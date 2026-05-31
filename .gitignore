@@ -9,3 +9,5 @@ __pycache__/
 *.log
 videos/
 output/
+nginx/.htpasswd
+.dashboard_password
