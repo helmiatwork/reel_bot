@@ -24,7 +24,8 @@ COPY yt-pipeline/ /app/yt_pipeline/
 COPY pipeline.py   /app/pipeline.py
 COPY pipeline-api/main.py /app/main.py
 RUN touch /app/voiceover/__init__.py /app/publisher/__init__.py \
-          /app/quality_check/__init__.py /app/analytics/__init__.py
+          /app/quality_check/__init__.py /app/analytics/__init__.py \
+          /app/yt_pipeline/__init__.py
 RUN mkdir -p /videos /output /app/credentials
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \

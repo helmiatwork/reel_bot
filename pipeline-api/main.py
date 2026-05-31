@@ -63,11 +63,12 @@ def health():
     return {"status": "ok", "service": "pipeline-api"}
 
 
-@app.get("/", response_class=HTMLResponse)
-def serve_dashboard():
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+def root():
+    """Serve the Reelbot dashboard UI."""
     if DASHBOARD.exists():
-        return HTMLResponse(DASHBOARD.read_text())
-    return HTMLResponse("<h1>Pipeline API</h1><p>Dashboard not built.</p>")
+        return FileResponse(str(DASHBOARD))
+    return HTMLResponse("<h2>Reelbot API running</h2><p><a href='/docs'>API docs</a></p>")
 
 
 @app.post("/voiceover/generate")

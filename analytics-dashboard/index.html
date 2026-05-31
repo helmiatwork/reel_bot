@@ -1,432 +1,472 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ReelBot Dashboard</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #0f1117;
-      --surface: #1a1d27;
-      --surface2: #252836;
-      --border: #2e3347;
-      --accent: #6c63ff;
-      --accent2: #48cfad;
-      --danger: #ff6b6b;
-      --warn: #ffd93d;
-      --text: #e2e8f0;
-      --muted: #8892a4;
-      --sidebar-w: 220px;
-    }
-    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; display: flex; min-height: 100vh; }
-
-    /* Sidebar */
-    #sidebar {
-      width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border);
-      display: flex; flex-direction: column; padding: 1.5rem 0; position: fixed; top: 0; left: 0; height: 100vh; z-index: 100;
-    }
-    .logo { padding: 0 1.25rem 1.5rem; font-size: 1.2rem; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
-    .logo span { color: var(--text); }
-    nav a {
-      display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 1.25rem;
-      color: var(--muted); text-decoration: none; font-size: 0.875rem; border-left: 3px solid transparent; transition: all 0.15s;
-    }
-    nav a:hover { color: var(--text); background: var(--surface2); }
-    nav a.active { color: var(--accent); border-left-color: var(--accent); background: var(--surface2); }
-    nav a .icon { width: 18px; text-align: center; }
-    .sidebar-sep { height: 1px; background: var(--border); margin: 0.75rem 1.25rem; }
-
-    /* Main */
-    #main { margin-left: var(--sidebar-w); flex: 1; padding: 2rem; max-width: calc(100vw - var(--sidebar-w)); }
-    .page { display: none; }
-    .page.active { display: block; }
-    h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem; }
-    .subtitle { color: var(--muted); font-size: 0.875rem; margin-bottom: 1.75rem; }
-
-    /* Cards */
-    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
-    .card-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
-    .card-value { font-size: 2rem; font-weight: 700; color: var(--text); }
-    .card-sub { font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
-    .card.accent .card-value { color: var(--accent); }
-    .card.green .card-value { color: var(--accent2); }
-
-    /* Table */
-    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-    thead th { background: var(--surface2); padding: 0.75rem 1rem; text-align: left; font-weight: 600; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; }
-    tbody td { padding: 0.75rem 1rem; border-top: 1px solid var(--border); }
-    tbody tr:hover td { background: var(--surface2); }
-    .badge { display: inline-block; padding: 0.2rem 0.55rem; border-radius: 99px; font-size: 0.7rem; font-weight: 600; }
-    .badge.ok { background: rgba(72,207,173,0.15); color: var(--accent2); }
-    .badge.warn { background: rgba(255,217,61,0.15); color: var(--warn); }
-    .badge.err { background: rgba(255,107,107,0.15); color: var(--danger); }
-
-    /* Pipeline form */
-    .form-group { margin-bottom: 1.25rem; }
-    label { display: block; font-size: 0.875rem; margin-bottom: 0.4rem; color: var(--muted); }
-    input, select, textarea {
-      width: 100%; padding: 0.65rem 0.9rem; background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 8px; color: var(--text); font-size: 0.875rem; outline: none; transition: border-color 0.15s;
-    }
-    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
-    textarea { resize: vertical; min-height: 80px; font-family: inherit; }
-    .btn {
-      padding: 0.65rem 1.5rem; border: none; border-radius: 8px; font-size: 0.875rem;
-      font-weight: 600; cursor: pointer; transition: opacity 0.15s;
-    }
-    .btn:hover { opacity: 0.85; }
-    .btn-primary { background: var(--accent); color: #fff; }
-    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-
-    /* Status box */
-    #run-status { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-top: 1rem; font-size: 0.875rem; display: none; }
-    #run-status.visible { display: block; }
-    .status-running { color: var(--warn); }
-    .status-done { color: var(--accent2); }
-    .status-error { color: var(--danger); }
-
-    /* API ref */
-    .endpoint { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; }
-    .ep-line { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.4rem; }
-    .method { font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px; }
-    .GET { background: rgba(72,207,173,0.15); color: var(--accent2); }
-    .POST { background: rgba(108,99,255,0.15); color: var(--accent); }
-    .ep-path { font-family: 'Courier New', monospace; font-size: 0.875rem; }
-    .ep-desc { font-size: 0.8rem; color: var(--muted); }
-
-    /* Insights */
-    .insight-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
-    .insight-title { font-weight: 600; margin-bottom: 0.5rem; }
-    .insight-body { font-size: 0.875rem; color: var(--muted); line-height: 1.6; }
-
-    /* Loading spinner */
-    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      #sidebar { transform: translateX(-100%); }
-      #main { margin-left: 0; }
-      .form-row { grid-template-columns: 1fr; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reelbot — Control Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080b0f;--surface:#0d1117;--card:#111820;--border:#1c2633;--border2:#243040;
+  --text:#e2ddd6;--muted:#4a5568;--dim:#2d3748;
+  --accent:#00e5ff;--accent2:#7c3aed;--green:#00d97e;--amber:#ffb020;--red:#ff4757;--purple:#a78bfa;
+  --display:'Syne',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;min-height:100vh;overflow-x:hidden}
+.layout{display:grid;grid-template-columns:220px 1fr;grid-template-rows:56px 1fr;min-height:100vh}
+.topbar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 28px;border-bottom:1px solid var(--border);background:rgba(8,11,15,.97);position:sticky;top:0;z-index:100}
+.brand{font-family:var(--display);font-size:18px;font-weight:800;letter-spacing:-.03em;display:flex;align-items:center;gap:10px}
+.brand-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1;box-shadow:0 0 10px var(--accent)}50%{opacity:.4;box-shadow:none}}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.status-badge{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
+.status-dot.offline{background:var(--red);box-shadow:0 0 6px var(--red)}
+.refresh-btn{background:transparent;border:1px solid var(--border2);color:var(--muted);font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:4px;cursor:pointer;letter-spacing:.06em;text-transform:uppercase;transition:all .15s}
+.refresh-btn:hover{border-color:var(--accent);color:var(--accent)}
+.last-sync{font-size:11px;color:var(--dim)}
+.sidebar{border-right:1px solid var(--border);padding:20px 0;display:flex;flex-direction:column;gap:2px;background:var(--surface)}
+.nav-section{padding:0 16px 6px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-top:14px}
+.nav-section:first-child{margin-top:0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 16px;color:var(--muted);cursor:pointer;transition:all .12s;border-left:2px solid transparent;user-select:none}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,.02)}
+.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(0,229,255,.05)}
+.nav-icon{font-size:15px;width:20px;text-align:center}
+.nav-label{font-size:12px;letter-spacing:.02em}
+.nav-badge{margin-left:auto;font-size:10px;background:var(--border2);color:var(--muted);padding:1px 6px;border-radius:10px;min-width:20px;text-align:center}
+.main{padding:28px;overflow-y:auto;display:flex;flex-direction:column;gap:22px}
+.page{display:none;flex-direction:column;gap:22px}
+.page.active{display:flex}
+.page-eyebrow{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.page-title{font-family:var(--display);font-size:26px;font-weight:700;letter-spacing:-.03em}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.stat-card{background:var(--card);padding:18px;transition:background .15s}
+.stat-card:hover{background:#151e28}
+.stat-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.stat-value{font-family:var(--display);font-size:30px;font-weight:700;letter-spacing:-.04em;line-height:1;margin-bottom:3px}
+.stat-value.accent{color:var(--accent)}.stat-value.green{color:var(--green)}.stat-value.amber{color:var(--amber)}
+.stat-sub{font-size:11px;color:var(--dim)}
+.section-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:12px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);background:var(--surface)}
+.panel-title{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.panel-body{padding:18px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:800px){.grid-2{grid-template-columns:1fr}}
+.table-wrap{border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.table-head{display:grid;padding:9px 18px;background:var(--surface);border-bottom:1px solid var(--border);gap:12px}
+.th{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.table-body{max-height:340px;overflow-y:auto;background:var(--card)}
+.table-body::-webkit-scrollbar{width:3px}
+.table-body::-webkit-scrollbar-thumb{background:var(--border2)}
+.table-row{display:grid;padding:11px 18px;border-bottom:1px solid var(--border);gap:12px;transition:background .1s;align-items:center}
+.table-row:last-child{border-bottom:none}
+.table-row:hover{background:rgba(255,255,255,.02)}
+.row-title{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--display);letter-spacing:-.01em}
+.row-cell{font-size:11px;color:var(--muted)}
+.badge{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px;letter-spacing:.04em;font-family:var(--mono)}
+.badge-green{background:rgba(0,217,126,.1);color:var(--green);border:1px solid rgba(0,217,126,.2)}
+.badge-amber{background:rgba(255,176,32,.1);color:var(--amber);border:1px solid rgba(255,176,32,.2)}
+.badge-red{background:rgba(255,71,87,.1);color:var(--red);border:1px solid rgba(255,71,87,.2)}
+.badge-blue{background:rgba(0,229,255,.08);color:var(--accent);border:1px solid rgba(0,229,255,.15)}
+.badge-dim{background:rgba(255,255,255,.04);color:var(--dim);border:1px solid var(--border2)}
+.ptag{display:inline-flex;align-items:center;font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 5px;border-radius:2px;margin-right:3px;border:1px solid var(--border2);color:var(--dim)}
+.ptag-yt{color:var(--red);border-color:rgba(255,71,87,.25)}
+.ptag-tt{color:var(--text);border-color:var(--border2)}
+.ptag-ig{color:var(--purple);border-color:rgba(167,139,250,.25)}
+.bar-row{display:flex;align-items:center;gap:12px;margin-bottom:13px}
+.bar-row:last-child{margin-bottom:0}
+.bar-label{font-size:11px;color:var(--muted);width:80px;flex-shrink:0}
+.bar-track{flex:1;height:4px;background:var(--border2);border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;border-radius:2px;transition:width 1.2s cubic-bezier(.16,1,.3,1);width:0}
+.bar-count{font-size:11px;color:var(--dim);width:24px;text-align:right}
+.gauge-wrap{text-align:center;padding:10px 0 18px}
+.gauge-num{font-family:var(--display);font-size:64px;font-weight:800;letter-spacing:-.06em;line-height:1;color:var(--accent)}
+.gauge-sub{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:6px 0 16px}
+.gauge-track{height:6px;background:var(--border2);border-radius:3px;overflow:hidden}
+.gauge-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width 1.4s cubic-bezier(.16,1,.3,1);width:0}
+.insight-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--border);border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.insight-card{background:var(--card);padding:16px}
+.insight-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+.insight-val{font-size:12px;line-height:1.6;color:var(--text)}
+.insight-val li{list-style:none;padding:4px 0;border-bottom:1px solid var(--border);font-size:11px}
+.insight-val li:last-child{border-bottom:none}
+.insight-val li::before{content:'→ ';color:var(--accent)}
+.form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.form-label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.form-input{background:var(--surface);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 12px;outline:none;transition:border-color .15s;width:100%}
+.form-input:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--dim)}
+.checkbox-group{display:flex;flex-wrap:wrap;gap:8px}
+.checkbox-item{display:flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--border2);border-radius:4px;cursor:pointer;font-size:11px;color:var(--muted);transition:all .15s;user-select:none}
+.checkbox-item:hover{border-color:var(--accent);color:var(--text)}
+.checkbox-item.checked{border-color:var(--accent);color:var(--accent);background:rgba(0,229,255,.05)}
+.checkbox-item input{display:none}
+.voice-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.voice-card{padding:10px 14px;border:1px solid var(--border2);border-radius:4px;cursor:pointer;transition:all .15s}
+.voice-card:hover{background:rgba(255,255,255,.02)}
+.voice-card.selected{border-color:var(--accent);background:rgba(0,229,255,.05)}
+.voice-name{font-size:12px;color:var(--text);margin-bottom:2px}
+.voice-desc{font-size:10px;color:var(--dim)}
+.run-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:linear-gradient(135deg,var(--accent2),var(--accent));border:none;border-radius:6px;color:#000;font-family:var(--display);font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.run-btn:hover{opacity:.9}
+.run-btn:disabled{opacity:.4;cursor:not-allowed}
+.output-box{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:14px;font-size:11px;line-height:1.8;color:var(--muted);min-height:80px;max-height:300px;overflow-y:auto;white-space:pre-wrap;word-break:break-all}
+.endpoint-list{display:flex;flex-direction:column;gap:4px}
+.endpoint-row{display:flex;align-items:center;gap:10px;padding:9px 14px;border:1px solid var(--border);border-radius:4px;background:var(--surface);cursor:pointer;transition:border-color .15s}
+.endpoint-row:hover{border-color:var(--border2)}
+.method{font-size:10px;font-weight:600;letter-spacing:.06em;width:36px;text-align:center;padding:2px 0;border-radius:2px;flex-shrink:0}
+.method-get{color:var(--green)}.method-post{color:var(--amber)}
+.endpoint-path{font-size:12px;color:var(--text);flex:1}
+.endpoint-desc{font-size:11px;color:var(--dim)}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 20px;gap:10px;color:var(--dim)}
+.empty-icon{font-size:28px;opacity:.3;margin-bottom:4px}
+.empty-title{font-family:var(--display);font-size:14px;color:var(--muted)}
+.empty-sub{font-size:12px;text-align:center;max-width:280px;line-height:1.6}
+.spinner{width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-row{display:flex;align-items:center;gap:10px;padding:18px;color:var(--dim);font-size:12px}
+</style>
 </head>
 <body>
+<div class="layout">
+  <header class="topbar">
+    <div class="brand"><div class="brand-dot"></div>Reelbot</div>
+    <div class="topbar-right">
+      <span class="last-sync" id="lastSync">—</span>
+      <button class="refresh-btn" onclick="loadAll()">↻ sync</button>
+      <div class="status-badge"><div class="status-dot" id="statusDot"></div><span id="statusText">connecting</span></div>
+    </div>
+  </header>
 
-<aside id="sidebar">
-  <div class="logo">Reel<span>Bot</span></div>
-  <nav>
-    <a href="#" class="active" data-page="dashboard"><span class="icon">⬛</span> Dashboard</a>
-    <a href="#" data-page="run-pipeline"><span class="icon">▶</span> Run Pipeline</a>
-    <a href="#" data-page="run-history"><span class="icon">📋</span> Run History</a>
-    <div class="sidebar-sep"></div>
-    <a href="#" data-page="performance"><span class="icon">📊</span> Performance</a>
-    <a href="#" data-page="ai-insights"><span class="icon">💡</span> AI Insights</a>
-    <div class="sidebar-sep"></div>
-    <a href="#" data-page="api-reference"><span class="icon">🔌</span> API Reference</a>
+  <nav class="sidebar">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" onclick="showPage('overview',this)"><span class="nav-icon">◈</span><span class="nav-label">Dashboard</span></div>
+    <div class="nav-section">Pipeline</div>
+    <div class="nav-item" onclick="showPage('run',this)"><span class="nav-icon">▶</span><span class="nav-label">Run Pipeline</span></div>
+    <div class="nav-item" onclick="showPage('runs',this)"><span class="nav-icon">≡</span><span class="nav-label">Run History</span><span class="nav-badge" id="runsBadge">—</span></div>
+    <div class="nav-section">Analytics</div>
+    <div class="nav-item" onclick="showPage('analytics',this)"><span class="nav-icon">◎</span><span class="nav-label">Performance</span></div>
+    <div class="nav-item" onclick="showPage('insights',this)"><span class="nav-icon">✦</span><span class="nav-label">AI Insights</span></div>
+    <div class="nav-section">System</div>
+    <div class="nav-item" onclick="showPage('api',this)"><span class="nav-icon">⌥</span><span class="nav-label">API Reference</span></div>
   </nav>
-</aside>
 
-<main id="main">
+  <main class="main">
 
-  <!-- Dashboard -->
-  <div class="page active" id="page-dashboard">
-    <h1>Dashboard</h1>
-    <p class="subtitle">Content pipeline overview</p>
-    <div class="cards" id="summary-cards">
-      <div class="card accent"><div class="card-label">Total Videos</div><div class="card-value" id="total-videos">—</div></div>
-      <div class="card green"><div class="card-label">Avg Quality Score</div><div class="card-value" id="avg-quality">—</div></div>
-      <div class="card"><div class="card-label">Platforms Active</div><div class="card-value" id="platform-count">—</div></div>
-      <div class="card"><div class="card-label">API Status</div><div class="card-value" id="api-status">—</div></div>
-    </div>
-    <h2 style="font-size:1rem;margin-bottom:1rem;color:var(--muted)">Recent Runs</h2>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Title</th><th>Platforms</th><th>Quality</th><th>Date</th></tr></thead>
-      <tbody id="recent-table"><tr><td colspan="4" style="color:var(--muted);text-align:center;padding:2rem">Loading…</td></tr></tbody>
-    </table></div>
-  </div>
-
-  <!-- Run Pipeline -->
-  <div class="page" id="page-run-pipeline">
-    <h1>Run Pipeline</h1>
-    <p class="subtitle">Trigger a new content research job</p>
-    <div style="max-width:560px">
-      <div class="form-group">
-        <label>Topic / Niche</label>
-        <input id="rp-topic" type="text" placeholder="e.g. productivity tips Indonesia" />
+    <!-- OVERVIEW -->
+    <div class="page active" id="page-overview">
+      <div><div class="page-eyebrow">Overview</div><div class="page-title">Dashboard</div></div>
+      <div class="stat-grid" id="statCards">
+        <div class="stat-card"><div class="stat-label">Total Videos</div><div class="stat-value accent" id="sc0">—</div><div class="stat-sub">all time</div></div>
+        <div class="stat-card"><div class="stat-label">Avg Quality</div><div class="stat-value green" id="sc1">—</div><div class="stat-sub">/ 100</div></div>
+        <div class="stat-card"><div class="stat-label">YouTube</div><div class="stat-value" id="sc2">—</div><div class="stat-sub">published</div></div>
+        <div class="stat-card"><div class="stat-label">TikTok</div><div class="stat-value" id="sc3">—</div><div class="stat-sub">published</div></div>
+        <div class="stat-card"><div class="stat-label">Instagram</div><div class="stat-value" id="sc4">—</div><div class="stat-sub">reels</div></div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Channel URL (optional)</label>
-          <input id="rp-channel" type="text" placeholder="https://youtube.com/@channel" />
+      <div class="section-label">Distribution</div>
+      <div class="grid-2">
+        <div class="panel"><div class="panel-head"><span class="panel-title">Platform breakdown</span></div><div class="panel-body" id="platformBars"><div class="loading-row"><div class="spinner"></div>loading...</div></div></div>
+        <div class="panel"><div class="panel-head"><span class="panel-title">Quality score</span></div><div class="panel-body" id="qualityGauge"><div class="loading-row"><div class="spinner"></div>loading...</div></div></div>
+      </div>
+      <div class="section-label">Recent videos</div>
+      <div class="table-wrap">
+        <div class="table-head" style="grid-template-columns:2fr 1fr 1fr 80px 80px"><div class="th">Title</div><div class="th">Date</div><div class="th">Platforms</div><div class="th">Quality</div><div class="th">Status</div></div>
+        <div class="table-body" id="recentTable"><div class="loading-row"><div class="spinner"></div>loading...</div></div>
+      </div>
+    </div>
+
+    <!-- RUN PIPELINE -->
+    <div class="page" id="page-run">
+      <div><div class="page-eyebrow">Pipeline</div><div class="page-title">Run Pipeline</div></div>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-head"><span class="panel-title">Configuration</span></div>
+          <div class="panel-body">
+            <div class="form-group"><label class="form-label">YouTube URL or Search Query</label><input class="form-input" id="runUrl" placeholder="https://youtube.com/watch?v=... or search terms"/></div>
+            <div class="form-group"><label class="form-label">Your Topic / Angle</label><input class="form-input" id="runTopic" placeholder="e.g. Why MG S5 EV is perfect for Indonesian roads"/></div>
+            <div class="form-group">
+              <label class="form-label">Platforms</label>
+              <div class="checkbox-group">
+                <label class="checkbox-item checked" id="cbYt" onclick="toggleCb(this,'youtube')"><input type="checkbox" checked>YouTube</label>
+                <label class="checkbox-item" id="cbTt" onclick="toggleCb(this,'tiktok')"><input type="checkbox">TikTok</label>
+                <label class="checkbox-item" id="cbIg" onclick="toggleCb(this,'instagram')"><input type="checkbox">Instagram</label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Voice</label>
+              <div class="voice-grid">
+                <div class="voice-card selected" onclick="selectVoice(this,'male_neutral')"><div class="voice-name">Adam</div><div class="voice-desc">Male · Neutral</div></div>
+                <div class="voice-card" onclick="selectVoice(this,'female_neutral')"><div class="voice-name">Bella</div><div class="voice-desc">Female · Neutral</div></div>
+                <div class="voice-card" onclick="selectVoice(this,'male_warm')"><div class="voice-name">Arnold</div><div class="voice-desc">Male · Warm</div></div>
+                <div class="voice-card" onclick="selectVoice(this,'female_warm')"><div class="voice-name">Elli</div><div class="voice-desc">Female · Warm</div></div>
+              </div>
+            </div>
+            <button class="run-btn" id="runBtn" onclick="startPipeline()">▶  Start Pipeline</button>
+          </div>
         </div>
-        <div class="form-group">
-          <label>Max Videos to Analyze</label>
-          <input id="rp-max" type="number" value="20" min="5" max="100" />
+        <div class="panel">
+          <div class="panel-head"><span class="panel-title">Live output</span><span class="badge badge-dim" id="runStatus">idle</span></div>
+          <div class="output-box" id="runOutput" style="border:none;border-radius:0;min-height:280px;max-height:400px">Configure and click Start Pipeline to begin.</div>
         </div>
       </div>
-      <button class="btn btn-primary" id="rp-btn" onclick="startResearch()">▶ Start Research</button>
-      <div id="run-status">
-        <span class="spinner"></span>
-        <span id="run-status-text">Initializing…</span>
+    </div>
+
+    <!-- RUN HISTORY -->
+    <div class="page" id="page-runs">
+      <div><div class="page-eyebrow">Pipeline</div><div class="page-title">Run History</div></div>
+      <div class="table-wrap">
+        <div class="table-head" style="grid-template-columns:1fr 100px 1fr 80px 80px 90px"><div class="th">Title</div><div class="th">Run ID</div><div class="th">Platforms</div><div class="th">Quality</div><div class="th">Status</div><div class="th">Date</div></div>
+        <div class="table-body" id="historyTable"><div class="loading-row"><div class="spinner"></div>loading...</div></div>
       </div>
     </div>
-  </div>
 
-  <!-- Run History -->
-  <div class="page" id="page-run-history">
-    <h1>Run History</h1>
-    <p class="subtitle">All pipeline runs</p>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Run ID</th><th>Title</th><th>Platforms</th><th>Quality</th><th>Status</th><th>Date</th></tr></thead>
-      <tbody id="history-table"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:2rem">Loading…</td></tr></tbody>
-    </table></div>
-  </div>
+    <!-- ANALYTICS -->
+    <div class="page" id="page-analytics">
+      <div><div class="page-eyebrow">Analytics</div><div class="page-title">Performance</div></div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-label">Total Videos</div><div class="stat-value accent" id="acTotal">—</div></div>
+        <div class="stat-card"><div class="stat-label">Avg Quality</div><div class="stat-value green" id="acQuality">—</div></div>
+        <div class="stat-card"><div class="stat-label">YouTube</div><div class="stat-value" id="acYt">—</div></div>
+        <div class="stat-card"><div class="stat-label">TikTok</div><div class="stat-value" id="acTt">—</div></div>
+        <div class="stat-card"><div class="stat-label">Instagram</div><div class="stat-value" id="acIg">—</div></div>
+      </div>
+      <div class="section-label">All videos</div>
+      <div class="table-wrap">
+        <div class="table-head" style="grid-template-columns:2fr 1fr 1fr 80px 80px"><div class="th">Title</div><div class="th">Date</div><div class="th">Platforms</div><div class="th">Quality</div><div class="th">Status</div></div>
+        <div class="table-body" id="analyticsTable"><div class="loading-row"><div class="spinner"></div>loading...</div></div>
+      </div>
+    </div>
 
-  <!-- Performance -->
-  <div class="page" id="page-performance">
-    <h1>Performance</h1>
-    <p class="subtitle">Platform breakdown and quality trends</p>
-    <div class="cards" id="perf-cards">
-      <div class="card"><div class="card-label">Loading…</div><div class="card-value">—</div></div>
+    <!-- AI INSIGHTS -->
+    <div class="page" id="page-insights">
+      <div><div class="page-eyebrow">Analytics</div><div class="page-title">AI Insights</div></div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">What the AI learned from your videos</span><button class="refresh-btn" onclick="loadInsights()">↻ regenerate</button></div>
+        <div class="panel-body" id="insightsBody"><div class="loading-row"><div class="spinner"></div>analyzing...</div></div>
+      </div>
+      <div class="section-label">Script feedback for next video</div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Improvements to apply next time</span></div>
+        <div class="panel-body" id="feedbackBody"><div class="loading-row"><div class="spinner"></div>loading...</div></div>
+      </div>
     </div>
-    <h2 style="font-size:1rem;margin-bottom:1rem;color:var(--muted)">By Platform</h2>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Platform</th><th>Videos</th><th>Share</th></tr></thead>
-      <tbody id="platform-table"></tbody>
-    </table></div>
-  </div>
 
-  <!-- AI Insights -->
-  <div class="page" id="page-ai-insights">
-    <h1>AI Insights</h1>
-    <p class="subtitle">Generated from your content analytics</p>
-    <div id="insights-container">
-      <p style="color:var(--muted)">Loading insights…</p>
+    <!-- API REFERENCE -->
+    <div class="page" id="page-api">
+      <div><div class="page-eyebrow">System</div><div class="page-title">API Reference</div></div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Endpoints — click to test</span></div>
+        <div class="panel-body" style="padding:12px"><div class="endpoint-list" id="endpointList"></div></div>
+      </div>
+      <div class="section-label">Test endpoint</div>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-head"><span class="panel-title">Request</span></div>
+          <div class="panel-body">
+            <div class="form-group"><label class="form-label">URL</label><input class="form-input" id="testUrl" value="/health"/></div>
+            <div class="form-group"><label class="form-label">Method</label><select class="form-input" id="testMethod"><option>GET</option><option>POST</option></select></div>
+            <div class="form-group"><label class="form-label">Body (JSON)</label><textarea class="form-input" id="testBody" rows="4" placeholder='{"key":"value"}'></textarea></div>
+            <button class="run-btn" onclick="testEndpoint()">Send Request</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><span class="panel-title">Response</span></div>
+          <div class="output-box" id="testOutput" style="border:none;border-radius:0;min-height:200px;max-height:360px">Response appears here...</div>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <!-- API Reference -->
-  <div class="page" id="page-api-reference">
-    <h1>API Reference</h1>
-    <p class="subtitle">Pipeline API endpoints — base URL: <code style="font-size:0.8rem;background:var(--surface2);padding:2px 6px;border-radius:4px">http://localhost:8000</code></p>
-
-    <div class="endpoint">
-      <div class="ep-line"><span class="method GET">GET</span><span class="ep-path">/health</span></div>
-      <div class="ep-desc">Health check — returns service status</div>
-    </div>
-    <div class="endpoint">
-      <div class="ep-line"><span class="method GET">GET</span><span class="ep-path">/analytics/data</span></div>
-      <div class="ep-desc">All analytics records as JSON array</div>
-    </div>
-    <div class="endpoint">
-      <div class="ep-line"><span class="method GET">GET</span><span class="ep-path">/analytics/summary</span></div>
-      <div class="ep-desc">Aggregated stats — total videos, platforms, avg quality</div>
-    </div>
-    <div class="endpoint">
-      <div class="ep-line"><span class="method GET">GET</span><span class="ep-path">/analytics/insights</span></div>
-      <div class="ep-desc">AI-generated insights from recent analytics</div>
-    </div>
-    <div class="endpoint">
-      <div class="ep-line"><span class="method POST">POST</span><span class="ep-path">/pipeline/research</span></div>
-      <div class="ep-desc">Start yt-pipeline research job. Body: <code>{"topic": "...", "max_videos": 20}</code></div>
-    </div>
-    <div class="endpoint">
-      <div class="ep-line"><span class="method GET">GET</span><span class="ep-path">/pipeline/research/status/{run_id}</span></div>
-      <div class="ep-desc">Poll research job status: running | done | error</div>
-    </div>
-    <div class="endpoint">
-      <div class="ep-line"><span class="method GET">GET</span><span class="ep-path">/pipeline/research/result/{run_id}</span></div>
-      <div class="ep-desc">Get research results when status = done</div>
-    </div>
-    <div class="endpoint">
-      <div class="ep-line"><span class="method POST">POST</span><span class="ep-path">/voiceover/generate</span></div>
-      <div class="ep-desc">Generate voiceover from script dict</div>
-    </div>
-    <div class="endpoint">
-      <div class="ep-line"><span class="method POST">POST</span><span class="ep-path">/quality/check</span></div>
-      <div class="ep-desc">AI quality check on rendered video</div>
-    </div>
-    <div class="endpoint">
-      <div class="ep-line"><span class="method POST">POST</span><span class="ep-path">/publish</span></div>
-      <div class="ep-desc">Publish video to platforms (YouTube / TikTok / IG)</div>
-    </div>
-    <div class="endpoint">
-      <div class="ep-line"><span class="method POST">POST</span><span class="ep-path">/pipeline/run</span></div>
-      <div class="ep-desc">Run complete pipeline end-to-end in background</div>
-    </div>
-  </div>
-
-</main>
-
+  </main>
+</div>
 <script>
-const BASE = '';
-let pollTimer = null;
+const API='';
+let selectedPlatforms=['youtube'],selectedVoice='male_neutral';
 
-// Nav
-document.querySelectorAll('nav a[data-page]').forEach(a => {
-  a.addEventListener('click', e => {
-    e.preventDefault();
-    const page = a.dataset.page;
-    document.querySelectorAll('nav a').forEach(x => x.classList.remove('active'));
-    document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
-    a.classList.add('active');
-    document.getElementById('page-' + page).classList.add('active');
-    if (page === 'dashboard') loadDashboard();
-    if (page === 'run-history') loadHistory();
-    if (page === 'performance') loadPerformance();
-    if (page === 'ai-insights') loadInsights();
-  });
-});
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+  if(id==='analytics')loadAnalytics();
+  if(id==='insights')loadInsights();
+  if(id==='runs')renderHistory();
+}
 
-// Dashboard
-async function loadDashboard() {
-  try {
-    const [sum, health] = await Promise.all([
-      fetch(BASE + '/analytics/summary').then(r => r.json()),
-      fetch(BASE + '/health').then(r => r.json()).catch(() => null)
+async function loadAll(){
+  try{
+    const[s,d]=await Promise.all([
+      fetch(`${API}/analytics/summary`).then(r=>r.json()),
+      fetch(`${API}/analytics/data`).then(r=>r.json())
     ]);
-    document.getElementById('total-videos').textContent = sum.total_videos ?? 0;
-    document.getElementById('avg-quality').textContent = sum.avg_quality ? sum.avg_quality + '%' : '—';
-    document.getElementById('platform-count').textContent = Object.keys(sum.platforms || {}).length;
-    document.getElementById('api-status').textContent = health ? '✅' : '❌';
-    document.getElementById('api-status').style.fontSize = '1.5rem';
-
-    const data = await fetch(BASE + '/analytics/data').then(r => r.json());
-    const tbody = document.getElementById('recent-table');
-    tbody.innerHTML = '';
-    (data.records || []).slice(0, 8).forEach(r => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${r.title || r.run_id || '—'}</td>
-        <td>${(r.platforms || []).join(', ') || '—'}</td>
-        <td><span class="badge ${qualityBadge(r.qc_score)}">${r.qc_score ?? '—'}</span></td>
-        <td style="color:var(--muted);font-size:0.8rem">${(r.created_at || '').slice(0,10) || '—'}</td>`;
-      tbody.appendChild(tr);
-    });
-    if (!data.records?.length) tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:2rem">No runs yet</td></tr>';
-  } catch(e) { console.error(e); }
-}
-
-function qualityBadge(score) {
-  if (!score) return '';
-  if (score >= 75) return 'ok';
-  if (score >= 55) return 'warn';
-  return 'err';
-}
-
-// Run Pipeline
-async function startResearch() {
-  const topic = document.getElementById('rp-topic').value.trim();
-  if (!topic) { alert('Enter a topic'); return; }
-  const btn = document.getElementById('rp-btn');
-  btn.disabled = true;
-  const statusBox = document.getElementById('run-status');
-  const statusText = document.getElementById('run-status-text');
-  statusBox.className = 'visible';
-  statusText.className = 'status-running';
-  statusText.textContent = 'Starting research job…';
-
-  try {
-    const res = await fetch(BASE + '/pipeline/research', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        topic,
-        channel_url: document.getElementById('rp-channel').value.trim() || null,
-        max_videos: parseInt(document.getElementById('rp-max').value) || 20
-      })
-    });
-    const data = await res.json();
-    const runId = data.run_id;
-    statusText.textContent = `Job started (ID: ${runId}) — polling…`;
-    pollTimer = setInterval(async () => {
-      try {
-        const s = await fetch(BASE + '/pipeline/research/status/' + runId).then(r => r.json());
-        if (s.status === 'done') {
-          clearInterval(pollTimer);
-          statusText.className = 'status-done';
-          statusText.textContent = `✅ Research complete (${runId})`;
-          btn.disabled = false;
-        } else if (s.status === 'error') {
-          clearInterval(pollTimer);
-          statusText.className = 'status-error';
-          statusText.textContent = `❌ Job failed — check logs`;
-          btn.disabled = false;
-        }
-      } catch(e) {}
-    }, 3000);
-  } catch(e) {
-    statusText.className = 'status-error';
-    statusText.textContent = 'Failed to start job: ' + e.message;
-    btn.disabled = false;
+    const p=s.platforms||{};
+    document.getElementById('sc0').textContent=s.total_videos||0;
+    document.getElementById('sc1').textContent=s.avg_quality?s.avg_quality.toFixed(0):'—';
+    document.getElementById('sc2').textContent=p.youtube||0;
+    document.getElementById('sc3').textContent=p.tiktok||0;
+    document.getElementById('sc4').textContent=p.instagram||0;
+    renderPlatformBars(p);renderGauge(s.avg_quality||0);
+    renderTable('recentTable',d.records||[],'2fr 1fr 1fr 80px 80px',8);
+    renderAnalyticsCards(s);
+    document.getElementById('runsBadge').textContent=d.total||0;
+    document.getElementById('statusDot').className='status-dot';
+    document.getElementById('statusText').textContent='online';
+    document.getElementById('lastSync').textContent='synced '+new Date().toLocaleTimeString();
+  }catch(e){
+    document.getElementById('statusDot').className='status-dot offline';
+    document.getElementById('statusText').textContent='offline';
   }
+  renderEndpoints();
 }
 
-// History
-async function loadHistory() {
-  try {
-    const data = await fetch(BASE + '/analytics/data').then(r => r.json());
-    const tbody = document.getElementById('history-table');
-    tbody.innerHTML = '';
-    (data.records || []).forEach(r => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td style="font-family:monospace;font-size:0.8rem">${r.run_id || '—'}</td>
-        <td>${r.title || '—'}</td>
-        <td>${(r.platforms || []).join(', ') || '—'}</td>
-        <td><span class="badge ${qualityBadge(r.qc_score)}">${r.qc_score ?? '—'}</span></td>
-        <td><span class="badge ok">done</span></td>
-        <td style="color:var(--muted);font-size:0.8rem">${(r.created_at || '').slice(0,10) || '—'}</td>`;
-      tbody.appendChild(tr);
-    });
-    if (!data.records?.length) tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:2rem">No runs yet</td></tr>';
-  } catch(e) {}
+function renderPlatformBars(p){
+  const total=Object.values(p).reduce((a,b)=>a+b,0)||1;
+  const rows=[{key:'youtube',label:'YouTube',color:'#ff4757'},{key:'tiktok',label:'TikTok',color:'#e2ddd6'},{key:'instagram',label:'Instagram',color:'#a78bfa'}];
+  document.getElementById('platformBars').innerHTML=total===0
+    ?'<div class="empty"><div class="empty-sub">No data yet</div></div>'
+    :rows.map(r=>`<div class="bar-row"><div class="bar-label">${r.label}</div><div class="bar-track"><div class="bar-fill" style="background:${r.color}" data-w="${Math.round(((p[r.key]||0)/total)*100)}%"></div></div><div class="bar-count">${p[r.key]||0}</div></div>`).join('');
+  requestAnimationFrame(()=>document.querySelectorAll('.bar-fill[data-w]').forEach(b=>{b.style.width=b.dataset.w}));
 }
 
-// Performance
-async function loadPerformance() {
-  try {
-    const sum = await fetch(BASE + '/analytics/summary').then(r => r.json());
-    const cards = document.getElementById('perf-cards');
-    cards.innerHTML = `
-      <div class="card accent"><div class="card-label">Total Videos</div><div class="card-value">${sum.total_videos ?? 0}</div></div>
-      <div class="card green"><div class="card-label">Avg Quality</div><div class="card-value">${sum.avg_quality ? sum.avg_quality + '%' : '—'}</div></div>
-    `;
-    const platforms = sum.platforms || {};
-    const total = Object.values(platforms).reduce((a,b) => a+b, 0) || 1;
-    const tbody = document.getElementById('platform-table');
-    tbody.innerHTML = Object.entries(platforms).map(([p,c]) =>
-      `<tr><td>${p}</td><td>${c}</td><td style="color:var(--muted)">${Math.round(c/total*100)}%</td></tr>`
-    ).join('') || '<tr><td colspan="3" style="color:var(--muted);text-align:center;padding:2rem">No data</td></tr>';
-  } catch(e) {}
+function renderGauge(score){
+  const col=score>=75?'var(--accent)':score>=50?'var(--amber)':'var(--red)';
+  document.getElementById('qualityGauge').innerHTML=`<div class="gauge-wrap"><div class="gauge-num" style="color:${col}">${score>0?score.toFixed(0):'—'}</div><div class="gauge-sub">average quality</div><div class="gauge-track"><div class="gauge-fill" data-w="${score}%"></div></div></div>`;
+  requestAnimationFrame(()=>document.querySelectorAll('.gauge-fill[data-w]').forEach(g=>{g.style.width=g.dataset.w}));
 }
 
-// AI Insights
-async function loadInsights() {
-  try {
-    const data = await fetch(BASE + '/analytics/insights').then(r => r.json());
-    const container = document.getElementById('insights-container');
-    const insights = data.insights || {};
-    if (!Object.keys(insights).length && !data.count) {
-      container.innerHTML = '<p style="color:var(--muted)">No analytics data yet. Run the pipeline first.</p>';
-      return;
+function sbadge(s){if(!s)return'<span class="badge badge-dim">—</span>';const c=s>=75?'badge-green':s>=50?'badge-amber':'badge-red';return`<span class="badge ${c}">${s}</span>`}
+function ptags(ps){if(!ps||!ps.length)return'<span style="color:var(--dim)">—</span>';const m={youtube:'ptag-yt',tiktok:'ptag-tt',instagram:'ptag-ig'},a={youtube:'YT',tiktok:'TT',instagram:'IG'};return ps.map(p=>`<span class="ptag ${m[p]||''}">${a[p]||p}</span>`).join('')}
+function stbadge(r){const res=r.publish_results||{};const e=Object.values(res).filter(v=>v&&v.error).length;if(e)return'<span class="badge badge-red">⚠ err</span>';if(Object.keys(res).length)return'<span class="badge badge-green">✓ ok</span>';return'<span class="badge badge-dim">—</span>'}
+
+function renderTable(id,records,cols,limit=999){
+  const el=document.getElementById(id);
+  if(!records.length){el.innerHTML='<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">No videos yet</div><div class="empty-sub">Run your first pipeline to see data.</div></div>';return;}
+  el.innerHTML=records.slice(0,limit).map(r=>`<div class="table-row" style="grid-template-columns:${cols}"><div class="row-title">${r.title||'Untitled'}</div><div class="row-cell">${r.created_at?new Date(r.created_at).toLocaleDateString():'—'}</div><div class="row-cell">${ptags(r.platforms)}</div><div class="row-cell">${sbadge(r.qc_score)}</div><div class="row-cell">${stbadge(r)}</div></div>`).join('');
+}
+
+function renderAnalyticsCards(s){
+  const p=s.platforms||{};
+  document.getElementById('acTotal').textContent=s.total_videos||0;
+  document.getElementById('acQuality').textContent=s.avg_quality?s.avg_quality.toFixed(0):'—';
+  document.getElementById('acYt').textContent=p.youtube||0;
+  document.getElementById('acTt').textContent=p.tiktok||0;
+  document.getElementById('acIg').textContent=p.instagram||0;
+}
+
+async function loadAnalytics(){
+  try{
+    const[s,d]=await Promise.all([fetch(`${API}/analytics/summary`).then(r=>r.json()),fetch(`${API}/analytics/data`).then(r=>r.json())]);
+    renderAnalyticsCards(s);
+    renderTable('analyticsTable',d.records||[],'2fr 1fr 1fr 80px 80px');
+  }catch(e){}
+}
+
+async function renderHistory(){
+  try{
+    const d=await fetch(`${API}/analytics/data`).then(r=>r.json());
+    const el=document.getElementById('historyTable');
+    const records=d.records||[];
+    if(!records.length){el.innerHTML='<div class="empty"><div class="empty-sub">No runs yet.</div></div>';return;}
+    el.innerHTML=records.map(r=>`<div class="table-row" style="grid-template-columns:1fr 100px 1fr 80px 80px 90px"><div class="row-title">${r.title||'Untitled'}</div><div class="row-cell" style="font-size:10px;color:var(--dim)">${(r.run_id||'—').substring(0,12)}</div><div class="row-cell">${ptags(r.platforms)}</div><div class="row-cell">${sbadge(r.qc_score)}</div><div class="row-cell">${stbadge(r)}</div><div class="row-cell">${r.created_at?new Date(r.created_at).toLocaleDateString():'—'}</div></div>`).join('');
+  }catch(e){document.getElementById('historyTable').innerHTML='<div class="empty"><div class="empty-sub">Could not load data.</div></div>';}
+}
+
+async function loadInsights(){
+  document.getElementById('insightsBody').innerHTML='<div class="loading-row"><div class="spinner"></div>analyzing performance data...</div>';
+  document.getElementById('feedbackBody').innerHTML='<div class="loading-row"><div class="spinner"></div>loading...</div>';
+  try{
+    const[ins,fb]=await Promise.all([fetch(`${API}/analytics/insights`).then(r=>r.json()),fetch(`${API}/analytics/feedback`).then(r=>r.json())]);
+    const i=ins.insights||{};
+    if(!Object.keys(i).length){document.getElementById('insightsBody').innerHTML='<div class="empty"><div class="empty-icon">✦</div><div class="empty-title">No insights yet</div><div class="empty-sub">Publish more videos to unlock AI-generated insights.</div></div>';}
+    else{
+      const cards=[{k:'best_performing_topics',l:'Top topics',list:true},{k:'best_hook_style',l:'Hook style',list:false},{k:'optimal_duration_sec',l:'Optimal duration',list:false,sfx:'s'},{k:'best_performing_format',l:'Best format',list:false},{k:'script_improvements',l:'Improvements',list:true},{k:'avoid',l:'Avoid',list:true}];
+      const html=cards.map(c=>{const v=i[c.k];if(!v)return'';const cont=c.list&&Array.isArray(v)?`<ul class="insight-val">${v.slice(0,4).map(x=>`<li>${x}</li>`).join('')}</ul>`:`<div class="insight-val">${v}${c.sfx||''}</div>`;return`<div class="insight-card"><div class="insight-label">${c.l}</div>${cont}</div>`;}).filter(Boolean).join('');
+      document.getElementById('insightsBody').innerHTML=`<div class="insight-grid" style="background:none;border:none;padding:0">${html}</div>`;
     }
-    container.innerHTML = Object.entries(insights).map(([k, v]) => `
-      <div class="insight-card">
-        <div class="insight-title">${k.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}</div>
-        <div class="insight-body">${typeof v === 'object' ? JSON.stringify(v, null, 2) : v}</div>
-      </div>
-    `).join('') || '<div class="insight-card"><div class="insight-body">Insights will appear here after enough data is collected.</div></div>';
-  } catch(e) {
-    document.getElementById('insights-container').innerHTML = '<p style="color:var(--muted)">Could not load insights.</p>';
-  }
+    document.getElementById('feedbackBody').innerHTML=fb.feedback?`<div style="font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap">${fb.feedback}</div>`:'<div class="empty"><div class="empty-sub">No feedback available yet.</div></div>';
+  }catch(e){document.getElementById('insightsBody').innerHTML='<div class="empty"><div class="empty-sub">Could not load insights.</div></div>';document.getElementById('feedbackBody').innerHTML='';}
 }
 
-loadDashboard();
+function toggleCb(el,platform){
+  el.classList.toggle('checked');
+  selectedPlatforms=el.classList.contains('checked')?[...selectedPlatforms,platform]:selectedPlatforms.filter(p=>p!==platform);
+}
+function selectVoice(el,v){document.querySelectorAll('.voice-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');selectedVoice=v;}
+
+async function startPipeline(){
+  const url=document.getElementById('runUrl').value.trim();
+  const topic=document.getElementById('runTopic').value.trim();
+  if(!url){alert('Enter a YouTube URL or search query');return;}
+  if(!selectedPlatforms.length){alert('Select at least one platform');return;}
+  const btn=document.getElementById('runBtn'),out=document.getElementById('runOutput'),badge=document.getElementById('runStatus');
+  btn.disabled=true;badge.className='badge badge-amber';badge.textContent='running';
+  const runId='run_'+Date.now();
+  const log=(msg,color)=>{out.innerHTML+=`<div style="color:${color||'var(--muted)'}"><span style="color:var(--dim)">${new Date().toLocaleTimeString()}</span>  ${msg}</div>`;out.scrollTop=out.scrollHeight;};
+  out.innerHTML='';
+  log('Starting pipeline...','var(--accent)');
+  log(`URL: ${url}`);log(`Topic: ${topic||'same as source'}`);log(`Platforms: ${selectedPlatforms.join(', ')}`);log(`Voice: ${selectedVoice}`);log('─'.repeat(36));
+  try{
+    log('⏳ Triggering research...','var(--accent)');
+    const res=await fetch(`${API}/pipeline/research`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic:topic||url,run_id:runId})});
+    const data=await res.json();
+    if(data.status==='started'){
+      log(`✓ Started — run_id: ${data.run_id}`,'var(--green)');
+      log('⏳ Polling for completion (checks every 5s)...','var(--accent)');
+      for(let i=0;i<60;i++){
+        await new Promise(r=>setTimeout(r,5000));
+        const poll=await fetch(`${API}/pipeline/research/status/${data.run_id}`).then(r=>r.json());
+        log(`  status: ${poll.status}`);
+        if(poll.status==='done'){log('✓ Research complete!','var(--green)');const result=await fetch(`${API}/pipeline/research/result/${data.run_id}`).then(r=>r.json());log('✓ Pipeline running — check results','var(--green)');break;}
+        else if(poll.status==='error'){log(`✗ Failed: ${poll.error||'unknown'}','var(--red)');break;}
+      }
+    }else{log(`✗ Error: ${JSON.stringify(data)}','var(--red)');}
+  }catch(e){log(`✗ ${e.message}','var(--red)');}
+  btn.disabled=false;badge.className='badge badge-dim';badge.textContent='idle';
+}
+
+function renderEndpoints(){
+  const eps=[
+    {m:'GET',p:'/health',d:'Service health check'},
+    {m:'GET',p:'/analytics/summary',d:'Stats for dashboard'},
+    {m:'GET',p:'/analytics/data',d:'All analytics records'},
+    {m:'GET',p:'/analytics/insights',d:'AI insights from data'},
+    {m:'GET',p:'/analytics/feedback',d:'Script feedback'},
+    {m:'POST',p:'/analytics/save',d:'Save analytics record'},
+    {m:'POST',p:'/voiceover/generate',d:'Generate voiceover'},
+    {m:'POST',p:'/voiceover/merge',d:'Merge audio + video'},
+    {m:'POST',p:'/quality/check',d:'AI quality score'},
+    {m:'POST',p:'/publish',d:'Publish to platforms'},
+    {m:'POST',p:'/pipeline/research',d:'Trigger research'},
+    {m:'GET',p:'/pipeline/research/status/{run_id}',d:'Poll status'},
+    {m:'GET',p:'/pipeline/research/result/{run_id}',d:'Get result'},
+    {m:'POST',p:'/pipeline/run',d:'Full pipeline run'},
+  ];
+  document.getElementById('endpointList').innerHTML=eps.map(e=>`<div class="endpoint-row" onclick="quickTest('${e.p}','${e.m}')"><span class="method method-${e.m.toLowerCase()}">${e.m}</span><span class="endpoint-path">${e.p}</span><span class="endpoint-desc">${e.d}</span></div>`).join('');
+}
+
+function quickTest(path,method){
+  document.getElementById('testUrl').value=path;
+  document.getElementById('testMethod').value=method;
+  showPage('api',document.querySelectorAll('.nav-item')[6]);
+}
+
+async function testEndpoint(){
+  const url=document.getElementById('testUrl').value,method=document.getElementById('testMethod').value,body=document.getElementById('testBody').value,out=document.getElementById('testOutput');
+  out.textContent='Loading...';
+  try{
+    const opts={method};
+    if(method==='POST'&&body){opts.headers={'Content-Type':'application/json'};opts.body=body;}
+    const res=await fetch(`${API}${url}`,opts);
+    const data=await res.json();
+    out.innerHTML=`<span style="color:${res.ok?'var(--green)':'var(--red)'}">${res.status} ${res.statusText}</span>\n\n${JSON.stringify(data,null,2)}`;
+  }catch(e){out.innerHTML=`<span style="color:var(--red)">Error: ${e.message}</span>`;}
+}
+
+loadAll();
+setInterval(loadAll,30000);
 </script>
 </body>
 </html>

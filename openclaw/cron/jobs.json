@@ -1,32 +1,43 @@
 {
-  "version": "1.0",
   "jobs": [
     {
-      "id": "daily_research",
-      "name": "Daily Trend Research",
-      "description": "Run yt-pipeline research every morning and summarize trends",
-      "schedule": "0 7 * * *",
-      "agent": "researcher",
-      "prompt": "Run daily trend research for the configured niche. Summarize top 5 trending topics and post a brief report.",
-      "enabled": false
+      "id": "daily-content-brief",
+      "name": "Daily Content Brief",
+      "schedule": "0 8 * * *",
+      "session": "isolated",
+      "message": "Check http://pipeline-api:8000/analytics/summary and send me a morning brief: how many videos published this week, average quality score, and one suggestion for today's content topic based on recent performance.",
+      "delivery": {
+        "mode": "announce",
+        "channel": "telegram"
+      },
+      "enabled": false,
+      "comment": "Enable this after first videos are published. Change schedule to your preferred time."
     },
     {
-      "id": "weekly_analytics",
+      "id": "weekly-analytics",
       "name": "Weekly Performance Report",
-      "description": "Generate weekly analytics summary every Monday",
       "schedule": "0 9 * * 1",
-      "agent": "analyst",
-      "prompt": "Generate weekly performance report. Compare this week vs last week. Highlight wins and areas for improvement.",
-      "enabled": false
+      "session": "isolated",
+      "message": "Fetch data from http://pipeline-api:8000/analytics/data and http://pipeline-api:8000/analytics/insights. Create a weekly performance report: total videos, platform breakdown, quality scores, AI insights, and recommendations for next week.",
+      "delivery": {
+        "mode": "announce",
+        "channel": "telegram"
+      },
+      "enabled": false,
+      "comment": "Weekly Monday morning report. Enable after accumulating some video data."
     },
     {
-      "id": "content_reminder",
-      "name": "Content Creation Reminder",
-      "description": "Daily reminder to create content if no video published today",
-      "schedule": "0 14 * * *",
-      "agent": "assistant",
-      "prompt": "Check if any video was published today. If not, send a friendly reminder to create content and suggest the top trending topic from yesterday's research.",
-      "enabled": false
+      "id": "pipeline-health-check",
+      "name": "Pipeline Health Check",
+      "schedule": "0 */6 * * *",
+      "session": "isolated",
+      "message": "Check if all services are healthy: GET http://pipeline-api:8000/health and GET http://cliproxy:8317/v1/models. If anything is down, notify me immediately on Telegram.",
+      "delivery": {
+        "mode": "announce",
+        "channel": "telegram"
+      },
+      "enabled": false,
+      "comment": "Health check every 6 hours. Enable when running in production."
     }
   ]
 }
