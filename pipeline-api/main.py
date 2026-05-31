@@ -263,7 +263,7 @@ def start_research(req: ResearchRequest, bg: BackgroundTasks):
     def _run():
         try:
             cmd = [
-                "python", "-m", "yt_pipeline.main",
+                "python", "/app/yt_pipeline/yt_pipeline.py",
                 f"--topic={req.topic}",
                 f"--max-videos={req.max_videos}",
             ]
