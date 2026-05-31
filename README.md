@@ -1,8 +1,30 @@
-# Content Automation Stack
+# Reelbot
 ### AI-powered video content creation pipeline for any niche
 
 **What this does:**
 You send a YouTube URL or topic via Telegram. The system researches it, writes an original script, generates AI visuals (via ArcReel), adds voiceover, checks quality, and publishes to YouTube / TikTok / Instagram — automatically.
+
+---
+
+## How It Works
+
+Here's the complete flow from top to bottom:
+
+**User → Telegram** sends any message — a YouTube URL, a topic, "remind me at 9am", anything.
+
+**OpenClaw** receives it, reads `SOUL.md` and `AGENTS.md`, identifies the intent, and routes to the right agent. Six agents live inside the same gateway process — no extra services.
+
+**Agents** — `reelbot` is the only one that goes further right to ArcReel via `skill.md`. The other five (`researcher`, `writer`, `analyst`, `support`, `assistant`) work purely through the pipeline-api and CLIProxy.
+
+**pipeline-api** is the workhorse — four modules inside it handle voiceover (ElevenLabs/gTTS), quality check (vision AI frame scoring), publisher (YouTube/TikTok/Instagram), and analytics with BGM. The on-demand tools (`yt-pipeline`, `video-analyzer`, `video-splitter`) are called by pipeline-api as subprocesses.
+
+**CLIProxyAPI** is the single AI gateway — every AI call from every service goes through it, authenticated and routed to Sumopod.
+
+**Sumopod** is the only external cloud dependency — 30+ models, nothing else leaves your VPS.
+
+**Output** — published to platforms, tracked in analytics, insights fed back to OpenClaw for the next video.
+
+Everything runs inside Docker Compose on your 4 GB Tencent VPS, behind Nginx with SSL and HTTP Basic Auth.
 
 ---
 
@@ -29,9 +51,8 @@ Think of it as your content manager's report — it tells you what is working an
 | URL | What it is |
 |-----|-----------|
 | `analytics.general-creation.xyz` | Analytics dashboard + insights |
-| `n8n.general-creation.xyz` | Workflow editor — view pipeline runs |
 | `arcreel.general-creation.xyz` | AI video generation workspace |
-| `openclaw.general-creation.xyz` | AI agent gateway |
+| `openclaw.general-creation.xyz` | OpenClaw agent gateway |
 | `api.general-creation.xyz/health` | Pipeline API status check |
 
 ---
@@ -66,18 +87,12 @@ content-automation/
 │
 ├── nginx/conf.d/               ← Subdomain routing config
 │   ├── 00-redirect.conf        ← HTTP → HTTPS
+│   ├── 00-limits.conf          ← rate limiting zones
 │   ├── 01-analytics.conf       ← analytics subdomain
-│   ├── 02-n8n.conf             ← n8n subdomain
 │   ├── 03-arcreel.conf         ← arcreel subdomain
 │   ├── 04-openclaw.conf        ← openclaw subdomain
 │   ├── 05-api.conf             ← api subdomain
 │   └── ssl-params.conf         ← shared SSL settings
-│
-├── n8n-workflows/              ← Import these into n8n in order
-│   ├── 00_test_cliproxy.json
-│   ├── 01_youtube_research.json
-│   ├── 02_arcreel_bridge.json
-│   └── 03_complete_pipeline.json
 │
 └── credentials/                ← Put YouTube OAuth file here
     └── client_secrets.json     ← (you create this yourself)
@@ -197,7 +212,7 @@ docker compose ps
 ```
 
 You should see all services as `running`:
-- postgres, cliproxy, openclaw, n8n, arcreel, pipeline-api, nginx, certbot
+- postgres, cliproxy, openclaw, arcreel, pipeline-api, nginx, certbot
 
 Check health:
 ```bash
@@ -215,24 +230,11 @@ curl https://api.general-creation.xyz/health
 4. Go to **Settings → Agent** → set Base URL to `http://cliproxy:8317/v1`
 5. Go to **Settings → API** → click Generate Token → copy the token
 6. Back on VPS: `nano .env` → set `ARCREEL_TOKEN=the_token_you_copied`
-7. `docker compose restart n8n pipeline-api`
+7. `docker compose restart pipeline-api`
 
 ---
 
-### Step 8 — Import n8n workflows
-
-1. Open `https://n8n.general-creation.xyz`
-2. Create an account on first login
-3. Click the menu (top left) → **Import from File**
-4. Import each file in this order:
-   - `n8n-workflows/00_test_cliproxy.json` — run this first to test AI connection
-   - `n8n-workflows/01_youtube_research.json`
-   - `n8n-workflows/02_arcreel_bridge.json`
-   - `n8n-workflows/03_complete_pipeline.json`
-
----
-
-### Step 9 — Set up YouTube publishing (optional)
+### Step 8 — Set up YouTube publishing (optional)
 
 1. Go to `console.cloud.google.com`
 2. Create a project → enable **YouTube Data API v3**
@@ -248,7 +250,7 @@ curl https://api.general-creation.xyz/health
 
 ---
 
-### Step 10 — Open your dashboard
+### Step 9 — Open your dashboard
 
 ```
 https://analytics.general-creation.xyz
@@ -292,12 +294,11 @@ docker compose --profile tools run --rm video-splitter \
 | PostgreSQL | ~150 MB |
 | CLIProxyAPI | ~50 MB |
 | OpenClaw | ~300 MB |
-| n8n | ~300 MB |
 | ArcReel | ~300 MB |
 | Pipeline API | ~200 MB |
 | Nginx + Certbot | ~50 MB |
-| **Total idle** | **~1.75 GB** |
-| **Free** | **~2.25 GB** |
+| **Total idle** | **~1.45 GB** |
+| **Free** | **~2.55 GB** |
 
 On-demand tools (video-analyzer, yt-pipeline) use up to 1 GB temporarily when running, which is still within limits.
 
@@ -310,7 +311,7 @@ On-demand tools (video-analyzer, yt-pipeline) use up to 1 GB temporarily when ru
 docker compose ps
 
 # View logs for a specific service
-docker compose logs -f n8n
+docker compose logs -f openclaw
 docker compose logs -f arcreel
 docker compose logs -f pipeline-api
 
@@ -323,11 +324,6 @@ docker compose down
 # Update ArcReel to latest version
 docker compose pull arcreel
 docker compose up -d --no-deps arcreel
-
-# Backup n8n workflows
-docker compose exec n8n \
-  n8n export:workflow --all \
-  --output=/home/node/.n8n/backup.json
 
 # Check SSL certificate expiry
 docker compose exec nginx \
@@ -349,9 +345,6 @@ Check postgres is healthy first: `docker compose logs postgres`
 **Pipeline API not responding:**
 Check logs: `docker compose logs pipeline-api`
 Most common cause: missing environment variables in .env
-
-**n8n workflows not triggering:**
-Make sure ARCREEL_TOKEN is set in .env after ArcReel first-time setup.
 
 ---
 
