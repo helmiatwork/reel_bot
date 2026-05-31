@@ -33,13 +33,17 @@ services:
       - "443:443"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro
       - ./analytics-dashboard:/var/www/analytics:ro
       - ./certs:/etc/letsencrypt:ro
       - ./webroot:/var/www/certbot:ro
     depends_on:
-      - arcreel
-      - openclaw
-      - pipeline-api
+      arcreel:
+        condition: service_healthy
+      openclaw:
+        condition: service_healthy
+      pipeline-api:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - stack-network
@@ -75,7 +79,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
-    mem_limit: 384m
+    mem_limit: 256m
     cpus: "0.4"
     restart: unless-stopped
     healthcheck:
@@ -159,7 +163,7 @@ services:
       - "1241"
     environment:
       - DATABASE_URL=postgresql://admin:${POSTGRES_PASSWORD}@postgres:5432/arcreel
-      - AUTH_PASSWORD=${ARCREEL_PASSWORD:-admin}
+      - AUTH_SECRET_KEY=${ARCREEL_PASSWORD:-admin}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - GROK_API_KEY=${GROK_API_KEY:-}
@@ -176,6 +180,12 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1241"]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 5
     networks:
       - stack-network
 

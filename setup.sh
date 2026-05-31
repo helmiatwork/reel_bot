@@ -54,6 +54,21 @@ for conf in ./nginx/conf.d/0[1-5]-*.conf; do
     sed -i 's/^server {/# server {/' "$conf"  2>/dev/null || true
 done
 
+# ── Generate nginx .htpasswd for Basic Auth ───────────────────
+echo "[setup] Creating nginx auth credentials..."
+if [ ! -f ./nginx/.htpasswd ]; then
+    apt-get install -y apache2-utils -q
+    if [ -z "${DASHBOARD_PASSWORD:-}" ]; then
+        DASHBOARD_PASSWORD=$(openssl rand -base64 24)
+        echo "✓ Generated random dashboard password — saving to .dashboard_password (chmod 600)"
+        echo "$DASHBOARD_PASSWORD" > .dashboard_password
+        chmod 600 .dashboard_password
+    fi
+    htpasswd -bc ./nginx/.htpasswd admin "$DASHBOARD_PASSWORD"
+    echo "✓ nginx/.htpasswd created (user: admin)"
+    echo "  Change later with: htpasswd ./nginx/.htpasswd admin"
+fi
+
 docker compose build
 docker compose up -d nginx certbot postgres
 echo "Waiting for containers..."
