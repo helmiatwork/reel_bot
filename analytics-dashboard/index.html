@@ -1,708 +1,432 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Content Automation — Analytics</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg:      #0a0a0a;
-    --surface: #111111;
-    --border:  #1e1e1e;
-    --text:    #e8e4dc;
-    --muted:   #666;
-    --accent:  #c8f04a;
-    --red:     #ff4d4d;
-    --amber:   #f5a623;
-    --teal:    #4af0c8;
-    --purple:  #a78bfa;
-    --mono:    'Space Mono', monospace;
-    --sans:    'DM Sans', sans-serif;
-  }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ReelBot Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #252836;
+      --border: #2e3347;
+      --accent: #6c63ff;
+      --accent2: #48cfad;
+      --danger: #ff6b6b;
+      --warn: #ffd93d;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+      --sidebar-w: 220px;
+    }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; display: flex; min-height: 100vh; }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+    /* Sidebar */
+    #sidebar {
+      width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; padding: 1.5rem 0; position: fixed; top: 0; left: 0; height: 100vh; z-index: 100;
+    }
+    .logo { padding: 0 1.25rem 1.5rem; font-size: 1.2rem; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
+    .logo span { color: var(--text); }
+    nav a {
+      display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 1.25rem;
+      color: var(--muted); text-decoration: none; font-size: 0.875rem; border-left: 3px solid transparent; transition: all 0.15s;
+    }
+    nav a:hover { color: var(--text); background: var(--surface2); }
+    nav a.active { color: var(--accent); border-left-color: var(--accent); background: var(--surface2); }
+    nav a .icon { width: 18px; text-align: center; }
+    .sidebar-sep { height: 1px; background: var(--border); margin: 0.75rem 1.25rem; }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    min-height: 100vh;
-    font-size: 14px;
-  }
+    /* Main */
+    #main { margin-left: var(--sidebar-w); flex: 1; padding: 2rem; max-width: calc(100vw - var(--sidebar-w)); }
+    .page { display: none; }
+    .page.active { display: block; }
+    h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .subtitle { color: var(--muted); font-size: 0.875rem; margin-bottom: 1.75rem; }
 
-  /* ── header ───────────────────────────────────── */
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 32px;
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    background: var(--bg);
-    z-index: 10;
-  }
+    /* Cards */
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
+    .card-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .card-value { font-size: 2rem; font-weight: 700; color: var(--text); }
+    .card-sub { font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
+    .card.accent .card-value { color: var(--accent); }
+    .card.green .card-value { color: var(--accent2); }
 
-  .logo {
-    font-family: var(--mono);
-    font-size: 13px;
-    letter-spacing: 0.08em;
-    color: var(--accent);
-    text-transform: uppercase;
-  }
-  .logo span { color: var(--muted); }
+    /* Table */
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    thead th { background: var(--surface2); padding: 0.75rem 1rem; text-align: left; font-weight: 600; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; }
+    tbody td { padding: 0.75rem 1rem; border-top: 1px solid var(--border); }
+    tbody tr:hover td { background: var(--surface2); }
+    .badge { display: inline-block; padding: 0.2rem 0.55rem; border-radius: 99px; font-size: 0.7rem; font-weight: 600; }
+    .badge.ok { background: rgba(72,207,173,0.15); color: var(--accent2); }
+    .badge.warn { background: rgba(255,217,61,0.15); color: var(--warn); }
+    .badge.err { background: rgba(255,107,107,0.15); color: var(--danger); }
 
-  .status-pill {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--muted);
-    padding: 6px 14px;
-    border: 1px solid var(--border);
-    border-radius: 100px;
-  }
-  .dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--accent);
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: 0.3; }
-  }
+    /* Pipeline form */
+    .form-group { margin-bottom: 1.25rem; }
+    label { display: block; font-size: 0.875rem; margin-bottom: 0.4rem; color: var(--muted); }
+    input, select, textarea {
+      width: 100%; padding: 0.65rem 0.9rem; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-size: 0.875rem; outline: none; transition: border-color 0.15s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 80px; font-family: inherit; }
+    .btn {
+      padding: 0.65rem 1.5rem; border: none; border-radius: 8px; font-size: 0.875rem;
+      font-weight: 600; cursor: pointer; transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 
-  /* ── main layout ──────────────────────────────── */
-  main { padding: 32px; max-width: 1400px; margin: 0 auto; }
+    /* Status box */
+    #run-status { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-top: 1rem; font-size: 0.875rem; display: none; }
+    #run-status.visible { display: block; }
+    .status-running { color: var(--warn); }
+    .status-done { color: var(--accent2); }
+    .status-error { color: var(--danger); }
 
-  .page-title {
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 6px;
-  }
-  h1 {
-    font-size: 28px;
-    font-weight: 500;
-    margin-bottom: 32px;
-    letter-spacing: -0.02em;
-  }
-  h1 em { font-style: normal; color: var(--accent); }
+    /* API ref */
+    .endpoint { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; }
+    .ep-line { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.4rem; }
+    .method { font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px; }
+    .GET { background: rgba(72,207,173,0.15); color: var(--accent2); }
+    .POST { background: rgba(108,99,255,0.15); color: var(--accent); }
+    .ep-path { font-family: 'Courier New', monospace; font-size: 0.875rem; }
+    .ep-desc { font-size: 0.8rem; color: var(--muted); }
 
-  /* ── stat cards ───────────────────────────────── */
-  .cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1px;
-    background: var(--border);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-    margin-bottom: 32px;
-  }
-  .card {
-    background: var(--surface);
-    padding: 24px;
-    position: relative;
-    overflow: hidden;
-  }
-  .card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: var(--accent);
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
-  .card:hover::before { opacity: 1; }
-  .card-label {
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 10px;
-  }
-  .card-value {
-    font-family: var(--mono);
-    font-size: 32px;
-    font-weight: 700;
-    color: var(--text);
-    line-height: 1;
-    margin-bottom: 4px;
-  }
-  .card-value.accent { color: var(--accent); }
-  .card-sub {
-    font-size: 12px;
-    color: var(--muted);
-  }
+    /* Insights */
+    .insight-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+    .insight-title { font-weight: 600; margin-bottom: 0.5rem; }
+    .insight-body { font-size: 0.875rem; color: var(--muted); line-height: 1.6; }
 
-  /* ── platform breakdown ───────────────────────── */
-  .section-title {
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .section-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
+    /* Loading spinner */
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-  .grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 32px;
-  }
-  @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
-
-  .panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 24px;
-  }
-  .panel-title {
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 20px;
-  }
-
-  /* Platform bars */
-  .platform-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 14px;
-  }
-  .platform-name {
-    font-family: var(--mono);
-    font-size: 12px;
-    width: 90px;
-    flex-shrink: 0;
-  }
-  .bar-track {
-    flex: 1;
-    height: 6px;
-    background: var(--border);
-    border-radius: 3px;
-    overflow: hidden;
-  }
-  .bar-fill {
-    height: 100%;
-    border-radius: 3px;
-    transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .bar-yt    { background: var(--red); }
-  .bar-tt    { background: var(--text); }
-  .bar-ig    { background: var(--purple); }
-  .bar-count {
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--muted);
-    width: 30px;
-    text-align: right;
-  }
-
-  /* Quality gauge */
-  .gauge-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 16px 0;
-  }
-  .gauge-score {
-    font-family: var(--mono);
-    font-size: 56px;
-    font-weight: 700;
-    color: var(--accent);
-    line-height: 1;
-  }
-  .gauge-label {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-top: 8px;
-    margin-bottom: 20px;
-  }
-  .gauge-bar {
-    width: 100%;
-    height: 8px;
-    background: var(--border);
-    border-radius: 4px;
-    overflow: hidden;
-  }
-  .gauge-fill {
-    height: 100%;
-    border-radius: 4px;
-    background: linear-gradient(90deg, var(--amber), var(--accent));
-    transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  /* ── video table ──────────────────────────────── */
-  .table-wrap {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-    margin-bottom: 32px;
-  }
-  .table-header {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-    padding: 12px 20px;
-    border-bottom: 1px solid var(--border);
-    background: #0d0d0d;
-  }
-  .th-cell {
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-  .table-body { max-height: 480px; overflow-y: auto; }
-  .table-body::-webkit-scrollbar { width: 4px; }
-  .table-body::-webkit-scrollbar-track { background: transparent; }
-  .table-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-  .table-row {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--border);
-    transition: background 0.15s;
-    cursor: default;
-  }
-  .table-row:last-child { border-bottom: none; }
-  .table-row:hover { background: rgba(255,255,255,0.02); }
-
-  .row-title {
-    font-size: 13px;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding-right: 16px;
-  }
-  .row-cell {
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-  }
-  .score-badge {
-    font-family: var(--mono);
-    font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-weight: 700;
-  }
-  .score-high  { background: rgba(200, 240, 74, 0.12); color: var(--accent); }
-  .score-mid   { background: rgba(245, 166, 35, 0.12); color: var(--amber); }
-  .score-low   { background: rgba(255, 77, 77, 0.12);  color: var(--red); }
-
-  .platform-tag {
-    font-family: var(--mono);
-    font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 3px;
-    border: 1px solid var(--border);
-    margin-right: 4px;
-    text-transform: uppercase;
-  }
-
-  /* ── insights panel ───────────────────────────── */
-  .insights-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 1px;
-    background: var(--border);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-    margin-bottom: 32px;
-  }
-  .insight-card {
-    background: var(--surface);
-    padding: 24px;
-  }
-  .insight-label {
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 10px;
-  }
-  .insight-value {
-    font-size: 14px;
-    line-height: 1.5;
-    color: var(--text);
-  }
-  .insight-value li {
-    list-style: none;
-    padding: 4px 0;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 8px;
-    margin-bottom: 8px;
-  }
-  .insight-value li:last-child { border-bottom: none; margin-bottom: 0; }
-  .insight-value li::before { content: '→ '; color: var(--accent); font-family: var(--mono); }
-
-  /* ── empty state ──────────────────────────────── */
-  .empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 64px 32px;
-    color: var(--muted);
-    text-align: center;
-    gap: 16px;
-  }
-  .empty-icon {
-    font-size: 40px;
-    opacity: 0.3;
-  }
-  .empty-title {
-    font-family: var(--mono);
-    font-size: 14px;
-    letter-spacing: 0.06em;
-  }
-  .empty-sub { font-size: 13px; max-width: 320px; line-height: 1.6; }
-
-  /* ── loading ──────────────────────────────────── */
-  .loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 48px;
-    gap: 8px;
-    color: var(--muted);
-    font-family: var(--mono);
-    font-size: 12px;
-  }
-  .spinner {
-    width: 16px; height: 16px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ── refresh btn ──────────────────────────────── */
-  .refresh-btn {
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    color: var(--muted);
-    background: transparent;
-    border: 1px solid var(--border);
-    padding: 6px 14px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.15s;
-    text-transform: uppercase;
-  }
-  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-  .header-right { display: flex; align-items: center; gap: 12px; }
-
-  .last-updated {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--muted);
-  }
-</style>
+    /* Responsive */
+    @media (max-width: 768px) {
+      #sidebar { transform: translateX(-100%); }
+      #main { margin-left: 0; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">content-automation <span>/ analytics</span></div>
-  <div class="header-right">
-    <span class="last-updated" id="lastUpdated">—</span>
-    <button class="refresh-btn" onclick="loadData()">↻ refresh</button>
-    <div class="status-pill">
-      <div class="dot"></div>
-      <span id="statusText">connecting...</span>
-    </div>
-  </div>
-</header>
+<aside id="sidebar">
+  <div class="logo">Reel<span>Bot</span></div>
+  <nav>
+    <a href="#" class="active" data-page="dashboard"><span class="icon">⬛</span> Dashboard</a>
+    <a href="#" data-page="run-pipeline"><span class="icon">▶</span> Run Pipeline</a>
+    <a href="#" data-page="run-history"><span class="icon">📋</span> Run History</a>
+    <div class="sidebar-sep"></div>
+    <a href="#" data-page="performance"><span class="icon">📊</span> Performance</a>
+    <a href="#" data-page="ai-insights"><span class="icon">💡</span> AI Insights</a>
+    <div class="sidebar-sep"></div>
+    <a href="#" data-page="api-reference"><span class="icon">🔌</span> API Reference</a>
+  </nav>
+</aside>
 
-<main>
-  <div class="page-title">Dashboard</div>
-  <h1>Video Performance <em>Overview</em></h1>
+<main id="main">
 
-  <!-- Stat cards -->
-  <div class="cards">
-    <div class="card">
-      <div class="card-label">Total Videos</div>
-      <div class="card-value accent" id="totalVideos">—</div>
-      <div class="card-sub">all time</div>
+  <!-- Dashboard -->
+  <div class="page active" id="page-dashboard">
+    <h1>Dashboard</h1>
+    <p class="subtitle">Content pipeline overview</p>
+    <div class="cards" id="summary-cards">
+      <div class="card accent"><div class="card-label">Total Videos</div><div class="card-value" id="total-videos">—</div></div>
+      <div class="card green"><div class="card-label">Avg Quality Score</div><div class="card-value" id="avg-quality">—</div></div>
+      <div class="card"><div class="card-label">Platforms Active</div><div class="card-value" id="platform-count">—</div></div>
+      <div class="card"><div class="card-label">API Status</div><div class="card-value" id="api-status">—</div></div>
     </div>
-    <div class="card">
-      <div class="card-label">Avg Quality Score</div>
-      <div class="card-value" id="avgQuality">—</div>
-      <div class="card-sub">out of 100</div>
-    </div>
-    <div class="card">
-      <div class="card-label">YouTube Published</div>
-      <div class="card-value" id="ytCount">—</div>
-      <div class="card-sub">videos</div>
-    </div>
-    <div class="card">
-      <div class="card-label">TikTok Published</div>
-      <div class="card-value" id="ttCount">—</div>
-      <div class="card-sub">videos</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Instagram Published</div>
-      <div class="card-value" id="igCount">—</div>
-      <div class="card-sub">reels</div>
-    </div>
+    <h2 style="font-size:1rem;margin-bottom:1rem;color:var(--muted)">Recent Runs</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Title</th><th>Platforms</th><th>Quality</th><th>Date</th></tr></thead>
+      <tbody id="recent-table"><tr><td colspan="4" style="color:var(--muted);text-align:center;padding:2rem">Loading…</td></tr></tbody>
+    </table></div>
   </div>
 
-  <!-- Platform + Quality -->
-  <p class="section-title">Distribution</p>
-  <div class="grid-2">
-    <div class="panel">
-      <div class="panel-title">Platform breakdown</div>
-      <div id="platformBars">
-        <div class="loading"><div class="spinner"></div> loading...</div>
+  <!-- Run Pipeline -->
+  <div class="page" id="page-run-pipeline">
+    <h1>Run Pipeline</h1>
+    <p class="subtitle">Trigger a new content research job</p>
+    <div style="max-width:560px">
+      <div class="form-group">
+        <label>Topic / Niche</label>
+        <input id="rp-topic" type="text" placeholder="e.g. productivity tips Indonesia" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Channel URL (optional)</label>
+          <input id="rp-channel" type="text" placeholder="https://youtube.com/@channel" />
+        </div>
+        <div class="form-group">
+          <label>Max Videos to Analyze</label>
+          <input id="rp-max" type="number" value="20" min="5" max="100" />
+        </div>
+      </div>
+      <button class="btn btn-primary" id="rp-btn" onclick="startResearch()">▶ Start Research</button>
+      <div id="run-status">
+        <span class="spinner"></span>
+        <span id="run-status-text">Initializing…</span>
       </div>
     </div>
-    <div class="panel">
-      <div class="panel-title">Average quality score</div>
-      <div class="gauge-wrap" id="qualityGauge">
-        <div class="loading"><div class="spinner"></div> loading...</div>
-      </div>
+  </div>
+
+  <!-- Run History -->
+  <div class="page" id="page-run-history">
+    <h1>Run History</h1>
+    <p class="subtitle">All pipeline runs</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Run ID</th><th>Title</th><th>Platforms</th><th>Quality</th><th>Status</th><th>Date</th></tr></thead>
+      <tbody id="history-table"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:2rem">Loading…</td></tr></tbody>
+    </table></div>
+  </div>
+
+  <!-- Performance -->
+  <div class="page" id="page-performance">
+    <h1>Performance</h1>
+    <p class="subtitle">Platform breakdown and quality trends</p>
+    <div class="cards" id="perf-cards">
+      <div class="card"><div class="card-label">Loading…</div><div class="card-value">—</div></div>
     </div>
+    <h2 style="font-size:1rem;margin-bottom:1rem;color:var(--muted)">By Platform</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Platform</th><th>Videos</th><th>Share</th></tr></thead>
+      <tbody id="platform-table"></tbody>
+    </table></div>
   </div>
 
   <!-- AI Insights -->
-  <p class="section-title">AI Insights</p>
-  <div class="insights-grid" id="insightsGrid">
-    <div class="insight-card">
-      <div class="loading"><div class="spinner"></div> fetching insights...</div>
+  <div class="page" id="page-ai-insights">
+    <h1>AI Insights</h1>
+    <p class="subtitle">Generated from your content analytics</p>
+    <div id="insights-container">
+      <p style="color:var(--muted)">Loading insights…</p>
     </div>
   </div>
 
-  <!-- Video table -->
-  <p class="section-title">Recent Videos</p>
-  <div class="table-wrap">
-    <div class="table-header">
-      <div class="th-cell">Title</div>
-      <div class="th-cell">Date</div>
-      <div class="th-cell">Platforms</div>
-      <div class="th-cell">Quality</div>
-      <div class="th-cell">Status</div>
+  <!-- API Reference -->
+  <div class="page" id="page-api-reference">
+    <h1>API Reference</h1>
+    <p class="subtitle">Pipeline API endpoints — base URL: <code style="font-size:0.8rem;background:var(--surface2);padding:2px 6px;border-radius:4px">http://localhost:8000</code></p>
+
+    <div class="endpoint">
+      <div class="ep-line"><span class="method GET">GET</span><span class="ep-path">/health</span></div>
+      <div class="ep-desc">Health check — returns service status</div>
     </div>
-    <div class="table-body" id="videoTable">
-      <div class="loading"><div class="spinner"></div> loading videos...</div>
+    <div class="endpoint">
+      <div class="ep-line"><span class="method GET">GET</span><span class="ep-path">/analytics/data</span></div>
+      <div class="ep-desc">All analytics records as JSON array</div>
+    </div>
+    <div class="endpoint">
+      <div class="ep-line"><span class="method GET">GET</span><span class="ep-path">/analytics/summary</span></div>
+      <div class="ep-desc">Aggregated stats — total videos, platforms, avg quality</div>
+    </div>
+    <div class="endpoint">
+      <div class="ep-line"><span class="method GET">GET</span><span class="ep-path">/analytics/insights</span></div>
+      <div class="ep-desc">AI-generated insights from recent analytics</div>
+    </div>
+    <div class="endpoint">
+      <div class="ep-line"><span class="method POST">POST</span><span class="ep-path">/pipeline/research</span></div>
+      <div class="ep-desc">Start yt-pipeline research job. Body: <code>{"topic": "...", "max_videos": 20}</code></div>
+    </div>
+    <div class="endpoint">
+      <div class="ep-line"><span class="method GET">GET</span><span class="ep-path">/pipeline/research/status/{run_id}</span></div>
+      <div class="ep-desc">Poll research job status: running | done | error</div>
+    </div>
+    <div class="endpoint">
+      <div class="ep-line"><span class="method GET">GET</span><span class="ep-path">/pipeline/research/result/{run_id}</span></div>
+      <div class="ep-desc">Get research results when status = done</div>
+    </div>
+    <div class="endpoint">
+      <div class="ep-line"><span class="method POST">POST</span><span class="ep-path">/voiceover/generate</span></div>
+      <div class="ep-desc">Generate voiceover from script dict</div>
+    </div>
+    <div class="endpoint">
+      <div class="ep-line"><span class="method POST">POST</span><span class="ep-path">/quality/check</span></div>
+      <div class="ep-desc">AI quality check on rendered video</div>
+    </div>
+    <div class="endpoint">
+      <div class="ep-line"><span class="method POST">POST</span><span class="ep-path">/publish</span></div>
+      <div class="ep-desc">Publish video to platforms (YouTube / TikTok / IG)</div>
+    </div>
+    <div class="endpoint">
+      <div class="ep-line"><span class="method POST">POST</span><span class="ep-path">/pipeline/run</span></div>
+      <div class="ep-desc">Run complete pipeline end-to-end in background</div>
     </div>
   </div>
 
 </main>
 
 <script>
-const API = '';  // same origin — nginx proxies /api/* to pipeline-api:8000
+const BASE = '';
+let pollTimer = null;
 
-async function loadData() {
-  document.getElementById('statusText').textContent = 'loading...';
+// Nav
+document.querySelectorAll('nav a[data-page]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const page = a.dataset.page;
+    document.querySelectorAll('nav a').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+    a.classList.add('active');
+    document.getElementById('page-' + page).classList.add('active');
+    if (page === 'dashboard') loadDashboard();
+    if (page === 'run-history') loadHistory();
+    if (page === 'performance') loadPerformance();
+    if (page === 'ai-insights') loadInsights();
+  });
+});
+
+// Dashboard
+async function loadDashboard() {
   try {
-    const [summary, data, insights] = await Promise.all([
-      fetch(`${API}/api/analytics/summary`).then(r => r.json()),
-      fetch(`${API}/api/analytics/data`).then(r => r.json()),
-      fetch(`${API}/api/analytics/insights`).then(r => r.json()).catch(() => ({}))
+    const [sum, health] = await Promise.all([
+      fetch(BASE + '/analytics/summary').then(r => r.json()),
+      fetch(BASE + '/health').then(r => r.json()).catch(() => null)
     ]);
+    document.getElementById('total-videos').textContent = sum.total_videos ?? 0;
+    document.getElementById('avg-quality').textContent = sum.avg_quality ? sum.avg_quality + '%' : '—';
+    document.getElementById('platform-count').textContent = Object.keys(sum.platforms || {}).length;
+    document.getElementById('api-status').textContent = health ? '✅' : '❌';
+    document.getElementById('api-status').style.fontSize = '1.5rem';
 
-    renderCards(summary);
-    renderPlatformBars(summary.platforms || {});
-    renderQualityGauge(summary.avg_quality || 0);
-    renderInsights(insights.insights || {});
-    renderTable(data.records || []);
-
-    const now = new Date().toLocaleTimeString();
-    document.getElementById('lastUpdated').textContent = `updated ${now}`;
-    document.getElementById('statusText').textContent = 'live';
-
-  } catch(e) {
-    document.getElementById('statusText').textContent = 'offline';
-    console.error('Failed to load analytics:', e);
-    renderEmpty();
-  }
-}
-
-function renderCards(summary) {
-  document.getElementById('totalVideos').textContent = summary.total_videos || 0;
-  document.getElementById('avgQuality').textContent =
-    summary.avg_quality ? summary.avg_quality.toFixed(0) : '—';
-  const p = summary.platforms || {};
-  document.getElementById('ytCount').textContent = p.youtube || 0;
-  document.getElementById('ttCount').textContent = p.tiktok  || 0;
-  document.getElementById('igCount').textContent = p.instagram || 0;
-}
-
-function renderPlatformBars(platforms) {
-  const el = document.getElementById('platformBars');
-  const total = Object.values(platforms).reduce((a, b) => a + b, 0) || 1;
-  const entries = [
-    { key: 'youtube',   label: 'YouTube',   cls: 'bar-yt' },
-    { key: 'tiktok',    label: 'TikTok',    cls: 'bar-tt' },
-    { key: 'instagram', label: 'Instagram', cls: 'bar-ig' },
-  ];
-
-  if (total === 0) {
-    el.innerHTML = '<div class="empty" style="padding:32px"><div class="empty-sub">No platform data yet</div></div>';
-    return;
-  }
-
-  el.innerHTML = entries.map(e => {
-    const count = platforms[e.key] || 0;
-    const pct   = Math.round((count / total) * 100);
-    return `<div class="platform-row">
-      <div class="platform-name">${e.label}</div>
-      <div class="bar-track">
-        <div class="bar-fill ${e.cls}" style="width:0%" data-width="${pct}%"></div>
-      </div>
-      <div class="bar-count">${count}</div>
-    </div>`;
-  }).join('');
-
-  // animate bars after render
-  requestAnimationFrame(() => {
-    el.querySelectorAll('.bar-fill').forEach(b => {
-      b.style.width = b.dataset.width;
+    const data = await fetch(BASE + '/analytics/data').then(r => r.json());
+    const tbody = document.getElementById('recent-table');
+    tbody.innerHTML = '';
+    (data.records || []).slice(0, 8).forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.title || r.run_id || '—'}</td>
+        <td>${(r.platforms || []).join(', ') || '—'}</td>
+        <td><span class="badge ${qualityBadge(r.qc_score)}">${r.qc_score ?? '—'}</span></td>
+        <td style="color:var(--muted);font-size:0.8rem">${(r.created_at || '').slice(0,10) || '—'}</td>`;
+      tbody.appendChild(tr);
     });
-  });
+    if (!data.records?.length) tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:2rem">No runs yet</td></tr>';
+  } catch(e) { console.error(e); }
 }
 
-function renderQualityGauge(score) {
-  const el = document.getElementById('qualityGauge');
-  const color = score >= 75 ? 'var(--accent)' : score >= 50 ? 'var(--amber)' : 'var(--red)';
-  el.innerHTML = `
-    <div class="gauge-score" style="color:${color}">${score > 0 ? score : '—'}</div>
-    <div class="gauge-label">average quality score</div>
-    <div class="gauge-bar">
-      <div class="gauge-fill" style="width:0%" data-width="${score}%"></div>
-    </div>`;
-  requestAnimationFrame(() => {
-    const fill = el.querySelector('.gauge-fill');
-    if (fill) fill.style.width = fill.dataset.width;
-  });
+function qualityBadge(score) {
+  if (!score) return '';
+  if (score >= 75) return 'ok';
+  if (score >= 55) return 'warn';
+  return 'err';
 }
 
-function renderInsights(insights) {
-  const el = document.getElementById('insightsGrid');
-  if (!insights || Object.keys(insights).length === 0) {
-    el.innerHTML = `<div class="insight-card">
-      <div class="insight-label">Status</div>
-      <div class="insight-value">No insights yet — publish more videos to get AI-generated recommendations.</div>
-    </div>`;
-    return;
+// Run Pipeline
+async function startResearch() {
+  const topic = document.getElementById('rp-topic').value.trim();
+  if (!topic) { alert('Enter a topic'); return; }
+  const btn = document.getElementById('rp-btn');
+  btn.disabled = true;
+  const statusBox = document.getElementById('run-status');
+  const statusText = document.getElementById('run-status-text');
+  statusBox.className = 'visible';
+  statusText.className = 'status-running';
+  statusText.textContent = 'Starting research job…';
+
+  try {
+    const res = await fetch(BASE + '/pipeline/research', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        topic,
+        channel_url: document.getElementById('rp-channel').value.trim() || null,
+        max_videos: parseInt(document.getElementById('rp-max').value) || 20
+      })
+    });
+    const data = await res.json();
+    const runId = data.run_id;
+    statusText.textContent = `Job started (ID: ${runId}) — polling…`;
+    pollTimer = setInterval(async () => {
+      try {
+        const s = await fetch(BASE + '/pipeline/research/status/' + runId).then(r => r.json());
+        if (s.status === 'done') {
+          clearInterval(pollTimer);
+          statusText.className = 'status-done';
+          statusText.textContent = `✅ Research complete (${runId})`;
+          btn.disabled = false;
+        } else if (s.status === 'error') {
+          clearInterval(pollTimer);
+          statusText.className = 'status-error';
+          statusText.textContent = `❌ Job failed — check logs`;
+          btn.disabled = false;
+        }
+      } catch(e) {}
+    }, 3000);
+  } catch(e) {
+    statusText.className = 'status-error';
+    statusText.textContent = 'Failed to start job: ' + e.message;
+    btn.disabled = false;
   }
+}
 
-  const cards = [
-    { label: 'What works',        key: 'best_performing_topics',   isList: true },
-    { label: 'Hook style',        key: 'best_hook_style',          isList: false },
-    { label: 'Optimal duration',  key: 'optimal_duration_sec',     isList: false, suffix: 's' },
-    { label: 'Improvements',      key: 'script_improvements',      isList: true },
-    { label: 'Avoid',             key: 'avoid',                    isList: true },
-    { label: 'Best format',       key: 'best_performing_format',   isList: false },
-  ];
+// History
+async function loadHistory() {
+  try {
+    const data = await fetch(BASE + '/analytics/data').then(r => r.json());
+    const tbody = document.getElementById('history-table');
+    tbody.innerHTML = '';
+    (data.records || []).forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td style="font-family:monospace;font-size:0.8rem">${r.run_id || '—'}</td>
+        <td>${r.title || '—'}</td>
+        <td>${(r.platforms || []).join(', ') || '—'}</td>
+        <td><span class="badge ${qualityBadge(r.qc_score)}">${r.qc_score ?? '—'}</span></td>
+        <td><span class="badge ok">done</span></td>
+        <td style="color:var(--muted);font-size:0.8rem">${(r.created_at || '').slice(0,10) || '—'}</td>`;
+      tbody.appendChild(tr);
+    });
+    if (!data.records?.length) tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:2rem">No runs yet</td></tr>';
+  } catch(e) {}
+}
 
-  el.innerHTML = cards.map(c => {
-    const val = insights[c.key];
-    if (!val) return '';
-    let display = '';
-    if (c.isList && Array.isArray(val)) {
-      display = `<ul class="insight-value">${val.slice(0,4).map(v => `<li>${v}</li>`).join('')}</ul>`;
-    } else {
-      display = `<div class="insight-value">${val}${c.suffix || ''}</div>`;
+// Performance
+async function loadPerformance() {
+  try {
+    const sum = await fetch(BASE + '/analytics/summary').then(r => r.json());
+    const cards = document.getElementById('perf-cards');
+    cards.innerHTML = `
+      <div class="card accent"><div class="card-label">Total Videos</div><div class="card-value">${sum.total_videos ?? 0}</div></div>
+      <div class="card green"><div class="card-label">Avg Quality</div><div class="card-value">${sum.avg_quality ? sum.avg_quality + '%' : '—'}</div></div>
+    `;
+    const platforms = sum.platforms || {};
+    const total = Object.values(platforms).reduce((a,b) => a+b, 0) || 1;
+    const tbody = document.getElementById('platform-table');
+    tbody.innerHTML = Object.entries(platforms).map(([p,c]) =>
+      `<tr><td>${p}</td><td>${c}</td><td style="color:var(--muted)">${Math.round(c/total*100)}%</td></tr>`
+    ).join('') || '<tr><td colspan="3" style="color:var(--muted);text-align:center;padding:2rem">No data</td></tr>';
+  } catch(e) {}
+}
+
+// AI Insights
+async function loadInsights() {
+  try {
+    const data = await fetch(BASE + '/analytics/insights').then(r => r.json());
+    const container = document.getElementById('insights-container');
+    const insights = data.insights || {};
+    if (!Object.keys(insights).length && !data.count) {
+      container.innerHTML = '<p style="color:var(--muted)">No analytics data yet. Run the pipeline first.</p>';
+      return;
     }
-    return `<div class="insight-card">
-      <div class="insight-label">${c.label}</div>
-      ${display}
-    </div>`;
-  }).filter(Boolean).join('');
-
-  if (!el.innerHTML) {
-    el.innerHTML = `<div class="insight-card">
-      <div class="insight-label">Insights</div>
-      <div class="insight-value">Publish more videos to unlock AI insights.</div>
-    </div>`;
+    container.innerHTML = Object.entries(insights).map(([k, v]) => `
+      <div class="insight-card">
+        <div class="insight-title">${k.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}</div>
+        <div class="insight-body">${typeof v === 'object' ? JSON.stringify(v, null, 2) : v}</div>
+      </div>
+    `).join('') || '<div class="insight-card"><div class="insight-body">Insights will appear here after enough data is collected.</div></div>';
+  } catch(e) {
+    document.getElementById('insights-container').innerHTML = '<p style="color:var(--muted)">Could not load insights.</p>';
   }
 }
 
-function renderTable(records) {
-  const el = document.getElementById('videoTable');
-  if (!records.length) {
-    el.innerHTML = `<div class="empty">
-      <div class="empty-icon">📭</div>
-      <div class="empty-title">No videos yet</div>
-      <div class="empty-sub">Run your first pipeline to see video analytics here.</div>
-    </div>`;
-    return;
-  }
-
-  el.innerHTML = records.map(r => {
-    const date    = r.created_at ? new Date(r.created_at).toLocaleDateString() : '—';
-    const score   = r.qc_score || 0;
-    const cls     = score >= 75 ? 'score-high' : score >= 50 ? 'score-mid' : 'score-low';
-    const scoreTxt = score ? score : '—';
-    const platforms = (r.platforms || []).map(p =>
-      `<span class="platform-tag">${p.substring(0,2).toUpperCase()}</span>`
-    ).join('');
-    const pubRes  = r.publish_results || {};
-    const errors  = Object.values(pubRes).filter(v => v.error).length;
-    const status  = errors ? `<span style="color:var(--red)">⚠ ${errors} err</span>` :
-                    Object.keys(pubRes).length ? `<span style="color:var(--accent)">✓ ok</span>` :
-                    `<span style="color:var(--muted)">—</span>`;
-    return `<div class="table-row">
-      <div class="row-title">${r.title || 'Untitled'}</div>
-      <div class="row-cell">${date}</div>
-      <div class="row-cell">${platforms || '<span style="color:var(--muted)">—</span>'}</div>
-      <div class="row-cell"><span class="score-badge ${cls}">${scoreTxt}</span></div>
-      <div class="row-cell">${status}</div>
-    </div>`;
-  }).join('');
-}
-
-function renderEmpty() {
-  const els = ['platformBars', 'qualityGauge', 'insightsGrid', 'videoTable'];
-  els.forEach(id => {
-    document.getElementById(id).innerHTML = `<div class="empty">
-      <div class="empty-sub">Could not connect to pipeline API. Make sure the stack is running.</div>
-    </div>`;
-  });
-}
-
-// Auto refresh every 60 seconds
-loadData();
-setInterval(loadData, 60000);
+loadDashboard();
 </script>
 </body>
 </html>

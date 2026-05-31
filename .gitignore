@@ -3,5 +3,6 @@ credentials/client_secrets.json
 credentials/youtube_token.json
 cliproxy/cli-proxy-api
 cliproxy/config.yaml
+openclaw/cron/jobs-state.json
 __pycache__/
 *.pyc
