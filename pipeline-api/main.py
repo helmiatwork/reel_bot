@@ -1,15 +1,18 @@
 # pipeline-api/main.py
 # FastAPI service exposing all pipeline gaps as REST endpoints
-# Called by n8n workflows
 
 import os, sys, json
+from pathlib import Path
 from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from pydantic import BaseModel
 from typing import Optional, List
 
 sys.path.insert(0, "/app")
 
 app = FastAPI(title="Content Pipeline API", version="1.0")
+
+DASHBOARD = Path("/app/dashboard/index.html")
 
 
 class VoiceoverRequest(BaseModel):
@@ -58,6 +61,13 @@ class PipelineRequest(BaseModel):
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "pipeline-api"}
+
+
+@app.get("/", response_class=HTMLResponse)
+def serve_dashboard():
+    if DASHBOARD.exists():
+        return HTMLResponse(DASHBOARD.read_text())
+    return HTMLResponse("<h1>Pipeline API</h1><p>Dashboard not built.</p>")
 
 
 @app.post("/voiceover/generate")
@@ -170,11 +180,6 @@ def run_pipeline(req: PipelineRequest, bg: BackgroundTasks):
 
 # ── Analytics dashboard endpoints ────────────────────────────
 
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, JSONResponse
-import os
-from pathlib import Path
-
 ANALYTICS_DB_PATH = os.getenv("ANALYTICS_DB", "/output/analytics.json")
 
 @app.get("/analytics/data")
@@ -215,3 +220,63 @@ def analytics_summary():
         })
     except Exception as e:
         return JSONResponse({"total_videos": 0, "error": str(e)})
+
+
+# ── Research Pipeline endpoints ──────────────────────────────
+
+class ResearchRequest(BaseModel):
+    topic: str
+    channel_url: Optional[str] = None
+    max_videos: int = 20
+
+
+_research_runs: dict = {}
+
+
+@app.post("/pipeline/research")
+def start_research(req: ResearchRequest, bg: BackgroundTasks):
+    """Start yt-pipeline research job in background."""
+    import uuid, subprocess, threading
+    run_id = str(uuid.uuid4())[:8]
+    _research_runs[run_id] = {"status": "running", "result": None, "error": None}
+
+    def _run():
+        try:
+            cmd = [
+                "python", "-m", "yt_pipeline.main",
+                "--topic", req.topic,
+                "--max-videos", str(req.max_videos),
+            ]
+            if req.channel_url:
+                cmd += ["--channel", req.channel_url]
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+            if proc.returncode == 0:
+                import json as _json
+                _research_runs[run_id]["result"] = _json.loads(proc.stdout) if proc.stdout.strip().startswith("{") else {"raw": proc.stdout}
+                _research_runs[run_id]["status"] = "done"
+            else:
+                _research_runs[run_id]["error"] = proc.stderr
+                _research_runs[run_id]["status"] = "error"
+        except Exception as e:
+            _research_runs[run_id]["error"] = str(e)
+            _research_runs[run_id]["status"] = "error"
+
+    bg.add_task(_run)
+    return {"status": "started", "run_id": run_id}
+
+
+@app.get("/pipeline/research/status/{run_id}")
+def research_status(run_id: str):
+    if run_id not in _research_runs:
+        raise HTTPException(status_code=404, detail="Run not found")
+    return {"run_id": run_id, "status": _research_runs[run_id]["status"]}
+
+
+@app.get("/pipeline/research/result/{run_id}")
+def research_result(run_id: str):
+    if run_id not in _research_runs:
+        raise HTTPException(status_code=404, detail="Run not found")
+    run = _research_runs[run_id]
+    if run["status"] != "done":
+        raise HTTPException(status_code=400, detail=f"Run status: {run['status']}")
+    return {"run_id": run_id, "result": run["result"]}
