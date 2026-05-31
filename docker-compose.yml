@@ -129,6 +129,10 @@ services:
       - shared_output:/output
     environment:
       - OPENCLAW_GATEWAY_PORT=18789
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - CLIPROXY_URL=http://cliproxy:8317/v1
+      - CLIPROXY_KEY=${CLIPROXY_KEY:-local-proxy-key}
+      - PIPELINE_API_URL=http://pipeline-api:8000
     mem_limit: 512m
     cpus: "0.5"
     depends_on:
