@@ -216,11 +216,13 @@ def run_complete_pipeline(
 
 
 def approve_and_publish(run_id: str, user_id: str = None,
-                         platforms: list = None, credentials: dict = {}):
+                         platforms: list = None, credentials: dict = None):
     """
     Called when human approves a video that was pending review.
     Looks up the stored pipeline state and continues to publish step.
     """
+    if credentials is None:
+        credentials = {}
     state_file = Path(f"/output/{run_id}/state.json")
     if not state_file.exists():
         notify_telegram(f"❌ Run {run_id} not found", user_id)
