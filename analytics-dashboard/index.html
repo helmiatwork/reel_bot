@@ -72,7 +72,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13
 .badge-amber{background:rgba(255,176,32,.1);color:var(--amber);border:1px solid rgba(255,176,32,.2)}
 .badge-red{background:rgba(255,71,87,.1);color:var(--red);border:1px solid rgba(255,71,87,.2)}
 .badge-blue{background:rgba(0,229,255,.08);color:var(--accent);border:1px solid rgba(0,229,255,.15)}
-.badge-dim{background:rgba(255,255,255,.04);color:var(--dim);border:1px solid var(--border2)}
+.badge-dim{background:rgba(255,255,255,.04);color:var(--dim);border:1px solid var(--border)}
 .ptag{display:inline-flex;align-items:center;font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 5px;border-radius:2px;margin-right:3px;border:1px solid var(--border2);color:var(--dim)}
 .ptag-yt{color:var(--red);border-color:rgba(255,71,87,.25)}
 .ptag-tt{color:var(--text);border-color:var(--border2)}
@@ -410,7 +410,7 @@ async function startPipeline(){
   log(`URL: ${url}`);log(`Topic: ${topic||'same as source'}`);log(`Platforms: ${selectedPlatforms.join(', ')}`);log(`Voice: ${selectedVoice}`);log('─'.repeat(36));
   try{
     log('⏳ Triggering research...','var(--accent)');
-    const res=await fetch(`${API}/pipeline/research`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic:topic||url,run_id:runId})});
+    const res=await fetch(`${API}/pipeline/research`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic:topic||url})});
     const data=await res.json();
     if(data.status==='started'){
       log(`✓ Started — run_id: ${data.run_id}`,'var(--green)');
@@ -420,7 +420,7 @@ async function startPipeline(){
         const poll=await fetch(`${API}/pipeline/research/status/${data.run_id}`).then(r=>r.json());
         log(`  status: ${poll.status}`);
         if(poll.status==='done'){log('✓ Research complete!','var(--green)');const result=await fetch(`${API}/pipeline/research/result/${data.run_id}`).then(r=>r.json());log('✓ Pipeline running — check results','var(--green)');break;}
-        else if(poll.status==='error'){log(`✗ Failed: ${poll.error||'unknown'}','var(--red)');break;}
+        else if(poll.status==='error'||poll.status==='failed'){log(`✗ Failed: ${poll.error||'unknown'}','var(--red)');break;}
       }
     }else{log(`✗ Error: ${JSON.stringify(data)}','var(--red)');}
   }catch(e){log(`✗ ${e.message}','var(--red)');}
