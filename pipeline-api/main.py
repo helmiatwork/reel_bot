@@ -236,19 +236,28 @@ _research_runs: dict = {}
 @app.post("/pipeline/research")
 def start_research(req: ResearchRequest, bg: BackgroundTasks):
     """Start yt-pipeline research job in background."""
-    import uuid, subprocess, threading
-    run_id = str(uuid.uuid4())[:8]
+    import uuid, subprocess
+    from urllib.parse import urlparse
+
+    if req.topic.startswith("-"):
+        raise HTTPException(status_code=400, detail="Invalid topic")
+    if req.channel_url:
+        parsed = urlparse(req.channel_url)
+        if parsed.scheme not in ("http", "https") or not parsed.netloc:
+            raise HTTPException(status_code=400, detail="channel_url must be an http(s) URL")
+
+    run_id = str(uuid.uuid4())
     _research_runs[run_id] = {"status": "running", "result": None, "error": None}
 
     def _run():
         try:
             cmd = [
                 "python", "-m", "yt_pipeline.main",
-                "--topic", req.topic,
-                "--max-videos", str(req.max_videos),
+                f"--topic={req.topic}",
+                f"--max-videos={req.max_videos}",
             ]
             if req.channel_url:
-                cmd += ["--channel", req.channel_url]
+                cmd.append(f"--channel={req.channel_url}")
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
             if proc.returncode == 0:
                 import json as _json
