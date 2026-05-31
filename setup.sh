@@ -58,9 +58,14 @@ done
 echo "[setup] Creating nginx auth credentials..."
 if [ ! -f ./nginx/.htpasswd ]; then
     apt-get install -y apache2-utils -q
-    DASHBOARD_PASS=${DASHBOARD_PASSWORD:-reelbot}
-    htpasswd -bc ./nginx/.htpasswd admin "$DASHBOARD_PASS"
-    echo "✓ nginx/.htpasswd created (user: admin, pass: $DASHBOARD_PASS)"
+    if [ -z "${DASHBOARD_PASSWORD:-}" ]; then
+        DASHBOARD_PASSWORD=$(openssl rand -base64 24)
+        echo "✓ Generated random dashboard password — saving to .dashboard_password (chmod 600)"
+        echo "$DASHBOARD_PASSWORD" > .dashboard_password
+        chmod 600 .dashboard_password
+    fi
+    htpasswd -bc ./nginx/.htpasswd admin "$DASHBOARD_PASSWORD"
+    echo "✓ nginx/.htpasswd created (user: admin)"
     echo "  Change later with: htpasswd ./nginx/.htpasswd admin"
 fi
 

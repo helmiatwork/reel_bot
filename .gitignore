@@ -10,3 +10,4 @@ __pycache__/
 videos/
 output/
 nginx/.htpasswd
+.dashboard_password
