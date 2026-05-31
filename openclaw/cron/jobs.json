@@ -1,0 +1,32 @@
+{
+  "version": "1.0",
+  "jobs": [
+    {
+      "id": "daily_research",
+      "name": "Daily Trend Research",
+      "description": "Run yt-pipeline research every morning and summarize trends",
+      "schedule": "0 7 * * *",
+      "agent": "researcher",
+      "prompt": "Run daily trend research for the configured niche. Summarize top 5 trending topics and post a brief report.",
+      "enabled": false
+    },
+    {
+      "id": "weekly_analytics",
+      "name": "Weekly Performance Report",
+      "description": "Generate weekly analytics summary every Monday",
+      "schedule": "0 9 * * 1",
+      "agent": "analyst",
+      "prompt": "Generate weekly performance report. Compare this week vs last week. Highlight wins and areas for improvement.",
+      "enabled": false
+    },
+    {
+      "id": "content_reminder",
+      "name": "Content Creation Reminder",
+      "description": "Daily reminder to create content if no video published today",
+      "schedule": "0 14 * * *",
+      "agent": "assistant",
+      "prompt": "Check if any video was published today. If not, send a friendly reminder to create content and suggest the top trending topic from yesterday's research.",
+      "enabled": false
+    }
+  ]
+}

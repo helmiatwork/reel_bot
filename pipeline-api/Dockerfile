@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir torch torchvision torchaudio \
     --index-url https://download.pytorch.org/whl/cpu
 RUN pip install --no-cache-dir \
     fastapi uvicorn \
-    elevenlabs gtts \
+    elevenlabs gtts yt-dlp \
     httpx \
     google-api-python-client google-auth-oauthlib google-auth-httplib2 \
     boto3 \
@@ -19,6 +19,8 @@ COPY voiceover/    /app/voiceover/
 COPY publisher/    /app/publisher/
 COPY quality-check/ /app/quality_check/
 COPY analytics/    /app/analytics/
+COPY analytics-dashboard/ /app/dashboard/
+COPY yt-pipeline/ /app/yt_pipeline/
 COPY pipeline.py   /app/pipeline.py
 COPY pipeline-api/main.py /app/main.py
 RUN touch /app/voiceover/__init__.py /app/publisher/__init__.py \
