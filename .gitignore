@@ -6,3 +6,6 @@ cliproxy/config.yaml
 openclaw/cron/jobs-state.json
 __pycache__/
 *.pyc
+*.log
+videos/
+output/
