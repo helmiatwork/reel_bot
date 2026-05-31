@@ -95,15 +95,26 @@ content-automation/
 
 ---
 
+### Step 0 — Copy CLIProxyAPI binary from your Mac (REQUIRED)
+
+```bash
+# Run this on your Mac BEFORE anything else
+scp ~/clipproxyapi/cli-proxy-api  user@YOUR_VPS_IP:~/reel_bot/cliproxy/
+scp ~/clipproxyapi/config.yaml    user@YOUR_VPS_IP:~/reel_bot/cliproxy/
+```
+
+Without these files, `docker compose build` will fail for the cliproxy service.
+
+---
+
 ### Step 1 — Point DNS to your VPS
 
-In your domain registrar, create 7 A records all pointing to your VPS IP:
+In your domain registrar, create 6 A records all pointing to your VPS IP:
 
 ```
 general-creation.xyz             → YOUR_VPS_IP
 www.general-creation.xyz         → YOUR_VPS_IP
 analytics.general-creation.xyz   → YOUR_VPS_IP
-n8n.general-creation.xyz         → YOUR_VPS_IP
 arcreel.general-creation.xyz     → YOUR_VPS_IP
 openclaw.general-creation.xyz    → YOUR_VPS_IP
 api.general-creation.xyz         → YOUR_VPS_IP
