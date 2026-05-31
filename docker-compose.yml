@@ -208,6 +208,7 @@ services:
     environment:
       - CLIPROXY_URL=http://cliproxy:8317/v1
       - CLIPROXY_KEY=${CLIPROXY_KEY:-local-proxy-key}
+      - OPENCLAW_URL=http://openclaw:18789
       - ARCREEL_URL=http://arcreel:1241
       - ARCREEL_TOKEN=${ARCREEL_TOKEN:-}
       - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY:-}

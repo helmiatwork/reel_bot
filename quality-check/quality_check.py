@@ -206,6 +206,12 @@ def quality_check_video(
     if all_issues:
         print(f"[QC] Issues: {all_issues}")
 
+    import shutil
+    try:
+        shutil.rmtree("/tmp/qc_frames", ignore_errors=True)
+    except Exception:
+        pass
+
     return result
 
 

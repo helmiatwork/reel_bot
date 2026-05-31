@@ -34,7 +34,7 @@ server {
     listen 80;
     server_name
         general-creation.xyz www.general-creation.xyz
-        analytics.general-creation.xyz n8n.general-creation.xyz
+        analytics.general-creation.xyz
         arcreel.general-creation.xyz openclaw.general-creation.xyz
         api.general-creation.xyz;
 
@@ -81,7 +81,6 @@ echo "Make sure these DNS records exist (A records → this VPS IP):"
 echo "  $DOMAIN"
 echo "  www.$DOMAIN"
 echo "  analytics.$DOMAIN"
-echo "  n8n.$DOMAIN"
 echo "  arcreel.$DOMAIN"
 echo "  openclaw.$DOMAIN"
 echo "  api.$DOMAIN"
@@ -102,7 +101,6 @@ docker compose run --rm certbot certonly \
     -d "$DOMAIN" \
     -d "www.$DOMAIN" \
     -d "analytics.$DOMAIN" \
-    -d "n8n.$DOMAIN" \
     -d "arcreel.$DOMAIN" \
     -d "openclaw.$DOMAIN" \
     -d "api.$DOMAIN"
@@ -130,7 +128,6 @@ echo "================================================"
 echo " ✅ Setup complete!"
 echo ""
 echo " 📊 Analytics:  https://analytics.$DOMAIN"
-echo " 🔧 n8n:        https://n8n.$DOMAIN"
 echo " 🎬 ArcReel:    https://arcreel.$DOMAIN"
 echo " 🤖 OpenClaw:   https://openclaw.$DOMAIN"
 echo " 🔌 API:        https://api.$DOMAIN/health"

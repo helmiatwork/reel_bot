@@ -231,7 +231,17 @@ class ResearchRequest(BaseModel):
     max_videos: int = 20
 
 
-_research_runs: dict = {}
+def _runs_path(run_id: str) -> Path:
+    return Path(f"/output/research_runs/{run_id}.json")
+
+def _save_run(run_id: str, data: dict):
+    p = _runs_path(run_id)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(data))
+
+def _load_run(run_id: str):
+    p = _runs_path(run_id)
+    return json.loads(p.read_text()) if p.exists() else None
 
 
 @app.post("/pipeline/research")
@@ -248,7 +258,7 @@ def start_research(req: ResearchRequest, bg: BackgroundTasks):
             raise HTTPException(status_code=400, detail="channel_url must be an http(s) URL")
 
     run_id = str(uuid.uuid4())
-    _research_runs[run_id] = {"status": "running", "result": None, "error": None}
+    _save_run(run_id, {"status": "running", "result": None, "error": None})
 
     def _run():
         try:
@@ -262,14 +272,20 @@ def start_research(req: ResearchRequest, bg: BackgroundTasks):
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
             if proc.returncode == 0:
                 import json as _json
-                _research_runs[run_id]["result"] = _json.loads(proc.stdout) if proc.stdout.strip().startswith("{") else {"raw": proc.stdout}
-                _research_runs[run_id]["status"] = "done"
+                run_data = _load_run(run_id) or {}
+                run_data["result"] = _json.loads(proc.stdout) if proc.stdout.strip().startswith("{") else {"raw": proc.stdout}
+                run_data["status"] = "done"
+                _save_run(run_id, run_data)
             else:
-                _research_runs[run_id]["error"] = proc.stderr
-                _research_runs[run_id]["status"] = "error"
+                run_data = _load_run(run_id) or {}
+                run_data["error"] = proc.stderr
+                run_data["status"] = "error"
+                _save_run(run_id, run_data)
         except Exception as e:
-            _research_runs[run_id]["error"] = str(e)
-            _research_runs[run_id]["status"] = "error"
+            run_data = _load_run(run_id) or {}
+            run_data["error"] = str(e)
+            run_data["status"] = "error"
+            _save_run(run_id, run_data)
 
     bg.add_task(_run)
     return {"status": "started", "run_id": run_id}
@@ -277,16 +293,17 @@ def start_research(req: ResearchRequest, bg: BackgroundTasks):
 
 @app.get("/pipeline/research/status/{run_id}")
 def research_status(run_id: str):
-    if run_id not in _research_runs:
+    run = _load_run(run_id)
+    if not run:
         raise HTTPException(status_code=404, detail="Run not found")
-    return {"run_id": run_id, "status": _research_runs[run_id]["status"]}
+    return {"run_id": run_id, "status": run["status"]}
 
 
 @app.get("/pipeline/research/result/{run_id}")
 def research_result(run_id: str):
-    if run_id not in _research_runs:
+    run = _load_run(run_id)
+    if not run:
         raise HTTPException(status_code=404, detail="Run not found")
-    run = _research_runs[run_id]
     if run["status"] != "done":
         raise HTTPException(status_code=400, detail=f"Run status: {run['status']}")
     return {"run_id": run_id, "result": run["result"]}

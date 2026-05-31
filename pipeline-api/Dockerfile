@@ -5,15 +5,12 @@ RUN apt-get update && apt-get install -y \
     ffmpeg libgl1 libglib2.0-0 curl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-RUN pip install --no-cache-dir torch torchvision torchaudio \
-    --index-url https://download.pytorch.org/whl/cpu
 RUN pip install --no-cache-dir \
     fastapi uvicorn \
     elevenlabs gtts yt-dlp \
     httpx \
     google-api-python-client google-auth-oauthlib google-auth-httplib2 \
-    boto3 \
-    openai-whisper
+    boto3
 # Copy all pipeline modules
 COPY voiceover/    /app/voiceover/
 COPY publisher/    /app/publisher/
