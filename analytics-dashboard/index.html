@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Content Automation — Analytics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:      #0a0a0a;
+    --surface: #111111;
+    --border:  #1e1e1e;
+    --text:    #e8e4dc;
+    --muted:   #666;
+    --accent:  #c8f04a;
+    --red:     #ff4d4d;
+    --amber:   #f5a623;
+    --teal:    #4af0c8;
+    --purple:  #a78bfa;
+    --mono:    'Space Mono', monospace;
+    --sans:    'DM Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ── header ───────────────────────────────────── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+
+  .logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  .logo span { color: var(--muted); }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+  }
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.3; }
+  }
+
+  /* ── main layout ──────────────────────────────── */
+  main { padding: 32px; max-width: 1400px; margin: 0 auto; }
+
+  .page-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  h1 {
+    font-size: 28px;
+    font-weight: 500;
+    margin-bottom: 32px;
+    letter-spacing: -0.02em;
+  }
+  h1 em { font-style: normal; color: var(--accent); }
+
+  /* ── stat cards ───────────────────────────────── */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .card:hover::before { opacity: 1; }
+  .card-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .card-value {
+    font-family: var(--mono);
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .card-value.accent { color: var(--accent); }
+  .card-sub {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* ── platform breakdown ───────────────────────── */
+  .section-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+  }
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  /* Platform bars */
+  .platform-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .platform-name {
+    font-family: var(--mono);
+    font-size: 12px;
+    width: 90px;
+    flex-shrink: 0;
+  }
+  .bar-track {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .bar-yt    { background: var(--red); }
+  .bar-tt    { background: var(--text); }
+  .bar-ig    { background: var(--purple); }
+  .bar-count {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    width: 30px;
+    text-align: right;
+  }
+
+  /* Quality gauge */
+  .gauge-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 0;
+  }
+  .gauge-score {
+    font-family: var(--mono);
+    font-size: 56px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .gauge-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 8px;
+    margin-bottom: 20px;
+  }
+  .gauge-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .gauge-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--amber), var(--accent));
+    transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* ── video table ──────────────────────────────── */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+  .table-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    background: #0d0d0d;
+  }
+  .th-cell {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .table-body { max-height: 480px; overflow-y: auto; }
+  .table-body::-webkit-scrollbar { width: 4px; }
+  .table-body::-webkit-scrollbar-track { background: transparent; }
+  .table-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .table-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+    cursor: default;
+  }
+  .table-row:last-child { border-bottom: none; }
+  .table-row:hover { background: rgba(255,255,255,0.02); }
+
+  .row-title {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 16px;
+  }
+  .row-cell {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+  }
+  .score-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+  }
+  .score-high  { background: rgba(200, 240, 74, 0.12); color: var(--accent); }
+  .score-mid   { background: rgba(245, 166, 35, 0.12); color: var(--amber); }
+  .score-low   { background: rgba(255, 77, 77, 0.12);  color: var(--red); }
+
+  .platform-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    margin-right: 4px;
+    text-transform: uppercase;
+  }
+
+  /* ── insights panel ───────────────────────────── */
+  .insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+  .insight-card {
+    background: var(--surface);
+    padding: 24px;
+  }
+  .insight-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .insight-value {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+  }
+  .insight-value li {
+    list-style: none;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+  }
+  .insight-value li:last-child { border-bottom: none; margin-bottom: 0; }
+  .insight-value li::before { content: '→ '; color: var(--accent); font-family: var(--mono); }
+
+  /* ── empty state ──────────────────────────────── */
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 32px;
+    color: var(--muted);
+    text-align: center;
+    gap: 16px;
+  }
+  .empty-icon {
+    font-size: 40px;
+    opacity: 0.3;
+  }
+  .empty-title {
+    font-family: var(--mono);
+    font-size: 14px;
+    letter-spacing: 0.06em;
+  }
+  .empty-sub { font-size: 13px; max-width: 320px; line-height: 1.6; }
+
+  /* ── loading ──────────────────────────────────── */
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    gap: 8px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── refresh btn ──────────────────────────────── */
+  .refresh-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .header-right { display: flex; align-items: center; gap: 12px; }
+
+  .last-updated {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">content-automation <span>/ analytics</span></div>
+  <div class="header-right">
+    <span class="last-updated" id="lastUpdated">—</span>
+    <button class="refresh-btn" onclick="loadData()">↻ refresh</button>
+    <div class="status-pill">
+      <div class="dot"></div>
+      <span id="statusText">connecting...</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="page-title">Dashboard</div>
+  <h1>Video Performance <em>Overview</em></h1>
+
+  <!-- Stat cards -->
+  <div class="cards">
+    <div class="card">
+      <div class="card-label">Total Videos</div>
+      <div class="card-value accent" id="totalVideos">—</div>
+      <div class="card-sub">all time</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Avg Quality Score</div>
+      <div class="card-value" id="avgQuality">—</div>
+      <div class="card-sub">out of 100</div>
+    </div>
+    <div class="card">
+      <div class="card-label">YouTube Published</div>
+      <div class="card-value" id="ytCount">—</div>
+      <div class="card-sub">videos</div>
+    </div>
+    <div class="card">
+      <div class="card-label">TikTok Published</div>
+      <div class="card-value" id="ttCount">—</div>
+      <div class="card-sub">videos</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Instagram Published</div>
+      <div class="card-value" id="igCount">—</div>
+      <div class="card-sub">reels</div>
+    </div>
+  </div>
+
+  <!-- Platform + Quality -->
+  <p class="section-title">Distribution</p>
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-title">Platform breakdown</div>
+      <div id="platformBars">
+        <div class="loading"><div class="spinner"></div> loading...</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Average quality score</div>
+      <div class="gauge-wrap" id="qualityGauge">
+        <div class="loading"><div class="spinner"></div> loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Insights -->
+  <p class="section-title">AI Insights</p>
+  <div class="insights-grid" id="insightsGrid">
+    <div class="insight-card">
+      <div class="loading"><div class="spinner"></div> fetching insights...</div>
+    </div>
+  </div>
+
+  <!-- Video table -->
+  <p class="section-title">Recent Videos</p>
+  <div class="table-wrap">
+    <div class="table-header">
+      <div class="th-cell">Title</div>
+      <div class="th-cell">Date</div>
+      <div class="th-cell">Platforms</div>
+      <div class="th-cell">Quality</div>
+      <div class="th-cell">Status</div>
+    </div>
+    <div class="table-body" id="videoTable">
+      <div class="loading"><div class="spinner"></div> loading videos...</div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const API = '';  // same origin — nginx proxies /api/* to pipeline-api:8000
+
+async function loadData() {
+  document.getElementById('statusText').textContent = 'loading...';
+  try {
+    const [summary, data, insights] = await Promise.all([
+      fetch(`${API}/api/analytics/summary`).then(r => r.json()),
+      fetch(`${API}/api/analytics/data`).then(r => r.json()),
+      fetch(`${API}/api/analytics/insights`).then(r => r.json()).catch(() => ({}))
+    ]);
+
+    renderCards(summary);
+    renderPlatformBars(summary.platforms || {});
+    renderQualityGauge(summary.avg_quality || 0);
+    renderInsights(insights.insights || {});
+    renderTable(data.records || []);
+
+    const now = new Date().toLocaleTimeString();
+    document.getElementById('lastUpdated').textContent = `updated ${now}`;
+    document.getElementById('statusText').textContent = 'live';
+
+  } catch(e) {
+    document.getElementById('statusText').textContent = 'offline';
+    console.error('Failed to load analytics:', e);
+    renderEmpty();
+  }
+}
+
+function renderCards(summary) {
+  document.getElementById('totalVideos').textContent = summary.total_videos || 0;
+  document.getElementById('avgQuality').textContent =
+    summary.avg_quality ? summary.avg_quality.toFixed(0) : '—';
+  const p = summary.platforms || {};
+  document.getElementById('ytCount').textContent = p.youtube || 0;
+  document.getElementById('ttCount').textContent = p.tiktok  || 0;
+  document.getElementById('igCount').textContent = p.instagram || 0;
+}
+
+function renderPlatformBars(platforms) {
+  const el = document.getElementById('platformBars');
+  const total = Object.values(platforms).reduce((a, b) => a + b, 0) || 1;
+  const entries = [
+    { key: 'youtube',   label: 'YouTube',   cls: 'bar-yt' },
+    { key: 'tiktok',    label: 'TikTok',    cls: 'bar-tt' },
+    { key: 'instagram', label: 'Instagram', cls: 'bar-ig' },
+  ];
+
+  if (total === 0) {
+    el.innerHTML = '<div class="empty" style="padding:32px"><div class="empty-sub">No platform data yet</div></div>';
+    return;
+  }
+
+  el.innerHTML = entries.map(e => {
+    const count = platforms[e.key] || 0;
+    const pct   = Math.round((count / total) * 100);
+    return `<div class="platform-row">
+      <div class="platform-name">${e.label}</div>
+      <div class="bar-track">
+        <div class="bar-fill ${e.cls}" style="width:0%" data-width="${pct}%"></div>
+      </div>
+      <div class="bar-count">${count}</div>
+    </div>`;
+  }).join('');
+
+  // animate bars after render
+  requestAnimationFrame(() => {
+    el.querySelectorAll('.bar-fill').forEach(b => {
+      b.style.width = b.dataset.width;
+    });
+  });
+}
+
+function renderQualityGauge(score) {
+  const el = document.getElementById('qualityGauge');
+  const color = score >= 75 ? 'var(--accent)' : score >= 50 ? 'var(--amber)' : 'var(--red)';
+  el.innerHTML = `
+    <div class="gauge-score" style="color:${color}">${score > 0 ? score : '—'}</div>
+    <div class="gauge-label">average quality score</div>
+    <div class="gauge-bar">
+      <div class="gauge-fill" style="width:0%" data-width="${score}%"></div>
+    </div>`;
+  requestAnimationFrame(() => {
+    const fill = el.querySelector('.gauge-fill');
+    if (fill) fill.style.width = fill.dataset.width;
+  });
+}
+
+function renderInsights(insights) {
+  const el = document.getElementById('insightsGrid');
+  if (!insights || Object.keys(insights).length === 0) {
+    el.innerHTML = `<div class="insight-card">
+      <div class="insight-label">Status</div>
+      <div class="insight-value">No insights yet — publish more videos to get AI-generated recommendations.</div>
+    </div>`;
+    return;
+  }
+
+  const cards = [
+    { label: 'What works',        key: 'best_performing_topics',   isList: true },
+    { label: 'Hook style',        key: 'best_hook_style',          isList: false },
+    { label: 'Optimal duration',  key: 'optimal_duration_sec',     isList: false, suffix: 's' },
+    { label: 'Improvements',      key: 'script_improvements',      isList: true },
+    { label: 'Avoid',             key: 'avoid',                    isList: true },
+    { label: 'Best format',       key: 'best_performing_format',   isList: false },
+  ];
+
+  el.innerHTML = cards.map(c => {
+    const val = insights[c.key];
+    if (!val) return '';
+    let display = '';
+    if (c.isList && Array.isArray(val)) {
+      display = `<ul class="insight-value">${val.slice(0,4).map(v => `<li>${v}</li>`).join('')}</ul>`;
+    } else {
+      display = `<div class="insight-value">${val}${c.suffix || ''}</div>`;
+    }
+    return `<div class="insight-card">
+      <div class="insight-label">${c.label}</div>
+      ${display}
+    </div>`;
+  }).filter(Boolean).join('');
+
+  if (!el.innerHTML) {
+    el.innerHTML = `<div class="insight-card">
+      <div class="insight-label">Insights</div>
+      <div class="insight-value">Publish more videos to unlock AI insights.</div>
+    </div>`;
+  }
+}
+
+function renderTable(records) {
+  const el = document.getElementById('videoTable');
+  if (!records.length) {
+    el.innerHTML = `<div class="empty">
+      <div class="empty-icon">📭</div>
+      <div class="empty-title">No videos yet</div>
+      <div class="empty-sub">Run your first pipeline to see video analytics here.</div>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = records.map(r => {
+    const date    = r.created_at ? new Date(r.created_at).toLocaleDateString() : '—';
+    const score   = r.qc_score || 0;
+    const cls     = score >= 75 ? 'score-high' : score >= 50 ? 'score-mid' : 'score-low';
+    const scoreTxt = score ? score : '—';
+    const platforms = (r.platforms || []).map(p =>
+      `<span class="platform-tag">${p.substring(0,2).toUpperCase()}</span>`
+    ).join('');
+    const pubRes  = r.publish_results || {};
+    const errors  = Object.values(pubRes).filter(v => v.error).length;
+    const status  = errors ? `<span style="color:var(--red)">⚠ ${errors} err</span>` :
+                    Object.keys(pubRes).length ? `<span style="color:var(--accent)">✓ ok</span>` :
+                    `<span style="color:var(--muted)">—</span>`;
+    return `<div class="table-row">
+      <div class="row-title">${r.title || 'Untitled'}</div>
+      <div class="row-cell">${date}</div>
+      <div class="row-cell">${platforms || '<span style="color:var(--muted)">—</span>'}</div>
+      <div class="row-cell"><span class="score-badge ${cls}">${scoreTxt}</span></div>
+      <div class="row-cell">${status}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderEmpty() {
+  const els = ['platformBars', 'qualityGauge', 'insightsGrid', 'videoTable'];
+  els.forEach(id => {
+    document.getElementById(id).innerHTML = `<div class="empty">
+      <div class="empty-sub">Could not connect to pipeline API. Make sure the stack is running.</div>
+    </div>`;
+  });
+}
+
+// Auto refresh every 60 seconds
+loadData();
+setInterval(loadData, 60000);
+</script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+# Local test override — NOT for VPS deployment
+# Usage: docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
+
+services:
+  cliproxy:
+    image: eceasy/cli-proxy-api:latest
+    pull_policy: always
+    build: !reset null
+    ports:
+      - "8317:8317"
+    volumes:
+      - ./cliproxy/config.yaml:/CLIProxyAPI/config.yaml
+      - cliproxy_auth:/root/.cli-proxy-api
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8317"]
+
+  openclaw:
+    build: !reset null
+    image: ghcr.io/openclaw/openclaw:latest
+    pull_policy: always
+    user: root
+    ports:
+      - "18789:18789"
+    volumes:
+      - ~/.openclaw:/root/.openclaw
+      - ~/.openclaw-auth-profile-secrets:/root/.config/openclaw
+      - shared_videos:/videos
+    environment:
+      HOME: /root
+      OPENCLAW_HOME: /root
+      OPENCLAW_STATE_DIR: /root/.openclaw
+      OPENCLAW_CONFIG_PATH: /root/.openclaw/openclaw.json
+      OPENCLAW_CONFIG_DIR: /root/.openclaw
+      OPENCLAW_WORKSPACE_DIR: /root/.openclaw/workspace
+      OPENCLAW_DISABLE_BONJOUR: "1"
+    command: ["node", "dist/index.js", "gateway", "--bind", "lan", "--port", "18789"]
+
+  n8n:
+    ports:
+      - "5678:5678"
+    environment:
+      N8N_HOST: localhost
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: http://localhost:5678
+      N8N_EDITOR_BASE_URL: http://localhost:5678
+
+  arcreel:
+    ports:
+      - "1241:1241"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://admin:${POSTGRES_PASSWORD}@postgres:5432/arcreel
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+    cap_add:
+      - NET_ADMIN
+
+  pipeline-api:
+    ports:
+      - "8000:8000"
+
+  nginx:
+    profiles: [vps-only]
+
+  certbot:
+    profiles: [vps-only]
+
+volumes:
+  cliproxy_auth:
+    name: content-stack-cliproxy-auth

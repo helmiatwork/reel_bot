@@ -1,0 +1,7 @@
+.env
+credentials/client_secrets.json
+credentials/youtube_token.json
+cliproxy/cli-proxy-api
+cliproxy/config.yaml
+__pycache__/
+*.pyc

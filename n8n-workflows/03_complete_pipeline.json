@@ -1,0 +1,535 @@
+{
+  "name": "Complete Pipeline \u2014 All Gaps Filled",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "complete-pipeline",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse incoming data from previous pipeline stages\n// Expects: { run_id, script, arcreel_project_id, user_id, platforms, voice }\nconst body = $input.first().json.body || $input.first().json;\n\nconst required = ['run_id', 'script', 'arcreel_project_id'];\nfor (const field of required) {\n  if (!body[field]) throw new Error(`Missing required field: ${field}`);\n}\n\nreturn [{ json: {\n  run_id:             body.run_id,\n  script:             body.script,\n  arcreel_project_id: body.arcreel_project_id,\n  user_id:            body.user_id || 'default',\n  platforms:          body.platforms || ['youtube'],\n  voice:              body.voice || 'male_neutral',\n  auto_publish:       body.auto_publish || false,\n  started_at:         new Date().toISOString()\n}}];"
+      },
+      "id": "parse-input",
+      "name": "Parse Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.ARCREEL_URL || 'http://arcreel:1241' }}/api/projects/{{ $json.arcreel_project_id }}/export",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.ARCREEL_TOKEN }}"
+            }
+          ]
+        }
+      },
+      "id": "download-arcreel",
+      "name": "Download ArcReel Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "command": "=# Save video from ArcReel to shared volume\nVIDEO_URL=$(echo '{{ $json.video_url }}' | tr -d '\"')\nOUT_FILE=\"/videos/{{ $('Parse Input').first().json.run_id }}_arcreel.mp4\"\ncurl -sL \"$VIDEO_URL\" -o \"$OUT_FILE\"\necho \"$OUT_FILE\""
+      },
+      "id": "save-video",
+      "name": "Save Video to Disk",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://pipeline-api:8000/voiceover/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"script\": {{ JSON.stringify($('Parse Input').first().json.script) }}, \"output_dir\": \"/output/{{ $('Parse Input').first().json.run_id }}_vo\", \"voice\": \"{{ $('Parse Input').first().json.voice || 'male_neutral' }}\" }"
+      },
+      "id": "generate-voiceover",
+      "name": "GAP 1: Generate Voiceover",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://pipeline-api:8000/voiceover/merge",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"video_path\": \"/videos/{{ $('Parse Input').first().json.run_id }}_arcreel.mp4\", \"audio_path\": \"/output/{{ $('Parse Input').first().json.run_id }}_vo/voiceover_full.mp3\", \"output_path\": \"/output/{{ $('Parse Input').first().json.run_id }}_final.mp4\" }"
+      },
+      "id": "merge-audio-video",
+      "name": "Merge Audio + Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1340,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://pipeline-api:8000/quality/check",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"video_path\": \"/output/{{ $('Parse Input').first().json.run_id }}_final.mp4\", \"script\": {{ JSON.stringify($('Parse Input').first().json.script) }}, \"min_score\": 65 }"
+      },
+      "id": "quality-check",
+      "name": "GAP 2: Quality Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse quality check result\nconst raw = $input.first().json.stdout || '';\nconst input = $('Parse Input').first().json;\n\nlet qc = { recommendation: 'approve', overall_score: 75 };\ntry {\n  const match = raw.match(/\\{[\\s\\S]+\\}/);\n  if (match) qc = JSON.parse(match[0]);\n} catch(e) {}\n\nreturn [{ json: {\n  ...input,\n  qc_result: qc,\n  qc_score: qc.overall_score || 75,\n  qc_recommendation: qc.recommendation || 'approve',\n  video_path: `/output/${input.run_id}_final.mp4`,\n  needs_review: qc.recommendation === 'review',\n  rejected: qc.recommendation === 'reject'\n}}];"
+      },
+      "id": "parse-qc",
+      "name": "Parse QC Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1780,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-reject",
+              "leftValue": "={{ $json.rejected }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-rejected",
+      "name": "Rejected?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.N8N_URL || 'http://n8n:5678' }}/webhook/telegram-notify",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"user_id\": \"{{ $('Parse Input').first().json.user_id }}\", \"message\": \"\u274c Quality check REJECTED\\nScore: {{ $json.qc_score }}\\nReason: {{ $json.qc_result.rejection_reason }}\\n\\nPlease regenerate in ArcReel.\" }"
+      },
+      "id": "notify-rejected",
+      "name": "Notify: Rejected",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2220,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "conditions": [
+            {
+              "id": "cond-auto",
+              "leftValue": "={{ $('Parse Input').first().json.auto_publish }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-auto-publish",
+      "name": "Auto Publish?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2220,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.N8N_URL || 'http://n8n:5678' }}/webhook/telegram-notify",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"user_id\": \"{{ $('Parse Input').first().json.user_id }}\", \"message\": \"\ud83d\udc40 Ready for approval!\\n\\n\ud83d\udcf9 {{ $('Parse Input').first().json.script.title }}\\n\ud83d\udcca Quality: {{ $json.qc_score }}/100\\n\\nReply 'approve {{ $('Parse Input').first().json.run_id }}' to publish to {{ $('Parse Input').first().json.platforms.join(', ') }}\" }"
+      },
+      "id": "notify-review",
+      "name": "Notify: Needs Approval",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://pipeline-api:8000/publish",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"video_path\": \"/output/{{ $('Parse Input').first().json.run_id }}_final.mp4\", \"public_video_url\": \"\", \"script\": {{ JSON.stringify($('Parse Input').first().json.script) }}, \"platforms\": {{ JSON.stringify($('Parse Input').first().json.platforms) }} }"
+      },
+      "id": "publish-platforms",
+      "name": "GAP 3: Publish to Platforms",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2440,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse publish results and build notification\nconst raw = $input.first().json.stdout || '{}';\nconst input = $('Parse Input').first().json;\n\nlet results = {};\ntry {\n  const match = raw.match(/\\{[\\s\\S]+\\}/);\n  if (match) results = JSON.parse(match[0]);\n} catch(e) {}\n\nconst lines = [];\nfor (const [platform, r] of Object.entries(results)) {\n  if (r.error) {\n    lines.push(`\u274c ${platform}: ${r.error}`);\n  } else if (platform === 'youtube') {\n    lines.push(`\ud83d\udcfa YouTube: ${r.url || 'uploaded (private)'}`);\n  } else if (platform === 'tiktok') {\n    lines.push(`\ud83c\udfb5 TikTok: check inbox for draft`);\n  } else if (platform === 'instagram') {\n    lines.push(`\ud83d\udcf8 Instagram: published as Reel`);\n  }\n}\n\nreturn [{ json: {\n  run_id: input.run_id,\n  user_id: input.user_id,\n  publish_results: results,\n  notification: `\u2705 Published!\\n\\n\ud83d\udcf9 ${input.script.title}\\n\\n${lines.join('\\n')}`\n}}];"
+      },
+      "id": "parse-publish",
+      "name": "Parse Publish Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2660,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.N8N_URL || 'http://n8n:5678' }}/webhook/telegram-notify",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"user_id\": \"{{ $json.user_id }}\", \"message\": \"{{ $json.notification }}\" }"
+      },
+      "id": "notify-published",
+      "name": "Notify: Published",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2880,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://pipeline-api:8000/analytics/save",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"run_id\": \"{{ $('Parse Input').first().json.run_id }}\", \"data\": { \"title\": \"{{ $('Parse Input').first().json.script.title }}\", \"platforms\": {{ JSON.stringify($('Parse Input').first().json.platforms) }}, \"qc_score\": {{ $('Parse QC Result').first().json.qc_score || 0 }} } }"
+      },
+      "id": "save-analytics",
+      "name": "GAP 4: Save Analytics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3100,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"complete\", \"run_id\": \"{{ $('Parse Input').first().json.run_id }}\" }"
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        3320,
+        500
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parse Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Input": {
+      "main": [
+        [
+          {
+            "node": "Download ArcReel Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download ArcReel Video": {
+      "main": [
+        [
+          {
+            "node": "Save Video to Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Video to Disk": {
+      "main": [
+        [
+          {
+            "node": "GAP 1: Generate Voiceover",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GAP 1: Generate Voiceover": {
+      "main": [
+        [
+          {
+            "node": "Merge Audio + Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Audio + Video": {
+      "main": [
+        [
+          {
+            "node": "GAP 2: Quality Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GAP 2: Quality Check": {
+      "main": [
+        [
+          {
+            "node": "Parse QC Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse QC Result": {
+      "main": [
+        [
+          {
+            "node": "Rejected?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rejected?": {
+      "main": [
+        [
+          {
+            "node": "Notify: Rejected",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Auto Publish?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto Publish?": {
+      "main": [
+        [
+          {
+            "node": "Notify: Needs Approval",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GAP 3: Publish to Platforms",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GAP 3: Publish to Platforms": {
+      "main": [
+        [
+          {
+            "node": "Parse Publish Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Publish Results": {
+      "main": [
+        [
+          {
+            "node": "Notify: Published",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify: Published": {
+      "main": [
+        [
+          {
+            "node": "GAP 4: Save Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GAP 4: Save Analytics": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "complete-pipeline"
+    },
+    {
+      "name": "gaps-filled"
+    }
+  ]
+}

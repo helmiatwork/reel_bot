@@ -1,0 +1,346 @@
+# ═══════════════════════════════════════════════════════════════════
+# CONTENT AUTOMATION STACK — docker-compose.yml
+#
+# Subdomains (configure DNS A records → your VPS IP):
+#   analytics.general-creation.xyz  → analytics dashboard
+#   n8n.general-creation.xyz         → n8n workflow editor
+#   arcreel.general-creation.xyz     → ArcReel video workspace
+#   openclaw.general-creation.xyz    → OpenClaw agent UI
+#   api.general-creation.xyz         → pipeline REST API
+#
+# Internal ports (not exposed publicly — Nginx proxies them):
+#   cliproxy   :8317    AI proxy
+#   openclaw   :18789   AI agent
+#   n8n        :5678    workflows
+#   arcreel    :1241    video gen
+#   pipeline-api :8000  REST API
+#
+# Quick start:
+#   cp .env.example .env && nano .env
+#   docker compose build
+#   docker compose up -d
+# ═══════════════════════════════════════════════════════════════════
+
+services:
+
+  # ─────────────────────────────────────────────────────────────
+  # NGINX — reverse proxy + subdomain routing + SSL termination
+  # Handles all public traffic and routes to internal services
+  # ─────────────────────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./analytics-dashboard:/var/www/analytics:ro
+      - nginx_certs:/etc/letsencrypt:ro
+      - nginx_webroot:/var/www/certbot:ro
+    depends_on:
+      - n8n
+      - arcreel
+      - openclaw
+      - pipeline-api
+    restart: unless-stopped
+    networks:
+      - stack-network
+
+  # ─────────────────────────────────────────────────────────────
+  # CERTBOT — auto SSL certificate management
+  # Runs once on start then sleeps, renews every 12 hours
+  # ─────────────────────────────────────────────────────────────
+  certbot:
+    image: certbot/certbot:latest
+    container_name: certbot
+    volumes:
+      - nginx_certs:/etc/letsencrypt
+      - nginx_webroot:/var/www/certbot
+    entrypoint: >
+      sh -c "trap exit TERM;
+             while :; do
+               certbot renew --webroot -w /var/www/certbot --quiet;
+               sleep 12h & wait $${!};
+             done"
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────
+  # SHARED POSTGRESQL
+  # ─────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
+      POSTGRES_MULTIPLE_DATABASES: n8n,arcreel
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    mem_limit: 384m
+    cpus: "0.4"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - stack-network
+
+  # ─────────────────────────────────────────────────────────────
+  # CLIPROXY — CLIProxyAPI → Sumopod (internal only)
+  # ─────────────────────────────────────────────────────────────
+  cliproxy:
+    build:
+      context: ./cliproxy
+      dockerfile: Dockerfile
+    image: content-stack/cliproxy:latest
+    container_name: cliproxy
+    expose:
+      - "8317"              # internal only — not mapped to host
+    mem_limit: 256m
+    cpus: "0.3"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8317"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
+    networks:
+      - stack-network
+
+  # ─────────────────────────────────────────────────────────────
+  # OPENCLAW — AI agent + Telegram
+  # Accessible at openclaw.general-creation.xyz
+  # ─────────────────────────────────────────────────────────────
+  openclaw:
+    build:
+      context: ./openclaw
+      dockerfile: Dockerfile
+    image: content-stack/openclaw:latest
+    container_name: openclaw
+    expose:
+      - "18789"
+    volumes:
+      - openclaw_data:/root/.openclaw
+      - shared_videos:/videos
+    environment:
+      - OPENCLAW_GATEWAY_PORT=18789
+    mem_limit: 512m
+    cpus: "0.5"
+    depends_on:
+      cliproxy:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18789"]
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 3
+    networks:
+      - stack-network
+
+  # ─────────────────────────────────────────────────────────────
+  # N8N — workflow orchestration
+  # Accessible at n8n.general-creation.xyz
+  # ─────────────────────────────────────────────────────────────
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    expose:
+      - "5678"
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=admin
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      - N8N_HOST=n8n.${DOMAIN:-general-creation.xyz}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=https://n8n.${DOMAIN:-general-creation.xyz}
+      - N8N_EDITOR_BASE_URL=https://n8n.${DOMAIN:-general-creation.xyz}
+      - CLIPROXY_URL=http://cliproxy:8317
+      - CLIPROXY_KEY=${CLIPROXY_KEY:-local-proxy-key}
+      - OPENCLAW_URL=http://openclaw:18789
+      - ARCREEL_URL=http://arcreel:1241
+      - ARCREEL_TOKEN=${ARCREEL_TOKEN:-}
+      - PIPELINE_API_URL=http://pipeline-api:8000
+      - EXECUTIONS_DATA_MAX_AGE=168
+      - N8N_LOG_LEVEL=warn
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - shared_videos:/videos
+      - shared_output:/output
+    mem_limit: 512m
+    cpus: "0.5"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - stack-network
+
+  # ─────────────────────────────────────────────────────────────
+  # ARCREEL — AI video generation workspace
+  # Accessible at arcreel.general-creation.xyz
+  # ─────────────────────────────────────────────────────────────
+  arcreel:
+    image: ghcr.io/arcreel/arcreel:latest
+    container_name: arcreel
+    expose:
+      - "1241"
+    environment:
+      - DATABASE_URL=postgresql://admin:${POSTGRES_PASSWORD}@postgres:5432/arcreel
+      - AUTH_PASSWORD=${ARCREEL_PASSWORD:-admin}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GROK_API_KEY=${GROK_API_KEY:-}
+      - CUSTOM_OPENAI_BASE_URL=http://cliproxy:8317/v1
+      - CUSTOM_OPENAI_KEY=${CLIPROXY_KEY:-local-proxy-key}
+      - CUSTOM_OPENAI_MODEL=gemini/gemini-2.5-flash
+    volumes:
+      - arcreel_data:/app/data
+      - arcreel_projects:/app/projects
+      - shared_output:/app/exports
+    mem_limit: 512m
+    cpus: "0.5"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - stack-network
+
+  # ─────────────────────────────────────────────────────────────
+  # PIPELINE API — voiceover + quality check + publish + analytics
+  # Accessible at api.general-creation.xyz
+  # ─────────────────────────────────────────────────────────────
+  pipeline-api:
+    build:
+      context: .
+      dockerfile: pipeline-api/Dockerfile
+    image: content-stack/pipeline-api:latest
+    container_name: pipeline-api
+    expose:
+      - "8000"
+    volumes:
+      - shared_videos:/videos
+      - shared_output:/output
+      - ./credentials:/app/credentials:ro
+    environment:
+      - CLIPROXY_URL=http://cliproxy:8317/v1
+      - CLIPROXY_KEY=${CLIPROXY_KEY:-local-proxy-key}
+      - ARCREEL_URL=http://arcreel:1241
+      - ARCREEL_TOKEN=${ARCREEL_TOKEN:-}
+      - N8N_URL=http://n8n:5678
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY:-}
+      - TIKTOK_ACCESS_TOKEN=${TIKTOK_ACCESS_TOKEN:-}
+      - IG_USER_ID=${IG_USER_ID:-}
+      - IG_ACCESS_TOKEN=${IG_ACCESS_TOKEN:-}
+      - YOUTUBE_CREDENTIALS=/app/credentials/client_secrets.json
+      - STORAGE_TYPE=${STORAGE_TYPE:-supabase}
+      - SUPABASE_URL=${SUPABASE_URL:-}
+      - SUPABASE_KEY=${SUPABASE_KEY:-}
+      - SUPABASE_BUCKET=${SUPABASE_BUCKET:-videos}
+      - S3_ENDPOINT=${S3_ENDPOINT:-}
+      - S3_KEY=${S3_KEY:-}
+      - S3_SECRET=${S3_SECRET:-}
+      - S3_BUCKET=${S3_BUCKET:-content-videos}
+      - VPS_HOST=${DOMAIN:-general-creation.xyz}
+      - ANALYTICS_DB=/output/analytics.json
+    mem_limit: 512m
+    cpus: "0.5"
+    depends_on:
+      cliproxy:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    networks:
+      - stack-network
+
+  # ─────────────────────────────────────────────────────────────
+  # ON-DEMAND TOOLS (--profile tools)
+  # ─────────────────────────────────────────────────────────────
+  video-analyzer:
+    build:
+      context: ./video-analyzer
+      dockerfile: Dockerfile
+    image: content-stack/video-analyzer:latest
+    container_name: video-analyzer
+    volumes:
+      - shared_videos:/videos
+      - shared_output:/output
+    environment:
+      - CLIPROXY_URL=http://cliproxy:8317/v1
+      - CLIPROXY_KEY=${CLIPROXY_KEY:-local-proxy-key}
+      - MODEL=gemini/gemini-2.5-flash-lite
+      - WHISPER_MODEL=base
+    mem_limit: 1g
+    cpus: "1.5"
+    profiles: [tools]
+    depends_on: [cliproxy]
+    networks:
+      - stack-network
+
+  video-splitter:
+    build:
+      context: ./video-splitter
+      dockerfile: Dockerfile
+    image: content-stack/video-splitter:latest
+    container_name: video-splitter
+    volumes:
+      - shared_videos:/videos
+    mem_limit: 512m
+    cpus: "1.0"
+    profiles: [tools]
+    networks:
+      - stack-network
+
+  yt-pipeline:
+    build:
+      context: ./yt-pipeline
+      dockerfile: Dockerfile
+    image: content-stack/yt-pipeline:latest
+    container_name: yt-pipeline
+    volumes:
+      - shared_videos:/videos
+      - shared_output:/output
+    environment:
+      - CLIPROXY_URL=http://cliproxy:8317/v1
+      - CLIPROXY_KEY=${CLIPROXY_KEY:-local-proxy-key}
+      - PEXELS_API_KEY=${PEXELS_API_KEY:-}
+      - FREESOUND_API_KEY=${FREESOUND_API_KEY:-}
+    mem_limit: 1.5g
+    cpus: "1.5"
+    profiles: [tools]
+    depends_on: [cliproxy]
+    networks:
+      - stack-network
+
+# ═══════════════════════════════════════════════════════════════
+volumes:
+  postgres_data:     { name: content-stack-postgres }
+  n8n_data:          { name: content-stack-n8n }
+  openclaw_data:     { name: content-stack-openclaw }
+  arcreel_data:      { name: content-stack-arcreel }
+  arcreel_projects:  { name: content-stack-arcreel-projects }
+  shared_videos:     { name: content-stack-videos }
+  shared_output:     { name: content-stack-output }
+  nginx_certs:       { name: content-stack-certs }
+  nginx_webroot:     { name: content-stack-webroot }
+
+networks:
+  stack-network:
+    driver: bridge
+    name: content-stack-network
