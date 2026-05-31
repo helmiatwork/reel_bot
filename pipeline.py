@@ -28,7 +28,7 @@ from analytics.analytics import (
 
 CLIPROXY_URL = os.getenv("CLIPROXY_URL", "http://cliproxy:8317/v1")
 CLIPROXY_KEY = os.getenv("CLIPROXY_KEY", "local-proxy-key")
-N8N_URL      = os.getenv("N8N_URL", "http://n8n:5678")
+OPENCLAW_URL = os.getenv("OPENCLAW_URL", "http://openclaw:18789")
 ARCREEL_URL  = os.getenv("ARCREEL_URL", "http://arcreel:1241")
 ARCREEL_TOKEN = os.getenv("ARCREEL_TOKEN", "")
 
@@ -37,7 +37,7 @@ def notify_telegram(message: str, user_id: str = None):
     """Send notification via OpenClaw → Telegram."""
     try:
         httpx.post(
-            f"{N8N_URL}/webhook/notify",
+            f"{OPENCLAW_URL}/api/notify",
             json={"message": message, "user_id": user_id},
             timeout=5
         )
@@ -54,12 +54,14 @@ def run_complete_pipeline(
     voice: str = "male_neutral",
     bg_music_path: str = None,
     auto_publish: bool = False,  # False = human approval required
-    credentials: dict = {}
+    credentials: dict = None
 ) -> dict:
     """
     Complete the pipeline from ArcReel output to published video.
     Fills all 4 gaps: voiceover, quality check, publish, analytics.
     """
+    if credentials is None:
+        credentials = {}
     platforms = platforms or ["youtube"]
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     work_dir = Path(f"/output/{run_id}")

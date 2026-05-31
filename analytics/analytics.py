@@ -26,7 +26,7 @@ def fetch_youtube_analytics(video_id: str, credentials_file: str = None) -> dict
     except ImportError:
         raise Exception("Install: pip install google-api-python-client")
 
-    token_file = credentials_file or "youtube_token.json"
+    token_file = credentials_file or "/app/credentials/youtube_token.json"
     if not Path(token_file).exists():
         return {"error": "No YouTube credentials found"}
 
