@@ -59,13 +59,15 @@ fs.writeFileSync(path, JSON.stringify(config, null, 2));
 console.log('[entrypoint] Gateway token + password configured from environment');
 "
 
-# Sync SOUL.md from agents config into workspace so it's used as the system prompt
-SOUL_SRC="/root/.openclaw/agents/main/SOUL.md"
-SOUL_DST="/root/.openclaw/workspace/SOUL.md"
-if [ -f "$SOUL_SRC" ]; then
-    mkdir -p "$(dirname "$SOUL_DST")"
-    cp "$SOUL_SRC" "$SOUL_DST"
-    echo "[entrypoint] SOUL.md synced to workspace"
-fi
+# Sync workspace config files from agents/main into workspace on every startup
+AGENTS_DIR="/root/.openclaw/agents/main"
+WORKSPACE_DIR="/root/.openclaw/workspace"
+mkdir -p "$WORKSPACE_DIR"
+for f in SOUL.md AGENTS.md; do
+    if [ -f "$AGENTS_DIR/$f" ]; then
+        cp "$AGENTS_DIR/$f" "$WORKSPACE_DIR/$f"
+        echo "[entrypoint] $f synced to workspace"
+    fi
+done
 
 exec "$@"
