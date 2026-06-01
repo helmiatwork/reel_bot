@@ -74,6 +74,19 @@ services:
   certbot:
     profiles: [vps-only]
 
+  n8n:
+    ports:
+      - "5678:5678"
+    environment:
+      N8N_PROTOCOL: http
+      N8N_HOST: localhost
+      WEBHOOK_URL: http://localhost:5678/
+      DB_TYPE: sqlite
+    volumes:
+      - n8n_local_data:/home/node/.n8n
+
 volumes:
   cliproxy_auth:
     name: content-stack-cliproxy-auth
+  n8n_local_data:
+    name: content-stack-n8n-local
