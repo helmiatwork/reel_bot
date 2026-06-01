@@ -39,14 +39,64 @@ if (process.env.CLIPROXY_URL || process.env.CLIPROXY_KEY) {
     }
 }
 
-if (process.env.OPENCLAW_TELEGRAM_OWNER_ID) {
-    config.commands = config.commands || {};
-    const entry = 'telegram:' + process.env.OPENCLAW_TELEGRAM_OWNER_ID;
-    const existing = config.commands.ownerAllowFrom || [];
-    if (!existing.includes(entry)) {
-        config.commands.ownerAllowFrom = [...existing, entry];
+// Scan for multiple Telegram bot tokens via OPENCLAW_TELEGRAM_BOT_TOKEN_FOR_<AGENT_ID>
+const botTokenVars = Object.keys(process.env).filter(k => k.startsWith('OPENCLAW_TELEGRAM_BOT_TOKEN_FOR_'));
+if (botTokenVars.length > 0) {
+    config.agents = config.agents || {};
+    config.channels = config.channels || {};
+    config.channels.telegram = config.channels.telegram || {};
+    config.channels.telegram.accounts = config.channels.telegram.accounts || {};
+    config.bindings = config.bindings || [];
+
+    const agents = [];
+    let isFirst = true;
+
+    for (const botTokenVar of botTokenVars.sort()) {
+        const agentId = botTokenVar.replace('OPENCLAW_TELEGRAM_BOT_TOKEN_FOR_', '').toLowerCase();
+        const botToken = process.env[botTokenVar];
+
+        if (!botToken) continue;
+
+        agents.push({
+            id: agentId,
+            default: isFirst,
+            workspace: isFirst ? '/root/.openclaw/workspace' : '/root/.openclaw/workspace-' + agentId
+        });
+
+        const accountId = isFirst ? 'default' : agentId;
+        config.channels.telegram.accounts[accountId] = { botToken };
+
+        config.bindings.push({
+            agentId,
+            match: { channel: 'telegram', accountId }
+        });
+
+        console.log('[entrypoint] Telegram bot configured for agent:', agentId, 'accountId:', accountId);
+        isFirst = false;
     }
-    console.log('[entrypoint] Telegram owner set from OPENCLAW_TELEGRAM_OWNER_ID:', entry);
+
+    config.agents.list = agents;
+    console.log('[entrypoint] agents.list configured with', agents.length, 'agent(s)');
+}
+
+// Scan for multiple Telegram owner IDs via OPENCLAW_TELEGRAM_OWNER_ID_FOR_<AGENT_ID>
+const ownerIdVars = Object.keys(process.env).filter(k => k.startsWith('OPENCLAW_TELEGRAM_OWNER_ID_FOR_'));
+if (ownerIdVars.length > 0) {
+    config.commands = config.commands || {};
+    const existing = config.commands.ownerAllowFrom || [];
+
+    for (const ownerIdVar of ownerIdVars) {
+        const ownerId = process.env[ownerIdVar];
+        if (ownerId) {
+            const entry = 'telegram:' + ownerId;
+            if (!existing.includes(entry)) {
+                existing.push(entry);
+            }
+        }
+    }
+
+    config.commands.ownerAllowFrom = existing;
+    console.log('[entrypoint] Telegram owners set from env vars, total entries:', existing.length);
 }
 
 if (process.env.OPENCLAW_DEFAULT_MODEL) {
@@ -67,15 +117,26 @@ fs.writeFileSync(path, JSON.stringify(config, null, 2));
 console.log('[entrypoint] Gateway token + password configured from environment');
 "
 
-# Sync workspace config files from agents/main into workspace on every startup
-AGENTS_DIR="/root/.openclaw/agents/main"
-WORKSPACE_DIR="/root/.openclaw/workspace"
-mkdir -p "$WORKSPACE_DIR"
-for f in SOUL.md AGENTS.md IDENTITY.md; do
-    if [ -f "$AGENTS_DIR/$f" ]; then
-        cp "$AGENTS_DIR/$f" "$WORKSPACE_DIR/$f"
-        echo "[entrypoint] $f synced to workspace"
+# Sync workspace config files from agents into workspace on every startup
+# For each agent, sync SOUL.md AGENTS.md IDENTITY.md from its agent directory to its workspace
+for agentTokenVar in $(env | grep -E '^OPENCLAW_TELEGRAM_BOT_TOKEN_FOR_' | cut -d= -f1); do
+    agentId=$(echo "$agentTokenVar" | sed 's/^OPENCLAW_TELEGRAM_BOT_TOKEN_FOR_//' | tr '[:upper:]' '[:lower:]')
+
+    if [ "$agentId" = "reelbot" ]; then
+        AGENTS_DIR="/root/.openclaw/agents/main"
+        WORKSPACE_DIR="/root/.openclaw/workspace"
+    else
+        AGENTS_DIR="/root/.openclaw/agents/$agentId"
+        WORKSPACE_DIR="/root/.openclaw/workspace-$agentId"
     fi
+
+    mkdir -p "$WORKSPACE_DIR"
+    for f in SOUL.md AGENTS.md IDENTITY.md; do
+        if [ -f "$AGENTS_DIR/$f" ]; then
+            cp "$AGENTS_DIR/$f" "$WORKSPACE_DIR/$f"
+            echo "[entrypoint] $f synced to $WORKSPACE_DIR"
+        fi
+    done
 done
 
 exec "$@"
