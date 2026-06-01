@@ -55,6 +55,14 @@ if (process.env.OPENCLAW_DEFAULT_MODEL) {
     config.agents.defaults.model = process.env.OPENCLAW_DEFAULT_MODEL;
     console.log('[entrypoint] default model set to:', process.env.OPENCLAW_DEFAULT_MODEL);
 }
+
+// Force workspace path to container path — VirtioFS serves the Mac host path
+// separately from the bind mount, causing OpenClaw to read stale default files.
+config.agents = config.agents || {};
+config.agents.defaults = config.agents.defaults || {};
+config.agents.defaults.workspace = '/root/.openclaw/workspace';
+console.log('[entrypoint] workspace forced to /root/.openclaw/workspace');
+
 fs.writeFileSync(path, JSON.stringify(config, null, 2));
 console.log('[entrypoint] Gateway token + password configured from environment');
 "
