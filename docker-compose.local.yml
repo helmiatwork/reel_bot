@@ -42,6 +42,7 @@ services:
       OPENCLAW_TELEGRAM_OWNER_ID: ${OPENCLAW_TELEGRAM_OWNER_ID:-}
       CLIPROXY_URL: ${CLIPROXY_URL:-http://cliproxy:8317/v1}
       CLIPROXY_KEY: ${CLIPROXY_KEY}
+      OPENCLAW_DEFAULT_MODEL: ${OPENCLAW_DEFAULT_MODEL:-cliproxy/gpt-5-nano}
     entrypoint: ["/bin/sh", "/entrypoint.sh"]
     command: ["node", "dist/index.js", "gateway", "--bind", "lan", "--port", "18789"]
 

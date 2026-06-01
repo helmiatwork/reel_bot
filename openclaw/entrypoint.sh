@@ -48,6 +48,13 @@ if (process.env.OPENCLAW_TELEGRAM_OWNER_ID) {
     }
     console.log('[entrypoint] Telegram owner set from OPENCLAW_TELEGRAM_OWNER_ID:', entry);
 }
+
+if (process.env.OPENCLAW_DEFAULT_MODEL) {
+    config.agents = config.agents || {};
+    config.agents.defaults = config.agents.defaults || {};
+    config.agents.defaults.model = process.env.OPENCLAW_DEFAULT_MODEL;
+    console.log('[entrypoint] default model set to:', process.env.OPENCLAW_DEFAULT_MODEL);
+}
 fs.writeFileSync(path, JSON.stringify(config, null, 2));
 console.log('[entrypoint] Gateway token + password configured from environment');
 "
