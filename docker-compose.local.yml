@@ -64,6 +64,10 @@ services:
     cap_add:
       - NET_ADMIN
 
+  postgres:
+    ports:
+      - "5432:5432"
+
   pipeline-api:
     ports:
       - "8000:8000"

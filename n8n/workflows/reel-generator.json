@@ -1881,6 +1881,46 @@
         ],
         "id": "08dbd666-e924-460c-a23c-90b726935a61",
         "name": "Sticky Note11"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "INSERT INTO workflow_logs(execution_id, workflow_id, workflow_name, started_at, status) VALUES($1, $2, $3, NOW(), 'running') ON CONFLICT(execution_id) DO NOTHING",
+          "options": {
+            "queryParams": "={{ [$execution.id, $workflow.id, $workflow.name] }}"
+          }
+        },
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.5,
+        "position": [-840, 980],
+        "id": "rl-log-start-0001-0001-0001-000000000001",
+        "name": "Log Start",
+        "credentials": {
+          "postgres": {
+            "id": "reelbot-postgres-cred",
+            "name": "Postgres (reelbot)"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE workflow_logs SET finished_at = NOW(), status = 'completed', output_url = $2 WHERE execution_id = $1",
+          "options": {
+            "queryParams": "={{ [$execution.id, $json.id ? 'https://www.youtube.com/watch?v=' + $json.id : ''] }}"
+          }
+        },
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.5,
+        "position": [3660, 2100],
+        "id": "rl-log-end-0002-0002-0002-000000000002",
+        "name": "Log End",
+        "credentials": {
+          "postgres": {
+            "id": "reelbot-postgres-cred",
+            "name": "Postgres (reelbot)"
+          }
+        }
       }
     ],
     "connections": {
@@ -1911,6 +1951,11 @@
           [
             {
               "node": "Gmail",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Log End",
               "type": "main",
               "index": 0
             }
@@ -1962,6 +2007,11 @@
           [
             {
               "node": "Extracting Video urls",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Log Start",
               "type": "main",
               "index": 0
             }
