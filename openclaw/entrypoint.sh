@@ -63,7 +63,7 @@ console.log('[entrypoint] Gateway token + password configured from environment')
 AGENTS_DIR="/root/.openclaw/agents/main"
 WORKSPACE_DIR="/root/.openclaw/workspace"
 mkdir -p "$WORKSPACE_DIR"
-for f in SOUL.md AGENTS.md; do
+for f in SOUL.md AGENTS.md IDENTITY.md; do
     if [ -f "$AGENTS_DIR/$f" ]; then
         cp "$AGENTS_DIR/$f" "$WORKSPACE_DIR/$f"
         echo "[entrypoint] $f synced to workspace"
