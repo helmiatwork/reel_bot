@@ -75,7 +75,7 @@ services:
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
-      POSTGRES_MULTIPLE_DATABASES: arcreel
+      POSTGRES_MULTIPLE_DATABASES: arcreel,n8n
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
@@ -310,12 +310,67 @@ services:
     networks:
       - stack-network
 
+  # ─────────────────────────────────────────────────────────────
+  # N8N — workflow automation
+  # Accessible at n8n.general-creation.xyz
+  # ─────────────────────────────────────────────────────────────
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: n8n
+    expose:
+      - "5678"
+    environment:
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - N8N_HOST=${DOMAIN:-general-creation.xyz}
+      - WEBHOOK_URL=https://n8n.${DOMAIN:-general-creation.xyz}/
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:?required}
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:?required}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - HEYGEN_API_KEY=${HEYGEN_API_KEY:-}
+      - CLIPROXY_URL=http://cliproxy:8317/v1
+      - CLIPROXY_KEY=${CLIPROXY_KEY}
+      - PIPELINE_API_URL=http://pipeline-api:8000
+      - ARCREEL_URL=http://arcreel:1241
+      - ARCREEL_TOKEN=${ARCREEL_TOKEN:-}
+      - OPENCLAW_URL=http://openclaw:18789
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=admin
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n/workflows:/home/node/workflows:ro
+      - shared_videos:/videos
+      - shared_output:/output
+    mem_limit: 512m
+    cpus: "0.5"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pipeline-api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    networks:
+      - stack-network
+
 # ═══════════════════════════════════════════════════════════════
 volumes:
   postgres_data:     { name: content-stack-postgres }
   openclaw_data:     { name: content-stack-openclaw }
   arcreel_data:      { name: content-stack-arcreel }
   arcreel_projects:  { name: content-stack-arcreel-projects }
+  n8n_data:          { name: content-stack-n8n }
   shared_videos:     { name: content-stack-videos }
   shared_output:     { name: content-stack-output }
 
