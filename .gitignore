@@ -12,4 +12,5 @@ output/
 nginx/.htpasswd
 .dashboard_password
 .vscode/
-openclaw/agents/main/
+openclaw/agents/main/agent/
+openclaw/agents/main/sessions/
