@@ -705,7 +705,7 @@
             "parameters": [
               {
                 "name": "X-Rapidapi-Key",
-                "value": "c4c18c2912msh80cf32d2f35c0fcp132bdcjsn7d276abf960e"
+                "value": "{{$env.RAPIDAPI_KEY}}"
               },
               {
                 "name": "X-Rapidapi-Host",
@@ -1467,7 +1467,7 @@
             "parameters": [
               {
                 "name": "X-Api-Key",
-                "value": "ODUzMzBkZWE5NjYwNGFmZjg0NTZiNDVjZTkwM2QyZDgtMTc0NTIxNjQyMA=="
+                "value": "{{$env.HEYGEN_API_KEY}}"
               },
               {
                 "name": "Content-Type",
@@ -1512,7 +1512,7 @@
             "parameters": [
               {
                 "name": "X-Api-Key",
-                "value": "ODUzMzBkZWE5NjYwNGFmZjg0NTZiNDVjZTkwM2QyZDgtMTc0NTIxNjQyMA=="
+                "value": "{{$env.HEYGEN_API_KEY}}"
               }
             ]
           },

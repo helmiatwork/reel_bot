@@ -330,6 +330,7 @@ services:
       - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:?required}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - HEYGEN_API_KEY=${HEYGEN_API_KEY:-}
+      - RAPIDAPI_KEY=${RAPIDAPI_KEY:-}
       - CLIPROXY_URL=http://cliproxy:8317/v1
       - CLIPROXY_KEY=${CLIPROXY_KEY}
       - PIPELINE_API_URL=http://pipeline-api:8000
