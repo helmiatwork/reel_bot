@@ -9,8 +9,11 @@ services:
     ports:
       - "8317:8317"
     volumes:
-      - ./cliproxy/config.yaml:/CLIProxyAPI/config.yaml
+      - ./cliproxy/config.yaml:/CLIProxyAPI/config.yaml.tpl:ro
       - cliproxy_auth:/root/.cli-proxy-api
+    environment:
+      CLIPROXY_KEY: ${CLIPROXY_KEY}
+    entrypoint: ["/bin/sh", "-c", "sed 's/CLIPROXY_KEY_PLACEHOLDER/'\"$$CLIPROXY_KEY\"'/' /CLIProxyAPI/config.yaml.tpl > /CLIProxyAPI/config.yaml && ./CLIProxyAPI"]
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8317"]
 
@@ -25,6 +28,7 @@ services:
       - ~/.openclaw:/root/.openclaw
       - ~/.openclaw-auth-profile-secrets:/root/.config/openclaw
       - shared_videos:/videos
+      - ./openclaw/entrypoint.sh:/entrypoint.sh:ro
     environment:
       HOME: /root
       OPENCLAW_HOME: /root
@@ -33,6 +37,13 @@ services:
       OPENCLAW_CONFIG_DIR: /root/.openclaw
       OPENCLAW_WORKSPACE_DIR: /root/.openclaw/workspace
       OPENCLAW_DISABLE_BONJOUR: "1"
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+      OPENCLAW_PASSWORD: ${OPENCLAW_PASSWORD}
+      OPENCLAW_TELEGRAM_OWNER_ID: ${OPENCLAW_TELEGRAM_OWNER_ID:-}
+      CLIPROXY_URL: ${CLIPROXY_URL:-http://cliproxy:8317/v1}
+      CLIPROXY_KEY: ${CLIPROXY_KEY}
+      OPENCLAW_DEFAULT_MODEL: ${OPENCLAW_DEFAULT_MODEL:-cliproxy/gpt-5-nano}
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
     command: ["node", "dist/index.js", "gateway", "--bind", "lan", "--port", "18789"]
 
   arcreel:

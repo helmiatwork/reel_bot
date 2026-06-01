@@ -133,10 +133,14 @@ services:
       - shared_output:/output
     environment:
       - OPENCLAW_GATEWAY_PORT=18789
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_BOT_TOKEN=${OPENCLAW_TELEGRAM_BOT_TOKEN:-}
       - CLIPROXY_URL=http://cliproxy:8317/v1
-      - CLIPROXY_KEY=${CLIPROXY_KEY:-local-proxy-key}
+      - CLIPROXY_KEY=${CLIPROXY_KEY}
       - PIPELINE_API_URL=http://pipeline-api:8000
+      - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN}
+      - OPENCLAW_PASSWORD=${OPENCLAW_PASSWORD}
+      - OPENCLAW_TELEGRAM_OWNER_ID=${OPENCLAW_TELEGRAM_OWNER_ID:-}
+      - OPENCLAW_DEFAULT_MODEL=${OPENCLAW_DEFAULT_MODEL:-cliproxy/gpt-5-nano}
     mem_limit: 512m
     cpus: "0.5"
     depends_on:
@@ -207,7 +211,7 @@ services:
       - ./credentials:/app/credentials:ro
     environment:
       - CLIPROXY_URL=http://cliproxy:8317/v1
-      - CLIPROXY_KEY=${CLIPROXY_KEY:-local-proxy-key}
+      - CLIPROXY_KEY=${CLIPROXY_KEY}
       - OPENCLAW_URL=http://openclaw:18789
       - ARCREEL_URL=http://arcreel:1241
       - ARCREEL_TOKEN=${ARCREEL_TOKEN:-}
@@ -255,7 +259,7 @@ services:
       - shared_output:/output
     environment:
       - CLIPROXY_URL=http://cliproxy:8317/v1
-      - CLIPROXY_KEY=${CLIPROXY_KEY:-local-proxy-key}
+      - CLIPROXY_KEY=${CLIPROXY_KEY}
       - MODEL=gemini/gemini-2.5-flash-lite
       - WHISPER_MODEL=base
     mem_limit: 1g
@@ -290,7 +294,7 @@ services:
       - shared_output:/output
     environment:
       - CLIPROXY_URL=http://cliproxy:8317/v1
-      - CLIPROXY_KEY=${CLIPROXY_KEY:-local-proxy-key}
+      - CLIPROXY_KEY=${CLIPROXY_KEY}
       - PEXELS_API_KEY=${PEXELS_API_KEY:-}
       - FREESOUND_API_KEY=${FREESOUND_API_KEY:-}
     mem_limit: 1.5g
