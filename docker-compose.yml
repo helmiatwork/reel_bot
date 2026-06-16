@@ -75,7 +75,7 @@ services:
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
-      POSTGRES_MULTIPLE_DATABASES: arcreel,n8n
+      POSTGRES_MULTIPLE_DATABASES: arcreel,n8n,content_automation
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
@@ -211,6 +211,8 @@ services:
     container_name: pipeline-api
     expose:
       - "8000"
+    ports:
+      - "8000:8000"          # dashboard + API reachable at http://localhost:8000
     volumes:
       - shared_videos:/videos
       - shared_output:/output
@@ -218,6 +220,7 @@ services:
     environment:
       - CLIPROXY_URL=http://cliproxy:8317/v1
       - CLIPROXY_KEY=${CLIPROXY_KEY}
+      - CLIPROXY_MGMT_KEY=${CLIPROXY_MGMT_KEY:-}
       - OPENCLAW_URL=http://openclaw:18789
       - ARCREEL_URL=http://arcreel:1241
       - ARCREEL_TOKEN=${ARCREEL_TOKEN:-}
@@ -236,10 +239,13 @@ services:
       - S3_BUCKET=${S3_BUCKET:-content-videos}
       - VPS_HOST=${DOMAIN:-general-creation.xyz}
       - ANALYTICS_DB=/output/analytics.json
+      - DATABASE_URL=postgresql://admin:${POSTGRES_PASSWORD}@postgres:5432/content_automation
     mem_limit: 512m
     cpus: "0.5"
     depends_on:
       cliproxy:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
