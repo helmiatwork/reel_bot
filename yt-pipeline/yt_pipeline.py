@@ -28,12 +28,135 @@ CLIPROXY_KEY = os.getenv("CLIPROXY_KEY", "local-proxy-key")
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")      # free at pexels.com/api
 FREESOUND_KEY = os.getenv("FREESOUND_API_KEY", "")    # free at freesound.org
 
-ANALYZER_MODEL = "gemini/gemini-2.5-flash-lite"  # vision — for frame analysis
-WRITER_MODEL   = "gemini/gemini-2.5-flash"        # best writing quality
-CHEAP_MODEL    = "deepseek-v4-flash"              # text-only, cheap
+# Model ids as exposed by cliproxy → Sumopod (NO "gemini/" provider prefix —
+# the proxy rejects prefixed names with "unknown provider").
+ANALYZER_MODEL = os.getenv("ANALYZER_MODEL", "gemini-2.5-flash-lite")  # vision — frame analysis
+WRITER_MODEL   = os.getenv("WRITER_MODEL", "gemini-2.5-flash")          # best writing quality
+CHEAP_MODEL    = os.getenv("CHEAP_MODEL", "deepseek-v4-flash")          # text-only, cheap
 
 VIDEOS_DIR = Path("/videos")
 OUTPUT_DIR = Path("/output")
+
+# ── Pipeline progress persistence (postgres — optional, never fatal) ──
+# pipeline-api sets RUN_ID + DATABASE_URL; standalone CLI runs leave them blank
+# and every helper below becomes a no-op, so the pipeline still works.
+DATABASE_URL = os.getenv("DATABASE_URL", "")
+RUN_ID = os.getenv("RUN_ID", "")
+
+
+def _db():
+    """psycopg connection or None — DB is optional; we never crash the pipeline over it."""
+    if not (DATABASE_URL and RUN_ID):
+        return None
+    try:
+        import psycopg
+        return psycopg.connect(DATABASE_URL, autocommit=True, connect_timeout=5)
+    except Exception as e:
+        print(f"  [progress] DB unavailable ({e}); continuing without persistence")
+        return None
+
+
+def db_init_run(youtube_url: str, topic: str):
+    conn = _db()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO pipeline_runs (run_id, youtube_url, topic, status) "
+                "VALUES (%s,%s,%s,'running') "
+                "ON CONFLICT (run_id) DO UPDATE SET status='running', error=NULL, finished_at=NULL",
+                (RUN_ID, youtube_url, topic))
+    except Exception as e:
+        print(f"  [progress] init_run failed: {e}")
+    finally:
+        conn.close()
+
+
+def db_step_start(step: str):
+    conn = _db()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO pipeline_run_steps (run_id, step, status, started_at) "
+                "VALUES (%s,%s,'running', now()) "
+                "ON CONFLICT (run_id, step) DO UPDATE SET status='running', "
+                "  started_at=COALESCE(pipeline_run_steps.started_at, now()), "
+                "  error=NULL, finished_at=NULL",
+                (RUN_ID, step))
+            cur.execute("UPDATE pipeline_runs SET current_step=%s WHERE run_id=%s", (step, RUN_ID))
+    except Exception as e:
+        print(f"  [progress] step_start({step}) failed: {e}")
+    finally:
+        conn.close()
+
+
+def db_step_done(step: str, output=None):
+    conn = _db()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE pipeline_run_steps SET status='done', output=%s, finished_at=now() "
+                "WHERE run_id=%s AND step=%s",
+                (json.dumps(output, ensure_ascii=False, default=str) if output is not None else None, RUN_ID, step))
+    except Exception as e:
+        print(f"  [progress] step_done({step}) failed: {e}")
+    finally:
+        conn.close()
+
+
+def db_step_error(step: str, err: str):
+    conn = _db()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE pipeline_run_steps SET status='error', error=%s, finished_at=now() "
+                "WHERE run_id=%s AND step=%s", (str(err)[:4000], RUN_ID, step))
+    except Exception as e:
+        print(f"  [progress] step_error({step}) failed: {e}")
+    finally:
+        conn.close()
+
+
+def db_finish_run(status: str, result=None, error: str = None):
+    conn = _db()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE pipeline_runs SET status=%s, result=%s, error=%s, finished_at=now() "
+                "WHERE run_id=%s",
+                (status, json.dumps(result, ensure_ascii=False, default=str) if result is not None else None,
+                 (str(error)[:4000] if error else None), RUN_ID))
+    except Exception as e:
+        print(f"  [progress] finish_run failed: {e}")
+    finally:
+        conn.close()
+
+
+def db_done_step_output(step: str):
+    """Return a finished step's stored output (for crash-resume), or None."""
+    conn = _db()
+    if not conn:
+        return None
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT output FROM pipeline_run_steps WHERE run_id=%s AND step=%s AND status='done'",
+                (RUN_ID, step))
+            row = cur.fetchone()
+            return row[0] if row else None
+    except Exception:
+        return None
+    finally:
+        conn.close()
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -85,15 +208,19 @@ def download_video(youtube_url: str, output_path: str) -> str:
 
     output_template = f"{output_path}/source_video.%(ext)s"
 
+    # Prefer mp4-native (h264+m4a) so the merge never has to remux av1/opus → mp4.
+    # 480p is plenty for frame analysis + keeps downloads fast (less YT throttling).
     result = subprocess.run([
         "yt-dlp",
-        "-f", "bestvideo[height<=720]+bestaudio/best[height<=720]",
+        "-f", "bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/"
+              "best[ext=mp4][height<=480]/best[height<=480]/best",
         "--merge-output-format", "mp4",
+        "--retries", "5", "--fragment-retries", "5",
+        "--socket-timeout", "30",
         "-o", output_template,
         "--no-playlist",
-        "--progress",
         youtube_url
-    ], capture_output=False)   # show progress in terminal
+    ], capture_output=False)
 
     if result.returncode != 0:
         raise Exception("Video download failed")
@@ -171,35 +298,210 @@ def search_youtube(query: str, max_results: int = 5) -> list:
 # STEP 2 — Analyze the video (frames + transcript)
 # ══════════════════════════════════════════════════════════════════
 
+def _extract_frames(video_path: str, n: int = 8) -> list:
+    """Extract n evenly-spaced frames (360px wide) via ffmpeg. Returns list of paths."""
+    import tempfile
+    dur = float(video_info_duration(video_path))
+    tmp = tempfile.mkdtemp(prefix="frames_")
+    paths = []
+    for i in range(n):
+        t = round(i * dur / (n + 0.5), 2) if dur else i
+        out = f"{tmp}/f_{i:02d}.jpg"
+        r = subprocess.run(
+            ["ffmpeg", "-nostdin", "-y", "-loglevel", "error", "-ss", str(t),
+             "-i", video_path, "-frames:v", "1", "-vf", "scale=360:-1", out],
+            capture_output=True, text=True)
+        if Path(out).exists():
+            paths.append((t, out))
+    return paths
+
+
+def video_info_duration(video_path: str) -> float:
+    """Probe a media file's duration in seconds (0.0 on failure)."""
+    r = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+         "-of", "csv=p=0", video_path], capture_output=True, text=True)
+    try:
+        return float(r.stdout.strip())
+    except (ValueError, AttributeError):
+        return 0.0
+
+
+def call_ai_vision(system_prompt: str, user_text: str, image_paths: list, model: str) -> str:
+    """Vision AI call via CLIProxyAPI → Sumopod (frames as base64 image_url parts)."""
+    import base64
+    content = [{"type": "text", "text": user_text}]
+    for _, p in image_paths:
+        b = base64.b64encode(Path(p).read_bytes()).decode()
+        content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b}"}})
+    response = httpx.post(
+        f"{CLIPROXY_URL}/chat/completions",
+        headers={"Authorization": f"Bearer {CLIPROXY_KEY}", "Content-Type": "application/json"},
+        json={"model": model,
+              "messages": [{"role": "system", "content": system_prompt},
+                           {"role": "user", "content": content}],
+              "temperature": 0.4, "max_tokens": 2000},
+        timeout=180,
+    )
+    response.raise_for_status()
+    return response.json()["choices"][0]["message"]["content"]
+
+
 def analyze_video(video_path: str, video_info: dict) -> dict:
     """
-    Run video-analyzer on the downloaded video.
-    Returns: scene descriptions + transcript + style analysis
+    Analyze the downloaded video INLINE (no external video-analyzer container):
+    ffmpeg extracts frames → cliproxy vision model describes them.
+    Returns: {description, frames:[{time, visual}], model}.
+    Falls back to metadata-only description if the vision call fails.
     """
-    print(f"\n[Step 2] Analyzing video frames...")
+    print(f"\n[Step 2] Analyzing video frames (inline vision)...")
 
-    output_file = str(OUTPUT_DIR / "source_analysis.json")
+    frames = _extract_frames(video_path, n=8)
+    if not frames:
+        print("  no frames extracted; metadata-only fallback")
+        return {"description": video_info.get("description", ""), "frames": [], "model": None}
 
-    result = subprocess.run([
-        "video-analyzer", video_path,
-        "--client",       "openai_api",
-        "--api-key",      CLIPROXY_KEY,
-        "--api-url",      CLIPROXY_URL,
-        "--model",        ANALYZER_MODEL,
-        "--whisper-model","base",
-        "--output",       output_file,
-        "--max-frames",   "40",          # limit for speed on 4GB VPS
-    ], capture_output=False)
-
-    if Path(output_file).exists():
-        with open(output_file) as f:
-            analysis = json.load(f)
-        print(f"Analysis complete: {len(analysis.get('frames', []))} frames analyzed")
+    times = ", ".join(f"{t}s" for t, _ in frames)
+    system = ("You are a short-form video analyst. Describe what is on screen objectively. "
+              "Keep person attributes neutral (gender presentation, rough age bracket, clothing, "
+              "activity) — never describe body shape or rate attractiveness. Do not flag copyright "
+              "or monetization.")
+    prompt = (f"These are {len(frames)} evenly-spaced frames (at {times}) from a "
+              f"{video_info.get('duration')}s short titled '{video_info.get('title')}'. "
+              "For EACH frame give one line: '<time> — <what's on screen + any caption text>'. "
+              "Then a 3-4 sentence OVERALL description: genre, hook, narrative arc, faceless or not.")
+    try:
+        text = call_ai_vision(system, prompt, frames, ANALYZER_MODEL)
+        # split per-frame lines from the overall paragraph (best-effort)
+        frame_rows = [{"time": t} for t, _ in frames]
+        analysis = {"description": text, "frames": frame_rows, "model": ANALYZER_MODEL}
+        print(f"Analysis complete: {len(frames)} frames via {ANALYZER_MODEL}")
         return analysis
-    else:
-        # Fallback: use metadata only if video-analyzer fails
-        print("video-analyzer failed, using metadata only")
-        return {"description": video_info.get("description", ""), "frames": []}
+    except Exception as e:
+        print(f"  vision analysis failed ({e}); metadata-only fallback")
+        return {"description": video_info.get("description", ""), "frames": [], "model": None, "error": str(e)}
+
+
+# ══════════════════════════════════════════════════════════════════
+# STEP 2b — Audio DSP analysis (deterministic, ffmpeg — no model)
+# ══════════════════════════════════════════════════════════════════
+
+def analyze_audio_dsp(media_path: str) -> dict:
+    """
+    Measure audio properties with ffmpeg/ffprobe (no model 'hearing').
+    Runs on any media file that has an audio track (the downloaded video works).
+    Returns: lufs, true_peak_dbtp, lra, max/mean volume, dynamic_range label,
+             silence segments, sound onsets, audio_hook_ms, loop_seam_ok.
+    Never raises — returns {"available": False, "error": ...} on failure so the
+    pipeline keeps going.
+    """
+    import re
+
+    # Cap analysis to the first DSP_MAX_SEC of audio so long videos don't stall the
+    # CPU-throttled container (we only need a representative loudness/onset profile;
+    # Shorts under this cap are analyzed in full).
+    DSP_MAX_SEC = 90
+
+    def _run(args):
+        # ffmpeg writes its measurements to stderr
+        return subprocess.run(
+            ["ffmpeg", "-nostdin", "-hide_banner", "-t", str(DSP_MAX_SEC),
+             "-i", media_path, *args, "-f", "null", "-"],
+            capture_output=True, text=True
+        ).stderr
+
+    print("\n[Step 2b] Audio DSP analysis (ffmpeg)...")
+    try:
+        # 1. loudness — loudnorm prints a JSON block to stderr
+        loud = _run(["-af", "loudnorm=print_format=json"])
+        m = re.search(r"\{[^{}]*\"input_i\"[^{}]*\}", loud, re.S)
+        lufs = tp = lra = None
+        if m:
+            j = json.loads(m.group(0))
+            lufs = _to_float(j.get("input_i"))
+            tp   = _to_float(j.get("input_tp"))
+            lra  = _to_float(j.get("input_lra"))
+
+        # 2. peak / mean amplitude
+        vol = _run(["-af", "volumedetect"])
+        max_v  = _to_float(_grep1(r"max_volume:\s*(-?\d+(?:\.\d+)?)\s*dB", vol))
+        mean_v = _to_float(_grep1(r"mean_volume:\s*(-?\d+(?:\.\d+)?)\s*dB", vol))
+
+        # 3. silence / sound onsets
+        sil = _run(["-af", "silencedetect=noise=-30dB:d=0.2"])
+        sil_starts = [float(x) for x in re.findall(r"silence_start:\s*(-?\d+(?:\.\d+)?)", sil)]
+        sil_ends   = [float(x) for x in re.findall(r"silence_end:\s*(\d+(?:\.\d+)?)", sil)]
+
+        # duration (for loop-seam tail check)
+        dur = _to_float(_grep1(r"Duration:\s*(\d+):(\d+):(\d+\.\d+)", sil, groups=3, as_hms=True))
+
+        # sound onsets = points where sound resumes after silence; if the clip
+        # opens with sound (no silence at 0), 0.0 is the first onset.
+        onsets = sorted(sil_ends)
+        opens_silent = any(s <= 0.15 for s in sil_starts)
+        if not opens_silent:
+            onsets = [0.0] + onsets
+        audio_hook_ms = int(round(onsets[0] * 1000)) if onsets else 0
+
+        # loop seam: clean if the clip ends in silence (a silence_start near the end
+        # with no later silence_end), giving a quiet tail to loop back from.
+        loop_seam_ok = None
+        if dur and sil_starts:
+            last_start = max(sil_starts)
+            tail_is_silent = last_start >= (dur - 0.4) or (sil_starts and max(sil_starts) > (sil_ends[-1] if sil_ends else 0))
+            loop_seam_ok = bool(tail_is_silent)
+
+        # dynamic-range label from LRA (loudness range)
+        dyn = None
+        if lra is not None:
+            dyn = "natural" if lra >= 9 else ("compressed" if lra >= 4 else "brickwalled")
+
+        # is there sustained sound (music bed) vs sparse events?
+        # heuristic: many short silences + low mean = sparse/raw; few silences = continuous bed.
+        n_sil = len(sil_starts)
+
+        return {
+            "available": True,
+            "lufs": lufs,
+            "true_peak_dbtp": tp,
+            "lra": lra,
+            "max_volume_db": max_v,
+            "mean_volume_db": mean_v,
+            "dynamic_range": dyn,
+            "duration_s": dur,
+            "silence_starts_s": sil_starts,
+            "silence_ends_s": sil_ends,
+            "sound_onsets_s": onsets,
+            "audio_hook_ms": audio_hook_ms,
+            "loop_seam_ok": loop_seam_ok,
+            "silence_count": n_sil,
+            "is_silent": (max_v is not None and max_v < -60),
+            # model fills these from transcript + this data (don't guess here):
+            "music_bed": None, "speech": None, "sfx": None,
+        }
+    except Exception as e:
+        print(f"  audio DSP failed: {e}")
+        return {"available": False, "error": str(e)}
+
+
+def _to_float(v, groups=1, as_hms=False):
+    if v is None:
+        return None
+    try:
+        if as_hms and isinstance(v, tuple):
+            h, m, s = v
+            return round(int(h) * 3600 + int(m) * 60 + float(s), 2)
+        return float(v)
+    except (ValueError, TypeError):
+        return None
+
+
+def _grep1(pattern, text, groups=1, as_hms=False):
+    import re
+    m = re.search(pattern, text)
+    if not m:
+        return None
+    return m.groups() if (groups > 1 or as_hms) else m.group(1)
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -222,87 +524,125 @@ def call_ai(system_prompt: str, user_message: str, model: str) -> str:
                 {"role": "user",   "content": user_message}
             ],
             "temperature": 0.7,
-            "max_tokens": 4000
+            "max_tokens": 8000
         },
-        timeout=120
+        timeout=180
     )
 
     return response.json()["choices"][0]["message"]["content"]
+
+
+def extract_json(text: str):
+    """Robustly pull a JSON object/array out of an LLM reply (handles ```json fences,
+    leading prose, trailing text). Returns the parsed object, or None if unparseable."""
+    if not text:
+        return None
+    t = text.strip()
+    # strip code fences
+    if "```" in t:
+        import re as _re
+        m = _re.search(r"```(?:json)?\s*(.*?)```", t, _re.S)
+        if m:
+            t = m.group(1).strip()
+    # slice from first { or [ to its matching last } or ]
+    start = min([i for i in (t.find("{"), t.find("[")) if i != -1], default=-1)
+    if start == -1:
+        return None
+    end = max(t.rfind("}"), t.rfind("]"))
+    if end <= start:
+        return None
+    try:
+        return json.loads(t[start:end + 1])
+    except Exception:
+        return None
 
 
 # ══════════════════════════════════════════════════════════════════
 # STEP 4 — Story Writer Agent
 # ══════════════════════════════════════════════════════════════════
 
-def story_writer_agent(video_info: dict, analysis: dict, user_topic: str) -> dict:
-    """
-    Writes an original script INSPIRED by the source video.
-    NOT a copy — a new story with a fresh angle.
-    """
-    print(f"\n[Step 4] Story Writer Agent generating script...")
-
-    system_prompt = """
-You are a creative video scriptwriter and storyteller.
-
-Your job: analyze a source video's style and structure, then write a 
-completely ORIGINAL script on the same topic but from a fresh angle.
-
-Rules:
-- NEVER copy or paraphrase the source video
-- Create original narration, examples, and structure
-- Match the emotional tone and pacing style of the source
-- Write in a warm, engaging, conversational style
-- Format: intro hook + 3-5 main segments + conclusion with CTA
-- Include [B-ROLL SUGGESTION] notes for each segment
-
-Output as JSON:
-{
-  "title": "video title",
-  "hook": "opening line that grabs attention",
-  "estimated_duration_min": 8,
-  "tone": "warm/educational/dramatic/etc",
-  "segments": [
-    {
-      "segment": 1,
-      "title": "segment title",
-      "narration": "full narration text",
-      "broll_suggestion": "what footage to show here",
-      "duration_sec": 60
-    }
-  ],
-  "conclusion": "closing narration",
-  "cta": "call to action",
-  "instagram_caption": "caption for Instagram",
-  "tiktok_caption": "caption for TikTok (150 chars max)",
-  "twitter": "tweet (280 chars max)",
-  "tags": ["tag1", "tag2"]
-}
+# Compact viral-formula library — the writer clones a STRUCTURE, never wording.
+FORMULA_LIBRARY = """
+- process-reveal: visual hook → before/condition → process beats ×4-6 → payoff money-shot held ~75% → soft CTA. (kuliner, repair, making)
+- price-reveal: tebak harga → proses/isi → reveal harga di akhir. (jajan, modal-untung)
+- did-you-know-fact: pertanyaan/klaim mengejutkan → bukti cepat ×3 → twist fakta → CTA komen.
+- why-explainer: "kenapa X?" hook → 3 sebab cepat ber-visual → kesimpulan punchy.
+- listicle-countdown: "3 hal …" → item 3→1, terkuat terakhir → CTA.
+- before-after: kondisi awal → transisi cepat → hasil dramatis di ~70%.
+- pov-storytime: "POV: …" caption → in-medias-res → eskalasi → punchline/loop.
+- expectation-vs-reality: ekspektasi → potong → realita lucu/satisfying.
+- street-food-tour / mukbang: money-shot makanan terus-menerus, ASMR, no dead air.
+- satisfying-asmr: tutup mata pun enak — suara + visual ritmis, loop mulus.
 """
 
+
+def story_writer_agent(video_info: dict, analysis: dict, user_topic: str, audio: dict = None) -> dict:
+    """
+    Writes ONE ready-to-shoot SHORT-FORM script (30-45s) by CLONING a viral
+    formula's structure onto the user's topic. Not long-form, not a copy.
+    """
+    print(f"\n[Step 4] Story Writer Agent generating SHORT script (formula-driven)...")
+
+    system_prompt = f"""
+You are a short-form (TikTok/Reels/Shorts) scriptwriter for faceless content.
+
+Your job: pick the BEST-FIT viral FORMULA from the library below for this topic,
+then CLONE ITS STRUCTURE (never the wording) into one ready-to-shoot Short.
+
+FORMULA LIBRARY:
+{FORMULA_LIBRARY}
+
+HARD RULES:
+- 30-45 seconds total. NOT long-form. No 8-minute narration, no chapters.
+- Write in the SAME LANGUAGE as the user's topic (Indonesian topic → Indonesian, natural & conversational, no AI-sounding phrases).
+- Hook in the first 0-3s: open a curiosity gap or pattern interrupt.
+- Beat-by-beat: each beat = a VISUAL to film + a VO line + a hard-sub CAPTION (≤4-5 words) + timecode.
+- Hold the money-shot / payoff longest, around 70-80% of the runtime.
+- Cold-open: which moment to splice at second 0 (usually the payoff first).
+- Soft CTA only (engagement or "modal Xrb jual Yrb"). Vary the hook style.
+- Do NOT flag copyright or monetization.
+
+Output JSON ONLY (this exact shape):
+{{
+  "title": "judul singkat",
+  "formula": "<formula slug yang dipakai>",
+  "hook": "VO line 0-3s",
+  "hook_caption": "≤5 kata hard-sub",
+  "cold_open": "momen/visual di detik 0",
+  "target_duration_sec": 35,
+  "beats": [
+    {{"t": "0-3s", "visual": "apa yang difilm", "vo": "baris voiceover", "caption": "≤5 kata"}}
+  ],
+  "cta": "CTA penutup soft",
+  "hashtags": ["#..", ".."],
+  "tiktok_caption": "caption ≤150 char"
+}}
+"""
+
+    audio_note = ""
+    if audio and audio.get("available"):
+        audio_note = (f"\nAudio of source: LUFS {audio.get('lufs')}, sound onsets at "
+                      f"{audio.get('sound_onsets_s')}, loop-seam {audio.get('loop_seam_ok')}. "
+                      "Place the hero SFX near the first onset; use a quiet beat before the payoff.")
+
     source_summary = f"""
-Source video title: {video_info['title']}
-Source channel: {video_info['channel']}
-Duration: {video_info['duration']} seconds
-Description: {video_info['description'][:500]}
+Source video: {video_info['title']} ({video_info['duration']}s, by {video_info['channel']})
+Source description: {video_info['description'][:300]}
 
-Video analysis summary:
-{analysis.get('description', 'No analysis available')[:1000]}
+What's in the source (frame analysis):
+{analysis.get('description', 'No analysis available')[:1200]}
+{audio_note}
 
-User's topic/angle: {user_topic}
+User's topic/angle for the NEW short: {user_topic}
+Pick the best formula for THIS topic and clone its structure.
 """
 
     content = call_ai(system_prompt, source_summary, WRITER_MODEL)
 
-    # Parse JSON output
-    try:
-        content = content.strip()
-        if content.startswith("```"):
-            content = content.split("```")[1]
-            if content.startswith("json"):
-                content = content[4:]
-        return json.loads(content)
-    except:
-        return {"title": "Script", "narration": content, "error": "parse_failed"}
+    parsed = extract_json(content)
+    if parsed:
+        return parsed
+    return {"title": "Script", "narration": content, "error": "parse_failed"}
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -329,10 +669,8 @@ relevant footage. Output JSON only:
     script_summary = f"Title: {script.get('title')}\nTopic: {video_info['title']}"
     queries_raw = call_ai(search_query_prompt, script_summary, CHEAP_MODEL)
 
-    try:
-        queries_raw = queries_raw.strip().strip("```json").strip("```")
-        queries = json.loads(queries_raw)
-    except:
+    queries = extract_json(queries_raw)
+    if not queries:
         queries = {
             "youtube_queries": [video_info['title'], "rice history Indonesia"],
             "stock_queries": ["rice field", "Indonesia food"]
@@ -418,10 +756,8 @@ Output JSON only:
     script_text = f"Title: {script.get('title')}\nTone: {script.get('tone')}\nHook: {script.get('hook', '')}"
     music_brief_raw = call_ai(music_brief_prompt, script_text, CHEAP_MODEL)
 
-    try:
-        music_brief_raw = music_brief_raw.strip().strip("```json").strip("```")
-        music_brief = json.loads(music_brief_raw)
-    except:
+    music_brief = extract_json(music_brief_raw)
+    if not music_brief:
         music_brief = {
             "mood": "calm",
             "genre": "ambient",
@@ -499,6 +835,78 @@ def search_freesound(query: str, max_results: int = 5) -> list:
 # MAIN PIPELINE — runs all agents sequentially
 # ══════════════════════════════════════════════════════════════════
 
+def discover_videos(niche: str, topic: str = "", top_n: int = 3, per_query: int = 8) -> dict:
+    """
+    Given a NICHE/keyword (no URL), let the AI find + rank candidate videos:
+    1. AI generates search queries  2. yt-dlp searches each  3. AI ranks by viral potential.
+    Returns {queries, candidate_count, picks:[{url,title,duration,channel,score,reason}]}.
+    """
+    print(f"\n[Discover] niche='{niche}' topic='{topic}'")
+
+    # 1. AI → search queries
+    q_prompt = ('Generate 5 YouTube search queries to find viral SHORT-FORM videos for this niche. '
+                'Vary angle/wording. Output JSON only: {"queries":["..",".."]}')
+    qj = extract_json(call_ai(q_prompt, f"Niche: {niche}\nTopic angle: {topic}", CHEAP_MODEL)) or {}
+    queries = [q for q in (qj.get("queries") or []) if isinstance(q, str)][:5] or [niche]
+    print(f"  queries: {queries}")
+
+    # 2. search + dedup by video id
+    seen = {}
+    for q in queries:
+        for v in search_youtube(q, per_query):
+            vid = v.get("id")
+            if vid and vid not in seen:
+                seen[vid] = v
+    candidates = list(seen.values())
+    print(f"  candidates: {len(candidates)}")
+    if not candidates:
+        return {"queries": queries, "candidate_count": 0, "picks": []}
+
+    # 3. AI ranks by viral potential
+    lines = "\n".join(
+        f"{i}. {c.get('title')} | {c.get('duration')}s | {c.get('channel')} | {c.get('url')}"
+        for i, c in enumerate(candidates))
+    rank_prompt = (f'Pick the TOP {top_n} candidate videos for VIRAL short-form potential in the niche. '
+                   'Reward: clear hook in title, clippable, strong topic fit, freshness. '
+                   f'Return ONLY the top {top_n}, best first. JSON only: '
+                   '{"ranked":[{"index":<n>,"score":1-10,"reason":"singkat"}]}')
+    rj = extract_json(call_ai(rank_prompt, f"Niche: {niche}\nCandidates:\n{lines}", WRITER_MODEL)) or {}
+    ranked = rj.get("ranked") or [{"index": i, "score": 0, "reason": ""} for i in range(len(candidates))]
+
+    picks = []
+    for r in ranked:
+        i = r.get("index")
+        if isinstance(i, int) and 0 <= i < len(candidates):
+            picks.append({**candidates[i], "score": r.get("score"), "reason": r.get("reason")})
+        if len(picks) >= top_n:
+            break
+    return {"queries": queries, "candidate_count": len(candidates), "picks": picks}
+
+
+def discover_and_produce(niche: str, topic: str = "", top_n: int = 3) -> dict:
+    """Discover candidate videos for a niche, then run the full pipeline on the top pick.
+    Persists a 'discover' step + the normal 8 production steps under one run_id."""
+    db_init_run(f"[discover] {niche}", topic)
+    db_step_start("discover")
+    try:
+        disc = discover_videos(niche, topic, top_n)
+    except Exception as e:
+        db_step_error("discover", str(e))
+        db_finish_run("error", error=str(e))
+        raise
+    db_step_done("discover", disc)
+
+    picks = disc.get("picks") or []
+    if not picks:
+        db_finish_run("error", error="no candidate videos found")
+        return {"discover": disc, "chosen": None, "produced": None}
+
+    top = picks[0]
+    print(f"\n✓ Discover picked #1: {top.get('title')} → {top.get('url')}")
+    produced = run_pipeline(top["url"], topic or niche)  # adds metadata..save under same run_id
+    return {"discover": disc, "chosen": top, "produced": produced}
+
+
 def run_pipeline(youtube_url: str, user_topic: str = "") -> dict:
     """
     Full pipeline: analyze source → write story → find footage → find music
@@ -512,61 +920,122 @@ def run_pipeline(youtube_url: str, user_topic: str = "") -> dict:
     print(f" URL   : {youtube_url}")
     print(f" Topic : {user_topic or 'same as source'}")
     print(f" Output: {run_dir}")
+    print(f" Run   : {RUN_ID or '(standalone, no DB)'}")
     print("=" * 60)
 
-    # ── Step 1: Get video metadata ───────────────────────────────
-    video_info = get_video_info(youtube_url)
-    print(f"\n✓ Video: '{video_info['title']}' by {video_info['channel']}")
-    print(f"  Duration: {video_info['duration']}s | Views: {video_info['view_count']:,}")
+    db_init_run(youtube_url, user_topic)
 
-    # ── Step 1b: Download video for analysis ────────────────────
-    video_path = download_video(youtube_url, str(run_dir))
-    print(f"\n✓ Video downloaded: {video_path}")
+    try:
+        # ── Step 1: Get video metadata ───────────────────────────
+        db_step_start("metadata")
+        video_info = get_video_info(youtube_url)
+        db_step_done("metadata", {"title": video_info.get("title"), "channel": video_info.get("channel"),
+                                  "duration": video_info.get("duration"), "views": video_info.get("view_count")})
+        print(f"\n✓ Video: '{video_info['title']}' by {video_info['channel']}")
+        print(f"  Duration: {video_info['duration']}s | Views: {video_info['view_count']:,}")
 
-    # ── Step 2: Analyze video ────────────────────────────────────
-    analysis = analyze_video(video_path, video_info)
-    print(f"\n✓ Analysis complete")
+        # ── Step 1b: Download video (resume-aware) ───────────────
+        prev = db_done_step_output("download")
+        if prev and prev.get("video_path") and Path(prev["video_path"]).exists():
+            video_path = prev["video_path"]
+            print(f"\n↩ Resumed: video already downloaded → {video_path}")
+        else:
+            db_step_start("download")
+            video_path = download_video(youtube_url, str(run_dir))
+            db_step_done("download", {"video_path": video_path})
+        print(f"\n✓ Video downloaded: {video_path}")
 
-    # ── Step 3: Write original story ────────────────────────────
-    topic = user_topic or f"inspired by: {video_info['title']}"
-    script = story_writer_agent(video_info, analysis, topic)
-    print(f"\n✓ Script written: '{script.get('title', 'Untitled')}'")
+        # ── Step 2: Analyze video (resume-aware) ─────────────────
+        prev = db_done_step_output("analyze")
+        if prev:
+            analysis = prev
+            print("\n↩ Resumed: analysis from DB")
+        else:
+            db_step_start("analyze")
+            analysis = analyze_video(video_path, video_info)
+            db_step_done("analyze", analysis)
+        print(f"\n✓ Analysis complete")
 
-    # ── Step 4: Find footage ─────────────────────────────────────
-    footage = footage_finder_agent(script, video_info)
-    print(f"\n✓ Found {len(footage.get('youtube_references', []))} YouTube references")
-    print(f"  Found {len(footage.get('stock_footage', []))} stock footage clips")
+        # ── Step 2b: Audio DSP (resume-aware) ────────────────────
+        prev = db_done_step_output("audio_dsp")
+        if prev:
+            audio = prev
+            print("\n↩ Resumed: audio DSP from DB")
+        else:
+            db_step_start("audio_dsp")
+            audio = analyze_audio_dsp(video_path)
+            db_step_done("audio_dsp", audio)
+        if audio.get("available"):
+            print(f"  audio: {audio.get('lufs')} LUFS, hook @ {audio.get('audio_hook_ms')}ms, "
+                  f"{audio.get('silence_count')} silence segs")
 
-    # ── Step 5: Find music ───────────────────────────────────────
-    music = music_finder_agent(script, analysis)
-    print(f"\n✓ Music: {music['music_brief'].get('mood')} {music['music_brief'].get('genre')}")
+        # ── Step 3: Write original story ─────────────────────────
+        db_step_start("script")
+        topic = user_topic or f"inspired by: {video_info['title']}"
+        script = story_writer_agent(video_info, analysis, topic, audio=audio)
+        db_step_done("script", script)
+        print(f"\n✓ Script written: '{script.get('title', 'Untitled')}'")
 
-    # ── Compile final output ────────────────────────────────────
-    final_output = {
-        "pipeline_run": timestamp,
-        "source_video": video_info,
-        "analysis_summary": analysis.get("description", ""),
-        "script": script,
-        "footage": footage,
-        "music": music
-    }
+        # ── Step 4: Find footage ─────────────────────────────────
+        db_step_start("footage")
+        footage = footage_finder_agent(script, video_info)
+        db_step_done("footage", footage)
+        print(f"\n✓ Found {len(footage.get('youtube_references', []))} YouTube references")
+        print(f"  Found {len(footage.get('stock_footage', []))} stock footage clips")
 
-    # Save JSON
-    output_file = run_dir / "pipeline_output.json"
-    with open(output_file, "w") as f:
-        json.dump(final_output, f, indent=2, ensure_ascii=False)
+        # ── Step 5: Find music ───────────────────────────────────
+        db_step_start("music")
+        music = music_finder_agent(script, analysis)
+        db_step_done("music", music)
+        print(f"\n✓ Music: {music['music_brief'].get('mood')} {music['music_brief'].get('genre')}")
 
-    # Save human-readable summary
-    summary_file = run_dir / "summary.md"
-    save_summary(final_output, summary_file)
+        # ── Compile final output ─────────────────────────────────
+        db_step_start("save")
+        final_output = {
+            "pipeline_run": timestamp,
+            "source_video": video_info,
+            "analysis_summary": analysis.get("description", ""),
+            "audio": audio,
+            "script": script,
+            "footage": footage,
+            "music": music
+        }
+        output_file = run_dir / "pipeline_output.json"
+        with open(output_file, "w") as f:
+            json.dump(final_output, f, indent=2, ensure_ascii=False)
+        summary_file = run_dir / "summary.md"
+        save_summary(final_output, summary_file)
+        db_step_done("save", {"output_file": str(output_file), "summary_file": str(summary_file)})
 
-    print(f"\n{'=' * 60}")
-    print(f"✅ Pipeline complete!")
-    print(f"   JSON  : {output_file}")
-    print(f"   Summary: {summary_file}")
-    print(f"{'=' * 60}")
+        db_finish_run("done", result={"pipeline_run": timestamp, "output_file": str(output_file)})
 
-    return final_output
+        print(f"\n{'=' * 60}")
+        print(f"✅ Pipeline complete!")
+        print(f"   JSON  : {output_file}")
+        print(f"   Summary: {summary_file}")
+        print(f"{'=' * 60}")
+
+        return final_output
+
+    except Exception as e:
+        # mark the in-flight step + the run as errored so nothing is lost
+        cur_step = None
+        conn = _db()
+        if conn:
+            try:
+                with conn.cursor() as c:
+                    c.execute("SELECT current_step FROM pipeline_runs WHERE run_id=%s", (RUN_ID,))
+                    r = c.fetchone()
+                    cur_step = r[0] if r else None
+            except Exception:
+                pass
+            finally:
+                conn.close()
+        if cur_step:
+            db_step_error(cur_step, str(e))
+        db_finish_run("error", error=str(e))
+        print(f"\n❌ Pipeline failed at step '{cur_step}': {e}")
+        raise
 
 
 def save_summary(output: dict, path: Path):
@@ -661,10 +1130,15 @@ if __name__ == "__main__":
 
     if len(sys.argv) < 2:
         print("Usage: python yt_pipeline.py <youtube_url> [topic]")
-        print('Example: python yt_pipeline.py "https://youtube.com/watch?v=xxx" "Why Indonesians eat rice"')
+        print("       python yt_pipeline.py --discover <niche> [topic]")
         sys.exit(1)
 
-    url   = sys.argv[1]
-    topic = sys.argv[2] if len(sys.argv) > 2 else ""
-
-    result = run_pipeline(url, topic)
+    if sys.argv[1] == "--discover":
+        # discovery mode: AI finds + ranks videos for a niche, then produces the top pick
+        niche = sys.argv[2] if len(sys.argv) > 2 else ""
+        topic = sys.argv[3] if len(sys.argv) > 3 else ""
+        result = discover_and_produce(niche, topic)
+    else:
+        url   = sys.argv[1]
+        topic = sys.argv[2] if len(sys.argv) > 2 else ""
+        result = run_pipeline(url, topic)

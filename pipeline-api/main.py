@@ -5,6 +5,7 @@ import os, sys, json
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional, List
 
@@ -12,7 +13,313 @@ sys.path.insert(0, "/app")
 
 app = FastAPI(title="Content Pipeline API", version="1.0")
 
-DASHBOARD = Path("/app/dashboard/index.html")
+DASHBOARD_DIR = Path("/app/dashboard")
+DASHBOARD = DASHBOARD_DIR / "index.html"
+DATABASE_URL = os.getenv("DATABASE_URL", "")
+
+# Serve the Svelte build's hashed JS/CSS bundles (vite emits them under assets/).
+_assets = DASHBOARD_DIR / "assets"
+if _assets.is_dir():
+    app.mount("/assets", StaticFiles(directory=str(_assets)), name="assets")
+
+
+def _db_conn():
+    """Open a short-lived postgres connection, or None if DB not configured/reachable."""
+    if not DATABASE_URL:
+        return None
+    try:
+        import psycopg
+        return psycopg.connect(DATABASE_URL, connect_timeout=5)
+    except Exception:
+        return None
+
+
+def _json(payload):
+    """JSON response that safely serializes datetimes etc. (JSONResponse has no default=)."""
+    from fastapi.responses import Response
+    return Response(content=json.dumps(payload, default=str, ensure_ascii=False),
+                    media_type="application/json")
+
+
+def _scalar(cur, sql, default=None):
+    try:
+        cur.execute(sql)
+        r = cur.fetchone()
+        return r[0] if r and r[0] is not None else default
+    except Exception:
+        return default
+
+
+@app.get("/dash/services")
+def dash_services():
+    """Live up/down + port for each stack service (pinged from inside the network)."""
+    import httpx
+    checks = [
+        ("postgres", 5432, None),
+        ("openclaw", 18789, "http://openclaw:18789"),
+        ("n8n", 5678, "http://n8n:5678/healthz"),
+        ("cliproxy", 8317, "http://cliproxy:8317"),
+        ("pipeline-api", 8000, "http://localhost:8000/health"),
+        ("arcreel", 1241, "http://arcreel:1241"),
+    ]
+    out = []
+    for name, port, url in checks:
+        up = False
+        if name == "postgres":
+            c = _db_conn()
+            up = c is not None
+            if c:
+                c.close()
+        else:
+            try:
+                r = httpx.get(url, timeout=3)
+                up = r.status_code < 500
+            except Exception:
+                up = False
+        out.append({"name": name, "port": port, "up": up})
+    return _json({"services": out, "live": sum(1 for s in out if s["up"]), "total": len(out)})
+
+
+@app.get("/dash/overview")
+def dash_overview():
+    """KPI cards + 7-day views trend + top movers, all from content_automation."""
+    conn = _db_conn()
+    if not conn:
+        return _json({"error": "db unavailable"})
+    try:
+        with conn.cursor() as cur:
+            sources = _scalar(cur, "SELECT count(*) FROM sources", 0)
+            produced = _scalar(cur, "SELECT count(*) FROM pipeline_runs WHERE status='done'", 0)
+            total_views = _scalar(cur,
+                "SELECT COALESCE(sum(v),0) FROM (SELECT DISTINCT ON (subject_type,subject_id) views v "
+                "FROM performance_snapshots ORDER BY subject_type,subject_id,captured_at DESC) t", 0)
+            formulas = _scalar(cur, "SELECT count(*) FROM formulas", 0)
+            clips = _scalar(cur, "SELECT count(*) FROM clips", 0)
+
+            # 7-day series per source (top 2 by latest views)
+            cur.execute(
+                "SELECT s.id, COALESCE(s.title,'source '||s.id) FROM sources s "
+                "JOIN performance_snapshots p ON p.subject_type='source' AND p.subject_id=s.id "
+                "GROUP BY s.id ORDER BY max(p.views) DESC NULLS LAST LIMIT 2")
+            top_sources = cur.fetchall()
+            series = []
+            for sid, title in top_sources:
+                cur.execute(
+                    "SELECT to_char(captured_at,'MM-DD') d, max(views) v FROM performance_snapshots "
+                    "WHERE subject_type='source' AND subject_id=%s GROUP BY d ORDER BY d", (sid,))
+                pts = cur.fetchall()
+                series.append({"label": (title or "")[:28], "points": [{"d": d, "v": int(v or 0)} for d, v in pts]})
+
+            cur.execute(
+                "SELECT COALESCE(title,'source '||id), COALESCE(views_at_analysis,0) "
+                "FROM sources ORDER BY views_at_analysis DESC NULLS LAST LIMIT 5")
+            movers = [{"title": t[:48], "views": int(v or 0)} for t, v in cur.fetchall()]
+
+        return _json({
+            "kpis": {"sources": sources, "total_views": int(total_views or 0),
+                     "produced": produced, "formulas": formulas, "clips": clips},
+            "series": series, "movers": movers,
+        })
+    finally:
+        conn.close()
+
+
+@app.get("/dash/table/{name}")
+def dash_table(name: str):
+    """Generic table read for the Sources/Posts/Formulas pages."""
+    allowed = {
+        "sources": "SELECT id, COALESCE(title,'-') title, COALESCE(platform,'-') platform, "
+                   "COALESCE(channel,'-') channel, COALESCE(views_at_analysis,0) views, status "
+                   "FROM sources ORDER BY id DESC LIMIT 100",
+        "formulas": "SELECT id, slug, name, COALESCE(best_for,'-') best_for FROM formulas ORDER BY id LIMIT 100",
+        "posts": "SELECT id, platform, COALESCE(status,'-') status, COALESCE(external_url,'-') url, "
+                 "scheduled_at, posted_at FROM posts ORDER BY id DESC LIMIT 100",
+        "clips": "SELECT id, source_id, start_sec, end_sec, COALESCE(presenter_gender,'-') gender, "
+                 "COALESCE(age_bracket,'-') age, COALESCE(activity,'-') activity, COALESCE(hook_score,0) hook "
+                 "FROM clips ORDER BY id DESC LIMIT 100",
+    }
+    if name not in allowed:
+        raise HTTPException(status_code=404, detail="unknown table")
+    conn = _db_conn()
+    if not conn:
+        return _json({"rows": [], "error": "db unavailable"})
+    try:
+        with conn.cursor() as cur:
+            cur.execute(allowed[name])
+            cols = [c.name for c in cur.description]
+            rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+        return _json({"columns": cols, "rows": rows})
+    finally:
+        conn.close()
+
+
+@app.get("/dash/agents")
+def dash_agents():
+    """The content-automation agent roster (role + model tier)."""
+    return _json({"agents": [
+        {"name": "analyze", "role": "Frame + audio breakdown (vision)", "model": "gemini-2.5-flash-lite"},
+        {"name": "analyze-senior", "role": "Deep viral strategy", "model": "claude/opus"},
+        {"name": "clipfinder", "role": "Pick clip-worthy moments", "model": "sonnet"},
+        {"name": "scriptwriter", "role": "Formula-driven Short script", "model": "gemini-2.5-flash"},
+        {"name": "editor", "role": "EDL assembly decisions", "model": "sonnet"},
+        {"name": "qcgate", "role": "Pre-publish QC gate", "model": "sonnet"},
+        {"name": "producer", "role": "Run-sheet / next steps", "model": "sonnet"},
+        {"name": "main", "role": "Telegram orchestrator", "model": "gemini-flash"},
+    ]})
+
+
+@app.get("/dash/formula-performance")
+def dash_formula_performance():
+    """Avg/total views per formula — which structure actually performs."""
+    conn = _db_conn()
+    if not conn:
+        return _json({"rows": [], "error": "db unavailable"})
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT f.slug, f.name, count(s.id) n, "
+                "COALESCE(round(avg(s.views_at_analysis)),0) avg_views, "
+                "COALESCE(sum(s.views_at_analysis),0) total_views, "
+                "COALESCE(max(s.views_at_analysis),0) best_views "
+                "FROM formulas f LEFT JOIN sources s ON s.formula_id = f.id "
+                "GROUP BY f.id, f.slug, f.name ORDER BY avg_views DESC NULLS LAST")
+            cols = [c.name for c in cur.description]
+            rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+        for r in rows:
+            for k in ("n", "avg_views", "total_views", "best_views"):
+                r[k] = int(r[k] or 0)
+        return _json({"rows": rows})
+    finally:
+        conn.close()
+
+
+@app.get("/dash/cost")
+def dash_cost():
+    """Spend proxy from cliproxy usage stats (request counts → rough est). Key is masked."""
+    import httpx
+    mgmt = os.getenv("CLIPROXY_MGMT_KEY", "")
+    base = os.getenv("CLIPROXY_URL", "http://cliproxy:8317/v1").rsplit("/v1", 1)[0]
+    est = float(os.getenv("EST_COST_PER_REQUEST", "0.0015"))
+    if not mgmt:
+        return _json({"error": "CLIPROXY_MGMT_KEY not set", "providers": [], "series": [], "totals": {}})
+    try:
+        r = httpx.get(base + "/v0/management/api-key-usage",
+                      headers={"Authorization": f"Bearer {mgmt}"}, timeout=5)
+        data = r.json()
+    except Exception as e:
+        return _json({"error": str(e), "providers": [], "series": [], "totals": {}})
+
+    providers, bucket = [], {}
+    tot_s = tot_f = 0
+    if isinstance(data, dict):
+        for prov, keys in data.items():
+            ps = pf = 0
+            for _keyid, stat in (keys.items() if isinstance(keys, dict) else []):
+                ps += int(stat.get("success", 0) or 0)
+                pf += int(stat.get("failed", 0) or 0)
+                for rq in stat.get("recent_requests", []):
+                    t = rq.get("time", "")
+                    bucket[t] = bucket.get(t, 0) + int(rq.get("success", 0) or 0) + int(rq.get("failed", 0) or 0)
+            tot_s += ps
+            tot_f += pf
+            # NOTE: only the provider name is exposed — the raw upstream API key
+            # (embedded in the usage map's inner key) is deliberately never returned.
+            providers.append({"name": prov, "success": ps, "failed": pf,
+                              "requests": ps + pf, "est_cost": round((ps + pf) * est, 4)})
+    series = [{"time": t, "requests": bucket[t]} for t in sorted(bucket)]
+    total = tot_s + tot_f
+    return _json({"providers": providers, "series": series,
+                  "totals": {"requests": total, "success": tot_s, "failed": tot_f,
+                             "est_cost": round(total * est, 4), "est_per_request": est}})
+
+
+@app.get("/pipeline/run/{run_id}/artifact")
+def run_artifact(run_id: str, download: bool = False):
+    """Read the produced script/EDL artifact (pipeline_output.json) + summary, or download it."""
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=503, detail="db unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT output FROM pipeline_run_steps WHERE run_id=%s AND step='save'", (run_id,))
+            row = cur.fetchone()
+    finally:
+        conn.close()
+    if not row or not row[0]:
+        raise HTTPException(status_code=404, detail="no artifact for this run")
+    out = row[0] if isinstance(row[0], dict) else json.loads(row[0])
+    f = out.get("output_file")
+    if not f or not Path(f).exists():
+        raise HTTPException(status_code=404, detail="artifact file missing on disk")
+    if download:
+        return FileResponse(f, filename=Path(f).name, media_type="application/json")
+    try:
+        content = json.loads(Path(f).read_text())
+    except Exception:
+        content = {"raw": Path(f).read_text()[:5000]}
+    summary = ""
+    sf = out.get("summary_file")
+    if sf and Path(sf).exists():
+        summary = Path(sf).read_text()[:8000]
+    return _json({"output_file": f, "content": content, "summary": summary})
+
+
+# ── Live read endpoints (postgres-backed) — used by the bot + dashboard ──
+
+@app.get("/pipeline/runs")
+def list_runs(limit: int = 20):
+    """Recent pipeline runs with status + current step."""
+    conn = _db_conn()
+    if not conn:
+        return _json({"runs": [], "error": "db unavailable"})
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT run_id, youtube_url, topic, status, current_step, "
+                "       started_at, finished_at "
+                "FROM pipeline_runs ORDER BY started_at DESC LIMIT %s", (limit,))
+            cols = [c.name for c in cur.description]
+            runs = [dict(zip(cols, r)) for r in cur.fetchall()]
+        return _json({"runs": runs, "total": len(runs)})
+    finally:
+        conn.close()
+
+
+@app.get("/pipeline/run/{run_id}")
+def get_run(run_id: str):
+    """One run: status, all steps, and the key outputs (discover picks + final script)."""
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=503, detail="db unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT run_id, youtube_url, topic, status, current_step, error, "
+                "       started_at, finished_at FROM pipeline_runs WHERE run_id=%s", (run_id,))
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="run not found")
+            cols = [c.name for c in cur.description]
+            run = dict(zip(cols, row))
+
+            cur.execute(
+                "SELECT step, status, output, error, started_at, finished_at "
+                "FROM pipeline_run_steps WHERE run_id=%s ORDER BY started_at", (run_id,))
+            scols = [c.name for c in cur.description]
+            steps = [dict(zip(scols, r)) for r in cur.fetchall()]
+
+        # surface the two most useful outputs
+        by = {s["step"]: s.get("output") for s in steps}
+        return _json({
+            "run": run,
+            "steps": [{k: v for k, v in s.items() if k != "output"} for s in steps],
+            "discover": by.get("discover"),
+            "script": by.get("script"),
+            "audio": by.get("audio"),
+            "save": by.get("save"),
+        })
+    finally:
+        conn.close()
 
 
 class VoiceoverRequest(BaseModel):
@@ -263,7 +570,9 @@ def start_research(req: ResearchRequest, bg: BackgroundTasks):
             cmd = ["python", "/app/yt_pipeline/yt_pipeline.py", req.youtube_url]
             if req.topic:
                 cmd.append(req.topic)
-            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+            # pass the run_id so yt_pipeline persists per-step progress to postgres
+            sub_env = {**os.environ, "RUN_ID": run_id}
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300, env=sub_env)
             if proc.returncode == 0:
                 import json as _json
                 run_data = _load_run(run_id) or {}
@@ -283,6 +592,44 @@ def start_research(req: ResearchRequest, bg: BackgroundTasks):
 
     bg.add_task(_run)
     return {"status": "started", "run_id": run_id}
+
+
+class DiscoverRequest(BaseModel):
+    niche: str                 # keyword/niche to search for (no URL needed)
+    topic: str = ""            # optional angle for the generated script
+    top_n: int = 3             # how many candidates to rank/keep
+
+
+@app.post("/pipeline/discover")
+def start_discover(req: DiscoverRequest, bg: BackgroundTasks):
+    """Discovery mode: AI searches + ranks videos for a niche, then runs the full
+    pipeline on the top pick. Progress persists per-step in postgres under run_id."""
+    import uuid, subprocess
+
+    if not req.niche.strip():
+        raise HTTPException(status_code=400, detail="niche is required")
+
+    run_id = str(uuid.uuid4())
+    _save_run(run_id, {"status": "running", "result": None, "error": None})
+
+    def _run():
+        try:
+            cmd = ["python", "/app/yt_pipeline/yt_pipeline.py", "--discover", req.niche, req.topic]
+            sub_env = {**os.environ, "RUN_ID": run_id}
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=900, env=sub_env)
+            run_data = _load_run(run_id) or {}
+            run_data["status"] = "done" if proc.returncode == 0 else "error"
+            if proc.returncode != 0:
+                run_data["error"] = proc.stderr[-2000:]
+            _save_run(run_id, run_data)
+        except Exception as e:
+            run_data = _load_run(run_id) or {}
+            run_data["error"] = str(e)
+            run_data["status"] = "error"
+            _save_run(run_id, run_data)
+
+    bg.add_task(_run)
+    return {"status": "started", "run_id": run_id, "mode": "discover"}
 
 
 @app.get("/pipeline/research/status/{run_id}")
