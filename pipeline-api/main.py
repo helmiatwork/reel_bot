@@ -233,6 +233,51 @@ def dash_cost():
                              "est_cost": round(total * est, 4), "est_per_request": est}})
 
 
+TOKEN_PRICES = {  # USD per 1M tokens (input, output) — approximate Sumopod rates
+    "gemini-2.5-flash-lite": (0.10, 0.40),
+    "gemini-2.5-flash": (0.30, 2.50),
+    "deepseek-v4-flash": (0.14, 0.28),
+    "deepseek-v4-pro": (0.40, 0.89),
+    "claude-haiku-4-5": (1.00, 5.00),
+    "claude-sonnet-4-6": (3.00, 15.00),
+    "claude-opus-4-6": (5.00, 25.00),
+    "claude-opus-4-7": (5.00, 25.00),
+}
+DEFAULT_TOKEN_PRICE = (0.50, 1.50)
+
+
+@app.get("/dash/token-usage")
+def dash_token_usage():
+    """Real token spend from api_usage (logged per LLM call), priced at read time."""
+    conn = _db_conn()
+    if not conn:
+        return _json({"rows": [], "series": [], "totals": {}, "error": "db unavailable"})
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT model, COALESCE(sum(prompt_tokens),0), COALESCE(sum(completion_tokens),0), "
+                        "COALESCE(sum(total_tokens),0), count(*) FROM api_usage "
+                        "GROUP BY model ORDER BY sum(total_tokens) DESC NULLS LAST")
+            rows = []
+            tot_cost = tot_tok = 0.0
+            tot_calls = 0
+            for m, pt, ct, tt, n in cur.fetchall():
+                pin, pout = TOKEN_PRICES.get(m, DEFAULT_TOKEN_PRICE)
+                cost = (int(pt) / 1e6) * pin + (int(ct) / 1e6) * pout
+                rows.append({"model": m, "prompt_tokens": int(pt), "completion_tokens": int(ct),
+                             "total_tokens": int(tt), "calls": int(n), "cost_usd": round(cost, 4)})
+                tot_cost += cost
+                tot_tok += int(tt)
+                tot_calls += int(n)
+            cur.execute("SELECT to_char(created_at,'MM-DD') d, COALESCE(sum(total_tokens),0) "
+                        "FROM api_usage GROUP BY d ORDER BY d")
+            series = [{"d": d, "tokens": int(t)} for d, t in cur.fetchall()]
+        return _json({"rows": rows, "series": series,
+                      "totals": {"cost_usd": round(tot_cost, 4), "total_tokens": int(tot_tok),
+                                 "calls": int(tot_calls)}})
+    finally:
+        conn.close()
+
+
 @app.get("/pipeline/run/{run_id}/artifact")
 def run_artifact(run_id: str, download: bool = False):
     """Read the produced script/EDL artifact (pipeline_output.json) + summary, or download it."""
