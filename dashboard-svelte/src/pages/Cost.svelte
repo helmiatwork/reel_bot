@@ -3,87 +3,99 @@
   import { api } from '../lib/api.js'
   import Chart from 'chart.js/auto'
 
-  let totals = $state({ requests: 0, success: 0, failed: 0, est_cost: 0, est_per_request: 0 })
-  let providers = $state([])
-  let series = $state([])
+  // real token spend (primary)
+  let tk = $state({ rows: [], series: [], totals: { cost_usd: 0, total_tokens: 0, calls: 0 } })
+  // cliproxy request volume (secondary / liveness)
+  let cx = $state({ providers: [], totals: { requests: 0, success: 0, failed: 0 } })
   let err = $state('')
   let canvas, chart, timer
 
   function rebuild() {
-    if (!canvas || !series.length) return
+    if (!canvas || !tk.series.length) return
     if (chart) chart.destroy()
     chart = new Chart(canvas, {
       type: 'bar',
       data: {
-        labels: series.map((s) => s.time),
-        datasets: [{ label: 'request / 10 mnt', data: series.map((s) => s.requests), backgroundColor: '#6ea8fe' }]
+        labels: tk.series.map((s) => s.d),
+        datasets: [{ label: 'token / hari', data: tk.series.map((s) => s.tokens), backgroundColor: '#a78bfa' }]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { labels: { color: '#8b97ab', font: { size: 11 } } } },
         scales: {
-          x: { ticks: { color: '#8b97ab', font: { size: 9 }, maxRotation: 90 }, grid: { color: '#1f2937' } },
-          y: { ticks: { color: '#8b97ab', font: { size: 11 } }, grid: { color: '#1f2937' } }
+          x: { ticks: { color: '#8b97ab', font: { size: 10 } }, grid: { color: '#1f2937' } },
+          y: { ticks: { color: '#8b97ab', font: { size: 11 }, callback: (v) => (v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1e3 ? (v / 1e3).toFixed(0) + 'k' : v) }, grid: { color: '#1f2937' } }
         }
       }
     })
   }
 
   async function load() {
-    const c = await api.cost()
-    if (!c) { err = 'pipeline-api tak terjangkau'; return }
-    if (c.error) err = c.error
-    totals = c.totals || totals
-    providers = c.providers || []
-    series = c.series || []
+    const [t, c] = await Promise.all([api.tokenUsage(), api.cost()])
+    if (t) { tk = t; if (t.error) err = t.error }
+    if (c) cx = c
     rebuild()
   }
 
   onMount(() => { load(); timer = setInterval(load, 15000) })
   onDestroy(() => { clearInterval(timer); chart && chart.destroy() })
 
-  const usd = (n) => '$' + (Number(n) || 0).toFixed(3)
-  let successRate = $derived(totals.requests ? Math.round((totals.success / totals.requests) * 100) : 0)
+  const usd = (n) => '$' + (Number(n) || 0).toFixed(4)
+  const fmtTok = (n) => (n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'k' : String(n || 0))
+  let cxRate = $derived(cx.totals?.requests ? Math.round((cx.totals.success / cx.totals.requests) * 100) : 0)
 </script>
 
 <div class="top">
-  <div><h1>Cost</h1><div class="sub">Proxy spend dari cliproxy usage — request count → estimasi</div></div>
-  <div class="pill">est ${totals.est_per_request}/req</div>
+  <div><h1>Cost</h1><div class="sub">Token spend asli (api_usage) + request volume cliproxy</div></div>
+  <div class="pill">{tk.totals.calls} call</div>
 </div>
 
 <div class="kpis">
-  <div class="card kpi"><div class="label">Total request</div><div class="val num">{totals.requests}</div><div class="delta mut">sejak cliproxy start</div></div>
-  <div class="card kpi"><div class="label">Estimasi biaya</div><div class="val num">{usd(totals.est_cost)}</div><div class="delta mut">≈ request × tarif</div></div>
-  <div class="card kpi"><div class="label">Success rate</div><div class="val num">{successRate}%</div><div class="delta {totals.failed ? 'down' : 'up'}">{totals.failed} gagal</div></div>
-  <div class="card kpi"><div class="label">Provider</div><div class="val num">{providers.length}</div><div class="delta mut">upstream aktif</div></div>
+  <div class="card kpi"><div class="label">Biaya token (asli)</div><div class="val num">{usd(tk.totals.cost_usd)}</div><div class="delta up">dari usage tercatat</div></div>
+  <div class="card kpi"><div class="label">Total token</div><div class="val num">{fmtTok(tk.totals.total_tokens)}</div><div class="delta mut">{tk.totals.calls} LLM call</div></div>
+  <div class="card kpi"><div class="label">Request cliproxy</div><div class="val num">{cx.totals?.requests || 0}</div><div class="delta {cx.totals?.failed ? 'down' : 'mut'}">{cxRate}% sukses</div></div>
+  <div class="card kpi"><div class="label">Model dipakai</div><div class="val num">{tk.rows.length}</div><div class="delta mut">unik</div></div>
 </div>
 
 <div class="grid2">
   <div class="card">
-    <h3>Volume request <span class="mut">— bucket 10 menit (in-memory)</span></h3>
-    {#if series.length}
+    <h3>Token per hari <span class="mut">— api_usage</span></h3>
+    {#if tk.series.length}
       <div style="height:140px;position:relative"><canvas bind:this={canvas}></canvas></div>
     {:else}
-      <p class="mut" style="font-size:12.5px">Belum ada request tercatat. Trigger pipeline buat ngisi.</p>
+      <p class="mut" style="font-size:12.5px">Belum ada call tercatat. Trigger pipeline buat ngisi (analyze/script pakai LLM).</p>
     {/if}
   </div>
   <div class="card">
-    <h3>Per provider</h3>
+    <h3>Biaya per model <span class="mut">— harga × token</span></h3>
     <table>
-      <thead><tr><th>Provider</th><th class="num" style="text-align:right">Req</th><th class="num" style="text-align:right">Gagal</th><th class="num" style="text-align:right">Est</th></tr></thead>
+      <thead><tr><th>Model</th><th class="num" style="text-align:right">Token</th><th class="num" style="text-align:right">Call</th><th class="num" style="text-align:right">Biaya</th></tr></thead>
       <tbody>
-        {#each providers as p}
+        {#each tk.rows as r}
           <tr>
-            <td>{p.name}</td>
-            <td class="num" style="text-align:right">{p.requests}</td>
-            <td class="num {p.failed ? 'down' : 'mut'}" style="text-align:right">{p.failed}</td>
-            <td class="num" style="text-align:right">{usd(p.est_cost)}</td>
+            <td>{r.model}</td>
+            <td class="num" style="text-align:right">{fmtTok(r.total_tokens)}</td>
+            <td class="num mut" style="text-align:right">{r.calls}</td>
+            <td class="num" style="text-align:right">{usd(r.cost_usd)}</td>
           </tr>
         {/each}
-        {#if !providers.length}<tr><td colspan="4" class="mut">Belum ada data.</td></tr>{/if}
+        {#if !tk.rows.length}<tr><td colspan="4" class="mut">Belum ada data token.</td></tr>{/if}
       </tbody>
     </table>
   </div>
 </div>
 
-<div class="note">⚠️ cliproxy cuma log <b>jumlah request</b> (bukan token), dan in-memory (reset kalau cliproxy restart). Biaya = estimasi kasar (request × tarif rata-rata). Set <code>EST_COST_PER_REQUEST</code> di env buat kalibrasi. {#if err}· <span class="down">{err}</span>{/if}</div>
+<div class="card" style="margin-top:14px">
+  <h3>Request volume cliproxy <span class="mut">— liveness per provider</span></h3>
+  <table>
+    <thead><tr><th>Provider</th><th class="num" style="text-align:right">Request</th><th class="num" style="text-align:right">Gagal</th></tr></thead>
+    <tbody>
+      {#each cx.providers as p}
+        <tr><td>{p.name}</td><td class="num" style="text-align:right">{p.requests}</td><td class="num {p.failed ? 'down' : 'mut'}" style="text-align:right">{p.failed}</td></tr>
+      {/each}
+      {#if !cx.providers.length}<tr><td colspan="3" class="mut">Belum ada request.</td></tr>{/if}
+    </tbody>
+  </table>
+</div>
+
+<div class="note">✅ Biaya token = <b>asli</b> (tiap call LLM dicatat di <code>api_usage</code> dgn prompt/completion token, dihargai pakai price table di pipeline-api). Request volume cliproxy buat liveness. {#if err}· <span class="down">{err}</span>{/if}</div>

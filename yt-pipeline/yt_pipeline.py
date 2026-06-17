@@ -327,6 +327,28 @@ def video_info_duration(video_path: str) -> float:
         return 0.0
 
 
+def db_log_usage(model: str, usage: dict, step: str = ""):
+    """Log one LLM call's token usage to api_usage. No-op without DB/RUN_ID or usage."""
+    if not usage:
+        return
+    conn = _db()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO api_usage (run_id, step, model, prompt_tokens, completion_tokens, total_tokens) "
+                "VALUES (%s,%s,%s,%s,%s,%s)",
+                (RUN_ID or None, step or None, model,
+                 int(usage.get("prompt_tokens", 0) or 0),
+                 int(usage.get("completion_tokens", 0) or 0),
+                 int(usage.get("total_tokens", 0) or 0)))
+    except Exception as e:
+        print(f"  [usage] log failed: {e}")
+    finally:
+        conn.close()
+
+
 def call_ai_vision(system_prompt: str, user_text: str, image_paths: list, model: str) -> str:
     """Vision AI call via CLIProxyAPI → Sumopod (frames as base64 image_url parts)."""
     import base64
@@ -344,7 +366,9 @@ def call_ai_vision(system_prompt: str, user_text: str, image_paths: list, model:
         timeout=180,
     )
     response.raise_for_status()
-    return response.json()["choices"][0]["message"]["content"]
+    data = response.json()
+    db_log_usage(model, data.get("usage", {}), "analyze")
+    return data["choices"][0]["message"]["content"]
 
 
 def analyze_video(video_path: str, video_info: dict) -> dict:
@@ -529,7 +553,9 @@ def call_ai(system_prompt: str, user_message: str, model: str) -> str:
         timeout=180
     )
 
-    return response.json()["choices"][0]["message"]["content"]
+    data = response.json()
+    db_log_usage(model, data.get("usage", {}), "")
+    return data["choices"][0]["message"]["content"]
 
 
 def extract_json(text: str):
