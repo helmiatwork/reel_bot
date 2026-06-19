@@ -37,6 +37,19 @@ export const api = {
   discover: (niche, topic = '', top_n = 3) => postJSON('/pipeline/discover', { niche, topic, top_n }),
   research: (youtube_url, topic = '') => postJSON('/pipeline/research', { youtube_url, topic }),
 
+  // YouTube Data API v3 endpoints
+  youtubeSearch: (q, max_results = 20, order = '', videoDuration = '') => {
+    const p = new URLSearchParams({ q, max_results })
+    if (order) p.set('order', order)
+    if (videoDuration) p.set('videoDuration', videoDuration)
+    return getJSON(`/youtube/search?${p}`)
+  },
+  youtubeTrending: (region = 'US', max_results = 20) =>
+    getJSON(`/youtube/trending?region=${region}&max_results=${max_results}`),
+  youtubeChannelUploads: (channel_id, max_results = 20) =>
+    getJSON(`/youtube/channel/${encodeURIComponent(channel_id)}/uploads?max_results=${max_results}`),
+  youtubeVideo: (video_id) => getJSON(`/youtube/video/${encodeURIComponent(video_id)}`),
+
   // Stream the agent's reply (SSE) from /dash/chat. Calls onDelta(textChunk)
   // per token, onError(msg) on failure, onDone() at end. Returns an abort fn.
   streamChat(message, history, { onDelta, onError, onDone }) {
