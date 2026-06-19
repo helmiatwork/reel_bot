@@ -13,6 +13,7 @@
   import Formulas from './pages/Formulas.svelte'
   import Clips from './pages/Clips.svelte'
   import Cost from './pages/Cost.svelte'
+  import Discover from './pages/Discover.svelte'
 
   const NAV = [
     { p: 'studio', ico: '✨', label: 'Studio' },
@@ -24,7 +25,8 @@
     { p: 'posts', ico: '📤', label: 'Posts' },
     { p: 'agents', ico: '🤖', label: 'Agents' },
     { p: 'formulas', ico: '✦', label: 'Formulas' },
-    { p: 'cost', ico: '💰', label: 'Cost' }
+    { p: 'cost', ico: '💰', label: 'Cost' },
+    { p: 'discover', ico: '🔍', label: 'Discover' }
   ]
 
   let current = $state('dashboard')
@@ -87,6 +89,7 @@
     {:else if current === 'agents'}<Agents />
     {:else if current === 'formulas'}<Formulas />
     {:else if current === 'cost'}<Cost />
+    {:else if current === 'discover'}<Discover />
     {/if}
   </main>
 </div>
