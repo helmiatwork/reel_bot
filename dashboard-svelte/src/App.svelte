@@ -3,6 +3,7 @@
   import { page } from './lib/stores.js'
   import { api } from './lib/api.js'
   import Drawer from './lib/Drawer.svelte'
+  import Studio from './pages/Studio.svelte'
   import Dashboard from './pages/Dashboard.svelte'
   import Sources from './pages/Sources.svelte'
   import Performance from './pages/Performance.svelte'
@@ -14,6 +15,7 @@
   import Cost from './pages/Cost.svelte'
 
   const NAV = [
+    { p: 'studio', ico: '✨', label: 'Studio' },
     { p: 'dashboard', ico: '▦', label: 'Dashboard' },
     { p: 'sources', ico: '▶', label: 'Sources' },
     { p: 'clips', ico: '✂', label: 'Clips' },
@@ -75,7 +77,8 @@
   </aside>
 
   <main class="main">
-    {#if current === 'dashboard'}<Dashboard />
+    {#if current === 'studio'}<Studio />
+    {:else if current === 'dashboard'}<Dashboard />
     {:else if current === 'sources'}<Sources />
     {:else if current === 'clips'}<Clips />
     {:else if current === 'performance'}<Performance />

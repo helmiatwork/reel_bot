@@ -35,7 +35,61 @@ export const api = {
   artifact: (id) => getJSON(`/pipeline/run/${id}/artifact`),
   artifactDownloadUrl: (id) => `/pipeline/run/${id}/artifact?download=true`,
   discover: (niche, topic = '', top_n = 3) => postJSON('/pipeline/discover', { niche, topic, top_n }),
-  research: (youtube_url, topic = '') => postJSON('/pipeline/research', { youtube_url, topic })
+  research: (youtube_url, topic = '') => postJSON('/pipeline/research', { youtube_url, topic }),
+
+  // Stream the agent's reply (SSE) from /dash/chat. Calls onDelta(textChunk)
+  // per token, onError(msg) on failure, onDone() at end. Returns an abort fn.
+  streamChat(message, history, { onDelta, onError, onDone }) {
+    const ctrl = new AbortController()
+    ;(async () => {
+      try {
+        const r = await fetch('/dash/chat', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ message, history }),
+          signal: ctrl.signal
+        })
+        if (!r.ok || !r.body) {
+          onError && onError(`HTTP ${r.status}`)
+          return
+        }
+        const reader = r.body.getReader()
+        const dec = new TextDecoder()
+        let buf = ''
+        while (true) {
+          const { value, done } = await reader.read()
+          if (done) break
+          buf += dec.decode(value, { stream: true })
+          let nl
+          while ((nl = buf.indexOf('\n')) >= 0) {
+            const line = buf.slice(0, nl).trim()
+            buf = buf.slice(nl + 1)
+            if (!line.startsWith('data:')) continue
+            const data = line.slice(5).trim()
+            if (data === '[DONE]') { onDone && onDone(); return }
+            try {
+              const j = JSON.parse(data)
+              if (j.error) { onError && onError(j.error); return }
+              const piece = j.choices?.[0]?.delta?.content
+              if (piece) onDelta && onDelta(piece)
+            } catch (_) {
+              /* ignore non-JSON keepalive lines */
+            }
+          }
+        }
+        onDone && onDone()
+      } catch (e) {
+        if (e.name !== 'AbortError') onError && onError(String(e))
+      }
+    })()
+    return () => ctrl.abort()
+  }
+}
+
+// Pull the first UUID (a pipeline run_id) out of free-form agent text, if any.
+export function extractRunId(text) {
+  const m = String(text || '').match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)
+  return m ? m[0] : null
 }
 
 // helpers

@@ -278,6 +278,61 @@ def dash_token_usage():
         conn.close()
 
 
+# ---- chat proxy → openclaw agent (same path as Telegram) ----
+# The dashboard chat page POSTs here; we relay to OpenClaw's OpenAI-compatible
+# endpoint so the reelbot agent processes the message exactly as it would a
+# Telegram message (validate intent → trigger pipeline → reply). The gateway
+# token stays server-side and is never exposed to the browser.
+OPENCLAW_URL = os.getenv("OPENCLAW_URL", "http://openclaw:18789").rstrip("/")
+OPENCLAW_MODEL = os.getenv("OPENCLAW_MODEL", "openclaw/reelbot")
+
+
+class ChatRequest(BaseModel):
+    message: str
+    history: Optional[List[dict]] = None  # [{role, content}, ...] prior turns
+
+
+@app.post("/dash/chat")
+async def dash_chat(req: ChatRequest):
+    """Stream the agent's reply (SSE passthrough) from OpenClaw's chat endpoint."""
+    token = os.getenv("OPENCLAW_GATEWAY_TOKEN", "")
+    if not token:
+        raise HTTPException(503, "OPENCLAW_GATEWAY_TOKEN not configured")
+
+    messages = list(req.history or [])
+    messages.append({"role": "user", "content": req.message})
+    payload = {"model": OPENCLAW_MODEL, "messages": messages, "stream": True}
+
+    import httpx
+    from fastapi.responses import StreamingResponse
+
+    async def relay():
+        timeout = httpx.Timeout(connect=10.0, read=300.0, write=30.0, pool=10.0)
+        try:
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                async with client.stream(
+                    "POST", f"{OPENCLAW_URL}/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {token}",
+                             "Content-Type": "application/json"},
+                    json=payload,
+                ) as resp:
+                    if resp.status_code != 200:
+                        body = (await resp.aread()).decode("utf-8", "replace")[:300]
+                        yield f"data: {json.dumps({'error': f'openclaw {resp.status_code}: {body}'})}\n\n"
+                        return
+                    async for line in resp.aiter_lines():
+                        # Pass SSE lines straight through (already `data: {...}` / `data: [DONE]`).
+                        if line:
+                            yield line + "\n"
+                        else:
+                            yield "\n"
+        except Exception as e:  # connection refused, timeout, etc.
+            yield f"data: {json.dumps({'error': f'chat relay failed: {e}'})}\n\n"
+
+    return StreamingResponse(relay(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
 @app.get("/pipeline/run/{run_id}/artifact")
 def run_artifact(run_id: str, download: bool = False):
     """Read the produced script/EDL artifact (pipeline_output.json) + summary, or download it."""
