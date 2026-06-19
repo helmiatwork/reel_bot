@@ -25,6 +25,13 @@ config.gateway.auth = {
 config.gateway.controlUi = config.gateway.controlUi || {};
 config.gateway.controlUi.dangerouslyDisableDeviceAuth = true;
 
+// Enable OpenAI-compatible HTTP API (POST /v1/chat/completions) so the
+// dashboard chat page can reach the agent the same way Telegram does.
+config.gateway.http = config.gateway.http || {};
+config.gateway.http.endpoints = config.gateway.http.endpoints || {};
+config.gateway.http.endpoints.chatCompletions = { enabled: true };
+console.log('[entrypoint] OpenAI HTTP API (chatCompletions) enabled');
+
 if (process.env.CLIPROXY_URL || process.env.CLIPROXY_KEY) {
     config.models = config.models || {};
     config.models.providers = config.models.providers || {};
