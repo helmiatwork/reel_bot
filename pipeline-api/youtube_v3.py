@@ -180,6 +180,7 @@ def trending(region_code: str = "US", max_results: int = 10, category_id: Option
     Raises YouTubeNotConfigured, YouTubeQuotaError, HttpError.
     """
     max_results = max(1, min(max_results, 50))
+    region_code = (region_code or "US").upper()
 
     service = _get_service()
 
