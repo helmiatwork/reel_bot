@@ -3,6 +3,7 @@
 
 import os, sys, json
 from pathlib import Path
+from urllib.parse import urlparse
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -12,6 +13,23 @@ from typing import Optional, List
 sys.path.insert(0, "/app")
 
 app = FastAPI(title="Content Pipeline API", version="1.0")
+
+# ── YouTube SSRF guard: allowlist known YouTube hosts ────────────────────────
+_YOUTUBE_HOSTS = {
+    "youtube.com", "www.youtube.com", "m.youtube.com",
+    "music.youtube.com", "youtu.be",
+}
+
+def _validate_youtube_url(url: str) -> str:
+    """Reject anything that isn't a real YouTube URL (SSRF guard — these endpoints
+    only ever fetch YouTube). Raises HTTPException(400) on failure; returns the url."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise HTTPException(status_code=400, detail="youtube_url must be a valid YouTube URL")
+    host = (parsed.hostname or "").lower().rstrip(".")
+    if host not in _YOUTUBE_HOSTS:
+        raise HTTPException(status_code=400, detail="youtube_url must be a valid YouTube URL")
+    return url
 
 DASHBOARD_DIR = Path("/app/dashboard")
 DASHBOARD = DASHBOARD_DIR / "index.html"
@@ -647,11 +665,8 @@ def get_transcript(req: TranscriptRequest):
     Returns: {segments: [{start: float, end: float, text: str}, ...]}
     Returns empty segments [] gracefully if no subs available."""
     import subprocess
-    from urllib.parse import urlparse
 
-    parsed = urlparse(req.youtube_url)
-    if parsed.scheme not in ("http", "https") or not parsed.netloc:
-        raise HTTPException(status_code=400, detail="youtube_url must be an http(s) URL")
+    _validate_youtube_url(req.youtube_url)
 
     try:
         # Call the yt_pipeline CLI to fetch transcript
@@ -669,7 +684,7 @@ def get_transcript(req: TranscriptRequest):
             return _json({"segments": []})
     except Exception as e:
         print(f"  [transcript] endpoint error: {e}")
-        raise HTTPException(status_code=500, detail=f"Transcript fetch failed: {e}")
+        raise HTTPException(status_code=500, detail="Transcript fetch failed")
 
 
 @app.post("/clips/frames")
@@ -679,11 +694,8 @@ def get_frames(req: FramesRequest):
     Returns: {frames: [{time: float, visual_description: str}, ...]}
     Frame extraction is synchronous; may take 30-90s depending on video size + vision calls."""
     import subprocess
-    from urllib.parse import urlparse
 
-    parsed = urlparse(req.youtube_url)
-    if parsed.scheme not in ("http", "https") or not parsed.netloc:
-        raise HTTPException(status_code=400, detail="youtube_url must be an http(s) URL")
+    _validate_youtube_url(req.youtube_url)
 
     if not req.timestamps:
         raise HTTPException(status_code=400, detail="timestamps list cannot be empty")
@@ -725,7 +737,8 @@ if result.returncode == 0:
             capture_output=True, text=True, timeout=300)
 
         if proc.returncode != 0:
-            raise Exception(f"Video download failed: {proc.stderr}")
+            print(f"[frames] Video download stderr: {proc.stderr}")
+            raise Exception("video download failed")
 
         video_path = proc.stdout.strip().split('\n')[-1]
         if not video_path or not Path(video_path).exists():
@@ -740,8 +753,8 @@ if result.returncode == 0:
             capture_output=True, text=True, timeout=120)
 
         if proc.returncode != 0:
-            print(f"[frames] Frame extraction failed: {proc.stderr}")
-            raise Exception(f"Frame extraction failed: {proc.stderr}")
+            print(f"[frames] Frame extraction stderr: {proc.stderr}")
+            raise Exception("frame extraction failed")
 
         try:
             result = json.loads(proc.stdout)
@@ -751,7 +764,7 @@ if result.returncode == 0:
             raise Exception(f"Frame result parse failed: {e}")
     except Exception as e:
         print(f"  [frames] endpoint error: {e}")
-        raise HTTPException(status_code=500, detail=f"Frame extraction failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Frame extraction failed")
 
 
 # ── Research Pipeline endpoints ──────────────────────────────
@@ -778,11 +791,8 @@ def _load_run(run_id: str):
 def start_research(req: ResearchRequest, bg: BackgroundTasks):
     """Start yt-pipeline research job in background."""
     import uuid, subprocess
-    from urllib.parse import urlparse
 
-    parsed = urlparse(req.youtube_url)
-    if parsed.scheme not in ("http", "https") or not parsed.netloc:
-        raise HTTPException(status_code=400, detail="youtube_url must be an http(s) URL")
+    _validate_youtube_url(req.youtube_url)
     if req.topic.startswith("-"):
         raise HTTPException(status_code=400, detail="Invalid topic")
 
