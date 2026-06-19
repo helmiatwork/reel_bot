@@ -295,6 +295,204 @@ def search_youtube(query: str, max_results: int = 5) -> list:
 
 
 # ══════════════════════════════════════════════════════════════════
+# VTT Subtitle Parser (used by get_timecoded_transcript)
+# ══════════════════════════════════════════════════════════════════
+
+def _parse_vtt(vtt_path: str) -> list:
+    """
+    Parse a VTT subtitle file into segments: [{"start": float, "end": float, "text": str}, ...]
+    Times are in seconds. Returns empty list if parsing fails.
+    """
+    segments = []
+    try:
+        with open(vtt_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+    except Exception as e:
+        print(f"  [transcript] VTT read failed: {e}")
+        return []
+
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        # Look for timecode line (HH:MM:SS.mmm --> HH:MM:SS.mmm)
+        if '-->' in line:
+            try:
+                parts = line.split('-->')
+                start_str = parts[0].strip()
+                end_str = parts[1].strip().split()[0]  # strip cue settings after end time
+
+                # Convert HH:MM:SS.mmm to seconds
+                def time_to_sec(t):
+                    parts = t.split(':')
+                    h = int(parts[0]) if len(parts) > 2 else 0
+                    m = int(parts[-2])
+                    s = float(parts[-1])
+                    return h * 3600 + m * 60 + s
+
+                start = time_to_sec(start_str)
+                end = time_to_sec(end_str)
+
+                # Next non-empty line(s) are the subtitle text
+                text_lines = []
+                i += 1
+                while i < len(lines):
+                    content = lines[i].strip()
+                    if not content or '-->' in content:
+                        break
+                    text_lines.append(content)
+                    i += 1
+
+                text = ' '.join(text_lines)
+                if text:
+                    segments.append({"start": round(start, 2), "end": round(end, 2), "text": text})
+            except Exception as e:
+                print(f"  [transcript] VTT line parse failed: {e}")
+                i += 1
+        else:
+            i += 1
+
+    return segments
+
+
+def get_timecoded_transcript(youtube_url: str) -> list:
+    """
+    Fetch timecoded transcript for a YouTube video using auto-generated subtitles.
+    Uses yt-dlp's built-in subtitle download (--write-auto-sub), parses VTT, returns segments.
+    Returns: [{"start": float (seconds), "end": float (seconds), "text": str}, ...]
+    Returns [] gracefully if no subtitles available.
+    """
+    import tempfile
+    import shutil
+
+    print(f"\n[Transcript] Fetching auto-generated subtitles: {youtube_url}")
+
+    tmp_dir = tempfile.mkdtemp(prefix="vtt_")
+    try:
+        # yt-dlp downloads subtitles as .vtt files; we grab the first language available
+        result = subprocess.run([
+            "yt-dlp",
+            "--write-auto-sub",
+            "--sub-format", "vtt",
+            "--skip-download",  # don't download the video itself
+            "-o", f"{tmp_dir}/subs",  # output template
+            "--no-playlist",
+            youtube_url
+        ], capture_output=True, text=True, timeout=30)
+
+        if result.returncode != 0:
+            print(f"  [transcript] yt-dlp subtitle fetch failed: {result.stderr}")
+            return []
+
+        # Find the downloaded VTT file (yt-dlp names it subs.en.vtt or subs.<lang>.vtt)
+        vtt_files = list(Path(tmp_dir).glob("subs*.vtt"))
+        if not vtt_files:
+            print(f"  [transcript] No .vtt file found after yt-dlp fetch")
+            return []
+
+        vtt_path = vtt_files[0]
+        segments = _parse_vtt(str(vtt_path))
+        print(f"  [transcript] Parsed {len(segments)} segments from {vtt_path.name}")
+        return segments
+    except Exception as e:
+        print(f"  [transcript] Unexpected error: {e}")
+        return []
+    finally:
+        try:
+            shutil.rmtree(tmp_dir)
+        except Exception:
+            pass
+
+
+# ══════════════════════════════════════════════════════════════════
+# Frame extraction at explicit timestamps
+# ══════════════════════════════════════════════════════════════════
+
+def extract_frames_at(video_path: str, timestamps: list) -> list:
+    """
+    Extract frames at specific timestamps (in seconds).
+    Returns: [{"time": float, "path": str}, ...]
+    Reuses ffmpeg -ss approach from _extract_frames. Gracefully skips failed frames.
+    Cap timestamps to avoid CPU overload (max 12 frames).
+    """
+    import tempfile
+
+    if not timestamps:
+        return []
+
+    # Cap to protect the container
+    if len(timestamps) > 12:
+        print(f"  [frames] Capping {len(timestamps)} timestamps to 12")
+        timestamps = timestamps[:12]
+
+    tmp = tempfile.mkdtemp(prefix="frames_at_")
+    paths = []
+
+    for i, t in enumerate(sorted(timestamps)):
+        try:
+            t_float = float(t)
+            out = f"{tmp}/frame_{i:02d}_{t_float:.1f}s.jpg"
+            r = subprocess.run(
+                ["ffmpeg", "-nostdin", "-y", "-loglevel", "error", "-ss", str(t_float),
+                 "-i", video_path, "-frames:v", "1", "-vf", "scale=360:-1", out],
+                capture_output=True, text=True, timeout=30)
+            if Path(out).exists():
+                paths.append({"time": round(t_float, 2), "path": out})
+        except Exception as e:
+            print(f"  [frames] Frame at {t}s failed: {e}")
+
+    return paths
+
+
+def describe_frames(frames: list, model: str = ANALYZER_MODEL) -> list:
+    """
+    Run vision AI on a list of frames, return per-frame visual descriptions.
+    Frames: [{"time": float, "path": str}, ...]
+    Returns: [{"time": float, "visual_description": str}, ...]
+    Gracefully handles failures (returns empty description).
+    """
+    if not frames:
+        return []
+
+    print(f"\n[Vision] Analyzing {len(frames)} frames...")
+
+    results = []
+    for frame in frames:
+        try:
+            time = frame.get("time")
+            path = frame.get("path")
+            if not path or not Path(path).exists():
+                results.append({"time": time, "visual_description": ""})
+                continue
+
+            # Convert to base64 for vision call
+            import base64
+            b = base64.b64encode(Path(path).read_bytes()).decode()
+            content = [
+                {"type": "text", "text": "Describe what is on screen in one concise sentence. Be neutral and objective."},
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b}"}}
+            ]
+
+            response = httpx.post(
+                f"{CLIPROXY_URL}/chat/completions",
+                headers={"Authorization": f"Bearer {CLIPROXY_KEY}", "Content-Type": "application/json"},
+                json={"model": model,
+                      "messages": [{"role": "user", "content": content}],
+                      "temperature": 0.3, "max_tokens": 200},
+                timeout=30,
+            )
+            response.raise_for_status()
+            data = response.json()
+            desc = data["choices"][0]["message"]["content"]
+            db_log_usage(model, data.get("usage", {}), "clipfinder_frames")
+            results.append({"time": time, "visual_description": desc})
+        except Exception as e:
+            print(f"  [vision] Frame {frame.get('time')}s failed: {e}")
+            results.append({"time": frame.get("time"), "visual_description": ""})
+
+    return results
+
+
+# ══════════════════════════════════════════════════════════════════
 # STEP 2 — Analyze the video (frames + transcript)
 # ══════════════════════════════════════════════════════════════════
 
@@ -1157,6 +1355,8 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python yt_pipeline.py <youtube_url> [topic]")
         print("       python yt_pipeline.py --discover <niche> [topic]")
+        print("       python yt_pipeline.py --transcript <youtube_url>")
+        print("       python yt_pipeline.py --frames <video_path> <timestamps_csv>")
         sys.exit(1)
 
     if sys.argv[1] == "--discover":
@@ -1164,6 +1364,30 @@ if __name__ == "__main__":
         niche = sys.argv[2] if len(sys.argv) > 2 else ""
         topic = sys.argv[3] if len(sys.argv) > 3 else ""
         result = discover_and_produce(niche, topic)
+    elif sys.argv[1] == "--transcript":
+        # Fetch timecoded transcript from a YouTube URL
+        url = sys.argv[2] if len(sys.argv) > 2 else ""
+        if not url:
+            print("Usage: python yt_pipeline.py --transcript <youtube_url>")
+            sys.exit(1)
+        segments = get_timecoded_transcript(url)
+        print(json.dumps({"segments": segments}, indent=2, ensure_ascii=False))
+    elif sys.argv[1] == "--frames":
+        # Extract frames at specific timestamps and describe them
+        if len(sys.argv) < 4:
+            print("Usage: python yt_pipeline.py --frames <video_path> <timestamps_csv>")
+            print("Example: python yt_pipeline.py --frames /path/video.mp4 5.2,10.5,15.0")
+            sys.exit(1)
+        video_path = sys.argv[2]
+        timestamps_str = sys.argv[3]
+        try:
+            timestamps = [float(t.strip()) for t in timestamps_str.split(',')]
+        except ValueError:
+            print("Error: timestamps must be comma-separated floats (e.g., 5.2,10.5,15.0)")
+            sys.exit(1)
+        frames = extract_frames_at(video_path, timestamps)
+        descriptions = describe_frames(frames)
+        print(json.dumps({"frames": descriptions}, indent=2, ensure_ascii=False))
     else:
         url   = sys.argv[1]
         topic = sys.argv[2] if len(sys.argv) > 2 else ""
