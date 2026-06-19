@@ -262,36 +262,86 @@ def download_audio_only(youtube_url: str, output_path: str) -> str:
 
 def search_youtube(query: str, max_results: int = 5) -> list:
     """
-    Search YouTube for related videos using yt-dlp.
+    Search YouTube for related videos. Tries v3 API first (via REST httpx),
+    falls back to yt-dlp.
     Returns list of video metadata (no download).
     """
     print(f"\n[Footage Search] Searching YouTube: '{query}'")
 
-    result = subprocess.run([
-        "yt-dlp",
-        f"ytsearch{max_results}:{query}",   # yt-dlp built-in search
-        "--dump-json",
-        "--flat-playlist",                   # metadata only, no download
-        "--no-playlist"
-    ], capture_output=True, text=True)
+    # Try v3 API first (using httpx REST call to avoid SDK dependency in yt-pipeline)
+    youtube_api_key = os.getenv("YOUTUBE_API_KEY", "")
+    if youtube_api_key:
+        try:
+            print(f"  [v3 API] Searching with: {query}")
+            response = httpx.get(
+                "https://www.googleapis.com/youtube/v3/search",
+                params={
+                    "q": query,
+                    "part": "snippet",
+                    "type": "video",
+                    "order": "relevance",
+                    "maxResults": min(max_results, 50),
+                    "key": youtube_api_key,
+                },
+                timeout=10
+            )
+            if response.status_code == 200:
+                data = response.json()
+                videos = []
+                for item in data.get("items", []):
+                    snippet = item.get("snippet", {})
+                    videos.append({
+                        "title":    snippet.get("title", ""),
+                        "url":      f"https://www.youtube.com/watch?v={item.get('id', {}).get('videoId', '')}",
+                        "duration": None,  # v3 search doesn't include duration
+                        "channel":  snippet.get("channelTitle", ""),
+                        "id":       item.get("id", {}).get("videoId", ""),
+                    })
+                if videos:
+                    print(f"  Found {len(videos)} videos (v3)")
+                    return videos
+            elif response.status_code == 403:
+                print(f"  [v3 API] Quota exceeded, falling back to yt-dlp")
+            else:
+                print(f"  [v3 API] HTTP {response.status_code}, falling back to yt-dlp")
+        except Exception as e:
+            print(f"  [v3 API] Error: {e}, falling back to yt-dlp")
+    else:
+        print(f"  [v3 API] No YOUTUBE_API_KEY, using yt-dlp")
 
-    videos = []
-    for line in result.stdout.strip().split("\n"):
-        if line:
-            try:
-                info = json.loads(line)
-                videos.append({
-                    "title":    info.get("title"),
-                    "url":      info.get("url") or f"https://youtube.com/watch?v={info.get('id')}",
-                    "duration": info.get("duration"),
-                    "channel":  info.get("uploader") or info.get("channel"),
-                    "id":       info.get("id"),
-                })
-            except:
-                pass
+    # Fallback to yt-dlp
+    try:
+        result = subprocess.run([
+            "yt-dlp",
+            f"ytsearch{max_results}:{query}",   # yt-dlp built-in search
+            "--dump-json",
+            "--flat-playlist",                   # metadata only, no download
+            "--no-playlist"
+        ], capture_output=True, text=True)
 
-    print(f"Found {len(videos)} related videos")
-    return videos
+        videos = []
+        for line in result.stdout.strip().split("\n"):
+            if line:
+                try:
+                    info = json.loads(line)
+                    videos.append({
+                        "title":    info.get("title"),
+                        "url":      info.get("url") or f"https://youtube.com/watch?v={info.get('id')}",
+                        "duration": info.get("duration"),
+                        "channel":  info.get("uploader") or info.get("channel"),
+                        "id":       info.get("id"),
+                    })
+                except:
+                    pass
+
+        if videos:
+            print(f"  Found {len(videos)} videos (yt-dlp)")
+            return videos
+    except Exception as e:
+        print(f"  [yt-dlp] Error: {e}")
+
+    print(f"Found 0 videos")
+    return []
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -1357,6 +1407,8 @@ if __name__ == "__main__":
         print("       python yt_pipeline.py --discover <niche> [topic]")
         print("       python yt_pipeline.py --transcript <youtube_url>")
         print("       python yt_pipeline.py --frames <video_path> <timestamps_csv>")
+        print("       python yt_pipeline.py --v3-search <query> [max_results]")
+        print("       python yt_pipeline.py --v3-video <youtube_url>")
         sys.exit(1)
 
     if sys.argv[1] == "--discover":
@@ -1388,6 +1440,27 @@ if __name__ == "__main__":
         frames = extract_frames_at(video_path, timestamps)
         descriptions = describe_frames(frames)
         print(json.dumps({"frames": descriptions}, indent=2, ensure_ascii=False))
+    elif sys.argv[1] == "--v3-search":
+        # Search YouTube using v3 API (for fallback from pipeline-api)
+        query = sys.argv[2] if len(sys.argv) > 2 else ""
+        max_results = int(sys.argv[3]) if len(sys.argv) > 3 else 5
+        if not query:
+            print("Usage: python yt_pipeline.py --v3-search <query> [max_results]")
+            sys.exit(1)
+        videos = search_youtube(query, max_results)
+        print(json.dumps(videos, indent=2, ensure_ascii=False))
+    elif sys.argv[1] == "--v3-video":
+        # Get video metadata (for fallback from pipeline-api)
+        url = sys.argv[2] if len(sys.argv) > 2 else ""
+        if not url:
+            print("Usage: python yt_pipeline.py --v3-video <youtube_url>")
+            sys.exit(1)
+        try:
+            info = get_video_info(url)
+            print(json.dumps(info, indent=2, ensure_ascii=False, default=str))
+        except Exception as e:
+            print(json.dumps({"error": str(e)}, indent=2), file=sys.stderr)
+            sys.exit(1)
     else:
         url   = sys.argv[1]
         topic = sys.argv[2] if len(sys.argv) > 2 else ""

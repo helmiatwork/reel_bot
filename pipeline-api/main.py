@@ -882,3 +882,169 @@ def research_result(run_id: str):
     if run["status"] != "done":
         raise HTTPException(status_code=400, detail=f"Run status: {run['status']}")
     return {"run_id": run_id, "result": run["result"]}
+
+
+# ── YouTube Data API v3 endpoints (with yt-dlp fallback) ──────────────────────
+
+from pipeline_api.youtube_v3 import (
+    search as v3_search,
+    video_details as v3_video_details,
+    trending as v3_trending,
+    channel_uploads as v3_channel_uploads,
+    YouTubeNotConfigured, YouTubeQuotaError
+)
+from googleapiclient.errors import HttpError as GoogleHttpError
+
+
+@app.get("/youtube/search")
+def youtube_search(q: str, max_results: int = 10):
+    """
+    Search YouTube videos. v3 primary, yt-dlp fallback.
+
+    Query params:
+      q: search query (required, non-empty)
+      max_results: 1-50 (default 10)
+
+    Returns: {items: [...], source: "v3" | "yt-dlp"}
+    """
+    if not q or not q.strip():
+        raise HTTPException(status_code=400, detail="q parameter is required and cannot be empty")
+
+    max_results = max(1, min(int(max_results), 50))
+
+    # Try v3 first
+    try:
+        items = v3_search(q, max_results=max_results)
+        return _json({"items": items, "source": "v3"})
+    except YouTubeNotConfigured:
+        print(f"[youtube/search] v3 not configured, falling back to yt-dlp for: {q}")
+    except YouTubeQuotaError:
+        print(f"[youtube/search] v3 quota exceeded, falling back to yt-dlp for: {q}")
+    except GoogleHttpError as e:
+        print(f"[youtube/search] v3 HTTP error: {e.resp.status}, falling back to yt-dlp for: {q}")
+    except Exception as e:
+        print(f"[youtube/search] v3 error: {e}, falling back to yt-dlp for: {q}")
+
+    # Fallback to yt-dlp
+    try:
+        import subprocess
+        proc = subprocess.run(
+            ["python", "/app/yt_pipeline/yt_pipeline.py", "--v3-search", q, str(max_results)],
+            capture_output=True, text=True, timeout=30)
+        if proc.returncode == 0:
+            try:
+                result = json.loads(proc.stdout)
+                return _json({"items": result, "source": "yt-dlp"})
+            except Exception as e:
+                print(f"[youtube/search] yt-dlp JSON parse failed: {e}")
+        else:
+            print(f"[youtube/search] yt-dlp stderr: {proc.stderr}")
+    except Exception as e:
+        print(f"[youtube/search] yt-dlp fallback failed: {e}")
+
+    # All fallbacks failed
+    return _json({"items": [], "source": "unavailable", "error": "search unavailable"})
+
+
+@app.get("/youtube/video/{video_id}")
+def youtube_video(video_id: str):
+    """
+    Get detailed metadata for a single video. v3 primary, yt-dlp fallback.
+
+    Returns: {video: {...}, source: "v3" | "yt-dlp"}
+    """
+    if not video_id or not video_id.strip():
+        raise HTTPException(status_code=400, detail="video_id is required")
+
+    # Try v3 first
+    try:
+        video = v3_video_details(video_id)
+        return _json({"video": video, "source": "v3"})
+    except YouTubeNotConfigured:
+        print(f"[youtube/video] v3 not configured, falling back to yt-dlp for: {video_id}")
+    except YouTubeQuotaError:
+        print(f"[youtube/video] v3 quota exceeded, falling back to yt-dlp for: {video_id}")
+    except GoogleHttpError as e:
+        print(f"[youtube/video] v3 HTTP error: {e.resp.status}, falling back to yt-dlp for: {video_id}")
+    except Exception as e:
+        print(f"[youtube/video] v3 error: {e}, falling back to yt-dlp for: {video_id}")
+
+    # Fallback to yt-dlp
+    try:
+        import subprocess
+        video_url = f"https://www.youtube.com/watch?v={video_id}"
+        proc = subprocess.run(
+            ["python", "/app/yt_pipeline/yt_pipeline.py", "--v3-video", video_url],
+            capture_output=True, text=True, timeout=30)
+        if proc.returncode == 0:
+            try:
+                result = json.loads(proc.stdout)
+                return _json({"video": result, "source": "yt-dlp"})
+            except Exception as e:
+                print(f"[youtube/video] yt-dlp JSON parse failed: {e}")
+        else:
+            print(f"[youtube/video] yt-dlp stderr: {proc.stderr}")
+    except Exception as e:
+        print(f"[youtube/video] yt-dlp fallback failed: {e}")
+
+    # All fallbacks failed
+    return _json({"video": None, "source": "unavailable", "error": "video metadata unavailable"})
+
+
+@app.get("/youtube/trending")
+def youtube_trending(region: str = "US", max_results: int = 10, category_id: str = ""):
+    """
+    Get trending videos for a region. v3 only (no yt-dlp equivalent).
+
+    Query params:
+      region: ISO 3166-1 code (default US)
+      max_results: 1-50 (default 10)
+      category_id: optional YouTube category ID
+
+    Returns: {items: [...], source: "v3" | "unavailable"}
+    """
+    max_results = max(1, min(int(max_results), 50))
+
+    try:
+        items = v3_trending(
+            region_code=region.upper(),
+            max_results=max_results,
+            category_id=category_id if category_id else None
+        )
+        return _json({"items": items, "source": "v3"})
+    except (YouTubeNotConfigured, YouTubeQuotaError) as e:
+        print(f"[youtube/trending] v3 unavailable: {e}")
+    except GoogleHttpError as e:
+        print(f"[youtube/trending] v3 HTTP error: {e.resp.status}")
+    except Exception as e:
+        print(f"[youtube/trending] v3 error: {e}")
+
+    return _json({"items": [], "source": "unavailable", "error": "trending data unavailable (v3 API key or quota issue)"})
+
+
+@app.get("/youtube/channel/{channel_id}/uploads")
+def youtube_channel_uploads(channel_id: str, max_results: int = 10):
+    """
+    Get recent uploads from a channel. v3 only (no yt-dlp equivalent).
+
+    Query params:
+      max_results: 1-50 (default 10)
+
+    Returns: {items: [...], source: "v3" | "unavailable"}
+    """
+    if not channel_id or not channel_id.strip():
+        raise HTTPException(status_code=400, detail="channel_id is required")
+
+    max_results = max(1, min(int(max_results), 50))
+
+    try:
+        items = v3_channel_uploads(channel_id, max_results=max_results)
+        return _json({"items": items, "source": "v3"})
+    except (YouTubeNotConfigured, YouTubeQuotaError) as e:
+        print(f"[youtube/channel] v3 unavailable: {e}")
+    except GoogleHttpError as e:
+        print(f"[youtube/channel] v3 HTTP error: {e.resp.status}")
+    except Exception as e:
+        print(f"[youtube/channel] v3 error: {e}")
+
+    return _json({"items": [], "source": "unavailable", "error": "channel uploads unavailable (v3 API key or quota issue)"})
