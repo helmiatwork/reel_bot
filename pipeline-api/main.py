@@ -886,7 +886,7 @@ def research_result(run_id: str):
 
 # ── YouTube Data API v3 endpoints (with yt-dlp fallback) ──────────────────────
 
-from pipeline_api.youtube_v3 import (
+from youtube_v3 import (
     search as v3_search,
     video_details as v3_video_details,
     trending as v3_trending,
@@ -894,6 +894,24 @@ from pipeline_api.youtube_v3 import (
     YouTubeNotConfigured, YouTubeQuotaError
 )
 from googleapiclient.errors import HttpError as GoogleHttpError
+
+
+def _normalize_ytdlp_items(raw: list) -> list:
+    """Map yt-dlp flat-search items ({id,title,channel,url,duration}) to the same
+    shape the v3 path returns, so the dashboard renders identically on either path."""
+    out = []
+    for v in raw or []:
+        vid = v.get("id") or v.get("video_id") or ""
+        out.append({
+            "video_id": vid,
+            "title": v.get("title", ""),
+            "channel_title": v.get("channel", "") or v.get("channel_title", ""),
+            "channel_id": v.get("channel_id", ""),
+            "published_at": v.get("upload_date") or None,
+            "thumbnail": f"https://i.ytimg.com/vi/{vid}/hqdefault.jpg" if vid else "",
+            "duration_s": v.get("duration"),
+        })
+    return out
 
 
 @app.get("/youtube/search")
@@ -934,7 +952,7 @@ def youtube_search(q: str, max_results: int = 10):
         if proc.returncode == 0:
             try:
                 result = json.loads(proc.stdout)
-                return _json({"items": result, "source": "yt-dlp"})
+                return _json({"items": _normalize_ytdlp_items(result), "source": "yt-dlp"})
             except Exception as e:
                 print(f"[youtube/search] yt-dlp JSON parse failed: {e}")
         else:

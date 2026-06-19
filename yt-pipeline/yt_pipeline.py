@@ -1447,7 +1447,11 @@ if __name__ == "__main__":
         if not query:
             print("Usage: python yt_pipeline.py --v3-search <query> [max_results]")
             sys.exit(1)
-        videos = search_youtube(query, max_results)
+        # Route the helper's diagnostic prints to stderr so stdout is pure JSON
+        # (pipeline-api parses stdout with json.loads).
+        import contextlib
+        with contextlib.redirect_stdout(sys.stderr):
+            videos = search_youtube(query, max_results)
         print(json.dumps(videos, indent=2, ensure_ascii=False))
     elif sys.argv[1] == "--v3-video":
         # Get video metadata (for fallback from pipeline-api)
@@ -1456,7 +1460,9 @@ if __name__ == "__main__":
             print("Usage: python yt_pipeline.py --v3-video <youtube_url>")
             sys.exit(1)
         try:
-            info = get_video_info(url)
+            import contextlib
+            with contextlib.redirect_stdout(sys.stderr):
+                info = get_video_info(url)
             print(json.dumps(info, indent=2, ensure_ascii=False, default=str))
         except Exception as e:
             print(json.dumps({"error": str(e)}, indent=2), file=sys.stderr)
