@@ -630,6 +630,130 @@ def analytics_summary():
         return JSONResponse({"total_videos": 0, "error": str(e)})
 
 
+# ── Clipfinder endpoints (timecoded transcript + frames) ──────────────────────
+
+class TranscriptRequest(BaseModel):
+    youtube_url: str           # YouTube video URL
+
+
+class FramesRequest(BaseModel):
+    youtube_url: str           # YouTube video URL
+    timestamps: List[float]    # List of timestamps in seconds (max 12)
+
+
+@app.post("/clips/transcript")
+def get_transcript(req: TranscriptRequest):
+    """Fetch timecoded transcript from a YouTube video using auto-generated subtitles.
+    Returns: {segments: [{start: float, end: float, text: str}, ...]}
+    Returns empty segments [] gracefully if no subs available."""
+    import subprocess
+    from urllib.parse import urlparse
+
+    parsed = urlparse(req.youtube_url)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise HTTPException(status_code=400, detail="youtube_url must be an http(s) URL")
+
+    try:
+        # Call the yt_pipeline CLI to fetch transcript
+        proc = subprocess.run(
+            ["python", "/app/yt_pipeline/yt_pipeline.py", "--transcript", req.youtube_url],
+            capture_output=True, text=True, timeout=60)
+        if proc.returncode != 0:
+            # Gracefully return empty segments on failure
+            return _json({"segments": []})
+        try:
+            result = json.loads(proc.stdout)
+            return _json(result)
+        except Exception as e:
+            print(f"  [transcript] JSON parse failed: {e}")
+            return _json({"segments": []})
+    except Exception as e:
+        print(f"  [transcript] endpoint error: {e}")
+        raise HTTPException(status_code=500, detail=f"Transcript fetch failed: {e}")
+
+
+@app.post("/clips/frames")
+def get_frames(req: FramesRequest):
+    """Extract frames at specific timestamps and describe them via vision AI.
+    Body: {youtube_url, timestamps: [float, ...]} (max 12 timestamps)
+    Returns: {frames: [{time: float, visual_description: str}, ...]}
+    Frame extraction is synchronous; may take 30-90s depending on video size + vision calls."""
+    import subprocess
+    from urllib.parse import urlparse
+
+    parsed = urlparse(req.youtube_url)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise HTTPException(status_code=400, detail="youtube_url must be an http(s) URL")
+
+    if not req.timestamps:
+        raise HTTPException(status_code=400, detail="timestamps list cannot be empty")
+
+    if len(req.timestamps) > 12:
+        raise HTTPException(status_code=400, detail="max 12 timestamps per request")
+
+    try:
+        # First download the video
+        print(f"[frames] Downloading video from {req.youtube_url}")
+        import tempfile
+        tmp_dir = tempfile.mkdtemp(prefix="frames_")
+
+        proc = subprocess.run(
+            ["python", "-c", f"""
+import subprocess
+from pathlib import Path
+
+url = {repr(req.youtube_url)}
+output_path = {repr(tmp_dir)}
+output_template = f"{{output_path}}/source_video.%(ext)s"
+
+result = subprocess.run([
+    "yt-dlp",
+    "-f", "bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/best[ext=mp4][height<=480]/best[height<=480]/best",
+    "--merge-output-format", "mp4",
+    "--retries", "5", "--fragment-retries", "5",
+    "--socket-timeout", "30",
+    "-o", output_template,
+    "--no-playlist",
+    url
+], capture_output=False)
+
+if result.returncode == 0:
+    for f in Path(output_path).glob("source_video.*"):
+        print(str(f))
+        break
+"""],
+            capture_output=True, text=True, timeout=300)
+
+        if proc.returncode != 0:
+            raise Exception(f"Video download failed: {proc.stderr}")
+
+        video_path = proc.stdout.strip().split('\n')[-1]
+        if not video_path or not Path(video_path).exists():
+            raise Exception("Downloaded video file not found")
+
+        print(f"[frames] Video downloaded to {video_path}")
+
+        # Now extract frames at timestamps via yt_pipeline CLI
+        timestamps_csv = ','.join(str(t) for t in req.timestamps)
+        proc = subprocess.run(
+            ["python", "/app/yt_pipeline/yt_pipeline.py", "--frames", video_path, timestamps_csv],
+            capture_output=True, text=True, timeout=120)
+
+        if proc.returncode != 0:
+            print(f"[frames] Frame extraction failed: {proc.stderr}")
+            raise Exception(f"Frame extraction failed: {proc.stderr}")
+
+        try:
+            result = json.loads(proc.stdout)
+            return _json(result)
+        except Exception as e:
+            print(f"  [frames] JSON parse failed: {e}")
+            raise Exception(f"Frame result parse failed: {e}")
+    except Exception as e:
+        print(f"  [frames] endpoint error: {e}")
+        raise HTTPException(status_code=500, detail=f"Frame extraction failed: {str(e)}")
+
+
 # ── Research Pipeline endpoints ──────────────────────────────
 
 class ResearchRequest(BaseModel):
