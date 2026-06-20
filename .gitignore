@@ -19,3 +19,4 @@ openclaw/agents/reelbot/sessions/
 openclaw/agents/*/sessions/
 .gitnexus
 .claude/
+docker-compose.override.yml
