@@ -1,0 +1,2423 @@
+# Niche matrix — 3 tier: vertikal (root) → niche → micro-niche
+# Sumber tier-2: db/niches.sql (106 niche). Tier-3 (micro) di-author.
+version: 1
+verticals:
+  - slug: v-alam
+    name: Alam
+    description: Konten alam, hewan, dan satwa liar dengan visual relaksasi atau fakta.
+    niches:
+      - slug: pet-animals
+        name: "Hewan / Pet"
+        description: Footage hewan lucu + cerita.
+        faceless: true
+        difficulty: menengah
+        rpm: rendah
+        formats: footage + caption + musik
+        example_hook: "Kucing ini tiap hari nungguin..."
+        micro:
+          - slug: pet-animals-kucing-viral
+            name: Kucing Viral Indonesia
+            description: Momen lucu dan menggemaskan kucing peliharaan lokal, dirangkum dari konten viral untuk penonton pecinta kucing.
+            example_hook: "Kucing ini tiap hari nungguin majikannya pulang kerja, sampai suatu hari..."
+          - slug: pet-animals-anjing-golden
+            name: Anjing Golden & Labrador
+            description: Footage anjing ras populer yang setia dan lucu, menyasar penonton keluarga muda yang tertarik punya anjing peliharaan.
+            example_hook: "Anjing ini nangis setiap kali bayinya dibawa masuk, bukan karena cemburu..."
+          - slug: pet-animals-hewan-exotic
+            name: Hewan Peliharaan Eksotik
+            description: Konten hewan peliharaan tidak biasa seperti musang, landak, atau reptil, untuk penonton yang tertarik dunia pet di luar kucing-anjing.
+            example_hook: "Dia pelihara ular di apartemen, dan tetangganya gak pernah tahu..."
+
+      - slug: wildlife
+        name: "Satwa Liar / Fakta Hewan"
+        description: Fakta & footage satwa.
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: footage + voiceover
+        example_hook: "Hewan ini bisa hidup tanpa kepala..."
+        micro:
+          - slug: wildlife-predator-ekstrem
+            name: Predator Paling Mematikan
+            description: Fakta mengejutkan tentang predator puncak di darat dan laut, untuk penonton yang suka konten sains alam yang menegangkan.
+            example_hook: "Buaya ini gak butuh makan selama 2 tahun, tapi tetap berbahaya..."
+          - slug: wildlife-hewan-indonesia
+            name: Satwa Liar Endemik Indonesia
+            description: Fakta dan footage satwa yang hanya ada di Indonesia seperti komodo, anoa, dan babirusa, menyasar kebanggaan lokal.
+            example_hook: "Hewan ini cuma ada di satu pulau di Indonesia, dan hampir punah..."
+          - slug: wildlife-adaptasi-ekstrem
+            name: Adaptasi Hewan di Habitat Ekstrem
+            description: Satwa yang berevolusi bertahan di kondisi ekstrem — gurun, kutub, laut dalam — untuk penonton sains kasual yang suka fakta mengejutkan.
+            example_hook: "Ikan ini hidup di 8.000 meter di bawah laut, tempat manusia gak bisa bertahan..."
+
+      - slug: nature-relax
+        name: "Alam / Relaxing"
+        description: Footage alam + lo-fi.
+        faceless: true
+        difficulty: pemula
+        rpm: rendah
+        formats: footage sinematik + musik
+        example_hook: "Berhenti scroll, tarik napas..."
+        micro:
+          - slug: nature-relax-hutan-indonesia
+            name: Hutan Tropis Indonesia ASMR
+            description: Footage sinematik hutan hujan Indonesia dengan suara alam asli dan musik lo-fi, untuk penonton yang butuh jeda dari hiruk-pikuk kota.
+            example_hook: "Berhenti scroll sebentar. Dengarkan ini..."
+          - slug: nature-relax-pantai-sunset
+            name: Pantai & Sunset Nusantara
+            description: Timelapse dan footage pantai-pantai Indonesia saat golden hour, cocok untuk penonton yang merindukan suasana laut.
+            example_hook: "5 menit ini akan reset mood kamu yang rusak seharian..."
+          - slug: nature-relax-gunung-kabut
+            name: Pegunungan & Kabut Pagi
+            description: Footage pegunungan Indonesia dengan kabut pagi dan suara alam, menyasar penonton urban yang kangen suasana dingin dan tenang.
+            example_hook: "Kalau kamu lelah, tonton ini dulu sebelum tidur..."
+
+      - slug: aquarium
+        name: "Aquascape / Ikan"
+        description: Aquascape, ikan hias, setup.
+        faceless: true
+        difficulty: menengah
+        rpm: rendah
+        formats: close-up + ASMR + time-lapse
+        example_hook: "Tank kosong ini jadi surga bawah air..."
+        micro:
+          - slug: aquarium-build-timelapse
+            name: Build Aquascape Timelapse
+            description: Proses membangun aquascape dari tank kosong hingga jadi dalam format timelapse, untuk komunitas hobi ikan hias Indonesia.
+            example_hook: "Tank kosong ini jadi surga bawah air dalam 7 hari..."
+          - slug: aquarium-ikan-lokal
+            name: Ikan Hias Lokal Indonesia
+            description: Showcase ikan hias endemik Indonesia seperti arwana, cupang, dan louhan, menyasar penggemar ikan yang bangga produk lokal.
+            example_hook: "Ikan ini asli Indonesia, harganya bisa capai puluhan juta..."
+          - slug: aquarium-troubleshoot
+            name: Masalah Umum Aquarium & Solusinya
+            description: Konten edukatif membahas masalah nyata aquarium seperti air keruh, alga meledak, dan ikan sakit, untuk pemula yang baru mulai hobi.
+            example_hook: "Air aquarium kamu hijau terus? Ini penyebab yang sering diabaikan..."
+
+  - slug: v-berita
+    name: Berita
+    description: Konten berita, analisis, dan komentar peristiwa terkini di Indonesia dan dunia.
+    niches:
+      - slug: explainer
+        name: "Explainer / \"Kenapa\""
+        description: Jelasin kenapa X terjadi.
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: motion-graphic + voiceover
+        example_hook: "Kenapa harga telur tiba-tiba naik..."
+        micro:
+          - slug: explainer-ekonomi-sehari-hari
+            name: Explainer Ekonomi Sehari-hari
+            description: Menjelaskan fenomena ekonomi yang dirasakan langsung masyarakat seperti inflasi, harga BBM, dan kurs rupiah dalam bahasa yang mudah dipahami.
+            example_hook: "Kenapa harga telur tiba-tiba naik padahal gaji kamu gak naik-naik..."
+          - slug: explainer-kebijakan-pemerintah
+            name: Bedah Kebijakan Pemerintah
+            description: Mengurai kebijakan publik baru dalam format visualisasi sederhana, untuk warga yang ingin paham tanpa baca dokumen panjang.
+            example_hook: "Aturan baru ini berlaku bulan depan, dan kamu pasti kena dampaknya..."
+          - slug: explainer-konflik-global
+            name: Konflik Global Dijelaskan Singkat
+            description: Memetakan konflik internasional yang ramai dibicarakan dalam narasi kronologis 60 detik, untuk penonton yang ingin konteks tanpa baca berita panjang.
+            example_hook: "Kenapa dua negara ini tiba-tiba perang setelah 50 tahun damai..."
+
+      - slug: news-commentary
+        name: "Berita / Komentar"
+        description: Bahas berita terkini + opini.
+        faceless: false
+        difficulty: sulit
+        rpm: sedang
+        formats: footage + voiceover + caption
+        example_hook: "Yang gak diberitakan soal kejadian ini..."
+        micro:
+          - slug: news-commentary-viral-sosmed
+            name: Komentar Isu Viral Sosmed
+            description: Membahas isu yang sedang trending di Twitter/X dan TikTok Indonesia dengan analisis singkat yang tidak memihak, untuk penonton yang ingin perspektif lebih dalam.
+            example_hook: "Semua orang ribut soal ini, tapi gak ada yang bahas sisi ini..."
+          - slug: news-commentary-politik-lokal
+            name: Politik Lokal & Pilkada
+            description: Komentar dan analisis singkat tentang dinamika politik daerah dan pemilihan kepala daerah, menyasar pemilih muda yang baru melek politik.
+            example_hook: "Calon ini viral karena janji ini, tapi rekam jejaknya bilang lain..."
+          - slug: news-commentary-isu-lingkungan
+            name: Isu Lingkungan Indonesia
+            description: Komentar atas kejadian lingkungan nyata — banjir, kebakaran hutan, sampah laut — dengan data dan konteks yang sering hilang dari berita utama.
+            example_hook: "Bencana ini sudah diprediksi 5 tahun lalu, tapi gak ada yang dengarkan..."
+
+  - slug: v-cerita
+    name: Cerita
+    description: Konten narasi, horor, misteri, dan recap untuk penonton yang suka cerita pendek.
+    niches:
+      - slug: ai-story
+        name: "AI Story / Reddit"
+        description: Narasi cerita + AI voice + gameplay bg.
+        faceless: true
+        difficulty: pemula
+        rpm: sedang
+        formats: AI voice + gameplay + auto-caption
+        example_hook: "Mantanku kira aku gak tahu, sampai..."
+        micro:
+          - slug: ai-story-hubungan-toxic
+            name: Cerita Hubungan Toxic & Manipulatif
+            description: Narasi cerita pendek tentang hubungan beracun dari sudut pandang orang pertama, diangkat dari Reddit-style confession, untuk penonton yang suka drama relatable.
+            example_hook: "Mantanku kira aku gak tahu, sampai aku temukan ini di HP-nya..."
+          - slug: ai-story-keluarga-rahasia
+            name: Rahasia Gelap Keluarga
+            description: Cerita keluarga dengan twist mengejutkan yang diungkap perlahan, menyasar penonton yang suka drama keluarga dengan akhir yang tidak terduga.
+            example_hook: "Baru setelah ayah meninggal, aku tahu siapa dia sebenarnya..."
+          - slug: ai-story-kerja-absurd
+            name: Kisah Absurd di Tempat Kerja
+            description: Cerita lucu sekaligus miris tentang drama kantor dan atasan gila dari perspektif karyawan, untuk penonton pekerja muda yang butuh validasi.
+            example_hook: "Atasan ini minta aku kerja lembur di hari pernikahanku sendiri..."
+
+      - slug: scary-story
+        name: "Cerita Horor"
+        description: Cerita seram + ambience.
+        faceless: true
+        difficulty: pemula
+        rpm: sedang
+        formats: voiceover gelap + ambience
+        example_hook: "Jam 3 pagi, aku dengar suara ini..."
+        micro:
+          - slug: scary-story-urban-legend
+            name: Urban Legend Indonesia
+            description: Versi audio-sinematik dari urban legend khas Indonesia seperti Kuntilanak, Pocong, dan Tuyul, menyasar penonton horor lokal yang suka cerita familier.
+            example_hook: "Di kota ini ada satu gang yang warganya gak pernah lewat malam hari..."
+          - slug: scary-story-true-paranormal
+            name: Pengalaman Paranormal Nyata
+            description: Cerita pengalaman horor nyata yang dikirim penonton atau dikurasi dari forum lokal, diformat ulang dengan narasi dramatis dan ambiens suara.
+            example_hook: "Kameranya terus mati setiap kali diarahkan ke sudut itu..."
+          - slug: scary-story-rumah-angker
+            name: Rumah Angker & Tempat Terlarang
+            description: Narasi tentang lokasi angker terkenal di Indonesia dengan sejarah kelam di baliknya, untuk penonton horor yang suka konteks historis.
+            example_hook: "Rumah ini sudah 20 tahun kosong, dan siapa yang masuk gak pernah sama lagi..."
+
+      - slug: text-story
+        name: "Chat / Text Story"
+        description: Cerita lewat screenshot chat.
+        faceless: true
+        difficulty: pemula
+        rpm: rendah
+        formats: chat bubble + SFX + musik
+        example_hook: "Dia kirim chat ini sebelum hilang..."
+        micro:
+          - slug: text-story-percakapan-mencurigakan
+            name: Chat Percakapan Mencurigakan
+            description: Cerita pendek berbasis percakapan chat yang mengandung red flag atau twist mengejutkan, untuk penonton yang suka format visual teks yang mudah dikonsumsi.
+            example_hook: "Dia kirim chat ini jam 2 pagi sebelum semua berubah..."
+          - slug: text-story-mantan-comeback
+            name: Chat Mantan yang Comeback
+            description: Drama relatable tentang mantan yang tiba-tiba muncul lagi dengan berbagai alasan, format chat bubble dengan reaksi komedi atau dramatis.
+            example_hook: "3 tahun gak ada kabar, dia kirim 'hei' jam 11 malam..."
+          - slug: text-story-scam-expose
+            name: Ekspos Chat Penipu
+            description: Rekap percakapan asli dengan penipu online yang terekspos, edukatif sekaligus menghibur, untuk penonton yang ingin waspada modus baru.
+            example_hook: "Dia bilang mau kirim hadiah, tapi minta ini dulu..."
+
+      - slug: true-crime
+        name: "True Crime"
+        description: Kasus kriminal nyata + narasi.
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: voiceover + footage + timeline
+        example_hook: "Dia hilang tanpa jejak, lalu..."
+        micro:
+          - slug: true-crime-kasus-indonesia
+            name: Kasus Kriminal Terkenal Indonesia
+            description: Rekonstruksi kasus kriminal besar Indonesia yang pernah menghebohkan publik, dengan narasi kronologis dan fakta yang sering luput dari pemberitaan awal.
+            example_hook: "Kasus ini sudah ditutup, tapi ada satu detail yang gak pernah dijelaskan..."
+          - slug: true-crime-modus-penipuan
+            name: Modus Penipuan yang Memakan Korban
+            description: Rekap kasus penipuan skala besar — investasi bodong, arisan online, romansa — yang mengorbankan banyak orang, disajikan sebagai peringatan.
+            example_hook: "Ribuan orang percaya dia, sampai uangnya raib semua..."
+          - slug: true-crime-pembunuhan-terencana
+            name: Pembunuhan Terencana & Persidangan
+            description: Narasi mendalam kasus pembunuhan berencana di Indonesia dengan rekonstruksi motif dan proses hukum, untuk penonton true crime yang ingin kasus lokal.
+            example_hook: "Semua orang pikir itu kecelakaan, sampai sidang mulai..."
+
+      - slug: mystery
+        name: "Misteri / Konspirasi"
+        description: Misteri belum terpecahkan, teori.
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: voiceover + footage misterius
+        example_hook: "Sinyal ini dari luar angkasa, tapi..."
+        micro:
+          - slug: mystery-hilang-misterius
+            name: Orang Hilang Misterius
+            description: Kasus orang hilang yang belum terpecahkan dari seluruh dunia maupun Indonesia, dengan teori dan fakta yang masih simpang siur.
+            example_hook: "Dia hilang di tengah keluarganya, dan kamera tidak menangkap apapun..."
+          - slug: mystery-fenomena-tak-terpecahkan
+            name: Fenomena Alam Tak Terpecahkan
+            description: Fenomena fisik dan alam yang belum ada penjelasan sains pasti, disajikan dengan nada penasaran bukan sensasional.
+            example_hook: "Kejadian ini terekam ratusan kali tapi sains belum bisa jelaskan..."
+          - slug: mystery-konspirasi-terverifikasi
+            name: Konspirasi yang Ternyata Nyata
+            description: Teori konspirasi masa lalu yang akhirnya terbukti benar dengan dokumen resmi, memberi penonton rasa validasi dan kejutan.
+            example_hook: "Dulu dianggap gila karena percaya ini, sekarang dokumen resmi membuktikannya..."
+
+      - slug: plot-recap
+        name: "Recap Film / Alur"
+        description: Ringkas alur film/series.
+        faceless: true
+        difficulty: menengah
+        rpm: rendah
+        formats: "klip film + voiceover (hati2 hak cipta)"
+        example_hook: "Pria ini dipenjara 15 tahun tanpa alasan..."
+        micro:
+          - slug: plot-recap-film-indonesia
+            name: Recap Film Indonesia Klasik & Baru
+            description: Ringkasan alur film Indonesia dari era klasik hingga terkini dengan konteks budaya, menyasar penonton yang ingin nostalgia atau tahu sinopsis sebelum nonton.
+            example_hook: "Film ini meraih 5 juta penonton, dan ini alasan sebenarnya kenapa..."
+          - slug: plot-recap-anime-populer
+            name: Recap Anime Populer dalam Bahasa Indonesia
+            description: Ringkasan arc atau season anime populer dalam narasi Bahasa Indonesia yang ringkas, untuk penonton anime yang ketinggalan atau ingin refresh ingatan.
+            example_hook: "Arc ini bikin jutaan penonton nangis, ini kenapa..."
+          - slug: plot-recap-twist-ending
+            name: Film dengan Twist Ending Gila
+            description: Khusus membahas film dan series dengan plot twist mengejutkan, dianalisis dengan penjelasan detail apa yang sebenarnya terjadi.
+            example_hook: "Kamu pasti miss detail ini di menit ke-12 yang ubah segalanya..."
+
+  - slug: v-edukasi
+    name: Edukasi
+    description: Konten edukatif ringan hingga mendalam — fakta, sains, sejarah, dan tips praktis.
+    niches:
+      - slug: fakta-unik
+        name: Fakta Unik
+        description: "Fakta menarik/aneh + voiceover + stok visual."
+        faceless: true
+        difficulty: pemula
+        rpm: rendah
+        formats: voiceover + stok + hard-sub
+        example_hook: "Kamu gak akan percaya ini nyata..."
+        micro:
+          - slug: fakta-unik-luar-angkasa
+            name: Fakta Luar Angkasa yang Bikin Ngeri
+            description: Fenomena kosmik yang gak masuk akal tapi nyata, untuk penonton sains kasual yang suka rasa takjub sekaligus merinding.
+            example_hook: "Planet ini hujan berlian setiap hari dan gak ada yang bisa ambilnya..."
+          - slug: fakta-unik-hewan-ekstrem
+            name: Hewan dengan Kemampuan Gila
+            description: Fakta hewan yang bikin otak nge-lag karena terlalu luar biasa, cocok untuk penonton nature yang suka konten pendek penuh kejutan.
+            example_hook: "Ubur-ubur ini secara teknis gak bisa mati karena bisa balik jadi bayi..."
+          - slug: fakta-unik-indonesia
+            name: Fakta Indonesia yang Gak Diajarkan di Sekolah
+            description: Fakta tersembunyi tentang Indonesia — geografis, historis, budaya — yang tidak masuk kurikulum, untuk penonton lokal yang suka bangga dengan negaranya.
+            example_hook: "Kamu lahir di sini tapi gak tahu kalau ini ada di Indonesia..."
+
+      - slug: top-list
+        name: "Top List / Ranking"
+        description: "Listicle \"5 terbaik...\", \"3 hal...\"."
+        faceless: true
+        difficulty: pemula
+        rpm: sedang
+        formats: voiceover + ranking visual
+        example_hook: "5 barang ini bikin hidup lebih mudah..."
+        micro:
+          - slug: top-list-produk-lokal
+            name: Ranking Produk Lokal Indonesia Terbaik
+            description: Listicle berbasis riset tentang produk buatan Indonesia yang bersaing di kelasnya, menyasar penonton yang ingin bangga dan belanja lokal.
+            example_hook: "5 produk Indonesia ini lebih bagus dari merek luar tapi jarang yang tahu..."
+          - slug: top-list-negara-unik
+            name: Ranking Negara dengan Fakta Paling Unik
+            description: Komparasi negara-negara dengan keunikan statistik atau budaya yang mengejutkan, untuk penonton geography dan trivia global.
+            example_hook: "Negara ini punya lebih banyak piramida dari Mesir, tapi gak ada yang bahas..."
+          - slug: top-list-kesalahan-umum
+            name: Kesalahan Umum yang Ternyata Salah
+            description: Listicle hal-hal yang dianggap benar oleh kebanyakan orang tapi sebenarnya mitos atau salah kaprah, format ringan untuk penonton umum.
+            example_hook: "3 hal yang selalu kamu lakukan salah tanpa sadar..."
+
+      - slug: history
+        name: Sejarah
+        description: Kisah sejarah + footage arsip + narasi.
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: voiceover + arsip + peta
+        example_hook: "Kerajaan ini hilang dalam semalam..."
+        micro:
+          - slug: history-kerajaan-nusantara
+            name: Kerajaan Nusantara yang Terlupakan
+            description: Kisah kerajaan-kerajaan Indonesia yang pernah berjaya tapi jarang dibahas di buku sejarah sekolah, dengan peta dan visualisasi wilayah.
+            example_hook: "Kerajaan ini lebih besar dari Majapahit, tapi gak ada di buku pelajaran kamu..."
+          - slug: history-peristiwa-dunia-tersembunyi
+            name: Peristiwa Dunia yang Sejarahnya Diputarbalikkan
+            description: Momen sejarah dunia yang versi resminya berbeda dari fakta di lapangan, disajikan dengan sumber arsip dan narasi kronologis.
+            example_hook: "Kejadian ini diajarkan terbalik di sekolah selama puluhan tahun..."
+          - slug: history-tokoh-terlupakan
+            name: Pahlawan dan Tokoh Sejarah yang Dilupakan
+            description: Biografi singkat tokoh berpengaruh yang kontribusinya besar tapi namanya jarang disebut, termasuk perempuan dan tokoh non-Jawa dalam sejarah Indonesia.
+            example_hook: "Perempuan ini yang sebenarnya merancang strategi pertempuran itu, tapi namanya hilang..."
+
+      - slug: science
+        name: Sains Populer
+        description: Penjelasan sains sederhana + animasi.
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: animasi + voiceover
+        example_hook: "Kenapa langit biru? Bukan alasan yang kamu kira..."
+        micro:
+          - slug: science-tubuh-manusia
+            name: Fakta Tubuh Manusia yang Mengejutkan
+            description: Penjelasan sains tentang cara kerja tubuh manusia yang jarang diketahui, disajikan dengan analogi sederhana dan visual animasi untuk penonton umum.
+            example_hook: "Otakmu sekarang sedang bohongi kamu, dan ini buktinya..."
+          - slug: science-fisika-sehari-hari
+            name: Fisika di Balik Kejadian Sehari-hari
+            description: Menjelaskan prinsip fisika yang bekerja di balik hal biasa seperti es batu, cermin, dan balon, membuat sains terasa relevan bukan abstrak.
+            example_hook: "Kenapa es batu mengapung? Jawaban ini selamatkan bumi kita..."
+          - slug: science-psikologi-perilaku
+            name: Psikologi di Balik Perilaku Manusia
+            description: Penjelasan singkat fenomena psikologi yang menjelaskan kenapa manusia berperilaku tertentu, menyasar penonton yang suka self-awareness dan ilmu sosial.
+            example_hook: "Otak kamu sengaja lupa hal ini untuk melindungi dirimu sendiri..."
+
+      - slug: geography
+        name: "Geografi / Negara"
+        description: Perbandingan negara, peta, budaya.
+        faceless: true
+        difficulty: pemula
+        rpm: sedang
+        formats: peta + bar-chart + voiceover
+        example_hook: "Negara terkecil di dunia cuma..."
+        micro:
+          - slug: geography-perbandingan-negara-asean
+            name: Perbandingan Negara ASEAN
+            description: Komparasi data ekonomi, budaya, dan kualitas hidup negara-negara ASEAN, menyasar penonton Indonesia yang penasaran posisi negaranya di kawasan.
+            example_hook: "Indonesia vs Vietnam 10 tahun lalu vs sekarang, siapa yang menang..."
+          - slug: geography-batas-wilayah-unik
+            name: Batas Wilayah Negara yang Absurd
+            description: Kasus-kasus perbatasan negara yang aneh secara geografis atau historis — enklave, eksklave, dan sengketa wilayah yang tidak pernah selesai.
+            example_hook: "Ada desa di sini yang berada di dua negara sekaligus, warga pilih sendiri..."
+          - slug: geography-indonesia-kepulauan
+            name: Fakta Geografi Indonesia yang Bikin Bangga
+            description: Angka dan fakta geografi Indonesia yang mengejutkan — luas laut, jumlah pulau, keanekaragaman hayati — disajikan sebagai konten kebanggaan lokal.
+            example_hook: "Indonesia punya lebih banyak pulau dari yang pernah dihitung resmi..."
+
+      - slug: language
+        name: Belajar Bahasa
+        description: Kosakata/frasa bahasa asing singkat.
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: teks + audio + repetisi
+        example_hook: "3 kata Inggris yang sering salah..."
+        micro:
+          - slug: language-inggris-kerja
+            name: Bahasa Inggris untuk Dunia Kerja
+            description: Kosakata dan frasa Inggris yang sering dipakai di lingkungan profesional dan email kantor, untuk pekerja muda yang ingin terdengar lebih natural.
+            example_hook: "Jangan bilang 'noted' lagi di email kantor, ganti dengan ini..."
+          - slug: language-slang-global
+            name: Slang Bahasa Asing yang Viral
+            description: Istilah slang dari bahasa Inggris, Korea, atau Jepang yang sering muncul di media sosial tapi jarang ada yang jelaskan artinya dengan benar.
+            example_hook: "Kata ini dipakai jutaan orang tapi artinya yang benar berbeda dari yang kamu kira..."
+          - slug: language-bahasa-daerah-indonesia
+            name: Kosakata Bahasa Daerah yang Keren
+            description: Kata-kata unik dari bahasa daerah Indonesia yang tidak ada padanannya dalam Bahasa Indonesia atau Inggris, memperkenalkan kekayaan linguistik lokal.
+            example_hook: "Bahasa Jawa punya kata untuk perasaan ini yang gak bisa diterjemahkan..."
+
+      - slug: data-viz
+        name: "Data / Statistik"
+        description: Visualisasi data, bar-chart race.
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: bar-race + voiceover
+        example_hook: "Negara terkaya 1900 vs 2025..."
+        micro:
+          - slug: data-viz-ekonomi-indonesia
+            name: Ekonomi Indonesia dalam Grafik
+            description: Visualisasi data makroekonomi Indonesia — pertumbuhan, inflasi, pengangguran — dalam format yang mudah dipahami untuk penonton awam yang ingin melek ekonomi.
+            example_hook: "Gaji UMR 2010 vs 2024 vs daya belinya, ini yang terjadi sebenarnya..."
+          - slug: data-viz-bar-race-global
+            name: Bar Chart Race Sejarah Dunia
+            description: Animasi bar chart race menampilkan perubahan peringkat negara dalam berbagai metrik dari waktu ke waktu, format yang sudah terbukti viral.
+            example_hook: "10 negara terkuat 1800 sampai 2024 dalam 60 detik..."
+          - slug: data-viz-media-sosial-indonesia
+            name: Statistik Media Sosial Indonesia
+            description: Visualisasi data penggunaan media sosial, tren platform, dan perilaku digital masyarakat Indonesia, relevan untuk kreator dan pemasar.
+            example_hook: "Platform ini kalahkan Instagram di Indonesia tanpa yang sadar..."
+
+      - slug: study-tips
+        name: Tips Belajar
+        description: Metode belajar, produktivitas pelajar.
+        faceless: true
+        difficulty: pemula
+        rpm: sedang
+        formats: teks + b-roll + voiceover
+        example_hook: "Cara belajar 2x lebih cepat..."
+        micro:
+          - slug: study-tips-ujian-nasional
+            name: Tips Persiapan Ujian dan Seleksi
+            description: Strategi belajar spesifik untuk ujian SNBT, CPNS, dan ujian sertifikasi populer Indonesia, menyasar pelajar dan fresh graduate.
+            example_hook: "Orang yang lulus SNBT gak belajar lebih lama, mereka belajar dengan cara ini..."
+          - slug: study-tips-fokus-era-digital
+            name: Cara Fokus Belajar di Era Distraksi
+            description: Teknik kognitif untuk mempertahankan fokus saat belajar di tengah notifikasi dan distraksi digital, berbasis riset psikologi.
+            example_hook: "Buka HP sekali saja saat belajar sudah hancurkan sesi studimu selama ini..."
+          - slug: study-tips-metode-hafalan
+            name: Teknik Hafalan yang Terbukti Sains
+            description: Metode menghafal berbasis ilmu saraf seperti spaced repetition dan memory palace, dijelaskan dengan cara praktis untuk pelajar Indonesia.
+            example_hook: "Cara hafal 100 kosakata dalam sehari yang dipakai juara olimpiade..."
+
+      - slug: did-you-know
+        name: Tahukah Kamu
+        description: Trivia cepat satu topik per video.
+        faceless: true
+        difficulty: pemula
+        rpm: rendah
+        formats: voiceover + stok + teks
+        example_hook: "Tahukah kamu otak buang 1% sel tiap..."
+        micro:
+          - slug: did-you-know-makanan-indonesia
+            name: Tahukah Kamu Soal Makanan Indonesia
+            description: Trivia mengejutkan tentang asal-usul dan fakta di balik makanan populer Indonesia yang sering dimakan tapi jarang diketahui sejarahnya.
+            example_hook: "Tahukah kamu rendang bukan asli Padang? Ini asal-usul sebenarnya..."
+          - slug: did-you-know-teknologi-sehari
+            name: Tahukah Kamu Teknologi yang Kamu Pakai
+            description: Fakta mengejutkan tentang teknologi yang digunakan sehari-hari — smartphone, internet, GPS — yang pengguna jarang menyadarinya.
+            example_hook: "Tahukah kamu GPS yang kamu pakai melibatkan relativitas Einstein setiap detik..."
+          - slug: did-you-know-tubuh-tidur
+            name: Tahukah Kamu Apa Terjadi Saat Kamu Tidur
+            description: Trivia sains tentang proses yang terjadi di tubuh dan otak manusia selama tidur, disajikan dalam format satu fakta per video yang mengejutkan.
+            example_hook: "Tahukah kamu otak aktif membuang racun hanya saat kamu tidur nyenyak..."
+
+      - slug: life-hack
+        name: Life Hack
+        description: Trik praktis sehari-hari yang bikin hidup lebih mudah.
+        faceless: true
+        difficulty: pemula
+        rpm: sedang
+        formats: demo + teks + voiceover
+        example_hook: "Trik dapur ini gak ada yang kasih tahu kamu..."
+        micro:
+          - slug: life-hack-dapur-masak
+            name: Life Hack Dapur & Memasak
+            description: Trik memasak dan menyimpan bahan makanan yang praktis dan menghemat waktu, didemonstrasikan secara visual untuk ibu rumah tangga dan anak kos.
+            example_hook: "Cara potong bawang ini gak bikin nangis dan 3x lebih cepat..."
+          - slug: life-hack-produktivitas-hp
+            name: Trik Tersembunyi di Smartphone
+            description: Fitur dan shortcut tersembunyi di Android dan iOS yang jarang diketahui pengguna rata-rata, disajikan sebagai discovery yang memberdayakan.
+            example_hook: "Tombol ini ada di HP kamu tapi 90% orang gak pernah tahu fungsinya..."
+          - slug: life-hack-hemat-uang
+            name: Trik Hemat Uang Sehari-hari
+            description: Cara-cara konkret menghemat pengeluaran harian yang tidak membutuhkan perubahan gaya hidup drastis, relevan untuk kelas menengah Indonesia.
+            example_hook: "Kebiasaan kecil ini hemat Rp500rb per bulan tanpa terasa..."
+
+  - slug: v-fashion
+    name: Fashion
+    description: Konten gaya busana, makeup, dan tren thrift untuk penonton fashion-conscious Indonesia.
+    niches:
+      - slug: fashion
+        name: "Fashion / OOTD"
+        description: "Gaya busana, mix-match, haul."
+        faceless: false
+        difficulty: menengah
+        rpm: tinggi
+        formats: lookbook + transisi + musik
+        example_hook: "Outfit Rp100rb tapi keliatan mahal..."
+        micro:
+          - slug: fashion-ootd-budget
+            name: OOTD Budget Rp100–300rb
+            description: Inspirasi outfit harian dengan total budget terjangkau dari brand lokal dan thrift, menyasar mahasiswa dan pekerja muda yang ingin stylish tanpa mahal.
+            example_hook: "Outfit Rp150rb ini bikin dikira pakai brand luar, ini breakdown-nya..."
+          - slug: fashion-ootd-kondangan
+            name: OOTD Kondangan & Formal Event
+            description: Panduan berpakaian untuk kondangan, wisuda, dan acara formal dengan pilihan yang elegan tapi tidak terlalu mahal, sangat relevan di budaya Indonesia.
+            example_hook: "Outfit kondangan Rp200rb yang gak malu-maluin, ini pilihannya..."
+          - slug: fashion-mix-match-warna
+            name: Cara Mix-Match Warna yang Tidak Salah
+            description: Panduan kombinasi warna pakaian berbasis teori warna yang disederhanakan, untuk penonton yang sering bingung padukan baju di lemari.
+            example_hook: "Kamu punya baju bagus tapi gak bisa mix-match? Ini aturan simpelnya..."
+
+      - slug: thrift
+        name: "Thrift / Flip Baju"
+        description: Berburu & flip baju bekas.
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: haul + before-after
+        example_hook: "Baju thrift Rp10rb jadi outfit mewah..."
+        micro:
+          - slug: thrift-pasar-loak-jakarta
+            name: Guide Berburu Thrift di Pasar Lokal
+            description: Panduan praktis berburu baju bekas di pasar loak dan toko thrift Indonesia dengan tips menemukan item tersembunyi dan menawar harga terbaik.
+            example_hook: "Tempat thrift ini di Jakarta yang selalu ada brand premium tapi gak ada yang tahu..."
+          - slug: thrift-flip-resell
+            name: Flip Baju Thrift untuk Dijual Lagi
+            description: Cara membeli baju bekas murah, memodifikasi atau membersihkannya, lalu menjual kembali dengan harga lebih tinggi sebagai bisnis sampingan.
+            example_hook: "Beli Rp15rb, jual Rp200rb, ini caranya dan gak butuh keahlian menjahit..."
+          - slug: thrift-styling-premium
+            name: Styling Baju Thrift Jadi Tampilan Premium
+            description: Demonstrasi visual mengubah baju second-hand menjadi outfit yang terlihat premium dengan teknik styling dan layering yang tepat.
+            example_hook: "Kemeja flannel Rp20rb ini dipakai begini, hasilnya keliatan branded..."
+
+      - slug: makeup
+        name: "Makeup / MUA"
+        description: Tutorial & transformasi makeup.
+        faceless: false
+        difficulty: menengah
+        rpm: tinggi
+        formats: POV + before-after + time-lapse
+        example_hook: "Transformasi makeup ini gila..."
+        micro:
+          - slug: makeup-natural-sehari
+            name: Makeup Natural untuk Sehari-hari
+            description: Tutorial makeup ringan yang cocok untuk kuliah, kerja, atau aktivitas harian dengan produk terjangkau yang tersedia di minimarket Indonesia.
+            example_hook: "Makeup 5 menit ini bikin kamu keliatan segar tanpa ketahuan pakai makeup..."
+          - slug: makeup-produk-lokal
+            name: Review & Tutorial Makeup Produk Lokal
+            description: Tutorial menggunakan produk makeup brand Indonesia yang kualitasnya bersaing dengan produk impor, menyasar konsumen yang ingin belanja lokal.
+            example_hook: "Brand ini lebih bagus dari Mac tapi harganya 5x lebih murah, ini buktinya..."
+          - slug: makeup-transformasi-dramatis
+            name: Transformasi Makeup Dramatis
+            description: Konten before-after makeup dengan hasil dramatis untuk pesta atau acara khusus, menonjolkan skill MUA dan kekuatan produk tertentu.
+            example_hook: "Transformasi ini gak pakai filter, lihat dari dekat prosesnya..."
+
+  - slug: v-finansial
+    name: Finansial
+    description: Konten edukasi keuangan, investasi, dan cara menghasilkan uang untuk generasi muda Indonesia.
+    niches:
+      - slug: finance-edu
+        name: Edukasi Keuangan
+        description: "Tips uang, nabung, budgeting."
+        faceless: true
+        difficulty: menengah
+        rpm: tinggi
+        formats: teks + grafik + voiceover
+        example_hook: "Cara nabung Rp10jt setahun..."
+        micro:
+          - slug: finance-edu-gaji-pertama
+            name: Cara Kelola Gaji Pertama dengan Benar
+            description: Panduan alokasi gaji untuk fresh graduate yang baru mulai bekerja, dengan formula sederhana yang bisa langsung diterapkan tanpa background finansial.
+            example_hook: "Gaji pertama kamu akan habis sia-sia tanpa aturan ini..."
+          - slug: finance-edu-hutang-produktif
+            name: Hutang yang Produktif vs Hutang yang Bunuh
+            description: Edukasi perbedaan hutang konsumtif dan produktif dengan contoh kasus nyata Indonesia, membantu penonton membuat keputusan pinjaman yang lebih cerdas.
+            example_hook: "Bukan semua hutang buruk, tapi jenis hutang ini yang hancurkan keuanganmu..."
+          - slug: finance-edu-dana-darurat
+            name: Bangun Dana Darurat dari Nol
+            description: Panduan langkah-langkah konkret membangun dana darurat bagi yang belum punya tabungan sama sekali, dengan timeline realistis berdasarkan penghasilan UMR.
+            example_hook: "Tanpa dana darurat, satu musibah cukup untuk hancurkan 5 tahun kerja kerasmu..."
+
+      - slug: investing
+        name: Investasi
+        description: "Saham, reksadana, investasi dasar."
+        faceless: true
+        difficulty: menengah
+        rpm: tinggi
+        formats: grafik + voiceover
+        example_hook: "Rp1jt/bulan jadi Rp1M dengan..."
+        micro:
+          - slug: investing-reksadana-pemula
+            name: Reksadana untuk Pemula Absolut
+            description: Panduan mulai investasi reksadana dari nol untuk yang belum pernah investasi, dengan rekomendasi platform dan jenis reksadana yang sesuai risiko pemula.
+            example_hook: "Rp100rb/bulan di reksadana ini jadi berapa dalam 10 tahun, ini hitungannya..."
+          - slug: investing-saham-dividen
+            name: Saham Dividen sebagai Passive Income
+            description: Strategi investasi saham berorientasi dividen untuk pembangun passive income jangka panjang, dengan daftar saham dividen konsisten di BEI.
+            example_hook: "Saham ini bayar dividen setiap tahun selama 10 tahun berturut-turut..."
+          - slug: investing-portofolio-milenial
+            name: Portofolio Investasi untuk Milenial Indonesia
+            description: Panduan alokasi portofolio yang realistis untuk milenial dengan penghasilan menengah, menggabungkan reksadana, saham, dan aset lain sesuai profil risiko.
+            example_hook: "Portofolio Rp500rb/bulan yang bisa bikin kamu pensiun dini di 45..."
+
+      - slug: crypto
+        name: Crypto
+        description: "Edukasi crypto, hati-hati klaim."
+        faceless: true
+        difficulty: menengah
+        rpm: tinggi
+        formats: grafik + teks
+        example_hook: "Rp1jt di koin ini 2020 jadi..."
+        micro:
+          - slug: crypto-bitcoin-dasar
+            name: Bitcoin & Blockchain untuk Pemula
+            description: Penjelasan dasar Bitcoin dan teknologi blockchain tanpa jargon teknis, menjawab pertanyaan yang sering ditanyakan pemula Indonesia tentang crypto.
+            example_hook: "Bitcoin itu apa sebenarnya? Penjelasan yang akhirnya masuk akal..."
+          - slug: crypto-risiko-nyata
+            name: Risiko Crypto yang Jarang Dibahas
+            description: Konten edukasi tentang risiko nyata berinvestasi crypto — volatilitas, scam, regulasi — yang sering disembunyikan oleh konten crypto yang terlalu bullish.
+            example_hook: "Orang ini taruh semua di crypto karena konten yang kamu tonton juga, ini akhirnya..."
+          - slug: crypto-altcoin-research
+            name: Cara Research Altcoin Sebelum Beli
+            description: Framework sederhana untuk mengevaluasi proyek crypto altcoin agar tidak asal ikut hype, dirancang untuk investor pemula hingga menengah.
+            example_hook: "Sebelum beli altcoin ini, cek 3 hal ini dulu atau kamu akan rugi..."
+
+      - slug: side-hustle
+        name: "Side Hustle / Cuan"
+        description: "Ide bisnis sampingan, kerja online."
+        faceless: true
+        difficulty: menengah
+        rpm: tinggi
+        formats: teks + b-roll + voiceover
+        example_hook: "Cara dapat Rp100rb/hari dari HP..."
+        micro:
+          - slug: side-hustle-freelance-digital
+            name: Freelance Digital dari Nol
+            description: Panduan memulai freelance di bidang desain, penulisan, atau media sosial tanpa portofolio sebelumnya, menyasar fresh graduate dan mahasiswa.
+            example_hook: "Mulai freelance tanpa portofolio dan dapat klien pertama dalam 2 minggu, ini caranya..."
+          - slug: side-hustle-jualan-online
+            name: Jualan Online di Tokopedia & Shopee
+            description: Strategi praktis buka toko online dan mendapatkan penjualan pertama di marketplace Indonesia, fokus pada produk fisik yang mudah direseller.
+            example_hook: "Toko ini omzetnya Rp10jt/bulan hanya jual satu produk, ini rahasianya..."
+          - slug: side-hustle-konten-kreator
+            name: Monetisasi sebagai Kreator Konten
+            description: Cara menghasilkan uang dari konten digital — YouTube, TikTok, Instagram — termasuk afiliasi, endorse, dan AdSense, untuk kreator yang baru mulai.
+            example_hook: "1.000 subscriber di YouTube bisa hasilkan segini, ini cara cepatnya..."
+
+      - slug: business-case
+        name: Studi Kasus Bisnis
+        description: Bedah brand/perusahaan sukses-gagal.
+        faceless: true
+        difficulty: sulit
+        rpm: tinggi
+        formats: voiceover + grafik + logo
+        example_hook: "Kenapa Nokia hancur dalam 5 tahun..."
+        micro:
+          - slug: business-case-startup-indonesia
+            name: Autopsi Startup Indonesia yang Gagal
+            description: Analisis mendalam kenapa startup Indonesia yang sempat ramai akhirnya tutup, dengan pelajaran bisnis konkret yang bisa diambil oleh pengusaha pemula.
+            example_hook: "Startup ini dapat pendanaan Rp100M, 2 tahun kemudian tutup. Ini kronologisnya..."
+          - slug: business-case-brand-lokal-sukses
+            name: Rahasia di Balik Brand Lokal yang Meledak
+            description: Bedah strategi bisnis dan branding brand Indonesia yang berhasil tumbuh dari UKM menjadi brand nasional, dengan data dan timeline konkret.
+            example_hook: "Brand ini mulai dari garasi, sekarang omzetnya triliunan. Ini yang beda..."
+          - slug: business-case-korporat-global
+            name: Korporat Global yang Hampir Bangkrut
+            description: Studi kasus perusahaan-perusahaan global yang hampir kolaps lalu berhasil bangkit, atau yang benar-benar jatuh, dengan analisis keputusan kritis di baliknya.
+            example_hook: "CEO ini satu keputusan dari kebangkrutan, lalu buat satu langkah yang selamatkan segalanya..."
+
+      - slug: real-estate
+        name: Property
+        description: "Tur properti, harga, investasi properti."
+        faceless: true
+        difficulty: menengah
+        rpm: tinggi
+        formats: tur + voiceover + reveal-harga
+        example_hook: "Tebak harga rumah ini..."
+        micro:
+          - slug: real-estate-apartemen-jakarta
+            name: Tebak Harga Apartemen Jakarta
+            description: Format reveal harga apartemen di Jakarta dari yang termurah hingga termahal, memberikan penonton benchmark harga properti yang sulit didapat dari sumber lain.
+            example_hook: "Apartemen di pusat Jakarta ini harganya berapa? Jawabannya mengejutkan..."
+          - slug: real-estate-kos-investasi
+            name: Investasi Kos-kosan dari Modal Kecil
+            description: Panduan memulai bisnis kos-kosan sebagai investasi properti dengan modal terbatas, termasuk perhitungan ROI dan tips lokasi strategis.
+            example_hook: "Modal Rp200jt bisa buka kos yang hasilkan Rp5jt/bulan, ini hitungannya..."
+          - slug: real-estate-kpr-pemula
+            name: KPR untuk Pertama Kali Tanpa Bingung
+            description: Panduan proses KPR dari awal hingga akad untuk pembeli rumah pertama, menjawab pertanyaan yang sering bikin orang ragu untuk mulai.
+            example_hook: "Ini yang bank gak kasih tahu kamu soal KPR sebelum kamu tanda tangan..."
+
+      - slug: crypto-trading
+        name: Crypto Trading
+        description: Strategi dan analisis trading aset kripto untuk pemula hingga menengah.
+        faceless: true
+        difficulty: menengah
+        rpm: tinggi
+        formats: grafik + screen-record + voiceover
+        example_hook: "Chart ini kasih sinyal beli sebelum naik 3x..."
+        micro:
+          - slug: crypto-trading-teknikal-dasar
+            name: Analisis Teknikal Crypto untuk Pemula
+            description: Pengenalan indikator teknikal dasar seperti RSI, MACD, dan support-resistance yang dipakai trader crypto, disajikan dengan contoh chart nyata.
+            example_hook: "Indikator ini muncul sebelum setiap pump besar, ini cara bacanya..."
+          - slug: crypto-trading-manajemen-risiko
+            name: Manajemen Risiko dalam Trading Crypto
+            description: Framework konkret mengatur posisi dan stop-loss agar tidak habis modal karena satu trade buruk, untuk trader pemula yang sering over-leverage.
+            example_hook: "Trader ini rugi 80% bukan karena analisis salah, tapi karena ini..."
+          - slug: crypto-trading-psikologi
+            name: Psikologi Trading yang Sering Bikin Rugi
+            description: Analisis bias kognitif umum yang dialami trader crypto — FOMO, revenge trading, overconfidence — dengan cara konkret melawannya.
+            example_hook: "Bukan strategi yang bikin kamu rugi, ini yang sebenarnya terjadi di otakmu saat trading..."
+
+  - slug: v-gaming
+    name: Gaming
+    description: Konten game — highlight, tips, mobile gaming, dan fakta tersembunyi untuk gamer Indonesia.
+    niches:
+      - slug: gaming-clips
+        name: Gaming Clips
+        description: Highlight momen game.
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: capture + caption + SFX
+        example_hook: "Clutch 1v5 paling gila..."
+        micro:
+          - slug: gaming-clips-mobile-legends
+            name: Highlight Mobile Legends Terbaik
+            description: Kumpulan momen clutch, savage, dan play mengejutkan di Mobile Legends dari server Indonesia, menyasar komunitas ML yang besar di Indonesia.
+            example_hook: "Savage solo 1v5 ranked ini bikin lawan mute mic semua..."
+          - slug: gaming-clips-fails-lucu
+            name: Gaming Fails & Momen Konyol
+            description: Kompilasi momen lucu dan fail yang tidak sengaja terjadi saat main game, disajikan dengan timing komedi untuk penonton gaming kasual.
+            example_hook: "Bug ini bikin pemain ranked tersebut gak bisa ngapa-ngapain selama 5 menit..."
+          - slug: gaming-clips-underdog-menang
+            name: Momen Underdog Menang Tidak Terduga
+            description: Highlight momen di mana pemain atau tim yang kalah jauh akhirnya menang dengan cara yang tidak diduga, format yang selalu mengundang engagement.
+            example_hook: "HP tinggal 10%, musuh masih 5 orang. Ini yang terjadi selanjutnya..."
+
+      - slug: game-tips
+        name: "Tips / Tutorial Game"
+        description: "Trik, build, walkthrough game."
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: capture + voiceover
+        example_hook: "Setting ini bikin aim kamu dewa..."
+        micro:
+          - slug: game-tips-setting-optimal
+            name: Setting Optimal untuk Performa Maksimal
+            description: Panduan konfigurasi grafis, kontrol, dan setting tersembunyi di game populer yang bisa meningkatkan performa tanpa upgrade hardware.
+            example_hook: "Setting ini bikin aim kamu 2x lebih konsisten dan 90% player gak tahu..."
+          - slug: game-tips-build-meta
+            name: Build Meta Terkini untuk Ranked
+            description: Penjelasan build dan strategi yang sedang dominan di meta ranked game populer Indonesia, diperbarui setiap patch dengan alasan di balik pilihan item.
+            example_hook: "Build ini naik winrate hero kamu dari 50% jadi 68%, ini penjelasannya..."
+          - slug: game-tips-rookie-mistakes
+            name: Kesalahan Pemula yang Bikin Stuck di Rank Rendah
+            description: Analisis kesalahan umum yang dilakukan pemain rank bawah dan cara konkret memperbaikinya, menyasar gamer yang merasa stuck dan ingin naik rank.
+            example_hook: "Kamu main 1.000 game tapi gak naik rank? Kamu pasti lakukan ini tanpa sadar..."
+
+      - slug: mobile-game
+        name: Mobile Gaming
+        description: "ML, FF, dll. Audiens lokal besar."
+        faceless: true
+        difficulty: pemula
+        rpm: sedang
+        formats: capture + caption
+        example_hook: "Hero ini auto-menang season ini..."
+        micro:
+          - slug: mobile-game-ml-tier-list
+            name: Tier List Mobile Legends Update Terbaru
+            description: Ranking hero Mobile Legends per patch terbaru dengan penjelasan singkat kenapa hero naik atau turun tier, untuk pemain yang ingin pilih hero tepat.
+            example_hook: "Hero ini turun tier tapi masih bisa carry, ini kenapa dan cara mainnya..."
+          - slug: mobile-game-ff-tips
+            name: Tips Free Fire untuk Pemain Kasual
+            description: Tips dan strategi Free Fire yang mudah diterapkan pemain kasual tanpa harus grinding berjam-jam, menyasar mayoritas pemain FF di Indonesia.
+            example_hook: "Cara menang Booyah tanpa aim yang bagus, strategi ini dipakai pro player..."
+          - slug: mobile-game-hemat-diamond
+            name: Cara Main Tanpa Boros Diamond atau UC
+            description: Strategi mendapatkan item dan skin premium di game mobile tanpa keluar banyak uang, relevan untuk pemain F2P yang ingin kompetitif.
+            example_hook: "Cara dapat skin limited ini gratis sebelum event berakhir, hampir gak ada yang tahu..."
+
+      - slug: game-facts
+        name: "Fakta Game / Easter Egg"
+        description: Rahasia & easter egg game.
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: klip + voiceover
+        example_hook: "Rahasia GTA yang baru ketemu 10 tahun..."
+        micro:
+          - slug: game-facts-easter-egg-tersembunyi
+            name: Easter Egg Tersembunyi yang Susah Ditemukan
+            description: Showcase easter egg dan rahasia yang sengaja disembunyikan developer game populer yang butuh waktu bertahun-tahun untuk ditemukan komunitas.
+            example_hook: "Easter egg GTA ini disembunyikan developer 10 tahun dan baru ketemu bulan lalu..."
+          - slug: game-facts-lore-tersembunyi
+            name: Lore Tersembunyi di Balik Game Populer
+            description: Penggalian cerita tersembunyi di balik game populer yang tidak disampaikan secara eksplisit, untuk penonton yang suka kedalaman narasi game.
+            example_hook: "Karakter ini sebenarnya villain dari awal, dan petunjuknya ada sejak scene pertama..."
+          - slug: game-facts-developer-blunder
+            name: Keputusan Developer yang Hampir Hancurkan Game
+            description: Kisah behind-the-scenes keputusan pengembangan game yang kontroversial atau hampir fatal, memberikan perspektif industri yang jarang dibahas konten gaming biasa.
+            example_hook: "Developer ini hampir hapus fitur yang jadi alasan utama game-nya laku 30 juta kopi..."
+
+  - slug: v-hiburan
+    name: Hiburan
+    description: Konten hiburan ringan — komedi, reaksi, meme, dan konten relatable untuk penonton yang ingin tertawa dan terhibur.
+    niches:
+      - slug: comedy-skit
+        name: "Komedi / Skit"
+        description: Sketsa lucu, butuh akting.
+        faceless: false
+        difficulty: menengah
+        rpm: rendah
+        formats: skit + punchline cepat
+        example_hook: "Pas kamu minta tolong istri..."
+        micro:
+          - slug: comedy-skit-anak-kos
+            name: Drama Kehidupan Anak Kos
+            description: Skit komedi pendek tentang situasi absurd sehari-hari anak kos — tagihan listrik mendadak, kompor meledak, dan drama sama pemilik kos — menyasar mahasiswa dan perantau.
+            example_hook: "Pas kamu lagi tidur nyenyak tiba-tiba pemilik kos ketuk pintu jam 7 pagi..."
+          - slug: comedy-skit-meeting-kantor
+            name: Meeting Kantor yang Bisa Jadi Email
+            description: Skit relatable tentang rapat kerja yang tidak produktif, atasan yang minta revisi tidak jelas, dan drama zoom meeting, untuk pekerja kantoran yang butuh validasi.
+            example_hook: "Meeting 2 jam ini bisa jadi satu kalimat email, tapi bos tetap minta hadir semua..."
+          - slug: comedy-skit-bucin-toxic
+            name: Skit Pasangan Bucin & Red Flag
+            description: Komedi pendek yang satirkan perilaku bucin dan hubungan penuh red flag dengan cara yang mengundang tawa tapi tetap relatable untuk anak muda.
+            example_hook: "Dia bilang 'bebas mau ke mana', tapi ini yang terjadi kalau kamu pergi..."
+
+      - slug: reaction
+        name: Reaction
+        description: Reaksi ke konten lain.
+        faceless: false
+        difficulty: pemula
+        rpm: rendah
+        formats: split-screen + ekspresi
+        example_hook: "Pertama kali nonton ini..."
+        micro:
+          - slug: reaction-makanan-ekstrem
+            name: Reaksi Cobain Makanan Ekstrem Pertama Kali
+            description: Rekaman reaksi jujur saat mencoba makanan ekstrem — durian montong, pete mentah, ceker pedas level 100 — format yang autentik dan mudah dibuat ulang.
+            example_hook: "Pertama kali cobain ini, dan reaksi aku gak bisa bohong..."
+          - slug: reaction-video-nostalgia
+            name: Reaksi Nonton Video Viral Lawas
+            description: Reaksi terhadap video viral Indonesia dari 10-15 tahun lalu yang mungkin sudah dilupakan generasi baru, memancing nostalgia dan komentar.
+            example_hook: "Baru pertama kali nonton video ini yang viral tahun 2010, dan ternyata..."
+          - slug: reaction-challenge-gagal
+            name: Reaksi Lihat Challenge yang Gagal Total
+            description: Komentar dan reaksi terhadap challenge media sosial yang gagal lucu tanpa menyakiti siapapun, format split-screen yang mengundang tawa bersama.
+            example_hook: "Challenge ini terlihat mudah sampai giliran mereka coba sendiri..."
+
+      - slug: memes
+        name: "Meme / Relatable"
+        description: Meme video, momen relatable.
+        faceless: true
+        difficulty: pemula
+        rpm: rendah
+        formats: klip + caption + musik
+        example_hook: "POV: kamu anak terakhir..."
+        micro:
+          - slug: memes-pov-kerja-indonesia
+            name: POV Kerja di Indonesia
+            description: Video meme POV yang menangkap situasi kerja spesifik Indonesia — lembur tanpa bayar, budaya senioritas, dan chat bos tengah malam — dengan caption yang tepat sasaran.
+            example_hook: "POV: bos chat jam 11 malam 'bisa minta tolong sebentar'..."
+          - slug: memes-mahasiswa-semester-akhir
+            name: Momen Paling Relatable Mahasiswa Tingkat Akhir
+            description: Meme video khusus penderitaan mahasiswa skripsi dan semester akhir — dosen pembimbing ghosting, sidang ditunda, dan wisuda yang terasa mustahil.
+            example_hook: "POV: dosen pembimbing baca drafmu lalu bilang 'ulangi dari bab 1'..."
+          - slug: memes-ekspektasi-vs-realita
+            name: Ekspektasi vs Realita Kehidupan Dewasa
+            description: Format split ekspektasi vs realita tentang milestone kehidupan dewasa Indonesia — dapat kerja, beli motor, dan pindah dari rumah orang tua.
+            example_hook: "Ekspektasi hidup mandiri vs realita setelah cek harga kos per bulan..."
+
+      - slug: fails
+        name: "Fails / Funny Clips"
+        description: "Kompilasi gagal/lucu (UGC)."
+        faceless: true
+        difficulty: pemula
+        rpm: rendah
+        formats: klip + SFX + caption
+        example_hook: "Dia gak nyangka bakal begini..."
+        micro:
+          - slug: fails-olahraga-dadakan
+            name: Fails Olahraga Dadakan yang Overconfident
+            description: Klip kompilasi momen seseorang terlalu percaya diri saat olahraga atau mencoba gerakan atletik padahal tidak terlatih, selalu mengundang tawa tanpa ada yang terluka serius.
+            example_hook: "Dia lihat tutorial 5 menit lalu yakin bisa langsung jago, ini hasilnya..."
+          - slug: fails-masak-pertama-kali
+            name: Kompilasi Masak Pertama Kali yang Disaster
+            description: Klip lucu orang yang memasak untuk pertama kalinya dengan hasil yang jauh dari ekspektasi, relatable untuk siapapun yang pernah gagal masak.
+            example_hook: "Katanya resepnya simpel, tapi dapur dia berubah jadi begini..."
+          - slug: fails-teknologi-orang-tua
+            name: Orang Tua vs Teknologi Modern
+            description: Kompilasi momen lucu orang tua yang berjuang dengan teknologi sehari-hari — video call terbalik, kirim pesan ke grup salah, dan screenshot yang tidak berhasil.
+            example_hook: "Ibu ini sudah 10 menit coba screenshot dan belum berhasil..."
+
+      - slug: pranks
+        name: Prank
+        description: "Jahil ke orang, butuh talent."
+        faceless: false
+        difficulty: menengah
+        rpm: rendah
+        formats: hidden-cam + reaksi
+        example_hook: "Dia gak sadar lagi di-prank..."
+        micro:
+          - slug: pranks-kaget-halus
+            name: Prank Kaget Halus yang Tidak Menyakiti
+            description: Prank ringan tanpa kekerasan atau rasa malu berlebihan — kejutan kecil di tempat yang tidak terduga — dengan reaksi yang genuine dan akhir yang hangat.
+            example_hook: "Dia gak sadar ada yang sembunyi di sana selama 5 menit menunggu momen ini..."
+          - slug: pranks-pura-pura-lupa
+            name: Prank Pura-pura Lupa Hari Penting
+            description: Dokumentasi prank berpura-pura lupa ulang tahun atau anniversari pasangan, dengan reaksi asli yang kemudian dibalas dengan kejutan manis di akhir.
+            example_hook: "Dia pikir aku lupa hari ini sampai lihat yang ada di dalam pintu..."
+          - slug: pranks-review-jujur-masakan
+            name: Prank Review Jujur Masakan Pasangan
+            description: Prank meminta orang asing atau kritikus makanan tiba-tiba mengulas masakan buatan pasangan, dengan reaksi yang mengejutkan dan mengundang tawa kedua belah pihak.
+            example_hook: "Aku suruh food critic dadakan review masakannya tanpa dia tahu, ini ekspresinya..."
+
+      - slug: voice-over-funny
+        name: "Dubbing / VO Lucu"
+        description: Dubbing hewan/video dengan suara lucu.
+        faceless: true
+        difficulty: pemula
+        rpm: rendah
+        formats: klip + voiceover komedi
+        example_hook: "Kalau kucing bisa ngomong..."
+        micro:
+          - slug: voice-over-funny-kucing-bos
+            name: Dubbing Kucing yang Berperilaku Seperti Bos
+            description: Footage kucing yang ekspresinya mirip bos kantor, didubbing dengan dialog atasan yang demanding dan tidak masuk akal, menyasar pekerja kantoran yang butuh tawa.
+            example_hook: "Kucing ini lirik aku persis kayak bos pas deadline besok pagi..."
+          - slug: voice-over-funny-hewan-drakor
+            name: Hewan Peliharaan Didubbing Drama Korea
+            description: Klip hewan peliharaan dengan pose dramatis yang didubbing dengan dialog drama Korea yang berlebihan, format humor lintas generasi yang mudah viral.
+            example_hook: "Anjing ini noleh pelan-pelan ke kamera dan yang keluar suaranya mengejutkan..."
+          - slug: voice-over-funny-bayi-motivasi
+            name: Bayi Didubbing Sebagai Motivator Bisnis
+            description: Video bayi yang ekspresi seriusnya didubbing sebagai pemimpin bisnis atau motivator yang memberikan nasihat kehidupan absurd tapi terdengar profound.
+            example_hook: "Bayi 8 bulan ini kasih nasihat bisnis yang lebih masuk akal dari seminar mahal..."
+
+  - slug: v-keluarga
+    name: Keluarga
+    description: Konten seputar pengasuhan anak, momen keluarga, dan tips parenting untuk orang tua muda Indonesia.
+    niches:
+      - slug: kids-edu
+        name: Edukasi Anak
+        description: Belajar warna/angka/lagu anak.
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: animasi + lagu + warna cerah
+        example_hook: "Belajar warna sambil nyanyi..."
+        micro:
+          - slug: kids-edu-angka-lagu
+            name: Belajar Angka 1-20 Lewat Lagu Anak
+            description: Konten edukatif mengajar angka kepada balita melalui lagu sederhana dan animasi warna-warni, cocok untuk orang tua yang ingin stimulasi kognitif awal anak.
+            example_hook: "Belajar angka 1 sampai 10 sambil nyanyi, anak pasti hafal dalam seminggu..."
+          - slug: kids-edu-alfabet-cerita
+            name: Alfabet Lewat Cerita Binatang
+            description: Setiap huruf alfabet diperkenalkan lewat karakter binatang lucu dengan cerita pendek, membantu anak usia 3-5 tahun menghafal huruf dengan cara menyenangkan.
+            example_hook: "A untuk Ayam yang punya petualangan seru hari ini, yuk kenalan..."
+          - slug: kids-edu-motorik-gerak
+            name: Latihan Motorik Kasar Sambil Bermain
+            description: Panduan aktivitas gerak tubuh sederhana untuk balita yang melatih motorik kasar dengan cara menyenangkan, bisa dilakukan di rumah tanpa alat khusus.
+            example_hook: "Gerakan ini lucu tapi melatih koordinasi anak lebih cepat dari yang kamu kira..."
+
+      - slug: parenting
+        name: "Parenting / Tips Ortu"
+        description: "Tips mengasuh, hack orang tua."
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: b-roll + teks + voiceover
+        example_hook: "Trik bikin anak mau makan sayur..."
+        micro:
+          - slug: parenting-tantrum-balita
+            name: Cara Redakan Tantrum Balita Tanpa Teriakan
+            description: Teknik de-eskalasi tantrum anak usia 2-4 tahun berbasis psikologi perkembangan anak, disajikan sebagai panduan praktis untuk orang tua yang sering kewalahan.
+            example_hook: "Kata satu ini hentikan tantrum anak aku dalam 30 detik, sekarang aku pakai terus..."
+          - slug: parenting-screen-time-seimbang
+            name: Screen Time Anak yang Tidak Merusak Otak
+            description: Panduan berbasis riset tentang berapa lama dan konten seperti apa yang aman untuk screen time anak berbagai usia, membantu orang tua membuat aturan yang masuk akal.
+            example_hook: "Bukan lama screen time-nya yang merusak, ini yang lebih penting dan sering diabaikan..."
+          - slug: parenting-komunikasi-remaja
+            name: Cara Bicara ke Remaja Tanpa Mereka Nutup Diri
+            description: Teknik komunikasi orang tua dengan anak remaja yang berbasis empati dan bukan otoritas, untuk orang tua yang merasa anaknya mulai jauh dan tertutup.
+            example_hook: "Satu kalimat ini yang bikin anak remaja mau cerita sendiri tanpa dipaksa..."
+
+      - slug: family-vlog
+        name: "Family / Wholesome"
+        description: Momen keluarga heartwarming.
+        faceless: false
+        difficulty: menengah
+        rpm: rendah
+        formats: footage + musik + caption
+        example_hook: "Reaksi anak lihat ayah pulang..."
+        micro:
+          - slug: family-vlog-reaksi-anak-kejutan
+            name: Reaksi Anak Saat Dapat Kejutan dari Orang Tua
+            description: Dokumentasi momen tulus reaksi anak kecil saat mendapat kejutan dari orang tua — baik sederhana maupun besar — format yang selalu mengundang emosi positif.
+            example_hook: "Ayah pulang setelah 3 bulan kerja di luar kota, lihat reaksi anak ini..."
+          - slug: family-vlog-kakek-nenek-millennial
+            name: Kakek-Nenek Pertama Kali Coba Teknologi Baru
+            description: Dokumentasi momen lucu sekaligus mengharukan saat kakek-nenek belajar hal baru dari cucu — main game, video call, atau pesan ojek online — generasi bertemu generasi.
+            example_hook: "Nenek 70 tahun belajar kirim GIF dari cucunya, dan hasilnya diluar dugaan..."
+          - slug: family-vlog-tradisi-unik-keluarga
+            name: Tradisi Unik yang Cuma Ada di Keluarga Ini
+            description: Dokumentasi kebiasaan atau ritual unik yang hanya ada dalam satu keluarga, yang mungkin terlihat aneh dari luar tapi penuh makna di dalam — memancing curiosity dan nostalgia penonton.
+            example_hook: "Keluarga ini tiap tahun lakukan hal yang menurut orang aneh, tapi alasannya buat aku nangis..."
+
+  - slug: v-kesehatan
+    name: Kesehatan
+    description: Konten seputar kebugaran, nutrisi, kesehatan mental, dan perawatan diri untuk hidup lebih sehat.
+    niches:
+      - slug: fitness
+        name: "Fitness / Workout"
+        description: "Latihan, form, tips gym."
+        faceless: false
+        difficulty: menengah
+        rpm: sedang
+        formats: demo gerakan + caption
+        example_hook: "Gerakan ini bakar lemak perut..."
+        micro:
+          - slug: fitness-form-koreksi
+            name: Koreksi Form Latihan yang Sering Salah
+            description: Konten side-by-side sebelum-sesudah form latihan umum yang sering dilakukan salah di gym, membantu penonton hindari cedera tanpa perlu personal trainer.
+            example_hook: "80% orang squat dengan cara ini dan akan nyeri lutut 5 tahun lagi..."
+          - slug: fitness-gym-pemula-tidak-malu
+            name: Panduan Gym Pertama Kali Tanpa Malu
+            description: Konten panduan praktis untuk pemula yang ingin ke gym tapi takut terlihat bodoh — alat apa yang dipakai dulu, etika gym, dan latihan yang aman tanpa spotter.
+            example_hook: "Ini yang harus kamu lakukan 30 menit pertama di gym, supaya gak bengong sendiri..."
+          - slug: fitness-latihan-usia-30an
+            name: Latihan Fisik yang Tepat Setelah Usia 30
+            description: Panduan menyesuaikan program latihan untuk orang dewasa 30-40 tahun yang metabolismenya mulai berubah, dengan fokus pada keberlanjutan bukan ekstremitas.
+            example_hook: "Latihan yang kamu lakukan di 20-an bisa merusak tubuh di 30-an, ini penggantinya..."
+
+      - slug: home-workout
+        name: Home Workout
+        description: Latihan rumah tanpa alat.
+        faceless: true
+        difficulty: pemula
+        rpm: sedang
+        formats: demo + timer + musik
+        example_hook: "Latihan 5 menit, perut rata..."
+        micro:
+          - slug: home-workout-kasur-pagi
+            name: Latihan 5 Menit di Atas Kasur Sebelum Bangun
+            description: Rutinitas gerakan ringan yang bisa dilakukan sebelum benar-benar bangun dari kasur, cocok untuk orang yang kesulitan memulai hari dengan aktif.
+            example_hook: "Sebelum kaki menyentuh lantai, lakukan ini 5 menit untuk tubuh yang lebih berenergi..."
+          - slug: home-workout-tanpa-berisik
+            name: Workout Tanpa Bising untuk Penghuni Kos
+            description: Rangkaian latihan intensitas sedang yang tidak menghasilkan suara berisik atau getaran — cocok untuk anak kos, apartemen, atau yang punya tetangga sensitif.
+            example_hook: "Workout ini bisa dilakukan jam 11 malam di kos tanpa bikin tetangga marah..."
+          - slug: home-workout-sambil-nonton
+            name: Gerakan yang Bisa Dilakukan Sambil Nonton TV
+            description: Latihan ringan yang bisa dilakukan di depan TV tanpa harus pause tontonan — squat di iklan, plank di intro, dsb — untuk yang sulit meluangkan waktu khusus olahraga.
+            example_hook: "Kalau kamu nonton 2 jam sehari, ini cara bakar 300 kalori tanpa sadar..."
+
+      - slug: nutrition
+        name: "Nutrisi / Diet"
+        description: "Tips makan sehat, mitos diet."
+        faceless: true
+        difficulty: menengah
+        rpm: tinggi
+        formats: teks + b-roll food + voiceover
+        example_hook: "Makanan yang kamu kira sehat ternyata..."
+        micro:
+          - slug: nutrition-mitos-diet-indonesia
+            name: Mitos Diet yang Dipercaya Orang Indonesia
+            description: Membongkar kepercayaan umum tentang diet yang beredar di Indonesia — nasi bikin gemuk, minum air es berbahaya — dengan penjelasan sains yang sederhana.
+            example_hook: "Dokter dan ahli gizi sepakat soal ini, tapi masyarakat masih percaya sebaliknya..."
+          - slug: nutrition-makanan-murah-bergizi
+            name: Makanan Murah di Warung yang Ternyata Super Bergizi
+            description: Membedah kandungan gizi makanan lokal Indonesia yang murah dan mudah didapat — tempe, ikan asin, sayur bayam — sebagai alternatif suplemen mahal.
+            example_hook: "Makanan Rp2rb ini kandungan proteinnya saingi suplemen Rp200rb, ini faktanya..."
+          - slug: nutrition-label-produk
+            name: Cara Baca Label Nutrisi Produk Kemasan
+            description: Panduan praktis memahami label nutrisi pada produk makanan kemasan Indonesia — klaim "rendah lemak", "bebas gula", dan angka yang sebenarnya perlu diperhatikan.
+            example_hook: "Produk ini label-nya 'sehat' tapi kalau kamu baca bagian ini, kamu tidak akan beli lagi..."
+
+      - slug: mental-health
+        name: Mental Health
+        description: "Tips kesehatan mental, mindfulness."
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: teks + b-roll tenang + voiceover
+        example_hook: "Kalau kamu overthinking, coba ini..."
+        micro:
+          - slug: mental-health-burnout-kerja
+            name: Kenali Burnout Sebelum Terlambat
+            description: Konten edukasi tentang tanda-tanda burnout yang sering diabaikan pekerja Indonesia yang terbiasa normalisasi kelelahan, dengan langkah konkret pemulihan.
+            example_hook: "Lelah ini bukan karena kurang tidur, ini tanda yang lebih serius yang perlu kamu tahu..."
+          - slug: mental-health-anxiety-sosial
+            name: Cara Hadapi Kecemasan Sosial Sehari-hari
+            description: Teknik praktis mengelola social anxiety dalam situasi nyata — presentasi kerja, kenalan baru, acara keluarga besar — tanpa harus masuk terapi dulu.
+            example_hook: "Setiap kali harus kenalan baru, ini yang sebenarnya terjadi di otak dan cara melawannya..."
+          - slug: mental-health-healing-tanpa-toxic-positivity
+            name: Pemulihan Emosi Tanpa Toxic Positivity
+            description: Konten yang memvalidasi perasaan negatif dan membedakannya dari toxic positivity, membantu penonton memproses emosi dengan cara yang lebih sehat.
+            example_hook: "Berhenti dipaksa 'bersyukur' ketika kamu sedang tidak baik-baik saja, ini yang benar-benar membantu..."
+
+      - slug: skincare
+        name: "Skincare / Beauty Tips"
+        description: "Rutinitas kulit, review produk."
+        faceless: false
+        difficulty: menengah
+        rpm: tinggi
+        formats: POV + before-after + voiceover
+        example_hook: "Urutan skincare yang selama ini salah..."
+        micro:
+          - slug: skincare-kulit-berminyak-tropis
+            name: Skincare untuk Kulit Berminyak di Iklim Tropis
+            description: Rutinitas skincare yang diformulasikan untuk kulit berminyak di iklim panas dan lembab seperti Indonesia, dengan rekomendasi produk lokal yang terjangkau.
+            example_hook: "Skincare routine Korea ini justru bikin kulit Indonesia makin berminyak, ini alasannya..."
+          - slug: skincare-hiperpigmentasi-bekas-jerawat
+            name: Atasi Bekas Jerawat dan Hiperpigmentasi
+            description: Panduan berbasis dermatologi tentang cara mengatasi bekas jerawat dan flek hitam di kulit coklat Asia, dengan timeline realistis dan bahan aktif yang tepat.
+            example_hook: "Bekas jerawat ini butuh berapa lama hilang? Ini jawaban dermatologis yang jarang dibahas..."
+          - slug: skincare-pria-anti-ribet
+            name: Skincare untuk Pria yang Tidak Suka Ribet
+            description: Rutinitas skincare minimalis 3 langkah untuk pria Indonesia yang belum pernah pakai skincare, dengan produk yang mudah ditemukan di Alfamart.
+            example_hook: "Pria ini gak pernah pakai skincare selama 30 tahun, ini perubahan setelah 90 hari..."
+
+      - slug: yoga
+        name: "Yoga / Stretching"
+        description: "Pose yoga, peregangan, relaksasi."
+        faceless: true
+        difficulty: pemula
+        rpm: sedang
+        formats: demo + ambience
+        example_hook: "Stretching 3 menit buat sakit punggung..."
+        micro:
+          - slug: yoga-punggung-pekerja-duduk
+            name: Peregangan 3 Menit untuk Pekerja yang Duduk Seharian
+            description: Urutan stretching singkat yang menargetkan nyeri punggung, leher, dan bahu akibat duduk di depan komputer, bisa dilakukan di meja kerja tanpa alas yoga.
+            example_hook: "Tiga gerakan ini yang fisioterapis rekomendasikan untuk hilangkan nyeri punggung duduk 8 jam..."
+          - slug: yoga-tidur-nyenyak
+            name: Yoga 10 Menit Sebelum Tidur untuk Tidur Lebih Nyenyak
+            description: Rutinitas yoga malam hari yang menenangkan sistem saraf dan menurunkan kortisol sebelum tidur, untuk penonton yang sering insomnia atau tidur tidak berkualitas.
+            example_hook: "Rutinitas ini kurangi waktu tidurku dari 45 menit jadi 10 menit, setiap malam..."
+          - slug: yoga-anxiety-grounding
+            name: Gerakan Yoga untuk Atasi Kecemasan Akut
+            description: Pose dan teknik napas yoga yang terbukti menenangkan sistem saraf saat serangan kecemasan tiba-tiba, disajikan sebagai first-aid mental untuk momen panik.
+            example_hook: "Saat panik tiba-tiba, lakukan ini sebelum lakukan hal lainnya..."
+
+  - slug: v-kreatif
+    name: Kreatif
+    description: Konten proses kreatif dan pembuatan — kerajinan, seni, woodworking, teknologi maker, dan fotografi.
+    niches:
+      - slug: diy-craft
+        name: "DIY / Kerajinan"
+        description: Bikin barang dari bahan murah.
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: POV + time-lapse + hard-sub
+        example_hook: "Dari kardus bekas jadi ini..."
+        micro:
+          - slug: diy-craft-daur-ulang-plastik
+            name: Daur Ulang Sampah Plastik Jadi Barang Berguna
+            description: Proyek kerajinan yang mengubah botol plastik, kantong kresek, dan kemasan bekas menjadi item rumah tangga berguna, menyasar penonton yang peduli lingkungan dan hemat.
+            example_hook: "Botol plastik ini biasanya langsung dibuang, tapi jadi ini dalam 20 menit..."
+          - slug: diy-craft-hadiah-personal
+            name: Hadiah Buatan Tangan yang Terlihat Mahal
+            description: Proyek kerajinan yang menghasilkan hadiah personal bernilai tinggi dari bahan murah — bingkai foto unik, lilin aroma, dan hiasan — untuk penonton yang ingin berkesan tanpa budget besar.
+            example_hook: "Hadiah ini terlihat Rp500rb tapi aku buat sendiri dengan modal Rp30rb..."
+          - slug: diy-craft-dekorasi-kos-murah
+            name: Dekorasi Kamar Kos dengan Budget Minimum
+            description: Proyek transformasi kamar kos dengan kerajinan tangan murah yang tidak merusak tembok dan tidak memerlukan izin pemilik kos, menyasar mahasiswa dan perantau.
+            example_hook: "Kamar kos ini totalnya Rp150rb untuk dekorasi dan sekarang terlihat kayak apartemen..."
+
+      - slug: art-drawing
+        name: "Seni / Menggambar"
+        description: Proses menggambar/melukis time-lapse.
+        faceless: true
+        difficulty: menengah
+        rpm: rendah
+        formats: time-lapse + ASMR
+        example_hook: "Gambar ini cuma pakai 1 pensil..."
+        micro:
+          - slug: art-drawing-potret-1-jam
+            name: Potret Wajah Realistis dalam 1 Jam
+            description: Time-lapse menggambar potret wajah realistis dari blank canvas hingga selesai dalam format yang memperlihatkan keputusan artistis penting di setiap tahap.
+            example_hook: "Dari kertas kosong jadi potret ini dalam 60 menit, ini prosesnya step by step..."
+          - slug: art-drawing-digital-tablet
+            name: Proses Digital Art dari Sketch ke Final
+            description: Layar-rekam proses lengkap membuat digital illustration dari sketsa kasar hingga artwork final, termasuk tips layer management dan pilihan brush.
+            example_hook: "Ini yang berbeda antara sketsa awal dan hasil akhir, dan kenapa layer itu penting..."
+          - slug: art-drawing-urban-sketching
+            name: Urban Sketching Lokasi Ikonik Indonesia
+            description: Time-lapse menggambar lokasi ikonik Indonesia secara langsung di lapangan — pasar, masjid, gedung tua — memadukan seni dengan dokumentasi budaya lokal.
+            example_hook: "Aku duduk di sini selama 40 menit dan gambar ini sebelum lokasi ini direnovasi..."
+
+      - slug: manufacturing
+        name: How It's Made
+        description: Proses produksi pabrik.
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: footage proses + voiceover
+        example_hook: "Begini cara pensil dibuat massal..."
+        micro:
+          - slug: manufacturing-produk-lokal-indonesia
+            name: Begini Cara Produk Lokal Indonesia Dibuat
+            description: Behind-the-scenes proses produksi produk Indonesia yang dikenal luas — kecap, batik, keramik Kasongan — memperlihatkan keahlian dan kerumitan di balik produk sehari-hari.
+            example_hook: "Kecap yang kamu pakai tiap hari melalui proses ini selama 6 bulan sebelum sampai ke meja makanmu..."
+          - slug: manufacturing-kerajinan-tangan-pengrajin
+            name: Tangan Pengrajin Lokal yang Hampir Punah
+            description: Dokumentasi pengrajin tua Indonesia yang masih menggunakan teknik tradisional untuk membuat produk artisan, menyasar penonton yang menghargai warisan budaya.
+            example_hook: "Pengrajin 70 tahun ini adalah satu-satunya yang masih tahu cara membuat ini di seluruh Indonesia..."
+          - slug: manufacturing-makanan-skala-industri
+            name: Proses Produksi Makanan Favorit Skala Pabrik
+            description: Footage dan penjelasan proses produksi makanan yang dikonsumsi jutaan orang Indonesia setiap hari dalam skala industri, memenuhi rasa ingin tahu yang universal.
+            example_hook: "Indomie yang kamu masak 3 menit itu melalui proses ini selama berjam-jam di pabrik..."
+
+      - slug: woodworking
+        name: Woodworking
+        description: "Kerajinan kayu, furniture."
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: POV + time-lapse + ASMR
+        example_hook: "Kayu bekas ini jadi meja mewah..."
+        micro:
+          - slug: woodworking-kayu-palet-bekas
+            name: Furniture dari Palet Kayu Bekas
+            description: Proyek woodworking menggunakan palet kayu gratis dari gudang atau toko untuk membuat furniture fungsional seperti meja, rak, dan bangku, menyasar yang ingin hemat sekaligus kreatif.
+            example_hook: "Palet kayu ini dibuang supir truk, aku ambil gratis dan sekarang jadi meja kerja seharga Rp2jt..."
+          - slug: woodworking-alat-tangan-minimal
+            name: Woodworking dengan Alat Tangan Minimal
+            description: Proyek furniture dan kerajinan kayu yang hanya menggunakan alat tangan dasar tanpa mesin mahal, membuktikan bahwa woodworking bisa dimulai siapapun dengan modal kecil.
+            example_hook: "Hanya pakai 3 alat tangan ini yang total Rp150rb, ini yang aku buat dalam seminggu..."
+          - slug: woodworking-finishing-cat-unik
+            name: Teknik Finishing Kayu dengan Hasil Unik
+            description: Tutorial teknik pewarnaan dan finishing kayu yang menghasilkan tampilan unik — efek terbakar, stain gradien, dan distressing — untuk pembuat yang ingin karya berbeda dari standard.
+            example_hook: "Teknik ini bikin kayu biasa terlihat seperti antik berumur 100 tahun dalam 30 menit..."
+
+      - slug: 3d-print
+        name: "3D Print / Maker"
+        description: "Cetak 3D, gadget DIY."
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: time-lapse + voiceover
+        example_hook: "Aku print alat ini sendiri..."
+        micro:
+          - slug: 3d-print-masalah-rumah-terpecahkan
+            name: Masalah Rumah yang Dipecahkan dengan 3D Print
+            description: Showcase solusi cetak 3D untuk masalah kecil di rumah yang sulit ditemukan di toko — bracket khusus, pengganti komponen rusak, organizer custom — memperlihatkan nilai praktis 3D printing.
+            example_hook: "Komponen ini sudah discontinue dan harga Rp500rb, aku print sendiri Rp15rb dalam 2 jam..."
+          - slug: 3d-print-gagal-belajar
+            name: 3D Print Gagal dan Cara Mendiagnosis Masalahnya
+            description: Konten jujur memperlihatkan hasil cetak 3D yang gagal beserta analisis penyebab dan solusinya, membantu komunitas maker pemula belajar dari kesalahan nyata.
+            example_hook: "Print ke-7 ini akhirnya berhasil, dan ini perbedaan yang aku lakukan di setiap iterasi..."
+          - slug: 3d-print-miniatur-arsitektur
+            name: Cetak Miniatur Bangunan Ikonik Indonesia
+            description: Proses modeling dan printing miniatur bangunan ikonik Indonesia — Monas, Borobudur, rumah adat — sebagai showcase sekaligus panduan untuk penggemar arsitektur dan maker.
+            example_hook: "Aku print Borobudur dalam skala 1:500 dan butuh 47 jam cetak, ini hasilnya..."
+
+      - slug: photography
+        name: "Fotografi / Editing"
+        description: "Tips foto, edit, before-after."
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: before-after + tutorial
+        example_hook: "Foto HP biasa jadi pro dengan..."
+        micro:
+          - slug: photography-lightroom-preset-lokal
+            name: Editing Foto dengan Tone Warna Estetik Indonesia
+            description: Tutorial Lightroom mobile untuk menciptakan tone warna yang cocok dengan lanskap dan cahaya Indonesia — golden hour tropis, tone hijau hutan — dengan preset yang bisa diunduh.
+            example_hook: "Foto biasa ini diubah dengan 5 slider di Lightroom gratis, sebelum dan sesudahnya..."
+          - slug: photography-golden-hour-hp
+            name: Teknik Foto Golden Hour Hanya dengan HP
+            description: Panduan teknis memaksimalkan cahaya golden hour untuk foto dramatis menggunakan smartphone, termasuk posisi, sudut, dan pengaturan kamera bawaan yang sering diabaikan.
+            example_hook: "Foto HP ini dikira pakai kamera mirrorless Rp20jt, ini tekniknya yang bisa kamu coba hari ini..."
+          - slug: photography-komposisi-otomatis
+            name: Aturan Komposisi yang Bikin Foto Langsung Lebih Baik
+            description: Penjelasan visual 5 aturan komposisi fotografi yang bisa langsung diterapkan siapapun tanpa pengetahuan teknis kamera — rule of thirds, leading lines, dan framing.
+            example_hook: "Foto ini biasa, foto ini luar biasa. Satu-satunya beda adalah aturan komposisi ini..."
+
+  - slug: v-kuliner
+    name: Kuliner
+    description: Konten masakan, resep, review makanan, dan jajanan untuk pecinta kuliner Indonesia.
+    niches:
+      - slug: kuliner-pov
+        name: Kuliner POV
+        description: "Masak/makan POV tangan, ASMR."
+        faceless: true
+        difficulty: pemula
+        rpm: sedang
+        formats: POV + ASMR + hard-sub
+        example_hook: "Resep viral Korea 3 bahan..."
+        micro:
+          - slug: kuliner-pov-tumisan-5-menit
+            name: POV Tumisan Lezat dalam 5 Menit
+            description: POV hands-on memasak tumisan nusantara yang lezat dalam waktu singkat, difilmkan dari sudut mata burung dengan suara ASMR bumbu yang memuaskan.
+            example_hook: "POV kamu masak ini sambil lapar banget dan ternyata jadi dalam 5 menit..."
+          - slug: kuliner-pov-jajan-pasar-pagi
+            name: POV Jajan Pasar Pagi Tradisional
+            description: POV berkeliling pasar tradisional Indonesia pagi hari, membeli dan mencicipi jajanan pasar yang makin langka, memadukan nostalgia dan dokumentasi kuliner lokal.
+            example_hook: "POV kamu bangun jam 5 pagi ke pasar dan cari jajanan ini sebelum habis..."
+          - slug: kuliner-pov-masak-warisan-nenek
+            name: POV Masak Resep Warisan Nenek
+            description: POV memasak resep tradisional keluarga yang diturunkan turun-temurun dengan teknik dan bumbu asli, memadukan nostalgia dengan pelestarian kuliner lokal.
+            example_hook: "Resep ini tidak pernah aku tulis, aku cuma ingat tangan nenek yang lakukannya..."
+
+      - slug: recipe
+        name: Resep Cepat
+        description: Resep step-by-step time-lapse.
+        faceless: true
+        difficulty: pemula
+        rpm: sedang
+        formats: time-lapse + hard-sub
+        example_hook: "Sarapan 5 menit anti ribet..."
+        micro:
+          - slug: recipe-satu-wajan
+            name: Resep Lengkap Satu Wajan Satu Malam
+            description: Resep makan malam penuh yang dimasak dalam satu wajan saja — minim cuci piring, waktu masak di bawah 20 menit — menyasar pekerja yang pulang malam dan tetap ingin masak sendiri.
+            example_hook: "Masakan ini butuh satu wajan dan 15 menit, lebih murah dari delivery dan lebih enak..."
+          - slug: recipe-sisa-bahan-kulkas
+            name: Masak dari Sisa Bahan Kulkas yang Mau Kadaluarsa
+            description: Serial resep kreatif menggunakan kombinasi sisa bahan yang ada di kulkas sebelum kadaluarsa, mengurangi food waste sekaligus mengajarkan improvisasi memasak.
+            example_hook: "Ada telur, tempe, dan wortel sisa, ini yang aku masak dan hasilnya..."
+          - slug: recipe-anak-kos-gas-terbatas
+            name: Resep Anak Kos dengan Kompor Satu Tungku
+            description: Resep lengkap dan bergizi yang dirancang khusus untuk keterbatasan anak kos — satu kompor, satu wajan, bahan dari warung terdekat, budget di bawah Rp20rb per porsi.
+            example_hook: "Makan bergizi Rp15rb sekali masak, bukan mie instan, dan ini caranya..."
+
+      - slug: food-review
+        name: Review Makanan
+        description: "Cobain/review tempat & jajanan."
+        faceless: false
+        difficulty: menengah
+        rpm: sedang
+        formats: POV makan + reaksi + caption
+        example_hook: "Mie terpedas di kota ini..."
+        micro:
+          - slug: food-review-warteg-tersembunyi
+            name: Warteg Tersembunyi dengan Masakan Luar Biasa
+            description: Review dan dokumentasi warteg atau warung sederhana di kota yang menyajikan masakan rumahan berkualitas luar biasa tapi tidak dikenal luas, menyasar pencari hidden gem kuliner.
+            example_hook: "Warteg ini gak ada nama, gak ada Google Maps, tapi antriannya sampai keluar setiap hari..."
+          - slug: food-review-ekspektasi-vs-hype
+            name: Review Jujur Tempat Makan yang Overhyped
+            description: Review kritis terhadap restoran dan kafe yang viral di media sosial tapi kenyataannya tidak sesuai ekspektasi harga, memberikan perspektif jujur yang bermanfaat.
+            example_hook: "Tempat ini 10.000 posting Instagram, aku datang dan ini yang sebenarnya terjadi..."
+          - slug: food-review-perbandingan-harga
+            name: Harga Mahal vs Murah — Mana yang Lebih Enak?
+            description: Blind test atau perbandingan langsung versi premium dan versi murah dari makanan yang sama, mengungkap apakah harga selalu berbanding lurus dengan rasa.
+            example_hook: "Ayam geprek Rp15rb vs Rp80rb — matanya tertutup, pilih yang mana..."
+
+      - slug: street-food
+        name: Street Food
+        description: Footage jajanan kaki lima.
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: footage + ASMR + caption
+        example_hook: "Jajanan legendaris yang hampir punah..."
+        micro:
+          - slug: street-food-pedagang-40-tahun
+            name: Pedagang Kaki Lima yang Sudah Berjualan 40 Tahun
+            description: Dokumentasi pedagang kaki lima veteran yang telah berjualan di tempat yang sama selama puluhan tahun, menggabungkan kuliner dengan cerita manusia yang menyentuh.
+            example_hook: "Bapak ini sudah jual di sini sejak 1985, dan resepnya tidak pernah berubah..."
+          - slug: street-food-jajanan-hampir-punah
+            name: Jajanan Tradisional yang Hampir Tidak Ada Lagi
+            description: Dokumentasi jajanan tradisional Indonesia yang pedagangnya semakin langka dan generasi muda tidak mengenalnya, sebagai arsip kuliner sekaligus konten nostalgia.
+            example_hook: "Jajanan ini aku makan waktu kecil dan sekarang cuma ada satu penjual yang tersisa di kota ini..."
+          - slug: street-food-malam-pasar-kaget
+            name: Keliling Pasar Malam & Pasar Kaget Indonesia
+            description: Dokumentasi suasana dan kuliner unik pasar malam atau pasar kaget di berbagai daerah Indonesia, memperlihatkan keragaman kuliner jajanan yang hanya ada di acara khusus.
+            example_hook: "Datang ke pasar malam ini jam 9 malam dan ini yang ditemukan..."
+
+      - slug: baking
+        name: "Baking / Dessert"
+        description: "Kue, dessert, dekorasi satisfying."
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: POV + time-lapse + ASMR
+        example_hook: "Kue ini cuma butuh 2 bahan..."
+        micro:
+          - slug: baking-no-oven-kompor
+            name: Kue Lezat Tanpa Oven Pakai Wajan
+            description: Resep kue dan dessert yang bisa dibuat tanpa oven menggunakan wajan atau panci biasa, membuka dunia baking untuk yang tinggal di kos atau tidak punya oven.
+            example_hook: "Brownies ini dimasak di wajan dan tidak bisa dibedakan dari yang pakai oven..."
+          - slug: baking-dekorasi-kue-pemula
+            name: Dekorasi Kue yang Terlihat Pro untuk Pemula
+            description: Tutorial dekorasi kue step-by-step menggunakan teknik yang hasilnya terlihat profesional tapi prosesnya bisa dilakukan pemula dengan alat sederhana.
+            example_hook: "Dekorasi kue ini terlihat butuh kursus profesional, tapi ini langkah-langkahnya yang ternyata bisa siapapun lakukan..."
+          - slug: baking-kue-tradisional-modern
+            name: Kue Tradisional Indonesia dengan Twist Modern
+            description: Resep yang mengambil kue tradisional nusantara dan memberinya presentasi atau variasi rasa modern, memadukan nostalgia dengan tren kuliner kekinian.
+            example_hook: "Klepon ini bentuknya sama tapi rasanya beda, ini twist yang bikin orang penasaran..."
+
+      - slug: coffee
+        name: "Kopi / Barista"
+        description: "Bikin kopi, latte art, alat seduh."
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: POV + ASMR + close-up
+        example_hook: "Latte art ini bikin pelanggan balik lagi..."
+        micro:
+          - slug: coffee-manual-brew-untuk-pemula
+            name: Manual Brew Kopi Indonesia untuk Pemula Absolut
+            description: Panduan pertama kali membuat kopi manual brew — V60, French press, atau AeroPress — dengan kopi single origin Indonesia, tanpa istilah teknis yang membingungkan.
+            example_hook: "Kopi paling enak yang pernah kamu minum tidak butuh mesin mahal, ini yang kamu butuhkan..."
+          - slug: coffee-kopi-daerah-indonesia
+            name: Perjalanan Rasa Kopi dari Berbagai Daerah Indonesia
+            description: Perbandingan karakter rasa kopi dari berbagai daerah Indonesia — Gayo, Toraja, Flores, Kintamani — membantu penonton menemukan kopi daerah favorit mereka.
+            example_hook: "Aku brew 5 kopi Indonesia berbeda dalam satu sesi, dan pemenangnya mengejutkan..."
+          - slug: coffee-latte-art-latihan-rumah
+            name: Latihan Latte Art di Rumah Tanpa Mesin Espresso
+            description: Teknik membuat latte art menggunakan susu yang dikocok manual dan kopi espresso dari moka pot, membuktikan seni kopi bisa dipelajari tanpa investasi besar.
+            example_hook: "Latte art ini aku buat pakai moka pot Rp100rb dan pengocok susu Rp30rb..."
+
+  - slug: v-lainnya
+    name: Lainnya
+    description: Konten yang tidak masuk kategori utama — berkebun, buku, kuis interaktif, dan kompilasi tematik.
+    niches:
+      - slug: gardening
+        name: "Berkebun / Tanaman"
+        description: "Tips tanaman, urban farming."
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: time-lapse + POV + voiceover
+        example_hook: "Tanam ini sekali, panen selamanya..."
+        micro:
+          - slug: gardening-polybag-balkon-sempit
+            name: Urban Farming di Balkon Sempit dengan Polybag
+            description: Panduan menanam sayuran produktif di balkon kos atau apartemen menggunakan polybag murah, membuktikan urban farming bisa dimulai dengan lahan kurang dari 2 meter persegi.
+            example_hook: "Balkon 1x2 meter ini hasilkan sayuran cukup untuk seminggu, ini setup-nya..."
+          - slug: gardening-tanaman-pengusir-nyamuk
+            name: Tanaman Hias yang Sekaligus Pengusir Nyamuk
+            description: Panduan menanam tanaman yang terbukti mengusir nyamuk secara alami sambil tetap estetik sebagai tanaman hias dalam ruangan, relevan untuk iklim tropis Indonesia.
+            example_hook: "Tanaman ini sudah aku tanam 3 bulan di kamar dan nyamuk benar-benar berkurang..."
+          - slug: gardening-propagasi-gratis
+            name: Perbanyak Tanaman Sendiri Tanpa Beli Benih
+            description: Teknik propagasi berbagai jenis tanaman hias dan sayuran dari stek, biji, dan daun yang sudah ada, sehingga koleksi tanaman bisa berkembang tanpa biaya tambahan.
+            example_hook: "Satu tanaman monstera ini sudah jadi 12 tanaman dalam 6 bulan tanpa beli sesuatu..."
+
+      - slug: books
+        name: "Buku / Ringkasan"
+        description: "Ringkas buku, rekomendasi."
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: teks + b-roll + voiceover
+        example_hook: "1 buku yang ubah cara pikirku..."
+        micro:
+          - slug: books-satu-ide-buku-bisnis
+            name: Satu Ide Inti dari Buku Bisnis Terbaik
+            description: Setiap video mengambil satu konsep kunci dari buku bisnis atau self-help terbaik dan menjelaskannya dalam 60 detik dengan contoh nyata yang relevan untuk Indonesia.
+            example_hook: "Buku ini 400 halaman, tapi satu idenya ini yang benar-benar mengubah cara aku bekerja..."
+          - slug: books-buku-yang-tidak-perlu-dibaca
+            name: Buku yang Tidak Perlu Kamu Baca Penuh
+            description: Review jujur buku populer yang ringkasannya lebih bermanfaat dari membaca penuh, membantu penonton memutuskan mana buku yang layak investasi waktu penuh.
+            example_hook: "Buku ini ada di mana-mana tapi setelah baca sampai akhir, ini yang benar-benar berguna..."
+          - slug: books-fiksi-yang-ajarkan-kehidupan
+            name: Novel Fiksi yang Ajarkan Hal Nyata
+            description: Analisis mendalam novel fiksi populer yang memuat pelajaran kehidupan tersembunyi di balik ceritanya — dari Bumi Manusia hingga The Alchemist — untuk penonton yang suka insight di balik hiburan.
+            example_hook: "Ini bukan buku self-help, ini novel, tapi halaman ini ubah cara aku lihat kegagalan..."
+
+      - slug: quiz
+        name: "Kuis / Tebak-tebakan"
+        description: Tebak gambar/jawaban interaktif.
+        faceless: true
+        difficulty: pemula
+        rpm: rendah
+        formats: teks + timer + reveal
+        example_hook: "Cuma 1% bisa jawab ini..."
+        micro:
+          - slug: quiz-tebak-kota-indonesia
+            name: Tebak Kota dari Satu Detail Foto
+            description: Kuis visual menebak kota Indonesia dari satu foto detail — bangunan, kuliner, atau pemandangan khas — menyasar penonton lokal yang suka uji pengetahuan geografi Indonesia.
+            example_hook: "Foto ini diambil di satu kota di Indonesia, kamu tahu di mana? Petunjuknya hanya ini..."
+          - slug: quiz-logo-brand-terpotong
+            name: Tebak Brand dari Logo yang Dipotong
+            description: Kuis menebak merek terkenal hanya dari sebagian kecil logo yang dipotong, format permainan visual yang mendorong partisipasi tinggi di kolom komentar.
+            example_hook: "Logo ini dipotong 90%, berapa lama kamu butuh untuk tebak ini brand apa..."
+          - slug: quiz-tahun-berapa-foto-ini
+            name: Tebak Foto Ini dari Tahun Berapa
+            description: Kuis visual menebak dekade foto-foto historis Indonesia dari petunjuk visual seperti mode, kendaraan, dan bangunan, memadukan trivia sejarah dengan format permainan.
+            example_hook: "Foto ini diambil di Indonesia, kamu bisa tebak tahunnya hanya dari yang terlihat di sini..."
+
+      - slug: compilation
+        name: Kompilasi Tematik
+        description: Kumpulan klip satu tema.
+        faceless: true
+        difficulty: pemula
+        rpm: rendah
+        formats: klip + musik + caption
+        example_hook: "10 momen paling memuaskan minggu ini..."
+        micro:
+          - slug: compilation-profesi-jarang-terlihat
+            name: Kompilasi Profesi yang Jarang Kita Lihat
+            description: Kumpulan klip pekerja di profesi tidak biasa yang jarang disorot media — penyelam mutiara, pembuat gamelan, penenun tradisional — sebagai penghargaan terhadap keberagaman profesi.
+            example_hook: "10 profesi Indonesia yang masih ada sampai sekarang tapi jarang kamu tahu..."
+          - slug: compilation-skill-tangan-luar-biasa
+            name: Kompilasi Keahlian Tangan yang Mengagumkan
+            description: Kumpulan klip pengrajin dan seniman dengan keahlian tangan luar biasa — ukiran detail, kaligrafi cepat, merajut dengan kecepatan tidak wajar — format satisfying yang selalu ditonton sampai habis.
+            example_hook: "Tangan manusia bisa lakukan ini, dan video ini membuktikannya dalam 60 detik..."
+          - slug: compilation-reaksi-alam-indonesia
+            name: Kompilasi Momen Alam Indonesia yang Jarang Terekam
+            description: Kumpulan footage langka fenomena alam Indonesia — letusan gunung berapi dari dekat, ikan terbang, dan aurora tropis — yang jarang terekam dengan kualitas baik.
+            example_hook: "10 fenomena alam Indonesia yang sulit dipercaya tapi semua terekam kamera..."
+
+  - slug: v-lifestyle
+    name: Lifestyle
+    description: Konten gaya hidup, produktivitas, minimalism, dan estetika untuk generasi muda Indonesia.
+    niches:
+      - slug: vlog
+        name: "Vlog / Day-in-life"
+        description: Dokumentasi keseharian.
+        faceless: false
+        difficulty: menengah
+        rpm: sedang
+        formats: handheld + b-roll + voiceover
+        example_hook: "Hari di mana semuanya berubah..."
+        micro:
+          - slug: vlog-pindah-kota-baru
+            name: Vlog Pindah Kerja ke Kota yang Belum Dikenal
+            description: Dokumentasi pengalaman nyata pindah ke kota baru untuk kerja — mencari kos, adaptasi budaya lokal, dan membangun lingkaran sosial dari nol — untuk penonton yang sedang merencanakan hal serupa.
+            example_hook: "Hari pertama di kota baru, tidak kenal siapapun, dan ini yang terjadi dalam 7 hari..."
+          - slug: vlog-hari-hidup-freelancer
+            name: Day in the Life Freelancer Indonesia
+            description: Dokumentasi jujur satu hari penuh kehidupan freelancer Indonesia — jam kerja sebenarnya, tantangan income tidak tetap, dan kebebasan yang sering disalahpahami.
+            example_hook: "Freelancer bukan berarti santai, ini jam 6 pagi sampai tengah malam hari ini..."
+          - slug: vlog-bulan-pertama-hidup-sendiri
+            name: Bulan Pertama Hidup Mandiri Pertama Kali
+            description: Dokumentasi jujur bulan pertama tinggal sendiri jauh dari orang tua — biaya tak terduga, rasa sepi, dan pelajaran yang tidak ada di buku — untuk yang sedang merencanakan kemandirian.
+            example_hook: "Bulan pertama hidup sendiri, ini yang tidak pernah diceritakan siapapun kepada aku sebelumnya..."
+
+      - slug: productivity
+        name: Produktivitas
+        description: "Rutinitas, habit, time-management."
+        faceless: true
+        difficulty: pemula
+        rpm: sedang
+        formats: b-roll + teks + voiceover
+        example_hook: "Rutinitas pagi yang ubah hidupku..."
+        micro:
+          - slug: productivity-sistem-catatan-second-brain
+            name: Sistem Catatan Digital yang Benar-benar Dipakai
+            description: Panduan membangun sistem pencatatan digital sederhana yang sustainable — bukan yang terlalu kompleks dan akhirnya ditinggalkan — untuk knowledge worker dan mahasiswa.
+            example_hook: "Sistem catatan ini aku pakai 2 tahun tanpa berhenti, dan ini yang berbeda dari yang lain..."
+          - slug: productivity-deep-work-indonesia
+            name: Deep Work di Era Distraksi Digital Indonesia
+            description: Teknik konkret membangun sesi kerja fokus mendalam di tengah distraksi WhatsApp, Instagram, dan lingkungan kerja Indonesia yang interruptif.
+            example_hook: "Aku bekerja 4 jam per hari dan hasilkan lebih banyak dari orang yang kerja 10 jam, ini caranya..."
+          - slug: productivity-review-mingguan-sederhana
+            name: Review Mingguan 15 Menit yang Benar-benar Efektif
+            description: Template review mingguan yang bisa diselesaikan dalam 15 menit dan cukup untuk menjaga progres tujuan jangka panjang, tanpa harus menjadi perfeksionis perencanaan.
+            example_hook: "15 menit setiap Minggu malam yang bikin Senin paginya selalu dimulai dengan benar..."
+
+      - slug: minimalism
+        name: "Minimalism / Declutter"
+        description: "Hidup minimalis, rapikan barang."
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: b-roll + before-after
+        example_hook: "Aku buang 100 barang dan..."
+        micro:
+          - slug: minimalism-rumah-ortu-penuh-barang
+            name: Declutter Rumah Orang Tua yang Tidak Mau Dibuang
+            description: Panduan mendekati percakapan tentang decluttering dengan orang tua yang sentimental dan tidak mau membuang barang, dengan teknik yang menghormati perasaan mereka.
+            example_hook: "Ibu aku simpan barang sejak 1990, ini percakapan yang akhirnya berhasil..."
+          - slug: minimalism-digital-hp-penuh
+            name: Minimalism Digital — Bersihkan HP yang Penuh Sesak
+            description: Panduan declutter digital menyeluruh — aplikasi tidak terpakai, foto duplikat, notifikasi tidak perlu — sebagai metafora dan praktek nyata pikiran yang lebih jernih.
+            example_hook: "HP aku 256GB penuh, setelah proses ini hanya 40GB terpakai dan hidup terasa lebih ringan..."
+          - slug: minimalism-wardrobe-kapsul
+            name: Bangun Wardrobe Kapsul 30 Potong Pakaian
+            description: Panduan membangun lemari pakaian minimalis dengan 30 potong pakaian serbaguna yang bisa dikombinasikan untuk semua kesempatan, menghilangkan kebingungan pilih baju harian.
+            example_hook: "30 potong baju ini menggantikan lemari 200 potong dan aku tidak pernah bingung lagi mau pakai apa..."
+
+      - slug: room-makeover
+        name: Makeover Kamar
+        description: "Transformasi kamar/ruang."
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: before-after + time-lapse
+        example_hook: "Kamar kos sempit ini disulap..."
+        micro:
+          - slug: room-makeover-budget-500rb
+            name: Makeover Kamar Total Budget Rp500rb
+            description: Transformasi kamar dengan budget ketat Rp500rb menggunakan kombinasi kerajinan tangan, thrift, dan pembelian cerdas, dengan breakdown biaya yang transparan.
+            example_hook: "Kamar ini sebelumnya terlihat seperti gudang, ini setelah Rp500rb dan 2 hari kerja..."
+          - slug: room-makeover-tanpa-bor-tempel
+            name: Dekorasi Kamar Tanpa Bor dan Tidak Merusak Dinding
+            description: Tutorial dekorasi kamar kos atau kontrakan menggunakan metode pemasangan yang tidak merusak dinding — command strip, tapestry, dan furniture freestanding.
+            example_hook: "Aku dekorasi kamar ini dan pas pindah deposit kembali penuh karena tidak ada bekas apapun..."
+          - slug: room-makeover-studio-kerja-rumah
+            name: Sudut Kerja Produktif di Kamar yang Sempit
+            description: Panduan membangun work-from-home setup yang ergonomis dan estetik di ruang sempit, termasuk solusi penyimpanan kabel dan pencahayaan yang benar untuk produktivitas.
+            example_hook: "Setup kerja ini di sudut 1x1 meter, dan ini yang bikin aku lebih produktif dari kerja di kantor..."
+
+      - slug: study-with-me
+        name: "Study / Work With Me"
+        description: "Belajar/kerja bareng, fokus."
+        faceless: true
+        difficulty: pemula
+        rpm: rendah
+        formats: timer + ambience + lo-fi
+        example_hook: "Belajar bareng 1 jam, no distraksi..."
+        micro:
+          - slug: study-with-me-pomodoro-visual
+            name: Study With Me Pomodoro dengan Timer Visual
+            description: Sesi belajar bersama dengan timer Pomodoro yang terlihat jelas di layar, musik lo-fi yang tidak mengganggu, dan transisi visual yang membantu penonton tetap sinkron.
+            example_hook: "Belajar bareng 2 jam dengan Pomodoro, timer muncul di layar, tidak ada excuse untuk berhenti..."
+          - slug: study-with-me-malam-deadline
+            name: Study With Me Malam Sebelum Deadline
+            description: Sesi belajar intensitas tinggi untuk malam sebelum ujian atau deadline, dengan energi yang mencerminkan kondisi nyata — kopi, meja berantakan, dan fokus penuh.
+            example_hook: "Tinggal 12 jam sebelum deadline, belajar bareng dari sekarang sampai selesai..."
+          - slug: study-with-me-cafe-ambience
+            name: Work With Me dengan Ambience Kafe Indonesia
+            description: Sesi kerja bersama dengan latar suara kafe Indonesia yang autentik — mesin kopi, obrolan samar, dan musik akustik — untuk yang tidak bisa ke kafe tapi butuh suasananya.
+            example_hook: "Tidak perlu keluar rumah untuk kerja dengan suasana kafe, belajar bareng di sini..."
+
+      - slug: aesthetic
+        name: "Aesthetic / Mood"
+        description: "Visual estetik + musik, vibe."
+        faceless: true
+        difficulty: pemula
+        rpm: rendah
+        formats: footage estetik + musik
+        example_hook: "Hidup slow living kayak gini..."
+        micro:
+          - slug: aesthetic-pagi-slow-living
+            name: Pagi Hari yang Tenang dan Tidak Terburu-buru
+            description: Footage estetik rutinitas pagi yang lambat dan penuh kesadaran — kopi, cahaya matahari pagi, dan sarapan sederhana — menginspirasi penonton untuk memperlambat tempo.
+            example_hook: "Pagi seperti ini seharusnya menjadi standar, bukan pengecualian..."
+          - slug: aesthetic-malam-hujan-indoor
+            name: Suasana Malam Hujan di Dalam Ruangan
+            description: Footage estetik malam hujan dari dalam rumah atau kafe — suara hujan, lilin, dan buku — menciptakan mood yang nyaman dan mendorong penonton untuk menikmati momen sepi.
+            example_hook: "Hujan di luar, hangat di dalam, dan waktu yang akhirnya hanya untuk dirimu sendiri..."
+          - slug: aesthetic-golden-hour-kota
+            name: Golden Hour di Kota-kota Indonesia
+            description: Kompilasi footage golden hour dari berbagai kota Indonesia — jalanan Jakarta, sawah Jogja, pantai Bali — sebagai konten estetik yang merayakan keindahan lokal yang sering terabaikan.
+            example_hook: "Kota yang sama setiap hari, tapi jam 6 sore dia berubah jadi ini..."
+
+  - slug: v-motivasi
+    name: Motivasi
+    description: Konten pengembangan diri, motivasi, spiritualitas, dan filosofi untuk penonton yang ingin berkembang.
+    niches:
+      - slug: motivation
+        name: "Motivasi / Quotes"
+        description: Kutipan motivasi + visual.
+        faceless: true
+        difficulty: pemula
+        rpm: rendah
+        formats: teks kinetik + sinematik + musik
+        example_hook: "Kalau kamu mau nyerah, dengar ini..."
+        micro:
+          - slug: motivation-gagal-sebelum-sukses
+            name: Berapa Kali Mereka Gagal Sebelum Sukses
+            description: Konten motivasi berbasis fakta tentang jumlah kegagalan nyata yang dialami tokoh sukses Indonesia dan dunia sebelum akhirnya berhasil, melawan narasi sukses instan.
+            example_hook: "Orang ini ditolak 97 kali sebelum akhirnya berhasil, dan kamu menyerah di percobaan ketiga..."
+          - slug: motivation-perbandingan-racun
+            name: Berhenti Membandingkan Diri dengan Orang Lain
+            description: Konten yang menantang kebiasaan perbandingan sosial di era media sosial dengan argumen yang berbasis psikologi dan bukan klise, untuk penonton yang sadar tapi masih terjebak.
+            example_hook: "Orang yang kamu iri itu sendiri sedang merasa tidak cukup, dan ini buktinya..."
+          - slug: motivation-kecil-tapi-konsisten
+            name: Kekuatan Perubahan 1% Setiap Hari
+            description: Konten motivasi berbasis konsep compound improvement — bahwa konsistensi perubahan kecil mengalahkan usaha besar yang sporadis — dengan contoh kalkulasi yang visual.
+            example_hook: "1% lebih baik setiap hari selama setahun, ini berapa jadinya dan kenapa otak kita tidak percaya..."
+
+      - slug: self-improve
+        name: Self Improvement
+        description: "Tips pengembangan diri, kebiasaan."
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: teks + b-roll + voiceover
+        example_hook: "1 kebiasaan yang ubah hidupku..."
+        micro:
+          - slug: self-improve-identitas-vs-tujuan
+            name: Bangun Identitas Baru Bukan Kejar Target
+            description: Pendekatan pengembangan diri berbasis identitas — "aku adalah orang yang sehat" vs "aku mau turun 10kg" — menjelaskan kenapa tujuan saja tidak cukup untuk perubahan yang bertahan.
+            example_hook: "Semua targetmu gagal bukan karena kurang motivasi, tapi karena kamu mulai dari tempat yang salah..."
+          - slug: self-improve-lingkungan-yang-membangun
+            name: Desain Lingkungan yang Membuatmu Otomatis Berkembang
+            description: Konsep behavior design — mengubah lingkungan fisik dan sosial agar perilaku baik menjadi default bukan pilihan — dengan contoh konkret yang bisa langsung diterapkan.
+            example_hook: "Kamu tidak butuh lebih banyak disiplin, kamu butuh lingkungan yang dirancang lebih baik..."
+          - slug: self-improve-batas-sehat
+            name: Belajar Bilang Tidak Tanpa Merasa Bersalah
+            description: Panduan praktis membangun batas personal yang sehat dalam konteks budaya Indonesia yang cenderung kolektif dan tidak nyaman menolak permintaan orang lain.
+            example_hook: "Kata 'tidak' ini membuat orang Indonesia merasa bersalah, tapi ini cara mengatakannya dengan benar..."
+
+      - slug: spiritual
+        name: "Spiritual / Religi"
+        description: "Renungan, kisah hikmah."
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: voiceover + visual tenang
+        example_hook: "Doa ini mengubah segalanya..."
+        micro:
+          - slug: spiritual-hikmah-ujian-hidup
+            name: Hikmah di Balik Ujian yang Terasa Tidak Adil
+            description: Renungan mendalam tentang makna di balik cobaan yang terasa tidak adil, disajikan dengan narasi yang menenangkan bukan menggurui, untuk penonton yang sedang di titik terendah.
+            example_hook: "Ketika kamu bertanya kenapa ini terjadi padamu, ini yang jarang ada yang beritahu..."
+          - slug: spiritual-kisah-teladan-lokal
+            name: Kisah Teladan dari Ulama dan Tokoh Lokal
+            description: Narasi singkat kisah nyata ulama atau tokoh spiritual Indonesia yang inspirasinya tidak banyak diketahui generasi muda, menghidupkan kembali kearifan lokal.
+            example_hook: "Kiai ini ditanya muridnya hal yang paling kamu takutkan, dan jawabannya tidak diduga siapapun..."
+          - slug: spiritual-ibadah-dan-produktivitas
+            name: Hubungan Antara Ibadah dan Produktivitas Harian
+            description: Konten yang menghubungkan praktik ibadah rutin dengan manfaat psikologis dan produktivitas yang nyata — bukan klaim supranatural — untuk penonton yang ingin keduanya seimbang.
+            example_hook: "Ini yang terjadi di otak dan tubuh 30 menit setelah sholat subuh yang tidak banyak dibahas..."
+
+      - slug: stoicism
+        name: "Filosofi / Stoik"
+        description: "Filosofi hidup, stoikisme."
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: teks + sinematik + voiceover
+        example_hook: "Marcus Aurelius bilang hal ini..."
+        micro:
+          - slug: stoicism-kontrol-vs-tidak
+            name: Dikotomi Kontrol — Apa yang Benar-benar dalam Kuasamu
+            description: Penjelasan mendalam konsep dikotomi kontrol Stoik yang diterapkan pada situasi sehari-hari Indonesia — kemacetan, drama kantor, dan ketidakpastian karir.
+            example_hook: "Marcus Aurelius hadapi wabah dan perang dengan prinsip ini yang bisa kamu pakai hari ini..."
+          - slug: stoicism-memento-mori-produktif
+            name: Ingat Kematian sebagai Motivasi Hidup
+            description: Penjelasan konsep Memento Mori Stoik bukan sebagai pemikiran gelap tapi sebagai tools untuk menentukan prioritas dan menghentikan kekhawatiran atas hal yang tidak penting.
+            example_hook: "Seneca menulis ini dari penjara, dan kalimatnya ini membuat semua keluhanku terasa kecil..."
+          - slug: stoicism-amor-fati-indonesia
+            name: Amor Fati — Cintai Apa yang Terjadi
+            description: Penerapan konsep Amor Fati Nietzsche dan Stoik dalam konteks kehidupan Indonesia — gagal CPNS, ditolak kerja, dan rencana yang berantakan — membalik perspektif tentang kegagalan.
+            example_hook: "Filosofi ini mengajarkan untuk tidak sekadar menerima hal buruk, tapi mencintainya, dan ini kenapa..."
+
+  - slug: v-olahraga
+    name: Olahraga
+    description: Konten olahraga — highlight, skill, tutorial, dan motivasi untuk pecinta olahraga Indonesia.
+    niches:
+      - slug: sports-clips
+        name: "Sports Highlights"
+        description: "Klip olahraga (hati2 hak cipta)."
+        faceless: true
+        difficulty: sulit
+        rpm: rendah
+        formats: klip + caption + SFX
+        example_hook: "Gol mustahil yang bikin stadion gila..."
+        micro:
+          - slug: sports-clips-gol-tendangan-bebas
+            name: Gol Tendangan Bebas Paling Ikonik Sepak Bola Indonesia
+            description: Rekap tendangan bebas paling membekas dari Liga 1 dan Timnas Indonesia, dikurasi untuk penonton yang ingin nostalgia momen bersejarah tanpa harus cari sendiri.
+            example_hook: "Tendangan bebas ini diingat ribuan orang di stadion yang sama sampai hari ini..."
+          - slug: sports-clips-momen-comeback
+            name: Momen Comeback Terbaik Olahraga Dunia
+            description: Kompilasi momen tim atau atlet yang membalikkan keadaan dari posisi hampir kalah menjadi juara, format yang selalu memancing emosi dan komentar.
+            example_hook: "Tertinggal 3 gol di babak kedua, dan ini yang terjadi 15 menit kemudian..."
+          - slug: sports-clips-atletik-indonesia-viral
+            name: Atlet Indonesia yang Viral karena Prestasinya
+            description: Highlight momen viral atlet Indonesia — dari bulu tangkis, angkat besi, hingga lari — yang sempat trending tapi layak ditonton ulang untuk penonton yang melewatkannya.
+            example_hook: "Momen ini ditonton 20 juta orang dalam 48 jam, dan ini alasannya..."
+
+      - slug: sports-skills
+        name: "Skill / Tutorial Olahraga"
+        description: "Trik & latihan cabang olahraga."
+        faceless: false
+        difficulty: menengah
+        rpm: sedang
+        formats: demo + slow-mo + caption
+        example_hook: "Teknik tendangan yang dipakai pro..."
+        micro:
+          - slug: sports-skills-badminton-smash
+            name: Teknik Smash Bulu Tangkis yang Benar
+            description: Tutorial smash bulu tangkis dari posisi kaki, ayunan raket, hingga follow-through, disajikan dengan slow-motion untuk penonton yang ingin naik level dari sekadar rekreasi.
+            example_hook: "Smash kamu tidak sekeras ini karena kesalahan di sini, bukan di lengan..."
+          - slug: sports-skills-futsal-wall-pass
+            name: Kombinasi Wall Pass & Dribel Futsal
+            description: Tutorial kombinasi gerakan futsal yang dipakai tim-tim kompetitif — wall pass, 1-2, dan fake shot — untuk pemain amatir yang ingin terlihat lebih teknikal di lapangan.
+            example_hook: "Gerakan 2 detik ini bikin lawan bingung dan membuka ruang tembak langsung..."
+          - slug: sports-skills-renang-nafas-efisien
+            name: Teknik Pernapasan Renang untuk Pemula
+            description: Panduan teknik pernapasan di renang gaya bebas yang paling sering salah — rotasi kepala, timing, dan exhale bawah air — untuk pemula yang masih terengah-engah setelah 25 meter.
+            example_hook: "Bukan stamina yang bikin kamu cepat lelah renang, ini yang sebenarnya perlu diperbaiki..."
+
+  - slug: v-on-camera
+    name: On-Camera
+    description: Konten yang menampilkan pembuat secara langsung — wawancara, edukasi tatap muka, challenge, dan podcast clip.
+    niches:
+      - slug: street-interview
+        name: "Street Interview"
+        description: "Wawancara orang di jalan."
+        faceless: false
+        difficulty: sulit
+        rpm: sedang
+        formats: wawancara + reveal jawaban
+        example_hook: "Aku tanya orang asing ini..."
+        micro:
+          - slug: street-interview-gaji-harapan
+            name: Berapa Gaji yang Kamu Anggap Layak?
+            description: Wawancara jalan tentang ekspektasi gaji masyarakat Indonesia dari berbagai latar belakang, memperlihatkan kesenjangan persepsi yang mengundang diskusi di kolom komentar.
+            example_hook: "Aku tanya 10 orang angka gaji yang bikin mereka merasa cukup, dan jawabannya mengejutkan..."
+          - slug: street-interview-pertanyaan-taboo
+            name: Pertanyaan yang Biasanya Tidak Ditanya di Depan Umum
+            description: Wawancara jalan dengan pertanyaan sensitif tapi relevan — soal pernikahan, tekanan keluarga, atau impian yang ditinggalkan — yang mengungkap kejujuran yang jarang tampil di media.
+            example_hook: "Aku tanya orang asing ini satu pertanyaan yang biasanya tidak ada yang berani tanya..."
+          - slug: street-interview-generasi-berbeda
+            name: Pertanyaan yang Sama kepada 3 Generasi Berbeda
+            description: Format wawancara yang mengajukan pertanyaan identik kepada orang dari generasi berbeda — Gen Z, Milenial, dan Baby Boomer — lalu memperlihatkan kontras jawaban yang menarik.
+            example_hook: "Pertanyaan sama soal sukses, tiga generasi berbeda — ini perbedaan jawabannya..."
+
+      - slug: talking-head
+        name: "Talking Head / Edukasi"
+        description: "Bicara langsung ke kamera."
+        faceless: false
+        difficulty: menengah
+        rpm: tinggi
+        formats: bicara + b-roll + caption
+        example_hook: "3 hal yang aku harap tahu lebih awal..."
+        micro:
+          - slug: talking-head-pelajaran-karir-pahit
+            name: Pelajaran Karir yang Dipelajari dengan Cara Pahit
+            description: Konten talking head jujur tentang kesalahan karir nyata yang mahal — tanda tangan kontrak buruk, resign tanpa rencana, atau salah pilih jalur — untuk profesional muda yang ingin belajar tanpa harus mengalaminya.
+            example_hook: "Keputusan karir ini aku sesali 3 tahun, dan aku tidak mau kamu buat kesalahan yang sama..."
+          - slug: talking-head-unpopular-opinion
+            name: Pendapat Kontroversial yang Tidak Populer tapi Benar
+            description: Format talking head yang menyampaikan pandangan yang bertentangan dengan narasi umum — tentang pendidikan, kesuksesan, atau budaya kerja Indonesia — dengan argumen yang solid bukan sekadar provokatif.
+            example_hook: "Semua orang bilang ini adalah jalan yang benar, tapi data dan pengalamanku bilang sebaliknya..."
+          - slug: talking-head-quarter-life-crisis
+            name: Aku Juga Tidak Tahu Harus ke Mana di Usia 20-an
+            description: Konten relatable tentang kebingungan nyata di usia 20-an — tekanan sosial, ekspektasi karir, dan perasaan tertinggal — disajikan dengan jujur bukan sebagai ceramah.
+            example_hook: "Aku 26 tahun, punya pekerjaan, dan masih tidak tahu ini jalan yang benar untukku..."
+
+      - slug: challenge
+        name: "Challenge"
+        description: "Tantangan, eksperimen sosial."
+        faceless: false
+        difficulty: menengah
+        rpm: rendah
+        formats: dokumentasi + reveal hasil
+        example_hook: "24 jam cuma makan warna kuning..."
+        micro:
+          - slug: challenge-hidup-tanpa-hp-sehari
+            name: 24 Jam Hidup Tanpa Smartphone
+            description: Dokumentasi jujur percobaan hidup seharian penuh tanpa smartphone — dari bangun tidur hingga malam — dengan temuan tentang ketergantungan digital yang mengejutkan pelakunya sendiri.
+            example_hook: "Aku coba hidup tanpa HP selama 24 jam dan jam ke-3 sudah terjadi hal yang tidak terduga..."
+          - slug: challenge-budget-ekstrem-seminggu
+            name: Hidup dengan Budget Rp50rb per Hari Selama Seminggu
+            description: Eksperimen nyata mencoba hidup dengan Rp50rb per hari selama tujuh hari — makan, transportasi, semua — dokumentasi survival yang relevan sekaligus membuka mata soal privilege.
+            example_hook: "Rp50rb sehari selama 7 hari, hari ke-3 ini yang membuat aku sadar selama ini boros..."
+          - slug: challenge-belajar-skill-baru-30-hari
+            name: Belajar Skill Baru dari Nol dalam 30 Hari
+            description: Dokumentasi proses belajar skill spesifik dari nol — coding, gitar, atau memasak — selama 30 hari dengan rekap mingguan yang jujur tentang progres nyata vs ekspektasi awal.
+            example_hook: "Hari 1 vs hari 30 belajar gitar ini, ternyata ini yang benar-benar sulit..."
+
+      - slug: podcast-clip
+        name: "Podcast Clips"
+        description: "Potongan momen podcast viral."
+        faceless: false
+        difficulty: menengah
+        rpm: sedang
+        formats: klip + caption + b-roll
+        example_hook: "Tamu ini bongkar rahasia industri..."
+        micro:
+          - slug: podcast-clip-founder-jujur
+            name: Saat Founder Startup Jujur Soal Kegagalan
+            description: Potongan momen podcast di mana founder startup Indonesia berbicara jujur tentang kegagalan, hutang, dan keputusan buruk — konten langka yang lebih berharga dari success story biasa.
+            example_hook: "Founder ini untuk pertama kalinya cerita angka kerugian yang selama ini disembunyikan..."
+          - slug: podcast-clip-ahli-bantah-mitos
+            name: Pakar yang Membantah Mitos Populer Langsung
+            description: Klip momen podcast di mana dokter, ekonom, atau pakar membantah mitos yang dipercaya luas — dari soal kesehatan hingga finansial — dengan penjelasan singkat yang mengejutkan penonton.
+            example_hook: "Dokter ini bantah langsung saran viral yang sudah dipercaya jutaan orang..."
+          - slug: podcast-clip-pergolakan-batin-tamu
+            name: Momen Emosional Tamu Podcast yang Tidak Terduga
+            description: Potongan momen podcast di mana tamu mengalami pergolakan emosional nyata — menangis, tertawa tidak terduga, atau momen keheningan — yang terasa autentik dan melampaui konten biasa.
+            example_hook: "Pertanyaan ini bikin tamu yang selalu tampil kuat akhirnya berhenti sejenak..."
+
+  - slug: v-otomotif
+    name: Otomotif
+    description: Konten seputar kendaraan — modifikasi, detailing, fakta, dan tips berkendara untuk pecinta otomotif Indonesia.
+    niches:
+      - slug: car-auto
+        name: "Otomotif / Detailing"
+        description: "Mobil, modif, detailing."
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: footage + before-after + voiceover
+        example_hook: "Mobil bekas ini disulap mewah..."
+        micro:
+          - slug: car-auto-detailing-poles-diy
+            name: Poles Mobil Sendiri di Rumah — Hasil Salon
+            description: Tutorial detailing mobil DIY langkah-langkah poles cat hingga hasil mendekati salon profesional, menggunakan produk yang tersedia di toko otomotif lokal dengan harga terjangkau.
+            example_hook: "Cat baret ini dihilangkan sendiri di garasi dengan alat seharga Rp200rb..."
+          - slug: car-auto-modif-budget-minim
+            name: Modifikasi Tampilan Mobil dengan Budget Rp1jt
+            description: Panduan modifikasi estetik mobil yang memberikan perubahan visual signifikan dengan budget di bawah Rp1 juta — wrap parsial, lampu DRL, dan aksesoris interior murah.
+            example_hook: "Mobil ini terlihat 10 juta lebih mahal setelah modifikasi seharga Rp800rb..."
+          - slug: car-auto-beli-bekas-jebakan
+            name: Jebakan Tersembunyi saat Beli Mobil Bekas
+            description: Panduan inspeksi mobil bekas yang mengungkap masalah yang disembunyikan penjual — bekas tabrakan, odometer mundur, dan kerusakan mesin yang baru terasa setelah dibeli.
+            example_hook: "Mobil ini sempurna di foto, tapi cek satu titik ini dan terungkap semuanya..."
+
+      - slug: car-facts
+        name: "Fakta Otomotif"
+        description: "Fakta mobil/motor, sejarah brand."
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: footage + voiceover
+        example_hook: "Kenapa mobil ini dilarang di Indonesia..."
+        micro:
+          - slug: car-facts-sejarah-brand-jepang
+            name: Sejarah Gelap Brand Otomotif Jepang yang Kuasai Indonesia
+            description: Kisah di balik dominasi brand Jepang di pasar otomotif Indonesia — keputusan politik, perjanjian eksklusif, dan persaingan yang mematikan brand lokal — yang jarang dibahas.
+            example_hook: "Brand ini kuasai 90% pasar Indonesia bukan karena paling bagus, tapi karena ini..."
+          - slug: car-facts-teknologi-tersembunyi
+            name: Fitur Tersembunyi di Mobil yang Kamu Punya
+            description: Showcase fitur-fitur yang sudah ada di mobil populer Indonesia tapi jarang diketahui pemiliknya karena tidak ada di buku manual atau sales tidak menjelaskan.
+            example_hook: "Tombol ini ada di dasbor mobilmu dan hampir tidak ada yang tahu fungsinya..."
+          - slug: car-facts-kecelakaan-desain
+            name: Kecelakaan Desain Mobil yang Mengubah Industri
+            description: Kisah recall dan kegagalan desain otomotif bersejarah yang merugikan atau membahayakan dan akhirnya mengubah standar keselamatan industri secara permanen.
+            example_hook: "Kesalahan desain ini membunuh ratusan orang sebelum pabrikan akhirnya mengakuinya..."
+
+      - slug: moto-vlog
+        name: "Moto / Riding"
+        description: "Riding, touring, tips motor."
+        faceless: false
+        difficulty: menengah
+        rpm: sedang
+        formats: helmet-cam + voiceover
+        example_hook: "Jalur ini berbahaya tapi indah..."
+        micro:
+          - slug: moto-vlog-jalur-tersembunyi-jawa
+            name: Jalur Motor Tersembunyi di Pulau Jawa
+            description: Dokumentasi riding melewati jalur pegunungan atau pedesaan di Jawa yang belum banyak dikenal komunitas touring, dengan tips waktu terbaik dan kondisi jalan yang jujur.
+            example_hook: "Jalur ini 3 jam dari Jakarta dan hampir tidak ada yang tahu, ini dokumentasinya..."
+          - slug: moto-vlog-tips-touring-pemula
+            name: Tips Touring Motor Pertama Kali Tanpa Panik
+            description: Panduan persiapan touring motor jarak jauh untuk pemula — checklist motor, barang bawaan, manajemen stamina, dan apa yang dilakukan saat mogok di jalan.
+            example_hook: "Touring pertama aku 500km tanpa persiapan ini, dan ini yang hampir buat aku menyesal..."
+          - slug: moto-vlog-kopling-manual-belajar
+            name: Belajar Motor Kopling Manual dalam Satu Hari
+            description: Dokumentasi proses belajar motor kopling manual dari nol hingga bisa jalan sendiri dalam satu hari, dengan penjelasan teknis yang menghilangkan rasa takut pemula.
+            example_hook: "Aku tidak pernah pegang motor kopling, ini yang terjadi setelah 8 jam latihan..."
+
+  - slug: v-satisfying
+    name: Satisfying
+    description: Konten visual dan audio yang memuaskan — restorasi, ASMR, cleaning, dan proses yang menenangkan.
+    niches:
+      - slug: restoration
+        name: "Restorasi Barang"
+        description: "Perbaiki barang rusak jadi baru."
+        faceless: true
+        difficulty: pemula
+        rpm: sedang
+        formats: POV + time-lapse + before-after
+        example_hook: "Barang karatan ini dibuang orang..."
+        micro:
+          - slug: restoration-sepatu-jadul
+            name: Restorasi Sepatu Jadul Jadi Seperti Baru
+            description: Proses restorasi sepatu lawas yang tampak tidak terselamatkan — sol rekat, kulit mengelupas, warna pudar — hingga kembali layak pakai, dengan produk yang mudah ditemukan di Indonesia.
+            example_hook: "Sepatu ini dibuang tetangga, 3 jam kemudian terlihat seperti baru dari toko..."
+          - slug: restoration-furnitur-kayu-lapuk
+            name: Furnitur Kayu Lapuk Dijadikan Kembali Fungsional
+            description: Proses restorasi furniture kayu tua yang lapuk dan rusak menjadi fungsional dan estetik kembali, memperlihatkan nilai yang tersembunyi dalam barang yang tampak tidak berguna.
+            example_hook: "Kursi kayu ini sudah 40 tahun tidak dipakai, ini yang terjadi setelah 5 jam di bengkel..."
+          - slug: restoration-elektronik-rusak
+            name: Barang Elektronik Rusak Diperbaiki dari Nol
+            description: Proses perbaikan barang elektronik yang dinyatakan mati — radio tua, kalkulator vintage, atau tape player — mulai dari diagnosis kerusakan hingga berhasil menyala kembali.
+            example_hook: "Radio tahun 1975 ini ditemukan di gudang, terakhir menyala saat aku belum lahir..."
+
+      - slug: satisfying
+        name: "Oddly Satisfying"
+        description: "Visual/proses memuaskan, loop."
+        faceless: true
+        difficulty: pemula
+        rpm: rendah
+        formats: close-up + SFX + loop
+        example_hook: "Tonton sampai habis, dijamin lega..."
+        micro:
+          - slug: satisfying-cat-rata-sempurna
+            name: Cat Dinding Rata Sempurna Tanpa Noda
+            description: Footage close-up proses pengecatan dinding dengan teknik yang menghasilkan lapisan sempurna rata dan bebas brush mark, format yang memuaskan bagi penonton yang obsesif dengan kerapian.
+            example_hook: "Kuas bergerak sekali ini dan hasilnya tidak ada yang menandingi..."
+          - slug: satisfying-packaging-rapi
+            name: Proses Packing Produk dengan Ketelitian Ekstrem
+            description: Footage proses pengemasan produk secara sangat teliti dan presisi — lipatan kertas sempurna, pita simetris, dan label rata — yang memenuhi kebutuhan penonton yang obsesif dengan kerapian.
+            example_hook: "Kotak ini dilipat dan dikemas dengan cara yang bikin tangan gatal ingin coba sendiri..."
+          - slug: satisfying-grouting-keramik
+            name: Grouting Nat Keramik Sampai Sempurna
+            description: Footage proses mengisi nat keramik dari yang kotor dan tidak merata hingga putih bersih dan rata sempurna, format satisfying yang sangat populer di komunitas rumah tangga.
+            example_hook: "Nat keramik ini hitam selama 10 tahun, 20 menit kemudian terlihat seperti baru dipasang..."
+
+      - slug: asmr
+        name: "ASMR"
+        description: "Suara memuaskan, dominan audio."
+        faceless: true
+        difficulty: menengah
+        rpm: rendah
+        formats: audio + close-up + no-talk
+        example_hook: "Pakai headset, dengerin ini..."
+        micro:
+          - slug: asmr-masak-tradisional
+            name: ASMR Memasak Masakan Tradisional Indonesia
+            description: Rekaman close-up dan binauralmemasak masakan tradisional Indonesia — tumisan, goreng bawang, dan ulek sambal — tanpa narasi, hanya suara proses memasak yang autentik.
+            example_hook: "Suara cobek ini akan membawa kamu ke dapur nenek, pakai headset..."
+          - slug: asmr-hujan-atap-seng
+            name: ASMR Hujan di Atap Seng Indonesia
+            description: Rekaman binaural hujan menimpa atap seng yang ikonik di Indonesia — suara yang sangat familier bagi jutaan penonton lokal tapi hampir tidak ada konten berkualitas tentangnya.
+            example_hook: "Suara ini akan membuat kamu tertidur dalam 5 menit jika kamu dengarkan dengan headset..."
+          - slug: asmr-ukir-kayu
+            name: ASMR Proses Ukiran Kayu Tangan
+            description: Rekaman close-up proses pengukiran kayu tangan dengan berbagai pahat — suara ketukan, serpihan, dan gerakan presisi — tanpa musik atau narasi, murni suara dan visual proses.
+            example_hook: "Suara pahat ini menenangkan dengan cara yang sulit dijelaskan, coba sendiri..."
+
+      - slug: cleaning
+        name: "Cleaning / Deep Clean"
+        description: "Bersih-bersih ekstrem, before-after."
+        faceless: true
+        difficulty: pemula
+        rpm: sedang
+        formats: time-lapse + before-after
+        example_hook: "Rumah sejorok ini disulap..."
+        micro:
+          - slug: cleaning-kamar-mandi-ekstrem
+            name: Deep Clean Kamar Mandi yang Tidak Pernah Disikat
+            description: Proses pembersihan kamar mandi yang kondisinya sangat kotor karena lama tidak dibersihkan — jamur, kerak, dan noda membandel — dengan produk lokal yang mudah didapat.
+            example_hook: "Kamar mandi ini tidak pernah disikat 2 tahun, ini yang terjadi dalam 1 jam..."
+          - slug: cleaning-dapur-minyak-membatu
+            name: Bersihkan Dapur dari Kerak Minyak yang Mengeras
+            description: Tutorial dan footage time-lapse membersihkan dapur dari kerak minyak tebal yang menempel di kompor, dinding, dan exhaust — transformasi ekstrem yang selalu mengundang tonton ulang.
+            example_hook: "Kerak minyak ini sudah 3 tahun menempel, ini produk dan teknik yang akhirnya berhasil..."
+          - slug: cleaning-motor-full-detailing
+            name: Motor Kusam Dijadikan Seperti Baru dengan Detailing
+            description: Proses detailing motor dari eksterior kotor dan cat kusam hingga bersih mengkilap — cocok untuk pemilik motor yang ingin tahu cara merawat kendaraan tanpa harus ke bengkel.
+            example_hook: "Motor ini terakhir dicuci 6 bulan lalu, ini hasil setelah 2 jam detailing sendiri..."
+
+      - slug: soap-cutting
+        name: "Cutting / Crushing"
+        description: "Potong sabun/slime, hydraulic press."
+        faceless: true
+        difficulty: pemula
+        rpm: rendah
+        formats: close-up + SFX + loop
+        example_hook: "Apa jadinya kalau ini dipress?"
+        micro:
+          - slug: soap-cutting-sabun-vintage
+            name: Potong Sabun Keras Vintage dengan Pisau
+            description: Footage close-up memotong sabun batang tua yang sudah mengeras dengan pisau tajam — suara dan tekstur yang sangat satisfying — menggunakan sabun lokal Indonesia yang familier.
+            example_hook: "Sabun batang ini keras seperti batu, tapi dengarkan suaranya saat dipotong..."
+          - slug: soap-cutting-resin-warna
+            name: Cutting Resin Berwarna yang Sudah Mengering
+            description: Proses memotong lempengan resin epoksi yang sudah mengeras dengan berbagai warna, mengungkap tekstur dan pola warna di bagian dalam yang tidak terlihat dari luar.
+            example_hook: "Tidak ada yang tahu apa yang ada di dalam resin ini sampai dipotong sekarang..."
+          - slug: soap-cutting-es-kristal
+            name: Crushing Bongkahan Es Kristal Besar
+            description: Footage meremukkan atau memecah bongkahan es besar dengan berbagai alat, memadukan visual yang dramatis dengan suara renyah yang konsisten memuaskan.
+            example_hook: "Es sebesar kepala ini dipecah satu pukulan dan suaranya bisa didengar dari jauh..."
+
+      - slug: kinetic-sand
+        name: "Sand / Slime"
+        description: "Main pasir kinetik/slime satisfying."
+        faceless: true
+        difficulty: pemula
+        rpm: rendah
+        formats: close-up + ASMR + loop
+        example_hook: "Suara ini bikin otak kamu tenang..."
+        micro:
+          - slug: kinetic-sand-cetakan-detail
+            name: Pasir Kinetik Dicetak ke Cetakan Detail
+            description: Footage close-up menekan pasir kinetik ke dalam cetakan bermotif detail lalu melepaskannya dalam satu gerakan, menghasilkan bentuk presisi yang memuaskan secara visual dan audio.
+            example_hook: "Pasir ini ditekan ke cetakan ini dan hasilnya sempurna tanpa cacat apapun..."
+          - slug: kinetic-sand-warna-dicampur
+            name: Mixing Pasir Kinetik Dua Warna
+            description: Proses mencampur dua blok pasir kinetik berwarna berbeda perlahan hingga membentuk pola marmer, konten loop yang sangat populer di segmen satisfying.
+            example_hook: "Dua warna ini belum pernah dicampur sebelumnya, tonton apa yang terbentuk..."
+          - slug: kinetic-sand-diiris-tipis
+            name: Iris Pasir Kinetik Setipis Mungkin
+            description: Footage memotong blok pasir kinetik dengan benang atau kawat tipis hingga menghasilkan irisan setipis kertas yang jatuh dengan cara yang sangat memuaskan.
+            example_hook: "Seberapa tipis irisan pasir ini bisa bertahan sebelum jatuh? Lihat sampai akhir..."
+
+      - slug: before-after
+        name: "Before After"
+        description: "Transformasi visual dramatis sebelum dan sesudah, format reveal."
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: split-screen + reveal + musik
+        example_hook: "Tunggu sampai detik ke-10, gak nyangka..."
+        micro:
+          - slug: before-after-taman-rumah-terlantar
+            name: Taman Rumah Terlantar Disulap dalam Satu Hari
+            description: Transformasi taman atau halaman rumah yang terlantar dan penuh rumput liar menjadi taman bersih dan rapi dalam satu hari kerja, dengan breakdown sederhana apa yang dilakukan.
+            example_hook: "Halaman ini sudah setahun tidak disentuh, ini setelah 8 jam kerja..."
+          - slug: before-after-lemari-berantakan
+            name: Lemari Pakaian Kacau Diorganisir Total
+            description: Transformasi lemari pakaian yang penuh sesak dan tidak teratur menjadi terorganisir rapi dengan sistem yang bisa dipertahankan, bukan sekadar disembunyikan untuk video.
+            example_hook: "Lemari ini butuh 5 menit untuk menemukan satu kaos, sekarang butuh 5 detik..."
+          - slug: before-after-motor-cat-kusam
+            name: Cat Motor Kusam Dipoles Kembali Mengkilap
+            description: Proses memoles cat motor yang kusam dan baret halus kembali menjadi mengkilap menggunakan compound dan polish, tanpa harus cat ulang yang mahal.
+            example_hook: "Cat motor ini 7 tahun tidak dipoles, ini hasilnya setelah 90 menit polishing..."
+
+  - slug: v-seni
+    name: Seni
+    description: Konten kreasi seni — musik, anime edit, dan tari untuk kreator berbakat.
+    niches:
+      - slug: music-edit
+        name: "Music / Beat Edit"
+        description: "Edit musik, cover, beat-making."
+        faceless: true
+        difficulty: menengah
+        rpm: rendah
+        formats: beat-sync + visual
+        example_hook: "Beat ini dibuat cuma 5 menit..."
+        micro:
+          - slug: music-edit-lagu-daerah-modern
+            name: Lagu Daerah Indonesia Diaransemen Ulang Modern
+            description: Produksi ulang lagu daerah nusantara dengan aransemen modern — trap, lo-fi, atau electronic — memperkenalkan kekayaan musik lokal kepada penonton yang biasanya tidak mendengarkan musik tradisional.
+            example_hook: "Lagu ini diajarkan di SD dulu, tapi versi ini terdengar seperti rilisan label internasional..."
+          - slug: music-edit-beat-dari-suara-dapur
+            name: Beat Musik dari Suara Benda Dapur
+            description: Proses membuat beat musik hanya menggunakan suara rekaman benda dapur — ketukan panci, gesekan sendok, suara air — diproses menjadi lagu yang layak didengar dari awal hingga akhir.
+            example_hook: "Suara wajan, sendok, dan air ini dijadikan satu lagu yang terdengar dari studio rekaman..."
+          - slug: music-edit-cover-tanpa-instrumen
+            name: Cover Lagu Viral Hanya dengan Vokal Berlapis
+            description: A cappella atau vokal berlapis yang merekonstruksi lagu populer hanya menggunakan suara manusia — termasuk efek perkusi mulut — tanpa instrumen apapun.
+            example_hook: "Lagu ini dicover tanpa satu instrumen pun, semua yang kamu dengar adalah suara manusia..."
+
+      - slug: anime-edit
+        name: "Anime Edit / AMV"
+        description: "Edit klip anime sinkron beat."
+        faceless: true
+        difficulty: menengah
+        rpm: rendah
+        formats: beat-sync + transisi
+        example_hook: "Scene ini bikin merinding..."
+        micro:
+          - slug: anime-edit-karakter-underrated
+            name: Edit Karakter Anime Underrated yang Layak Lebih Populer
+            description: AMV yang menyorot karakter anime yang sering diabaikan fandom tapi memiliki arc atau kemampuan yang luar biasa, membuka perspektif baru bagi penonton yang sudah tonton serialnya.
+            example_hook: "Karakter ini bukan protagonis, tapi arc-nya lebih dalam dari siapapun di seri ini..."
+          - slug: anime-edit-ending-yang-menghancurkan
+            name: Kumpulan Ending Anime yang Bikin Tidak Bisa Tidur
+            description: Kompilasi potongan ending anime yang paling emosional atau mengejutkan, diedit dengan musik yang memperkuat emosi dan deskripsi singkat konteksnya untuk yang belum tonton.
+            example_hook: "10 ending anime yang masih bikin nangis walau sudah nonton 5 kali..."
+          - slug: anime-edit-fight-scene-terbaik
+            name: Fight Scene Terbaik Anime Diedit dengan Musik Epik
+            description: Kurasi fight scene paling ikonik dari berbagai anime yang diedit ulang dengan sinkronisasi musik untuk memaksimalkan dampak visual dan emosional, untuk penonton action anime.
+            example_hook: "Fight scene ini sudah hebat di anime aslinya, dengan musik ini jadi berbeda level..."
+
+      - slug: dance
+        name: "Dance / Choreo"
+        description: "Tarian/challenge, butuh tampil."
+        faceless: false
+        difficulty: menengah
+        rpm: rendah
+        formats: dance + musik trending
+        example_hook: "Challenge ini lagi viral..."
+        micro:
+          - slug: dance-tari-tradisional-modern-fusion
+            name: Tari Tradisional Indonesia dengan Gerakan Modern
+            description: Koreografi yang menggabungkan gerakan tari tradisional Indonesia — Saman, Jaipong, atau Tor-tor — dengan elemen kontemporer, menyasar penonton yang menghargai warisan budaya yang tetap relevan.
+            example_hook: "Gerakan tari ini umurnya ratusan tahun, tapi dipadukan begini hasilnya luar biasa..."
+          - slug: dance-challenge-kreasi-sendiri
+            name: Dance Challenge yang Diciptakan Sendiri dan Viral
+            description: Dokumentasi proses membuat koreografi challenge original yang dirancang agar mudah ditiru penonton, termasuk breakdown gerakan untuk yang ingin ikut.
+            example_hook: "Challenge ini aku ciptakan sendiri 2 minggu lalu dan sekarang sudah 500 orang ikut..."
+          - slug: dance-cover-beda-genre
+            name: Cover Dance K-Pop dengan Genre Musik yang Berlawanan
+            description: Koreografi K-pop yang dipertahankan tapi dijalankan dengan musik yang berlawanan genre — dangdut, gamelan, atau jazz — menciptakan kontras yang mengundang tawa sekaligus kagum.
+            example_hook: "Koreografi BTS ini aku jalankan dengan musik dangdut koplo dan hasilnya mengejutkan..."
+
+  - slug: v-teknologi
+    name: Teknologi
+    description: Konten teknologi — gadget, tips aplikasi, AI tools, dan coding untuk penonton tech-savvy Indonesia.
+    niches:
+      - slug: tech-news
+        name: "Tech / Gadget News"
+        description: "Berita teknologi, bocoran gadget."
+        faceless: true
+        difficulty: menengah
+        rpm: tinggi
+        formats: screen-record + voiceover
+        example_hook: "Fitur HP ini disembunyikan..."
+        micro:
+          - slug: tech-news-fitur-android-tersembunyi
+            name: Fitur Android yang Disembunyikan di Menu Developer
+            description: Showcase fitur-fitur Android yang tersembunyi di balik Developer Options atau pengaturan yang jarang dibuka, memberikan pengguna kontrol lebih atas perangkat tanpa harus root.
+            example_hook: "Setting ini ada di semua HP Android tapi tersembunyi di sini, dan fungsinya sangat berguna..."
+          - slug: tech-news-startup-indonesia-gagal
+            name: Startup Teknologi Indonesia yang Tutup Tahun Ini
+            description: Liputan singkat startup teknologi Indonesia yang baru saja tutup atau pivot drastis, dengan analisis cepat apa yang salah — bukan gosip tapi pelajaran industri yang berguna.
+            example_hook: "Startup ini baru raih pendanaan Seri A, 8 bulan kemudian tutup. Ini yang terjadi..."
+          - slug: tech-news-ai-gantikan-pekerjaan
+            name: Pekerjaan yang Sudah Mulai Digantikan AI di Indonesia
+            description: Laporan konkret tentang profesi di Indonesia yang sudah mulai terdampak otomasi dan AI — bukan prediksi spekulatif tapi kasus nyata yang sedang terjadi — untuk penonton yang ingin antisipasi.
+            example_hook: "3 profesi ini sudah mulai kehilangan pekerjaan di Indonesia karena AI, ini datanya..."
+
+      - slug: app-tips
+        name: "Tips Aplikasi"
+        description: "Trik aplikasi, hidden feature."
+        faceless: true
+        difficulty: pemula
+        rpm: tinggi
+        formats: screen-record + caption
+        example_hook: "Setting WhatsApp ini wajib kamu matiin..."
+        micro:
+          - slug: app-tips-whatsapp-privasi
+            name: Setting WhatsApp yang Melindungi Privasi Kamu
+            description: Panduan konfigurasi privasi WhatsApp yang sering diabaikan — siapa yang bisa lihat foto profil, status online, dan last seen — dengan penjelasan risiko jika dibiarkan default.
+            example_hook: "Setting WhatsApp ini membiarkan orang asing tahu kapan kamu online, matikan sekarang..."
+          - slug: app-tips-google-maps-offline
+            name: Fitur Google Maps yang Berguna Saat Tidak Ada Sinyal
+            description: Tutorial fitur offline dan tersembunyi Google Maps yang sangat berguna saat traveling ke daerah sinyal lemah Indonesia, termasuk download peta dan navigasi tanpa internet.
+            example_hook: "Di daerah tanpa sinyal ini, Google Maps masih bisa navigasi karena setting ini..."
+          - slug: app-tips-shortcuts-produktivitas
+            name: Shortcut Aplikasi Produktivitas yang Hemat 1 Jam Sehari
+            description: Kumpulan shortcut keyboard dan gesture di aplikasi produktivitas populer — Notion, Google Docs, Gmail — yang pengguna rutin pun jarang ketahui tapi signifikan menghemat waktu.
+            example_hook: "Shortcut ini ada di aplikasi yang kamu buka setiap hari, dan aku hemat 45 menit per hari karenanya..."
+
+      - slug: ai-tools
+        name: "AI Tools"
+        description: "Review/tutorial tools AI terbaru."
+        faceless: true
+        difficulty: menengah
+        rpm: tinggi
+        formats: screen-record + voiceover
+        example_hook: "5 tools AI yang bikin kerjamu 10x..."
+        micro:
+          - slug: ai-tools-untuk-freelancer-indonesia
+            name: AI Tools yang Langsung Berguna untuk Freelancer Indonesia
+            description: Review dan tutorial AI tools yang secara konkret berguna untuk freelancer Indonesia — desainer, penulis, dan penerjemah — dengan perbandingan versi gratis vs berbayar.
+            example_hook: "5 AI tools ini aku pakai setiap hari sebagai freelancer dan semuanya gratis atau murah..."
+          - slug: ai-tools-prompt-engineering-dasar
+            name: Cara Nulis Prompt yang Dapat Hasil 10x Lebih Baik
+            description: Tutorial prompt engineering dasar yang langsung bisa diterapkan untuk ChatGPT, Claude, dan Gemini — bukan teori tapi contoh sebelum-sesudah yang memperlihatkan perbedaan kualitas output.
+            example_hook: "Prompt yang sama, tapi cara penulisan yang berbeda, hasilnya jauh berbeda. Ini contohnya..."
+          - slug: ai-tools-image-generation-lokal
+            name: Generate Foto Realistis Orang Indonesia dengan AI
+            description: Tutorial menggunakan AI image generation untuk membuat foto berkualitas tinggi dengan wajah dan konteks visual Indonesia yang akurat, termasuk tips prompt untuk hasil lokal yang konsisten.
+            example_hook: "AI ini bisa generate foto orang Indonesia yang lebih realistis dari tool lain, ini cara settingnya..."
+
+      - slug: coding
+        name: "Coding / Programming"
+        description: "Tips ngoding, demo, karir tech."
+        faceless: true
+        difficulty: menengah
+        rpm: tinggi
+        formats: screen-record + caption
+        example_hook: "Kode ini bikin programmer pemula kaget..."
+        micro:
+          - slug: coding-debugging-cara-pro
+            name: Cara Pro Debugging yang Tidak Diajarkan di Bootcamp
+            description: Teknik debugging yang dipakai developer senior — binary search debugging, rubber duck method, dan membaca stack trace efisien — yang jarang ada di kurikulum bootcamp tapi sangat menentukan produktivitas.
+            example_hook: "Kamu bisa Google error, tapi developer senior debug dengan cara ini yang jauh lebih cepat..."
+          - slug: coding-portfolio-tanpa-pengalaman
+            name: Bangun Portfolio Coding yang Dilirik HRD Tanpa Pengalaman
+            description: Panduan membuat portfolio coding yang menarik untuk fresh graduate atau career switcher — jenis project yang dipilih, cara presentasi di GitHub, dan cara jelaskan di interview.
+            example_hook: "Portfolio ini yang bikin developer tanpa pengalaman kerja dapat panggilan interview di startup unicorn..."
+          - slug: coding-git-workflow-tim
+            name: Git Workflow yang Dipakai Tim Profesional
+            description: Tutorial workflow Git yang sesungguhnya dipakai tim software profesional — branching strategy, PR review, dan merge conflict resolution — jauh melampaui sekadar git add commit push.
+            example_hook: "Cara pakai Git ini yang membedakan junior dari mid-level developer di tim profesional..."
+
+      - slug: gadget-review
+        name: "Review Gadget"
+        description: "Unboxing/review perangkat. Afiliasi."
+        faceless: true
+        difficulty: menengah
+        rpm: tinggi
+        formats: POV + close-up + voiceover
+        example_hook: "Gadget Rp200rb ini ngalahin yang jutaan..."
+        micro:
+          - slug: gadget-review-aksesoris-under-200rb
+            name: Aksesoris HP Terbaik di Bawah Rp200rb
+            description: Review jujur aksesoris smartphone murah yang kinerjanya mengejutkan — casing, charger, dan kabel — mengidentifikasi yang benar-benar worth it dari lautan produk murah di marketplace.
+            example_hook: "Charger Rp50rb ini ternyata lebih aman dari charger original yang 10x harganya, ini testnya..."
+          - slug: gadget-review-laptop-second-worth
+            name: Laptop Second Berapa yang Masih Layak Dibeli
+            description: Panduan membeli laptop bekas dengan benchmark yang jelas — usia maksimal, spec minimum per harga, dan cara cek kondisi fisik — untuk mahasiswa yang harus memilih laptop dengan budget terbatas.
+            example_hook: "Di bawah budget ini, laptop baru tidak ada yang worth it. Ini alternatif second yang lebih baik..."
+          - slug: gadget-review-earphone-lokal
+            name: Earphone Brand Lokal yang Bersaing dengan JBL
+            description: Review komparatif earphone buatan Indonesia atau brand Asia yang kurang dikenal melawan brand besar pada rentang harga yang sama, membongkar apakah harga brand premium selalu justified.
+            example_hook: "Earphone Rp150rb ini aku test blind dengan earphone Rp600rb, hasilnya mengejutkan..."
+
+      - slug: product-review
+        name: "Product Review"
+        description: "Review produk konsumen dengan perbandingan harga dan performa untuk keputusan beli."
+        faceless: true
+        difficulty: menengah
+        rpm: tinggi
+        formats: unboxing + demo + voiceover
+        example_hook: "Produk viral ini worth it atau cuma hype?"
+        micro:
+          - slug: product-review-skincare-lokal-vs-impor
+            name: Skincare Lokal vs Impor Harga Sama — Mana yang Menang?
+            description: Perbandingan head-to-head produk skincare lokal Indonesia dengan produk impor pada rentang harga yang sama, menggunakan pengujian nyata bukan sekadar baca kandungan.
+            example_hook: "Serum lokal Rp80rb ini aku bandingkan dengan serum Korea Rp90rb selama 4 minggu, ini hasilnya..."
+          - slug: product-review-peralatan-dapur-murah
+            name: Peralatan Dapur Viral Shopee — Worth It atau Tidak?
+            description: Review jujur peralatan dapur yang sedang viral di Shopee dan TikTok Indonesia — apakah sesuai klaim iklan atau hanya bagus di video — dengan uji coba nyata di dapur.
+            example_hook: "Alat masak ini 50.000 terjual bulan ini di Shopee, aku beli dan ini yang sebenarnya terjadi..."
+          - slug: product-review-suplemen-populer
+            name: Suplemen Paling Laris Indonesia — Mana yang Benar-benar Kerja?
+            description: Review berbasis sains terhadap suplemen populer Indonesia — vitamin C dosis tinggi, collagen, dan omega-3 — dengan penjelasan apakah klaim marketing-nya sesuai riset aktual.
+            example_hook: "Suplemen ini iklannya ada di mana-mana, tapi riset bilang efeknya ini..."
+
+  - slug: v-travel
+    name: Travel
+    description: Konten perjalanan dan destinasi — eksplorasi, hidden gems, dan tips budget traveling Indonesia.
+    niches:
+      - slug: travel
+        name: "Travel / Tempat"
+        description: "Destinasi + tips + voiceover."
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: footage + teks + voiceover
+        example_hook: "Tempat di Indonesia kayak luar negeri..."
+        micro:
+          - slug: travel-desa-wisata-tersembunyi
+            name: Desa Wisata Indonesia yang Belum di Google Maps
+            description: Dokumentasi desa wisata otentik di Indonesia yang belum terjamah turis massal dan belum terdaftar di Google Maps, memberikan penonton koordinat dan cara aksesnya.
+            example_hook: "Desa ini tidak ada di Google Maps, aku dapat koordinatnya dari warga lokal, ini yang ditemukan..."
+          - slug: travel-kota-kedua-indonesia
+            name: Kota Kedua Indonesia yang Lebih Menarik dari Ibu Kota
+            description: Dokumentasi kota-kota tier dua Indonesia — Pontianak, Ternate, Kupang — yang sering dilewatkan traveler tapi menawarkan pengalaman budaya dan kuliner yang sulit ditemukan di kota besar.
+            example_hook: "Kota ini jarang masuk itinerary Indonesia padahal punya sesuatu yang tidak ada di Bali..."
+          - slug: travel-momen-sebelum-hilang
+            name: Tempat di Indonesia yang Akan Berubah dalam 5 Tahun
+            description: Dokumentasi destinasi Indonesia yang sedang dalam proses pembangunan atau perubahan besar, memberikan penonton rasa urgensi untuk mengunjungi sebelum karakter aslinya hilang.
+            example_hook: "Tempat ini masih seperti 20 tahun lalu, tapi proyek ini akan mengubahnya selamanya..."
+
+      - slug: hidden-gems
+        name: "Hidden Gems"
+        description: "Tempat tersembunyi/underrated."
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: footage + teks
+        example_hook: "Pantai ini belum ramai turis..."
+        micro:
+          - slug: hidden-gems-pantai-tanpa-tiket
+            name: Pantai Gratis Tanpa Tiket Masuk yang Seindah Resort
+            description: Dokumentasi pantai-pantai Indonesia yang tidak memungut biaya tiket tapi kualitas pasir dan airnya bersaing dengan pantai berbayar, lengkap dengan petunjuk akses yang jelas.
+            example_hook: "Pantai ini tidak ada tiket masuk dan airnya sejernih resort Rp2jt per malam, ini lokasinya..."
+          - slug: hidden-gems-warung-satu-menu
+            name: Warung yang Hanya Jual Satu Menu tapi Antri Sejam
+            description: Dokumentasi warung makan legendaris di berbagai kota Indonesia yang hanya menjual satu atau dua menu saja tapi kualitasnya membuat orang rela antre panjang setiap hari.
+            example_hook: "Warung ini hanya jual satu makanan, hanya buka 4 jam, dan selalu habis sebelum tutup..."
+          - slug: hidden-gems-museum-tak-ramai
+            name: Museum Indonesia yang Sepi tapi Koleksinya Luar Biasa
+            description: Dokumentasi museum di Indonesia yang hampir tidak pernah ramai pengunjung padahal koleksi dan kisahnya luar biasa — alternatif edukasi yang tidak bikin kantong jebol.
+            example_hook: "Museum ini lokasinya di tengah kota, tiketnya Rp5rb, dan koleksinya tidak ada di museum mana pun..."
+
+      - slug: luxury-bait
+        name: "Luxury / Lifestyle"
+        description: "Visual mewah aspiratif."
+        faceless: true
+        difficulty: menengah
+        rpm: sedang
+        formats: footage mewah + teks + musik
+        example_hook: "Rumah Rp100M ini punya lift mobil..."
+        micro:
+          - slug: luxury-bait-villa-bali-tersembunyi
+            name: Villa Bali Tersembunyi yang Lebih Indah dari yang Viral
+            description: Dokumentasi villa Bali yang tidak banyak diekspos Instagram tapi kualitas arsitektur dan pemandangannya melampaui villa viral, lengkap dengan harga sewa yang mengejutkan.
+            example_hook: "Villa ini 3x lebih indah dari yang viral di Instagram dan harganya ternyata lebih murah..."
+          - slug: luxury-bait-rumah-artis-tradisional
+            name: Rumah Selebritis Indonesia dengan Desain Tradisional Mewah
+            description: Tur virtual rumah artis atau tokoh Indonesia yang memilih desain tradisional nusantara yang mewah — Joglo, Limasan, atau rumah adat modern — sebagai pernyataan identitas.
+            example_hook: "Rumah ini bukan modern minimalis, ini Rp15M tapi terlihat seperti warisan leluhur yang dijaga..."
+          - slug: luxury-bait-pengalaman-lokal-bintang-lima
+            name: Pengalaman Bintang Lima di Destinasi Lokal Tak Terduga
+            description: Dokumentasi hotel butik atau pengalaman menginap premium yang tersembunyi di kota-kota kecil Indonesia yang memberikan kesan mewah tapi dengan harga yang tidak masuk akal murahnya.
+            example_hook: "Rp400rb semalam di kota ini dan ini yang didapat, lebih baik dari hotel bintang empat di Jakarta..."
+
+      - slug: budget-travel
+        name: "Travel Hemat"
+        description: "Tips jalan-jalan murah."
+        faceless: true
+        difficulty: pemula
+        rpm: sedang
+        formats: footage + teks tips
+        example_hook: "Liburan Bali Rp500rb 3 hari..."
+        micro:
+          - slug: budget-travel-backpacker-sumatera
+            name: Backpacker Sumatera dengan Budget Rp1jt Per Minggu
+            description: Panduan perjalanan hemat melintasi Sumatera dengan transportasi umum dan penginapan lokal, membuktikan pulau terbesar kedua di Indonesia bisa dijelajahi tanpa kantong tebal.
+            example_hook: "7 hari di Sumatera, 5 kota, total habis Rp900rb. Ini rute dan breakdown biayanya..."
+          - slug: budget-travel-tiket-pesawat-murah
+            name: Cara Dapat Tiket Pesawat Domestik Rp100rb
+            description: Strategi dan timing membeli tiket pesawat domestik Indonesia dengan harga terendah — flash sale, tanggal optimal, dan aplikasi yang sering luput dari perhatian.
+            example_hook: "Tiket ini aku beli Rp99rb ke Lombok, dan ini caranya yang bisa kamu ulangi..."
+          - slug: budget-travel-akomodasi-gratis-lokal
+            name: Menginap Gratis di Seluruh Indonesia dengan Jaringan Lokal
+            description: Panduan couchsurfing dan jaringan komunitas traveler Indonesia yang memungkinkan menginap gratis di berbagai kota, termasuk cara membangun reputasi dan menjaga kepercayaan tuan rumah.
+            example_hook: "Aku keliling 8 kota Indonesia tanpa bayar penginapan satu malam pun, ini caranya..."
