@@ -7,9 +7,11 @@
   let chart
 
   $effect(() => {
-    // re-read so the effect tracks data changes
-    const lbl = labels
-    const ds = datasets
+    // Snapshot to plain objects — Chart.js calls Object.defineProperty on the
+    // dataset objects, which a $state proxy rejects (state_descriptors_fixed),
+    // throwing during init and corrupting the whole app's reactivity flush.
+    const lbl = $state.snapshot(labels)
+    const ds = $state.snapshot(datasets)
     if (!canvas) return
     if (chart) chart.destroy()
     chart = new Chart(canvas, {

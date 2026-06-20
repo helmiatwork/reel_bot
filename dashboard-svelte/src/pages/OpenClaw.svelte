@@ -77,9 +77,14 @@
   // -- Chip: prefill composer --
   function chipClick(prompt) {
     input = prompt
-    // Focus textarea
+    // Focus + resize directly. Do NOT dispatch a synthetic 'input' event:
+    // bind:value would read the not-yet-updated DOM value and clobber `input`.
     const ta = document.querySelector('.oc-textarea')
-    if (ta) { ta.focus(); ta.dispatchEvent(new Event('input')) }
+    if (ta) {
+      ta.focus()
+      ta.style.height = 'auto'
+      ta.style.height = Math.min(ta.scrollHeight, 140) + 'px'
+    }
   }
 
   // -- Send message --
@@ -93,8 +98,10 @@
     busy = true
 
     messages.push({ role: 'user', text: msg, streaming: false, runId: null })
-    const assistant = { role: 'assistant', text: '', streaming: true, runId: null }
-    messages.push(assistant)
+    messages.push({ role: 'assistant', text: '', streaming: true, runId: null })
+    // Index of the assistant bubble — mutate via messages[ai] so updates go
+    // through the $state proxy (a captured object ref would not be reactive).
+    const ai = messages.length - 1
     scrollDown()
 
     // Build history from all prior messages (exclude the two just pushed)
@@ -102,22 +109,22 @@
 
     abortChat = api.streamChat(msg, history, {
       onDelta: (chunk) => {
-        assistant.text += chunk
+        messages[ai].text += chunk
         scrollDown()
       },
       onError: (err) => {
-        assistant.text += (assistant.text ? '\n\n' : '') + `Gagal: ${err}`
-        assistant.streaming = false
+        messages[ai].text += (messages[ai].text ? '\n\n' : '') + `Gagal: ${err}`
+        messages[ai].streaming = false
         busy = false
         abortChat = null
       },
       onDone: () => {
-        assistant.streaming = false
+        messages[ai].streaming = false
         busy = false
         abortChat = null
         // Try to extract run_id from the reply
-        const id = extractRunId(assistant.text)
-        if (id) assistant.runId = id
+        const id = extractRunId(messages[ai].text)
+        if (id) messages[ai].runId = id
         scrollDown()
       }
     })
