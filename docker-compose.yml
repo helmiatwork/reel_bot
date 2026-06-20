@@ -219,9 +219,9 @@ services:
       - ./credentials:/app/credentials:ro
       - ./youtube_token.json:/app/youtube_token.json
       - /var/run/docker.sock:/var/run/docker.sock  # Enable container restart via docker SDK (gated by nginx basic auth)
-      - openclaw_data:/openclaw-data:ro            # Read-only access to OpenClaw session store
+      - ./openclaw/agents:/openclaw-agents:ro      # Read-only access to OpenClaw session store (agents bind, where transcripts live)
     environment:
-      - OPENCLAW_SESSIONS_DIR=/openclaw-data/agents/reelbot/sessions
+      - OPENCLAW_SESSIONS_DIR=/openclaw-agents/reelbot/sessions
       - CLIPROXY_URL=http://cliproxy:8317/v1
       - CLIPROXY_KEY=${CLIPROXY_KEY}
       - CLIPROXY_MGMT_KEY=${CLIPROXY_MGMT_KEY:-}
