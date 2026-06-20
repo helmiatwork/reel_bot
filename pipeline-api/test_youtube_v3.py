@@ -537,6 +537,7 @@ class TestCaptions:
 
 class TestQuotaTracking:
     @patch("youtube_v3.psycopg")
+    @patch("youtube_v3.DATABASE_URL", "postgres://localhost/test")
     def test_record_quota_success(self, mock_psycopg):
         """Test successful quota recording."""
         mock_conn = MagicMock()
@@ -596,7 +597,7 @@ class TestQuotaTracking:
     @patch("youtube_v3.DATABASE_URL", "postgres://localhost/test")
     def test_get_quota_reset_boundary(self, mock_psycopg):
         """Test quota reset_at is always in the future."""
-        from datetime import datetime as dt
+        from datetime import datetime as dt, timezone, timedelta
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
         mock_psycopg.connect.return_value = mock_conn
@@ -605,11 +606,11 @@ class TestQuotaTracking:
 
         result = get_quota()
         reset_at = dt.fromisoformat(result["reset_at"].replace("Z", "+00:00"))
-        now = dt.utcnow()
+        now = dt.now(timezone.utc)
 
-        # Reset should be in the future (within 24h from now)
+        # Reset should be in the future, within the next 24h.
         assert reset_at > now
-        assert reset_at <= dt.combine(now.date(), dt.min.time()).replace(day=now.day+1)
+        assert reset_at - now <= timedelta(hours=24)
 
 
 # ── Normalization tests (main.py) ──────────────────────────────
@@ -663,8 +664,7 @@ class TestNormalization:
     def test_normalize_ytdlp_video_empty(self):
         """Test normalization of empty yt-dlp video."""
         def _normalize_ytdlp_video(raw: dict) -> dict:
-            if not raw:
-                return {}
+            raw = raw or {}  # always emit full shape (matches main.py)
             vid = raw.get("id") or raw.get("video_id") or ""
             return {
                 "video_id": vid,

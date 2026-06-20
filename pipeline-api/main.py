@@ -920,8 +920,7 @@ def _normalize_ytdlp_items(raw: list) -> list:
 def _normalize_ytdlp_video(raw: dict) -> dict:
     """Map a yt-dlp single video dict to the v3 video_details shape.
     yt-dlp uses 'id' for video_id; v3 uses 'video_id'."""
-    if not raw:
-        return {}
+    raw = raw or {}  # always emit the full shape (with empty defaults) so callers get consistent keys
     vid = raw.get("id") or raw.get("video_id") or ""
     return {
         "video_id": vid,
