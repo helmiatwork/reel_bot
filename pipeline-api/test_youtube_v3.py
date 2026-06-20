@@ -762,10 +762,11 @@ class TestGetAnalyticsService:
 
         assert result is not None
         mock_build.assert_called_once()
-        call_kwargs = mock_build.call_args[1]
-        assert call_kwargs["service_name"] == "youtubeAnalytics"
-        assert call_kwargs["version"] == "v2"
-        assert "credentials" in call_kwargs
+        # build is called as build("youtubeAnalytics", "v2", credentials=creds)
+        call_args = mock_build.call_args
+        assert call_args[0][0] == "youtubeAnalytics"
+        assert call_args[0][1] == "v2"
+        assert "credentials" in call_args[1]
 
     @patch("youtube_v3.Path")
     def test_get_analytics_service_no_oauth(self, mock_path):
@@ -816,8 +817,8 @@ class TestChannelAnalytics:
 
         mock_service = MagicMock()
         mock_build.return_value = mock_service
-        mock_query = mock_service.reports().query()
-        mock_query.execute.return_value = {
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
             "columnHeaders": [
                 {"name": "views", "dataType": "INTEGER"},
                 {"name": "estimatedMinutesWatched", "dataType": "INTEGER"},
@@ -861,8 +862,8 @@ class TestChannelAnalytics:
 
         mock_service = MagicMock()
         mock_build.return_value = mock_service
-        mock_query = mock_service.reports().query()
-        mock_query.execute.return_value = {
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
             "columnHeaders": [{"name": "day"}, {"name": "views"}],
             "rows": [["2024-01-01", "100"], ["2024-01-02", "150"]],
         }
@@ -882,7 +883,7 @@ class TestChannelAnalytics:
             )
 
         # Verify the call was made with expected kwargs
-        call_kwargs = mock_query.call_args[1]
+        call_kwargs = mock_query_method.call_args.kwargs
         assert call_kwargs["startDate"] == "2024-01-01"
         assert call_kwargs["endDate"] == "2024-01-31"
         assert call_kwargs["metrics"] == "views"
@@ -951,8 +952,8 @@ class TestAnalyticsCore:
 
         mock_service = MagicMock()
         mock_build.return_value = mock_service
-        mock_query = mock_service.reports().query()
-        mock_query.execute.return_value = {
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
             "columnHeaders": [{"name": "views"}],
             "rows": [["10000"]],
         }
@@ -966,7 +967,7 @@ class TestAnalyticsCore:
             result = analytics_core("2024-01-01", "2024-01-31")
 
         # Verify the correct metrics are used
-        call_kwargs = mock_query.call_args[1]
+        call_kwargs = mock_query_method.call_args.kwargs
         expected_metrics = "views,estimatedMinutesWatched,averageViewDuration,averageViewPercentage,likes,comments,shares,subscribersGained,subscribersLost"
         assert call_kwargs["metrics"] == expected_metrics
         assert call_kwargs.get("dimensions") is None
@@ -981,8 +982,8 @@ class TestAnalyticsCore:
 
         mock_service = MagicMock()
         mock_build.return_value = mock_service
-        mock_query = mock_service.reports().query()
-        mock_query.execute.return_value = {
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
             "columnHeaders": [{"name": "day"}, {"name": "views"}],
             "rows": [["2024-01-01", "100"]],
         }
@@ -995,7 +996,7 @@ class TestAnalyticsCore:
             from youtube_v3 import analytics_core
             result = analytics_core("2024-01-01", "2024-01-31", by="day")
 
-        call_kwargs = mock_query.call_args[1]
+        call_kwargs = mock_query_method.call_args.kwargs
         assert call_kwargs["dimensions"] == "day"
 
     @patch("youtube_v3.Path")
@@ -1008,8 +1009,8 @@ class TestAnalyticsCore:
 
         mock_service = MagicMock()
         mock_build.return_value = mock_service
-        mock_query = mock_service.reports().query()
-        mock_query.execute.return_value = {
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
             "columnHeaders": [{"name": "video"}, {"name": "views"}],
             "rows": [["vid1", "1000"]],
         }
@@ -1022,7 +1023,7 @@ class TestAnalyticsCore:
             from youtube_v3 import analytics_core
             result = analytics_core("2024-01-01", "2024-01-31", by="video")
 
-        call_kwargs = mock_query.call_args[1]
+        call_kwargs = mock_query_method.call_args.kwargs
         assert call_kwargs["dimensions"] == "video"
         assert call_kwargs["sort"] == "-views"
         assert call_kwargs["maxResults"] == 200
@@ -1041,8 +1042,8 @@ class TestAnalyticsCTR:
 
         mock_service = MagicMock()
         mock_build.return_value = mock_service
-        mock_query = mock_service.reports().query()
-        mock_query.execute.return_value = {
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
             "columnHeaders": [{"name": "day"}, {"name": "views"}, {"name": "impressionClickThroughRate"}],
             "rows": [["2024-01-01", "100", "0.05"]],
         }
@@ -1055,7 +1056,7 @@ class TestAnalyticsCTR:
             from youtube_v3 import analytics_ctr
             result = analytics_ctr("2024-01-01", "2024-01-31", by="day")
 
-        call_kwargs = mock_query.call_args[1]
+        call_kwargs = mock_query_method.call_args.kwargs
         assert "views" in call_kwargs["metrics"]
         assert "impressions" in call_kwargs["metrics"]
         assert "impressionClickThroughRate" in call_kwargs["metrics"]
@@ -1075,8 +1076,8 @@ class TestAnalyticsAudience:
 
         mock_service = MagicMock()
         mock_build.return_value = mock_service
-        mock_query = mock_service.reports().query()
-        mock_query.execute.return_value = {
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
             "columnHeaders": [{"name": "ageGroup"}, {"name": "gender"}, {"name": "viewerPercentage"}],
             "rows": [["18-24", "MALE", "0.25"]],
         }
@@ -1089,7 +1090,7 @@ class TestAnalyticsAudience:
             from youtube_v3 import analytics_audience
             result = analytics_audience("2024-01-01", "2024-01-31", kind="demographics")
 
-        call_kwargs = mock_query.call_args[1]
+        call_kwargs = mock_query_method.call_args.kwargs
         assert "ageGroup" in call_kwargs["dimensions"]
         assert "gender" in call_kwargs["dimensions"]
         assert call_kwargs["metrics"] == "viewerPercentage"
@@ -1104,8 +1105,8 @@ class TestAnalyticsAudience:
 
         mock_service = MagicMock()
         mock_build.return_value = mock_service
-        mock_query = mock_service.reports().query()
-        mock_query.execute.return_value = {
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
             "columnHeaders": [{"name": "country"}, {"name": "views"}],
             "rows": [["JP", "5000"]],
         }
@@ -1118,7 +1119,7 @@ class TestAnalyticsAudience:
             from youtube_v3 import analytics_audience
             result = analytics_audience("2024-01-01", "2024-01-31", kind="geography")
 
-        call_kwargs = mock_query.call_args[1]
+        call_kwargs = mock_query_method.call_args.kwargs
         assert call_kwargs["dimensions"] == "country"
         assert "views" in call_kwargs["metrics"]
         assert call_kwargs["sort"] == "-views"
@@ -1133,8 +1134,8 @@ class TestAnalyticsAudience:
 
         mock_service = MagicMock()
         mock_build.return_value = mock_service
-        mock_query = mock_service.reports().query()
-        mock_query.execute.return_value = {
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
             "columnHeaders": [{"name": "insightTrafficSourceType"}, {"name": "views"}],
             "rows": [["SEARCH", "1000"]],
         }
@@ -1147,7 +1148,7 @@ class TestAnalyticsAudience:
             from youtube_v3 import analytics_audience
             result = analytics_audience("2024-01-01", "2024-01-31", kind="traffic")
 
-        call_kwargs = mock_query.call_args[1]
+        call_kwargs = mock_query_method.call_args.kwargs
         assert call_kwargs["dimensions"] == "insightTrafficSourceType"
 
     @patch("youtube_v3.Path")
@@ -1160,8 +1161,8 @@ class TestAnalyticsAudience:
 
         mock_service = MagicMock()
         mock_build.return_value = mock_service
-        mock_query = mock_service.reports().query()
-        mock_query.execute.return_value = {
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
             "columnHeaders": [{"name": "deviceType"}, {"name": "views"}],
             "rows": [["MOBILE", "8000"]],
         }
@@ -1174,7 +1175,7 @@ class TestAnalyticsAudience:
             from youtube_v3 import analytics_audience
             result = analytics_audience("2024-01-01", "2024-01-31", kind="device")
 
-        call_kwargs = mock_query.call_args[1]
+        call_kwargs = mock_query_method.call_args.kwargs
         assert call_kwargs["dimensions"] == "deviceType"
 
 
@@ -1191,8 +1192,8 @@ class TestAnalyticsRevenue:
 
         mock_service = MagicMock()
         mock_build.return_value = mock_service
-        mock_query = mock_service.reports().query()
-        mock_query.execute.return_value = {
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
             "columnHeaders": [{"name": "estimatedRevenue"}],
             "rows": [["1500.50"]],
         }
@@ -1205,7 +1206,7 @@ class TestAnalyticsRevenue:
             from youtube_v3 import analytics_revenue
             result = analytics_revenue("2024-01-01", "2024-01-31")
 
-        call_kwargs = mock_query.call_args[1]
+        call_kwargs = mock_query_method.call_args.kwargs
         expected_metrics = "estimatedRevenue,estimatedAdRevenue,grossRevenue,cpm,playbackBasedCpm,monetizedPlaybacks"
         assert call_kwargs["metrics"] == expected_metrics
 
@@ -1219,8 +1220,8 @@ class TestAnalyticsRevenue:
 
         mock_service = MagicMock()
         mock_build.return_value = mock_service
-        mock_query = mock_service.reports().query()
-        mock_query.execute.return_value = {
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
             "columnHeaders": [{"name": "video"}, {"name": "estimatedRevenue"}],
             "rows": [["vid1", "500.00"]],
         }
@@ -1233,7 +1234,7 @@ class TestAnalyticsRevenue:
             from youtube_v3 import analytics_revenue
             result = analytics_revenue("2024-01-01", "2024-01-31", by="video")
 
-        call_kwargs = mock_query.call_args[1]
+        call_kwargs = mock_query_method.call_args.kwargs
         assert call_kwargs["dimensions"] == "video"
 
 
