@@ -72,11 +72,13 @@ def _scalar(cur, sql, default=None):
 def dash_services():
     """Live up/down + port for each stack service (pinged from inside the network)."""
     import httpx
+    # cliproxy runs natively on the host (macOS binary can't run in Docker), so
+    # it is reached via host.docker.internal, not a container DNS name.
     checks = [
         ("postgres", 5432, None),
         ("openclaw", 18789, "http://openclaw:18789"),
         ("n8n", 5678, "http://n8n:5678/healthz"),
-        ("cliproxy", 8317, "http://cliproxy:8317"),
+        ("cliproxy", 8317, "http://host.docker.internal:8317/v1/models"),
         ("pipeline-api", 8000, "http://localhost:8000/health"),
         ("arcreel", 1241, "http://arcreel:1241"),
     ]
@@ -90,7 +92,9 @@ def dash_services():
                 c.close()
         else:
             try:
-                r = httpx.get(url, timeout=3)
+                # treat any HTTP reply (incl. 401/404) as "up" — a response on
+                # the port means the service is listening; only 5xx/no-reply is down.
+                r = httpx.get(url, timeout=6)
                 up = r.status_code < 500
             except Exception:
                 up = False
