@@ -11,7 +11,7 @@ RUN pip install --no-cache-dir \
     httpx \
     "psycopg[binary]" \
     google-api-python-client google-auth-oauthlib google-auth-httplib2 \
-    boto3
+    boto3 docker
 # Copy all pipeline modules
 COPY voiceover/    /app/voiceover/
 COPY publisher/    /app/publisher/

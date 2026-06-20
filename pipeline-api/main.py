@@ -98,6 +98,63 @@ def dash_services():
     return _json({"services": out, "live": sum(1 for s in out if s["up"]), "total": len(out)})
 
 
+# ── Service restart endpoints (docker SDK via mounted socket) ─────────────────
+# Allowlist of restartable containers (deliberately excludes pipeline-api itself).
+_RESTARTABLE_SERVICES = {"postgres", "openclaw", "cliproxy", "n8n", "arcreel"}
+
+
+@app.post("/dash/restart/{service}")
+def restart_service(service: str):
+    """Restart a specific service container. Gated by dashboard auth (nginx DASHBOARD_PASSWORD)."""
+    # Special case: explicitly reject pipeline-api to avoid killing the in-flight request
+    if service == "pipeline-api":
+        raise HTTPException(status_code=400, detail="cannot restart pipeline-api from itself")
+
+    if service not in _RESTARTABLE_SERVICES:
+        raise HTTPException(status_code=400, detail="unknown service")
+
+    try:
+        import docker
+        client = docker.from_env()
+        container = client.containers.get(service)
+        container.restart(timeout=10)
+        return _json({"service": service, "status": "restarted"})
+    except docker.errors.NotFound:
+        return _json({"service": service, "status": "not_running"})
+    except Exception as e:
+        # Log server-side, don't expose internals to client
+        print(f"[restart/{service}] error: {type(e).__name__}: {e}")
+        return _json({"service": service, "status": "error"})
+
+
+@app.post("/dash/restart-all")
+def restart_all():
+    """Restart all restartable services. Returns aggregated status per service."""
+    try:
+        import docker
+        client = docker.from_env()
+    except Exception as e:
+        print(f"[restart-all] docker unavailable: {type(e).__name__}: {e}")
+        return _json({"status": "error", "detail": "docker unavailable"})
+
+    results = []
+    restarted_count = 0
+    for service in _RESTARTABLE_SERVICES:
+        try:
+            container = client.containers.get(service)
+            container.restart(timeout=10)
+            results.append({"service": service, "status": "restarted"})
+            restarted_count += 1
+        except docker.errors.NotFound:
+            results.append({"service": service, "status": "not_running"})
+        except Exception as e:
+            # Log error but don't fail the whole call
+            print(f"[restart-all/{service}] error: {type(e).__name__}: {e}")
+            results.append({"service": service, "status": "error"})
+
+    return _json({"results": results, "restarted": restarted_count})
+
+
 @app.get("/dash/overview")
 def dash_overview():
     """KPI cards + 7-day views trend + top movers, all from content_automation."""
