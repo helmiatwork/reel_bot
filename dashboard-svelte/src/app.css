@@ -14,13 +14,27 @@ a{color:inherit;text-decoration:none;cursor:pointer}
 .badge-live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(52,211,153,.18)}
 .badge-live.partial{color:var(--amber)}
 .badge-live.partial::before{background:var(--amber);box-shadow:0 0 0 3px rgba(251,191,36,.18)}
+.badge-row{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.btn-restart-all{background:transparent;border:1px solid var(--line);color:var(--mut);border-radius:6px;padding:2px 7px;font-size:11px;cursor:pointer;line-height:1.4;flex:0 0 auto}
+.btn-restart-all:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.btn-restart-all:disabled{opacity:.5;cursor:default}
+.restart-result{font-size:11px;color:var(--green);margin-top:4px}
+.restart-result.err{color:var(--red)}
 .svclist{margin-top:10px;display:flex;flex-direction:column;gap:7px}
-.svc{display:flex;align-items:center;gap:8px;font-size:12px}
+.svc{display:flex;align-items:center;gap:6px;font-size:12px}
+.svc-name{flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .svc .led{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
 .svc.up .led{background:var(--green);box-shadow:0 0 0 3px rgba(52,211,153,.16)}
 .svc.down .led{background:var(--red);box-shadow:0 0 0 3px rgba(248,113,113,.16)}
 .svc.down{color:var(--mut)}
-.svc .port{margin-left:auto;color:var(--mut);font-size:11px}
+.svc.busy{opacity:.7}
+.svc .port{color:var(--mut);font-size:11px;white-space:nowrap}
+.btn-restart-row{background:transparent;border:1px solid transparent;color:var(--mut);border-radius:5px;padding:1px 5px;font-size:12px;cursor:pointer;flex:0 0 auto;line-height:1.3}
+.btn-restart-row:hover:not(:disabled){border-color:var(--line);color:var(--accent)}
+.btn-restart-row:disabled{opacity:.5;cursor:default}
+.row-result{font-size:10px;white-space:nowrap;flex:0 0 auto}
+.row-result.ok{color:var(--green)}
+.row-result.err{color:var(--red)}
 .main{padding:22px 26px;position:relative}
 .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
 .top h1{font-size:19px;margin:0}
