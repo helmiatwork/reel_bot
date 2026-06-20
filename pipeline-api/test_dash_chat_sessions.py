@@ -357,3 +357,83 @@ class TestDashChatSessionKey:
         assert len(msgs) == 3
         assert msgs[-1]["role"] == "user"
         assert msgs[-1]["content"] == "new msg"
+
+
+# ── DELETE /dash/chat/session/{sid} ──────────────────────────────────────────
+
+class TestDeleteChatSession:
+    def test_delete_removes_all_three_siblings(self, sessions_dir, client):
+        """DELETE removes .jsonl, .trajectory.jsonl, .trajectory-path.json and returns deleted count."""
+        # Add the trajectory-path.json sibling for FAKE_UUID_1
+        (sessions_dir / f"{FAKE_UUID_1}.trajectory-path.json").write_text(
+            '{"steps": []}', encoding="utf-8"
+        )
+        r = client.delete(f"/dash/chat/session/{FAKE_UUID_1}")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["sid"] == FAKE_UUID_1
+        # Should have deleted .jsonl + .trajectory.jsonl + .trajectory-path.json = 3
+        assert data["deleted"] == 3
+        # Primary file must be gone
+        assert not (sessions_dir / f"{FAKE_UUID_1}.jsonl").exists()
+        # Trajectory siblings also gone
+        assert not (sessions_dir / f"{FAKE_UUID_1}.trajectory.jsonl").exists()
+        assert not (sessions_dir / f"{FAKE_UUID_1}.trajectory-path.json").exists()
+
+    def test_deleted_session_absent_from_list(self, sessions_dir, client):
+        """After DELETE the session no longer appears in GET /dash/chat/sessions."""
+        client.delete(f"/dash/chat/session/{FAKE_UUID_1}")
+        r = client.get("/dash/chat/sessions")
+        keys = [s["key"] for s in r.json()["sessions"]]
+        assert FAKE_UUID_1 not in keys
+        # Other session still present
+        assert FAKE_UUID_2 in keys
+
+    def test_delete_nonexistent_sid_returns_404(self, client):
+        """DELETE of an unknown (but valid-format) sid → 404."""
+        unknown = "dddddddd-4444-4444-d444-dddddddddddd"
+        r = client.delete(f"/dash/chat/session/{unknown}")
+        assert r.status_code == 404
+
+    def test_delete_path_traversal_dot_dot_slash(self, client):
+        """DELETE with ../etc in sid → 400, nothing outside dir touched."""
+        r = client.delete("/dash/chat/session/../../etc")
+        assert r.status_code in (400, 404, 422)
+
+    def test_delete_path_traversal_url_encoded(self, client):
+        """DELETE with URL-encoded traversal → 400."""
+        r = client.delete("/dash/chat/session/..%2Fetc%2Fpasswd")
+        assert r.status_code in (400, 404, 422)
+
+    def test_delete_slash_in_sid(self, client):
+        """DELETE with a/b sid (contains slash) → 400 or routing miss."""
+        r = client.delete("/dash/chat/session/a/b")
+        assert r.status_code in (400, 404, 422)
+
+    def test_delete_invalid_sid_characters(self, client):
+        """DELETE with non-alnum/dash chars in sid → 400."""
+        r = client.delete("/dash/chat/session/not-a-uuid!!!!")
+        assert r.status_code == 400
+
+    def test_delete_only_jsonl_exists_no_500(self, tmp_path):
+        """DELETE when only .jsonl exists (no trajectory siblings) → success, deleted>=1."""
+        import main as m
+        d = tmp_path / "sessions"
+        d.mkdir()
+        uuid = "eeeeeeee-5555-4555-e555-eeeeeeeeeeee"
+        write_session(d, uuid, [{"role": "user", "content": "solo"}])
+        # Ensure no siblings exist
+        assert not (d / f"{uuid}.trajectory.jsonl").exists()
+        assert not (d / f"{uuid}.trajectory-path.json").exists()
+
+        original = m.OPENCLAW_SESSIONS_DIR
+        m.OPENCLAW_SESSIONS_DIR = str(d)
+        from fastapi.testclient import TestClient
+        tc = TestClient(m.app)
+        r = tc.delete(f"/dash/chat/session/{uuid}")
+        m.OPENCLAW_SESSIONS_DIR = original
+
+        assert r.status_code == 200
+        data = r.json()
+        assert data["deleted"] >= 1
+        assert not (d / f"{uuid}.jsonl").exists()

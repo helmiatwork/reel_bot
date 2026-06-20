@@ -612,6 +612,55 @@ def get_chat_session(sid: str):
     return _json({"messages": messages_out})
 
 
+@app.delete("/dash/chat/session/{sid}")
+def delete_chat_session(sid: str):
+    """Delete a session's transcript files from the shared volume.
+
+    Removes <sid>.jsonl, <sid>.trajectory.jsonl, and <sid>.trajectory-path.json
+    if they exist (best-effort per file; missing siblings are not an error).
+    Does NOT touch sessions.json — OpenClaw self-heals dangling index entries.
+
+    Returns {"deleted": <count>, "sid": sid}.
+    404 if the primary .jsonl file does not exist.
+    400 if sid fails the safe-id check (alnum + dash, 8-64 chars).
+    """
+    if not _SAFE_SID.match(sid):
+        raise HTTPException(status_code=400, detail="invalid session id")
+
+    sessions_dir = Path(OPENCLAW_SESSIONS_DIR)
+    primary = sessions_dir / f"{sid}.jsonl"
+
+    # Resolve real paths and assert they stay inside sessions_dir (traversal guard).
+    try:
+        real_primary = os.path.realpath(str(primary))
+        real_dir = os.path.realpath(str(sessions_dir))
+        if not real_primary.startswith(real_dir + os.sep) and real_primary != real_dir:
+            raise HTTPException(status_code=400, detail="invalid session id")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=400, detail="invalid session id")
+
+    if not primary.exists():
+        raise HTTPException(status_code=404, detail="session not found")
+
+    siblings = [
+        sessions_dir / f"{sid}.jsonl",
+        sessions_dir / f"{sid}.trajectory.jsonl",
+        sessions_dir / f"{sid}.trajectory-path.json",
+    ]
+    deleted = 0
+    for p in siblings:
+        try:
+            if p.exists():
+                p.unlink()
+                deleted += 1
+        except Exception as e:
+            print(f"[delete_session/{sid}] failed to unlink {p.name}: {e}")
+
+    return _json({"deleted": deleted, "sid": sid})
+
+
 class ChatRequest(BaseModel):
     message: str
     history: Optional[List[dict]] = None  # [{role, content}, ...] prior turns (stateless mode)

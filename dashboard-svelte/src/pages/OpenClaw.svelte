@@ -74,6 +74,20 @@
     }
   }
 
+  async function deleteSession(e, key) {
+    e.stopPropagation()
+    if (!window.confirm('Delete this session? This cannot be undone.')) return
+    const res = await api.chatSessionDelete(key)
+    if (res && (res.deleted >= 1 || res.sid)) {
+      // Remove from list immediately
+      sessions = sessions.filter((s) => s.key !== key)
+      // If deleted session was active, start fresh
+      if (activeKey === key) {
+        await newChat()
+      }
+    }
+  }
+
   // Relative time formatting for sidebar item age labels
   function relAge(isoStr) {
     if (!isoStr) return ''
@@ -272,22 +286,32 @@
         <div class="oc-sidebar-empty">No sessions yet</div>
       {:else}
         {#each sessions as s}
-          <button
+          <div
             class="oc-session-item"
             class:active={s.key === activeKey}
-            onclick={() => switchSession(s.key)}
-            aria-current={s.key === activeKey ? 'true' : undefined}
-            title={s.title}
+            role="listitem"
           >
-            <span class="oc-session-title">{s.title}</span>
-            <span class="oc-session-meta">
-              {#if s.model}
-                <span class="oc-model-badge">{s.model.split('/').pop()}</span>
-              {/if}
-              <span class="oc-session-age">{relAge(s.updated)}</span>
-            </span>
-            <!-- TODO v2: delete session (store is read-only in v1) -->
-          </button>
+            <button
+              class="oc-session-select"
+              onclick={() => switchSession(s.key)}
+              aria-current={s.key === activeKey ? 'true' : undefined}
+              title={s.title}
+            >
+              <span class="oc-session-title">{s.title}</span>
+              <span class="oc-session-meta">
+                {#if s.model}
+                  <span class="oc-model-badge">{s.model.split('/').pop()}</span>
+                {/if}
+                <span class="oc-session-age">{relAge(s.updated)}</span>
+              </span>
+            </button>
+            <button
+              class="oc-session-del"
+              onclick={(e) => deleteSession(e, s.key)}
+              title="Delete session"
+              aria-label="Delete session"
+            >🗑</button>
+          </div>
         {/each}
       {/if}
     </div>
@@ -455,14 +479,11 @@
 
   .oc-session-item {
     display: flex;
-    flex-direction: column;
-    gap: 3px;
-    text-align: left;
-    padding: 8px 10px;
+    flex-direction: row;
+    align-items: stretch;
     border-radius: 8px;
     border: 1px solid transparent;
     background: none;
-    cursor: pointer;
     color: var(--txt);
     transition: background 0.1s, border-color 0.1s;
     width: 100%;
@@ -475,9 +496,51 @@
     background: var(--panel);
     border-color: var(--accent);
   }
-  .oc-session-item:focus-visible {
+
+  .oc-session-select {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    text-align: left;
+    padding: 8px 6px 8px 10px;
+    border: 0;
+    border-radius: 8px 0 0 8px;
+    background: none;
+    cursor: pointer;
+    color: var(--txt);
+  }
+  .oc-session-select:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 1px;
+  }
+
+  .oc-session-del {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 0 8px 8px 0;
+    background: none;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--mut);
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+  }
+  .oc-session-item:hover .oc-session-del {
+    opacity: 1;
+  }
+  .oc-session-del:hover {
+    color: var(--red);
+  }
+  .oc-session-del:focus-visible {
+    outline: 2px solid var(--red);
+    outline-offset: 1px;
+    opacity: 1;
   }
 
   .oc-session-title {
