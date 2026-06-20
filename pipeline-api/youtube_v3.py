@@ -9,7 +9,19 @@ from pathlib import Path
 from typing import List, Optional, Dict
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from datetime import datetime
+from datetime import datetime, timedelta
+
+# Optional deps hoisted to module level so they are patchable in tests and used
+# consistently. Guarded so importing this module never hard-fails when a lib is
+# absent (the functions below degrade gracefully).
+try:
+    from google.oauth2.credentials import Credentials
+except ImportError:
+    Credentials = None
+try:
+    import psycopg
+except ImportError:
+    psycopg = None
 
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "")
 YOUTUBE_CREDENTIALS = os.getenv("YOUTUBE_CREDENTIALS", "client_secrets.json")
@@ -315,8 +327,9 @@ def _get_oauth_service():
     else tries InstalledAppFlow with client_secrets_file.
     Raises YouTubeOAuthNotConfigured if neither token nor client_secrets exist.
     """
+    if Credentials is None:
+        raise YouTubeOAuthNotConfigured("OAuth libraries not installed")
     try:
-        from google.oauth2.credentials import Credentials
         from google.auth.transport.requests import Request
         import google_auth_oauthlib.flow as flow_module
     except ImportError:
@@ -489,7 +502,6 @@ def _record_quota(operation: str, units: int) -> None:
         return
 
     try:
-        import psycopg
         conn = psycopg.connect(DATABASE_URL, connect_timeout=2)
         with conn.cursor() as cur:
             # Ensure table exists
@@ -530,7 +542,6 @@ def get_quota() -> Dict:
 
     if DATABASE_URL:
         try:
-            import psycopg
             conn = psycopg.connect(DATABASE_URL, connect_timeout=2)
             with conn.cursor() as cur:
                 today = datetime.utcnow().date()
@@ -546,11 +557,9 @@ def get_quota() -> Dict:
 
     remaining = max(0, DAILY_LIMIT - used)
     # Next reset is 24h from now (UTC midnight)
-    next_reset = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-    if next_reset <= datetime.utcnow():
-        next_reset = next_reset.replace(day=next_reset.day + 1)
-        if next_reset.month > 12:
-            next_reset = next_reset.replace(year=next_reset.year + 1, month=1)
+    # Next reset = upcoming UTC midnight (timedelta handles month/year rollover safely).
+    midnight_today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    next_reset = midnight_today + timedelta(days=1)
 
     return {
         "used": used,
