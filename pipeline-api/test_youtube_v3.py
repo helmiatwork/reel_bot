@@ -9,6 +9,7 @@ from youtube_v3 import (
     captions_list, captions_download,
     get_quota,
     YouTubeNotConfigured, YouTubeQuotaError, YouTubeOAuthNotConfigured,
+    YouTubeMetricNotAvailable,
     _parse_iso8601_duration, _record_quota
 )
 from googleapiclient.errors import HttpError
@@ -949,6 +950,29 @@ class TestChannelAnalytics:
                 channel_analytics("2024-01-01", "", ["views"])
 
 
+class TestYouTubeMetricNotAvailable:
+    """Test YouTubeMetricNotAvailable exception class."""
+
+    def test_exception_exists_and_is_exception_subclass(self):
+        """Test that YouTubeMetricNotAvailable is defined and is an Exception."""
+        from youtube_v3 import YouTubeMetricNotAvailable
+        assert issubclass(YouTubeMetricNotAvailable, Exception)
+
+    def test_exception_can_be_raised_and_caught(self):
+        """Test that YouTubeMetricNotAvailable can be raised and caught."""
+        from youtube_v3 import YouTubeMetricNotAvailable
+        with pytest.raises(YouTubeMetricNotAvailable):
+            raise YouTubeMetricNotAvailable("Test message")
+
+    def test_exception_message_contains_youtube_reporting_api_link(self):
+        """Test that exception message mentions YouTube Reporting API as alternative."""
+        from youtube_v3 import analytics_ctr
+        with pytest.raises(YouTubeMetricNotAvailable) as exc_info:
+            analytics_ctr("2024-01-01", "2024-01-31")
+        assert "YouTube Reporting API" in str(exc_info.value)
+        assert "https://developers.google.com/youtube/reporting" in str(exc_info.value)
+
+
 class TestAnalyticsCore:
     """Test analytics_core() convenience wrapper."""
 
@@ -1042,35 +1066,26 @@ class TestAnalyticsCore:
 class TestAnalyticsCTR:
     """Test analytics_ctr() convenience wrapper."""
 
-    @patch("youtube_v3.Path")
-    @patch("youtube_v3.build")
-    def test_analytics_ctr_by_day(self, mock_build, mock_path):
-        """Test analytics_ctr with day dimension."""
-        mock_path_obj = MagicMock()
-        mock_path_obj.exists.return_value = True
-        mock_path.return_value = mock_path_obj
+    def test_analytics_ctr_raises_metric_not_available(self):
+        """Test that analytics_ctr() raises YouTubeMetricNotAvailable immediately."""
+        from youtube_v3 import analytics_ctr
 
-        mock_service = MagicMock()
-        mock_build.return_value = mock_service
-        mock_query_method = mock_service.reports.return_value.query
-        mock_query_method.return_value.execute.return_value = {
-            "columnHeaders": [{"name": "day"}, {"name": "views"}, {"name": "impressionClickThroughRate"}],
-            "rows": [["2024-01-01", "100", "0.05"]],
-        }
+        with pytest.raises(YouTubeMetricNotAvailable):
+            analytics_ctr("2024-01-01", "2024-01-31")
 
-        with patch("youtube_v3.Credentials") as mock_creds_class:
-            mock_creds = MagicMock()
-            mock_creds.valid = True
-            mock_creds_class.from_authorized_user_file.return_value = mock_creds
+    def test_analytics_ctr_raises_with_by_day(self):
+        """Test that analytics_ctr() raises even with by='day' dimension."""
+        from youtube_v3 import analytics_ctr
 
-            from youtube_v3 import analytics_ctr
-            result = analytics_ctr("2024-01-01", "2024-01-31", by="day")
+        with pytest.raises(YouTubeMetricNotAvailable):
+            analytics_ctr("2024-01-01", "2024-01-31", by="day")
 
-        call_kwargs = mock_query_method.call_args.kwargs
-        assert "views" in call_kwargs["metrics"]
-        assert "impressions" in call_kwargs["metrics"]
-        assert "impressionClickThroughRate" in call_kwargs["metrics"]
-        assert call_kwargs["dimensions"] == "day"
+    def test_analytics_ctr_raises_with_by_video(self):
+        """Test that analytics_ctr() raises even with by='video' dimension."""
+        from youtube_v3 import analytics_ctr
+
+        with pytest.raises(YouTubeMetricNotAvailable):
+            analytics_ctr("2024-01-01", "2024-01-31", by="video")
 
 
 class TestAnalyticsAudience:
