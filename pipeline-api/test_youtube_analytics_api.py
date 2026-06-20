@@ -305,3 +305,228 @@ class TestYouTubeAnalyticsEndpoints:
         data = response.json()
         assert data["start"] == "2024-06-01"
         assert data["end"] == "2024-06-15"
+
+
+# ── /dash/overview channel block tests ──────────────────────────────────────
+
+
+def _make_fake_cursor(sources=3, produced=5, total_views=1000, formulas=2, clips=8,
+                      top_sources=None, series_rows=None, movers=None):
+    """Return a fake psycopg cursor mock that returns canned DB values."""
+    cur = MagicMock()
+
+    if top_sources is None:
+        top_sources = []
+    if series_rows is None:
+        series_rows = []
+    if movers is None:
+        movers = [("Video A", 500), ("Video B", 300)]
+
+    # _scalar is called 5 times in order: sources, produced, total_views, formulas, clips
+    cur.fetchone.side_effect = [
+        (sources,),
+        (produced,),
+        (total_views,),
+        (formulas,),
+        (clips,),
+    ]
+    # cur.execute is called for top_sources query, then series queries, then movers
+    # cur.fetchall is called for each of those
+    cur.fetchall.side_effect = [
+        top_sources,   # top_sources SELECT
+        *[series_rows for _ in top_sources],  # one series SELECT per source
+        movers,        # movers SELECT
+    ]
+    return cur
+
+
+def _make_fake_conn(cur):
+    """Wrap a fake cursor in a fake connection context manager."""
+    conn = MagicMock()
+    ctx = MagicMock()
+    ctx.__enter__ = MagicMock(return_value=cur)
+    ctx.__exit__ = MagicMock(return_value=False)
+    conn.cursor.return_value = ctx
+    return conn
+
+
+def _analytics_core_side_effect(total_rows, day_rows, video_rows):
+    """Build a side_effect callable that returns different results per call order."""
+    calls = [0]
+
+    def _side_effect(start_date, end_date, by=None):
+        if by is None:
+            # total
+            return {"rows_as_dicts": total_rows}
+        elif by == "day":
+            return {"rows_as_dicts": day_rows}
+        elif by == "video":
+            return {"rows_as_dicts": video_rows}
+        return {"rows_as_dicts": []}
+
+    return _side_effect
+
+
+class TestDashOverviewChannelBlock:
+    """Tests for the channel analytics block in /dash/overview."""
+
+    @patch("main._db_conn")
+    @patch("main.analytics_core")
+    @patch("main.youtube_v3.video_details")
+    def test_channel_block_populated(self, mock_video_details, mock_analytics_core, mock_db_conn):
+        """channel block is populated with total_views, series, top_videos; kpis still present."""
+        cur = _make_fake_cursor(sources=7, produced=12, formulas=4, clips=20)
+        mock_db_conn.return_value = _make_fake_conn(cur)
+
+        mock_analytics_core.side_effect = _analytics_core_side_effect(
+            total_rows=[{
+                "views": "5000",
+                "averageViewPercentage": "42.5",
+                "averageViewDuration": "65",
+            }],
+            day_rows=[
+                {"day": "2024-01-01", "views": "100"},
+                {"day": "2024-01-02", "views": "150"},
+            ],
+            video_rows=[
+                {"video": "abc123", "views": "2000", "averageViewPercentage": "55.0"},
+                {"video": "def456", "views": "1000", "averageViewPercentage": "30.0"},
+            ],
+        )
+        mock_video_details.return_value = [
+            {"video_id": "abc123", "title": "My Great Video"},
+            {"video_id": "def456", "title": "Another Video"},
+        ]
+
+        response = client.get("/dash/overview")
+        assert response.status_code == 200
+        data = response.json()
+
+        # existing kpis keys must still be present
+        assert "kpis" in data
+        assert data["kpis"]["sources"] == 7
+        assert data["kpis"]["produced"] == 12
+        assert data["kpis"]["formulas"] == 4
+        assert data["kpis"]["clips"] == 20
+
+        # channel block
+        assert "channel" in data
+        ch = data["channel"]
+        assert ch["total_views"] == 5000
+        assert ch["avg_view_pct"] == 42.5
+        assert ch["avg_duration"] == 65
+
+        # series: one entry labelled "views channel" with two points
+        assert len(ch["series"]) == 1
+        assert ch["series"][0]["label"] == "views channel"
+        points = ch["series"][0]["points"]
+        assert len(points) == 2
+        assert points[0] == {"d": "01-01", "v": 100}
+        assert points[1] == {"d": "01-02", "v": 150}
+
+        # top_videos: resolved titles + retention
+        assert len(ch["top_videos"]) == 2
+        assert ch["top_videos"][0]["title"] == "My Great Video"
+        assert ch["top_videos"][0]["views"] == 2000
+        assert ch["top_videos"][0]["retention"] == 55.0
+        assert ch["top_videos"][1]["title"] == "Another Video"
+
+        # no error key set
+        assert not ch.get("error")
+
+    @patch("main._db_conn")
+    @patch("main.analytics_core")
+    def test_channel_block_oauth_not_configured(self, mock_analytics_core, mock_db_conn):
+        """analytics_core raises YouTubeOAuthNotConfigured → response 200 with channel.error set."""
+        cur = _make_fake_cursor()
+        mock_db_conn.return_value = _make_fake_conn(cur)
+
+        mock_analytics_core.side_effect = youtube_v3.YouTubeOAuthNotConfigured(
+            "youtube_token.json missing"
+        )
+
+        response = client.get("/dash/overview")
+        assert response.status_code == 200  # must NOT 500
+        data = response.json()
+
+        assert "channel" in data
+        ch = data["channel"]
+        assert ch["total_views"] == 0
+        assert ch["error"] != ""
+        assert "oauth" in ch["error"].lower()
+        # series and top_videos degrade gracefully
+        assert ch["series"] == []
+        assert ch["top_videos"] == []
+
+    @patch("main._db_conn")
+    @patch("main.analytics_core")
+    def test_channel_block_not_configured(self, mock_analytics_core, mock_db_conn):
+        """analytics_core raises YouTubeNotConfigured → channel.error set, endpoint still 200."""
+        cur = _make_fake_cursor()
+        mock_db_conn.return_value = _make_fake_conn(cur)
+
+        mock_analytics_core.side_effect = youtube_v3.YouTubeNotConfigured("YOUTUBE_API_KEY not set")
+
+        response = client.get("/dash/overview")
+        assert response.status_code == 200
+        data = response.json()
+        ch = data["channel"]
+        assert ch["total_views"] == 0
+        assert "api key" in ch["error"].lower()
+
+    @patch("main._db_conn")
+    @patch("main.analytics_core")
+    def test_channel_block_quota_error(self, mock_analytics_core, mock_db_conn):
+        """analytics_core raises YouTubeQuotaError → channel.error set, endpoint still 200."""
+        cur = _make_fake_cursor()
+        mock_db_conn.return_value = _make_fake_conn(cur)
+
+        mock_analytics_core.side_effect = youtube_v3.YouTubeQuotaError("quota exceeded")
+
+        response = client.get("/dash/overview")
+        assert response.status_code == 200
+        data = response.json()
+        ch = data["channel"]
+        assert ch["total_views"] == 0
+        assert "quota" in ch["error"].lower()
+
+    @patch("main._db_conn")
+    @patch("main.analytics_core")
+    def test_channel_block_generic_exception(self, mock_analytics_core, mock_db_conn):
+        """Any unexpected exception → channel.error set, endpoint still 200."""
+        cur = _make_fake_cursor()
+        mock_db_conn.return_value = _make_fake_conn(cur)
+
+        mock_analytics_core.side_effect = RuntimeError("unexpected failure")
+
+        response = client.get("/dash/overview")
+        assert response.status_code == 200
+        data = response.json()
+        ch = data["channel"]
+        assert ch["total_views"] == 0
+        assert ch["error"] == "RuntimeError"
+
+    @patch("main._db_conn")
+    @patch("main.analytics_core")
+    @patch("main.youtube_v3.video_details")
+    def test_channel_block_title_resolution_failure(
+        self, mock_video_details, mock_analytics_core, mock_db_conn
+    ):
+        """video_details failing → falls back to raw video ID as title, endpoint still 200."""
+        cur = _make_fake_cursor()
+        mock_db_conn.return_value = _make_fake_conn(cur)
+
+        mock_analytics_core.side_effect = _analytics_core_side_effect(
+            total_rows=[{"views": "100", "averageViewPercentage": "30.0", "averageViewDuration": "45"}],
+            day_rows=[],
+            video_rows=[{"video": "xyz999", "views": "100", "averageViewPercentage": "30.0"}],
+        )
+        mock_video_details.side_effect = Exception("network error")
+
+        response = client.get("/dash/overview")
+        assert response.status_code == 200
+        data = response.json()
+        ch = data["channel"]
+        # title falls back to the raw video id
+        assert ch["top_videos"][0]["title"] == "xyz999"
+        assert not ch.get("error")  # title failure should NOT poison the whole block

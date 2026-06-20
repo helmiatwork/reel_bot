@@ -159,9 +159,116 @@ def restart_all():
     return _json({"results": results, "restarted": restarted_count})
 
 
+def _build_channel_analytics() -> dict:
+    """Fetch live YouTube channel analytics for the last 90 days ending yesterday.
+
+    Returns a dict with total_views, avg_view_pct, avg_duration, series, top_videos.
+    On any error (missing OAuth, quota, network) returns a safe error shell so the
+    dashboard still loads — this must never raise.
+    """
+    import datetime as _dt
+    _error_shell = {
+        "error": "",
+        "total_views": 0,
+        "avg_view_pct": 0,
+        "avg_duration": 0,
+        "series": [],
+        "top_videos": [],
+    }
+
+    try:
+        today = _dt.date.today()
+        end_date = (today - _dt.timedelta(days=1)).isoformat()
+        start_date = (today - _dt.timedelta(days=90)).isoformat()
+
+        # — totals —
+        total_result = analytics_core(start_date, end_date)
+        total_row = (total_result.get("rows_as_dicts") or [{}])[0]
+        total_views = int(float(total_row.get("views") or 0))
+        avg_view_pct = float(total_row.get("averageViewPercentage") or 0)
+        avg_duration = int(float(total_row.get("averageViewDuration") or 0))
+
+        # — daily series —
+        day_result = analytics_core(start_date, end_date, by="day")
+        day_rows = day_result.get("rows_as_dicts") or []
+        day_rows_sorted = sorted(day_rows, key=lambda r: r.get("day", ""))
+        series_points = []
+        for r in day_rows_sorted:
+            raw_day = r.get("day", "")
+            # "day" column comes back as YYYY-MM-DD; convert to MM-DD for the chart
+            label = raw_day[5:] if len(raw_day) == 10 else raw_day
+            series_points.append({"d": label, "v": int(float(r.get("views") or 0))})
+        channel_series = [{"label": "views channel", "points": series_points}]
+
+        # — top 5 videos —
+        vid_result = analytics_core(start_date, end_date, by="video")
+        vid_rows = vid_result.get("rows_as_dicts") or []
+        # sort descending by views (API should already sort but be defensive)
+        vid_rows_sorted = sorted(vid_rows, key=lambda r: float(r.get("views") or 0), reverse=True)[:5]
+
+        top_videos = []
+        video_ids = [str(r.get("video", "")) for r in vid_rows_sorted if r.get("video")]
+        # best-effort title resolution; fall back to raw video id on any error
+        title_map: dict = {}
+        if video_ids:
+            try:
+                details = youtube_v3.video_details(video_ids)
+                # video_details returns a list when given a list
+                if isinstance(details, dict):
+                    details = [details]
+                for d in (details or []):
+                    title_map[d.get("video_id", "")] = d.get("title", "")
+            except Exception:
+                pass  # title resolution is best-effort; raw IDs used as fallback
+
+        for r in vid_rows_sorted:
+            vid_id = str(r.get("video", ""))
+            title = title_map.get(vid_id) or vid_id
+            top_videos.append({
+                "title": title[:80],
+                "views": int(float(r.get("views") or 0)),
+                "retention": float(r.get("averageViewPercentage") or 0),
+            })
+
+        return {
+            "total_views": total_views,
+            "avg_view_pct": avg_view_pct,
+            "avg_duration": avg_duration,
+            "series": channel_series,
+            "top_videos": top_videos,
+        }
+
+    except Exception as exc:
+        from youtube_v3 import (
+            YouTubeOAuthNotConfigured as _OAuthErr,
+            YouTubeNotConfigured as _NotCfg,
+            YouTubeQuotaError as _Quota,
+        )
+        try:
+            from googleapiclient.errors import HttpError as _HttpErr
+        except ImportError:
+            _HttpErr = None
+
+        if isinstance(exc, _OAuthErr):
+            reason = "oauth not configured"
+        elif isinstance(exc, _NotCfg):
+            reason = "youtube api key not set"
+        elif isinstance(exc, _Quota):
+            reason = "quota exceeded"
+        elif _HttpErr and isinstance(exc, _HttpErr):
+            reason = f"http error {exc.resp.status}"
+        else:
+            reason = type(exc).__name__
+
+        shell = dict(_error_shell)
+        shell["error"] = reason
+        return shell
+
+
 @app.get("/dash/overview")
 def dash_overview():
-    """KPI cards + 7-day views trend + top movers, all from content_automation."""
+    """KPI cards + 7-day views trend + top movers, all from content_automation.
+    Also includes live YouTube channel analytics under the 'channel' key."""
     conn = _db_conn()
     if not conn:
         return _json({"error": "db unavailable"})
@@ -194,10 +301,13 @@ def dash_overview():
                 "FROM sources ORDER BY views_at_analysis DESC NULLS LAST LIMIT 5")
             movers = [{"title": t[:48], "views": int(v or 0)} for t, v in cur.fetchall()]
 
+        channel = _build_channel_analytics()
+
         return _json({
             "kpis": {"sources": sources, "total_views": int(total_views or 0),
                      "produced": produced, "formulas": formulas, "clips": clips},
             "series": series, "movers": movers,
+            "channel": channel,
         })
     finally:
         conn.close()
