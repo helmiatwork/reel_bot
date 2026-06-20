@@ -891,7 +891,10 @@ from youtube_v3 import (
     video_details as v3_video_details,
     trending as v3_trending,
     channel_uploads as v3_channel_uploads,
-    YouTubeNotConfigured, YouTubeQuotaError
+    captions_list as v3_captions_list,
+    captions_download as v3_captions_download,
+    get_quota as v3_get_quota,
+    YouTubeNotConfigured, YouTubeQuotaError, YouTubeOAuthNotConfigured
 )
 from googleapiclient.errors import HttpError as GoogleHttpError
 
@@ -912,6 +915,26 @@ def _normalize_ytdlp_items(raw: list) -> list:
             "duration_s": v.get("duration"),
         })
     return out
+
+
+def _normalize_ytdlp_video(raw: dict) -> dict:
+    """Map a yt-dlp single video dict to the v3 video_details shape.
+    yt-dlp uses 'id' for video_id; v3 uses 'video_id'."""
+    raw = raw or {}  # always emit the full shape (with empty defaults) so callers get consistent keys
+    vid = raw.get("id") or raw.get("video_id") or ""
+    return {
+        "video_id": vid,
+        "title": raw.get("title", ""),
+        "description": (raw.get("description", "") or "")[:1000],
+        "duration_iso": "",  # yt-dlp doesn't return ISO duration
+        "duration_s": raw.get("duration", 0),
+        "view_count": int(raw.get("view_count", 0) or 0),
+        "like_count": int(raw.get("like_count", 0) or 0),
+        "comment_count": int(raw.get("comment_count", 0) or 0),
+        "channel_title": raw.get("channel", "") or raw.get("uploader", ""),
+        "tags": raw.get("tags", [])[:20] if raw.get("tags") else [],
+        "published_at": raw.get("upload_date") or "",
+    }
 
 
 @app.get("/youtube/search")
@@ -948,7 +971,7 @@ def youtube_search(q: str, max_results: int = 10):
         import subprocess
         proc = subprocess.run(
             ["python", "/app/yt_pipeline/yt_pipeline.py", "--v3-search", q, str(max_results)],
-            capture_output=True, text=True, timeout=30)
+            capture_output=True, text=True, timeout=60)
         if proc.returncode == 0:
             try:
                 result = json.loads(proc.stdout)
@@ -993,11 +1016,12 @@ def youtube_video(video_id: str):
         video_url = f"https://www.youtube.com/watch?v={video_id}"
         proc = subprocess.run(
             ["python", "/app/yt_pipeline/yt_pipeline.py", "--v3-video", video_url],
-            capture_output=True, text=True, timeout=30)
+            capture_output=True, text=True, timeout=60)
         if proc.returncode == 0:
             try:
                 result = json.loads(proc.stdout)
-                return _json({"video": result, "source": "yt-dlp"})
+                normalized = _normalize_ytdlp_video(result)
+                return _json({"video": normalized, "source": "yt-dlp"})
             except Exception as e:
                 print(f"[youtube/video] yt-dlp JSON parse failed: {e}")
         else:
@@ -1066,3 +1090,164 @@ def youtube_channel_uploads(channel_id: str, max_results: int = 10):
         print(f"[youtube/channel] v3 error: {e}")
 
     return _json({"items": [], "source": "unavailable", "error": "channel uploads unavailable (v3 API key or quota issue)"})
+
+
+@app.get("/youtube/captions")
+def youtube_captions(video_id: str):
+    """
+    List available captions for a video (OAuth required — own-channel only).
+
+    Query params:
+      video_id: YouTube video ID (required)
+
+    Returns:
+      {video_id, captions: [{caption_id, language, name, track_kind}], available: bool, source: "v3"}
+      On OAuth not configured or video not owned: {captions: [], available: false, reason: "..."}
+    """
+    if not video_id or not video_id.strip():
+        raise HTTPException(status_code=400, detail="video_id is required")
+
+    try:
+        captions = v3_captions_list(video_id)
+        return _json({
+            "video_id": video_id,
+            "captions": captions,
+            "available": True,
+            "source": "v3"
+        })
+    except YouTubeOAuthNotConfigured:
+        return _json({
+            "video_id": video_id,
+            "captions": [],
+            "available": False,
+            "reason": "youtube oauth not configured"
+        })
+    except GoogleHttpError as e:
+        if e.resp.status == 403:
+            # Video not owned by this channel
+            return _json({
+                "video_id": video_id,
+                "captions": [],
+                "available": False,
+                "reason": "not authorized for this video"
+            })
+        print(f"[youtube/captions] v3 HTTP error {e.resp.status}")
+        raise HTTPException(status_code=500, detail="captions list failed")
+    except Exception as e:
+        print(f"[youtube/captions] v3 error: {e}")
+        raise HTTPException(status_code=500, detail="captions list failed")
+
+
+@app.get("/youtube/captions/{caption_id}")
+def youtube_captions_download(caption_id: str, fmt: str = "srt"):
+    """
+    Download caption text for a caption track (OAuth required).
+
+    Path params:
+      caption_id: Caption ID from /youtube/captions list
+
+    Query params:
+      fmt: Format — 'srt', 'vtt', or 'ttml' (default 'srt')
+
+    Returns:
+      {caption_id, fmt, content}
+
+    On format invalid or OAuth not configured: 400/500 error.
+    """
+    if not caption_id or not caption_id.strip():
+        raise HTTPException(status_code=400, detail="caption_id is required")
+
+    if fmt not in ("srt", "vtt", "ttml"):
+        raise HTTPException(status_code=400, detail="fmt must be one of srt, vtt, ttml")
+
+    try:
+        result = v3_captions_download(caption_id, fmt=fmt)
+        return _json(result)
+    except YouTubeOAuthNotConfigured:
+        raise HTTPException(status_code=500, detail="youtube oauth not configured")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except GoogleHttpError as e:
+        print(f"[youtube/captions_download] HTTP error {e.resp.status}")
+        raise HTTPException(status_code=500, detail="captions download failed")
+    except Exception as e:
+        print(f"[youtube/captions_download] error: {e}")
+        raise HTTPException(status_code=500, detail="captions download failed")
+
+
+@app.get("/youtube/quota")
+def youtube_quota():
+    """
+    Get current YouTube API quota usage.
+
+    Returns:
+      {used: int, limit: 10000, remaining: int, reset_at: ISO8601, day: date}
+
+    Quota is tracked per UTC day. If DB unavailable, returns estimated (assumes 0 units).
+    """
+    quota = v3_get_quota()
+    return _json(quota)
+
+
+class ClipThisRequest(BaseModel):
+    youtube_url: Optional[str] = None
+    video_id: Optional[str] = None
+
+
+@app.post("/youtube/clip-this")
+def youtube_clip_this(req: ClipThisRequest, bg: BackgroundTasks):
+    """
+    Trigger the clip-discovery pipeline on a YouTube video.
+
+    Body (JSON):
+      {
+        youtube_url?: str (e.g., 'https://www.youtube.com/watch?v=...'),
+        video_id?: str (e.g., 'dQw4w9WgXcQ')
+      }
+
+    At least one must be provided. If youtube_url, extracts video_id.
+    Returns: {run_id, status: "started", video_id}
+
+    This kicks off the EXISTING /pipeline/research flow (research → clipfinder → editor).
+    """
+    # Validate input
+    if not req.youtube_url and not req.video_id:
+        raise HTTPException(status_code=400, detail="youtube_url or video_id is required")
+
+    extracted_video_id = req.video_id
+    if req.youtube_url:
+        _validate_youtube_url(req.youtube_url)
+        # Extract video_id from URL
+        from urllib.parse import urlparse, parse_qs
+        parsed = urlparse(req.youtube_url)
+        if parsed.netloc in ("youtu.be", "www.youtu.be"):
+            # Short URL: https://youtu.be/{video_id}
+            extracted_video_id = parsed.path.lstrip("/")
+        else:
+            # Long URL: v parameter in query string
+            qs = parse_qs(parsed.query)
+            extracted_video_id = qs.get("v", [""])[0]
+
+    if not extracted_video_id:
+        raise HTTPException(status_code=400, detail="could not extract video_id from youtube_url")
+
+    # Generate a run_id and kick off research pipeline
+    import uuid
+    import subprocess
+    run_id = str(uuid.uuid4())[:8]
+    video_url = f"https://www.youtube.com/watch?v={extracted_video_id}"
+
+    def _run():
+        try:
+            # Call the existing research pipeline (--discover mode)
+            cmd = ["python", "/app/yt_pipeline/yt_pipeline.py", "--discover", "auto", video_url]
+            sub_env = {**os.environ, "RUN_ID": run_id}
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=900, env=sub_env)
+            # Log result server-side; client tracks via /pipeline/research/status/{run_id}
+            status = "done" if proc.returncode == 0 else "error"
+            print(f"[youtube/clip-this] run_id={run_id} status={status}")
+        except Exception as e:
+            print(f"[youtube/clip-this] run_id={run_id} error: {e}")
+
+    bg.add_task(_run)
+    return _json({"run_id": run_id, "status": "started", "video_id": extracted_video_id})

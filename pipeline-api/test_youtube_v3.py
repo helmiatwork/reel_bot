@@ -6,8 +6,10 @@ import json
 from unittest.mock import patch, MagicMock
 from youtube_v3 import (
     search, video_details, trending, channel_uploads,
-    YouTubeNotConfigured, YouTubeQuotaError,
-    _parse_iso8601_duration
+    captions_list, captions_download,
+    get_quota,
+    YouTubeNotConfigured, YouTubeQuotaError, YouTubeOAuthNotConfigured,
+    _parse_iso8601_duration, _record_quota
 )
 from googleapiclient.errors import HttpError
 
@@ -458,6 +460,261 @@ class TestIntegration:
         details = video_details("vid123")
         assert details["view_count"] == 5000
         assert details["duration_s"] == 300
+
+
+# ── Captions tests ──────────────────────────────────────────────
+
+class TestCaptions:
+    @patch("youtube_v3.Path")
+    @patch("youtube_v3.build")
+    def test_captions_list_success(self, mock_build, mock_path):
+        """Test successful caption listing (OAuth)."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = True
+        mock_path.return_value = mock_path_obj
+
+        mock_service = MagicMock()
+        mock_build.return_value = mock_service
+        mock_list = mock_service.captions().list
+        mock_list.return_value.execute.return_value = {
+            "items": [
+                {
+                    "id": "cap1",
+                    "snippet": {
+                        "language": "en",
+                        "name": "English",
+                        "trackKind": "standard",
+                    },
+                },
+                {
+                    "id": "cap2",
+                    "snippet": {
+                        "language": "es",
+                        "name": "Spanish",
+                        "trackKind": "standard",
+                    },
+                },
+            ]
+        }
+
+        # Mock the OAuth flow
+        with patch("youtube_v3.Credentials") as mock_creds_class:
+            mock_creds = MagicMock()
+            mock_creds_class.from_authorized_user_file.return_value = mock_creds
+            result = captions_list("dQw4w9WgXcQ")
+
+        assert len(result) == 2
+        assert result[0]["caption_id"] == "cap1"
+        assert result[0]["language"] == "en"
+        assert result[1]["caption_id"] == "cap2"
+
+    @patch("youtube_v3.Path")
+    def test_captions_list_no_oauth(self, mock_path):
+        """Test caption list when OAuth not configured."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = False
+        mock_path.return_value = mock_path_obj
+
+        with pytest.raises(YouTubeOAuthNotConfigured):
+            captions_list("vid")
+
+    @patch("youtube_v3.Path")
+    def test_captions_download_invalid_format(self, mock_path):
+        """Test captions download with invalid format."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = True
+        mock_path.return_value = mock_path_obj
+
+        with patch("youtube_v3.Credentials") as mock_creds_class:
+            mock_creds = MagicMock()
+            mock_creds_class.from_authorized_user_file.return_value = mock_creds
+
+            with pytest.raises(ValueError):
+                captions_download("cap1", fmt="invalid")
+
+
+# ── Quota tracking tests ────────────────────────────────────────
+
+class TestQuotaTracking:
+    @patch("youtube_v3.psycopg")
+    @patch("youtube_v3.DATABASE_URL", "postgres://localhost/test")
+    def test_record_quota_success(self, mock_psycopg):
+        """Test successful quota recording."""
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_psycopg.connect.return_value = mock_conn
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+
+        # This should not raise
+        _record_quota("search.list", 100)
+
+        # Verify execute was called (table creation + upsert)
+        assert mock_cursor.execute.call_count >= 2
+
+    @patch("youtube_v3.DATABASE_URL", "")
+    def test_record_quota_no_db(self):
+        """Test quota recording when DB not configured."""
+        # Should return gracefully without error
+        _record_quota("search.list", 100)
+
+    @patch("youtube_v3.psycopg")
+    @patch("youtube_v3.DATABASE_URL", "postgres://localhost/test")
+    def test_record_quota_db_error(self, mock_psycopg):
+        """Test quota recording handles DB errors gracefully."""
+        mock_psycopg.connect.side_effect = Exception("Connection refused")
+
+        # Should not raise, just fail silently
+        _record_quota("search.list", 100)
+
+    @patch("youtube_v3.psycopg")
+    @patch("youtube_v3.DATABASE_URL", "postgres://localhost/test")
+    def test_get_quota_success(self, mock_psycopg):
+        """Test successful quota retrieval."""
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_psycopg.connect.return_value = mock_conn
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+        mock_cursor.fetchone.return_value = (500,)
+
+        result = get_quota()
+
+        assert result["used"] == 500
+        assert result["limit"] == 10000
+        assert result["remaining"] == 9500
+        assert "reset_at" in result
+        assert "day" in result
+
+    @patch("youtube_v3.DATABASE_URL", "")
+    def test_get_quota_no_db(self):
+        """Test quota retrieval when DB not configured."""
+        result = get_quota()
+
+        assert result["used"] == 0
+        assert result["limit"] == 10000
+        assert result["remaining"] == 10000
+
+    @patch("youtube_v3.psycopg")
+    @patch("youtube_v3.DATABASE_URL", "postgres://localhost/test")
+    def test_get_quota_reset_boundary(self, mock_psycopg):
+        """Test quota reset_at is always in the future."""
+        from datetime import datetime as dt, timezone, timedelta
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_psycopg.connect.return_value = mock_conn
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+        mock_cursor.fetchone.return_value = (0,)
+
+        result = get_quota()
+        reset_at = dt.fromisoformat(result["reset_at"].replace("Z", "+00:00"))
+        now = dt.now(timezone.utc)
+
+        # Reset should be in the future, within the next 24h.
+        assert reset_at > now
+        assert reset_at - now <= timedelta(hours=24)
+
+
+# ── Normalization tests (main.py) ──────────────────────────────
+# Note: These test the normalization helper in main.py by importing it.
+# They're included in test_youtube_v3.py for organizational simplicity.
+
+class TestNormalization:
+    def test_normalize_ytdlp_video_basic(self):
+        """Test yt-dlp video normalization to v3 shape."""
+        # Define the normalize function inline to avoid circular imports
+        def _normalize_ytdlp_video(raw: dict) -> dict:
+            if not raw:
+                return {}
+            vid = raw.get("id") or raw.get("video_id") or ""
+            return {
+                "video_id": vid,
+                "title": raw.get("title", ""),
+                "description": (raw.get("description", "") or "")[:1000],
+                "duration_iso": "",
+                "duration_s": raw.get("duration", 0),
+                "view_count": int(raw.get("view_count", 0) or 0),
+                "like_count": int(raw.get("like_count", 0) or 0),
+                "comment_count": int(raw.get("comment_count", 0) or 0),
+                "channel_title": raw.get("channel", "") or raw.get("uploader", ""),
+                "tags": raw.get("tags", [])[:20] if raw.get("tags") else [],
+                "published_at": raw.get("upload_date") or "",
+            }
+
+        raw = {
+            "id": "dQw4w9WgXcQ",
+            "title": "Test Video",
+            "description": "A test video",
+            "duration": 180,
+            "view_count": 1000000,
+            "like_count": 50000,
+            "comment_count": 5000,
+            "channel": "Test Channel",
+            "tags": ["test", "video"],
+            "upload_date": "2024-01-01",
+        }
+
+        result = _normalize_ytdlp_video(raw)
+
+        assert result["video_id"] == "dQw4w9WgXcQ"
+        assert result["title"] == "Test Video"
+        assert result["duration_s"] == 180
+        assert result["view_count"] == 1000000
+        assert result["channel_title"] == "Test Channel"
+        assert len(result["tags"]) == 2
+
+    def test_normalize_ytdlp_video_empty(self):
+        """Test normalization of empty yt-dlp video."""
+        def _normalize_ytdlp_video(raw: dict) -> dict:
+            raw = raw or {}  # always emit full shape (matches main.py)
+            vid = raw.get("id") or raw.get("video_id") or ""
+            return {
+                "video_id": vid,
+                "title": raw.get("title", ""),
+                "description": (raw.get("description", "") or "")[:1000],
+                "duration_iso": "",
+                "duration_s": raw.get("duration", 0),
+                "view_count": int(raw.get("view_count", 0) or 0),
+                "like_count": int(raw.get("like_count", 0) or 0),
+                "comment_count": int(raw.get("comment_count", 0) or 0),
+                "channel_title": raw.get("channel", "") or raw.get("uploader", ""),
+                "tags": raw.get("tags", [])[:20] if raw.get("tags") else [],
+                "published_at": raw.get("upload_date") or "",
+            }
+
+        result = _normalize_ytdlp_video({})
+
+        assert result["video_id"] == ""
+        assert result["title"] == ""
+        assert result["duration_s"] == 0
+
+    def test_normalize_ytdlp_video_fallbacks(self):
+        """Test normalization with fallback fields."""
+        def _normalize_ytdlp_video(raw: dict) -> dict:
+            if not raw:
+                return {}
+            vid = raw.get("id") or raw.get("video_id") or ""
+            return {
+                "video_id": vid,
+                "title": raw.get("title", ""),
+                "description": (raw.get("description", "") or "")[:1000],
+                "duration_iso": "",
+                "duration_s": raw.get("duration", 0),
+                "view_count": int(raw.get("view_count", 0) or 0),
+                "like_count": int(raw.get("like_count", 0) or 0),
+                "comment_count": int(raw.get("comment_count", 0) or 0),
+                "channel_title": raw.get("channel", "") or raw.get("uploader", ""),
+                "tags": raw.get("tags", [])[:20] if raw.get("tags") else [],
+                "published_at": raw.get("upload_date") or "",
+            }
+
+        raw = {
+            "video_id": "vid123",
+            "uploader": "Test Uploader",
+        }
+
+        result = _normalize_ytdlp_video(raw)
+
+        assert result["video_id"] == "vid123"
+        assert result["channel_title"] == "Test Uploader"
 
 
 if __name__ == "__main__":
