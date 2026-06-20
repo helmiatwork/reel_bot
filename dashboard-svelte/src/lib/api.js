@@ -49,6 +49,8 @@ export const api = {
   youtubeChannelUploads: (channel_id, max_results = 20) =>
     getJSON(`/youtube/channel/${encodeURIComponent(channel_id)}/uploads?max_results=${max_results}`),
   youtubeVideo: (video_id) => getJSON(`/youtube/video/${encodeURIComponent(video_id)}`),
+  youtubeQuota: () => getJSON('/youtube/quota'),
+  clipThis: (video_id) => postJSON('/youtube/clip-this', { video_id }),
 
   // Stream the agent's reply (SSE) from /dash/chat. Calls onDelta(textChunk)
   // per token, onError(msg) on failure, onDone() at end. Returns an abort fn.
