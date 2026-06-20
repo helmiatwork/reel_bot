@@ -955,9 +955,12 @@ from youtube_v3 import (
     captions_list as v3_captions_list,
     captions_download as v3_captions_download,
     get_quota as v3_get_quota,
-    YouTubeNotConfigured, YouTubeQuotaError, YouTubeOAuthNotConfigured
+    analytics_core, analytics_audience, analytics_revenue, analytics_ctr,
+    YouTubeNotConfigured, YouTubeQuotaError, YouTubeOAuthNotConfigured,
+    YouTubeMetricNotAvailable
 )
 from googleapiclient.errors import HttpError as GoogleHttpError
+import youtube_v3
 
 
 def _normalize_ytdlp_items(raw: list) -> list:
@@ -1248,6 +1251,191 @@ def youtube_quota():
     """
     quota = v3_get_quota()
     return _json(quota)
+
+
+# ── YouTube Analytics API v2 endpoints ──────────────────────────────────────
+
+def _get_date_window(start: Optional[str] = None, end: Optional[str] = None) -> tuple:
+    """
+    Parse date parameters or return default (last 28 days ending yesterday).
+    Returns (start_date_str, end_date_str) in YYYY-MM-DD format.
+    """
+    from datetime import date, timedelta
+    today = date.today()
+    default_end = (today - timedelta(days=1)).isoformat()
+    default_start = (today - timedelta(days=29)).isoformat()
+    return (start or default_start, end or default_end)
+
+
+def _handle_analytics_error(exc: Exception) -> tuple:
+    """
+    Map YouTube Analytics exceptions to HTTP status and detail.
+    Returns (status_code, detail_string).
+    """
+    if isinstance(exc, YouTubeOAuthNotConfigured):
+        return 503, "YouTube OAuth not configured (youtube_token.json needed)"
+    elif isinstance(exc, YouTubeNotConfigured):
+        return 503, "YouTube API not configured"
+    elif isinstance(exc, YouTubeQuotaError):
+        return 429, "YouTube API quota exceeded"
+    elif isinstance(exc, YouTubeMetricNotAvailable):
+        return 501, str(exc)
+    elif isinstance(exc, ValueError):
+        return 400, str(exc)
+    elif isinstance(exc, GoogleHttpError):
+        return 502, f"YouTube API error: {exc.resp.status}"
+    else:
+        return 500, f"Analytics error: {str(exc)}"
+
+
+@app.get("/analytics/channel/core")
+def analytics_channel_core(
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    by: Optional[str] = None,
+):
+    """
+    Query core analytics metrics (views, watch time, engagement).
+
+    Query params:
+      start: Start date in YYYY-MM-DD format (default: 28 days ago)
+      end: End date in YYYY-MM-DD format (default: yesterday)
+      by: Optional dimension: 'day', 'video', or None (channel total)
+
+    Returns: {start, end, by, rows: [<analytics data as dicts>]}
+
+    Errors:
+      503: OAuth/API not configured
+      429: Quota exceeded
+      400: Invalid parameters
+      500/502: API/unexpected errors
+    """
+    try:
+        start_date, end_date = _get_date_window(start, end)
+        result = analytics_core(start_date, end_date, by=by)
+        rows = result.get("rows_as_dicts", [])
+        return _json({
+            "start": start_date,
+            "end": end_date,
+            "by": by,
+            "rows": rows,
+        })
+    except Exception as e:
+        status, detail = _handle_analytics_error(e)
+        raise HTTPException(status_code=status, detail=detail)
+
+
+@app.get("/analytics/channel/audience")
+def analytics_channel_audience(
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    kind: str = "geography",
+):
+    """
+    Query audience composition analytics by demographics, geography, traffic, or device.
+
+    Query params:
+      start: Start date in YYYY-MM-DD format (default: 28 days ago)
+      end: End date in YYYY-MM-DD format (default: yesterday)
+      kind: One of 'demographics', 'geography', 'traffic', 'device' (default: geography)
+
+    Returns: {start, end, kind, rows: [<audience data as dicts>]}
+
+    Errors:
+      400: Invalid kind parameter
+      503: OAuth/API not configured
+      429: Quota exceeded
+      500/502: API/unexpected errors
+    """
+    valid_kinds = {"demographics", "geography", "traffic", "device"}
+    if kind not in valid_kinds:
+        raise HTTPException(
+            status_code=400,
+            detail=f"kind must be one of: {', '.join(sorted(valid_kinds))}",
+        )
+
+    try:
+        start_date, end_date = _get_date_window(start, end)
+        result = analytics_audience(start_date, end_date, kind=kind)
+        rows = result.get("rows_as_dicts", [])
+        return _json({
+            "start": start_date,
+            "end": end_date,
+            "kind": kind,
+            "rows": rows,
+        })
+    except Exception as e:
+        status, detail = _handle_analytics_error(e)
+        raise HTTPException(status_code=status, detail=detail)
+
+
+@app.get("/analytics/channel/revenue")
+def analytics_channel_revenue(
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    by: Optional[str] = None,
+):
+    """
+    Query revenue analytics (estimated revenue, CPM, monetized playbacks).
+    REQUIRES: Monetized YouTube channel (YouTube Partner Program).
+
+    Query params:
+      start: Start date in YYYY-MM-DD format (default: 28 days ago)
+      end: End date in YYYY-MM-DD format (default: yesterday)
+      by: Optional dimension: 'day', 'video', or None (channel total)
+
+    Returns: {start, end, by, rows: [<revenue data as dicts>]}
+
+    Errors:
+      503: OAuth/API not configured or channel not monetized
+      429: Quota exceeded
+      400: Invalid parameters
+      500/502: API/unexpected errors
+    """
+    try:
+        start_date, end_date = _get_date_window(start, end)
+        result = analytics_revenue(start_date, end_date, by=by)
+        rows = result.get("rows_as_dicts", [])
+        return _json({
+            "start": start_date,
+            "end": end_date,
+            "by": by,
+            "rows": rows,
+        })
+    except Exception as e:
+        status, detail = _handle_analytics_error(e)
+        raise HTTPException(status_code=status, detail=detail)
+
+
+@app.get("/analytics/channel/ctr")
+def analytics_channel_ctr(
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    by: Optional[str] = None,
+):
+    """
+    Query click-through rate analytics (impressions, CTR).
+
+    **LIMITATION:** YouTube Analytics API v2 does NOT expose impression metrics.
+    This endpoint always returns 501 Not Implemented with an explanatory message.
+
+    These metrics are only available through:
+      1. YouTube Reporting API (bulk CSV reports)
+      2. YouTube Studio UI (Advanced Analytics)
+
+    See the error response detail for more information.
+
+    Errors:
+      501: Metric not available (always)
+    """
+    try:
+        start_date, end_date = _get_date_window(start, end)
+        result = analytics_ctr(start_date, end_date, by=by)
+        # This will never be reached because analytics_ctr() always raises
+        return _json({"rows": []})
+    except Exception as e:
+        status, detail = _handle_analytics_error(e)
+        raise HTTPException(status_code=status, detail=detail)
 
 
 class ClipThisRequest(BaseModel):
