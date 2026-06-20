@@ -15,18 +15,20 @@
   import Cost from './pages/Cost.svelte'
   import Discover from './pages/Discover.svelte'
 
+  // Standard line icons (Lucide), monochrome, inherit text color.
+  const I = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`
   const NAV = [
-    { p: 'openclaw', ico: '🦅', label: 'OpenClaw' },
-    { p: 'dashboard', ico: '▦', label: 'Dashboard' },
-    { p: 'sources', ico: '▶', label: 'Sources' },
-    { p: 'clips', ico: '✂', label: 'Clips' },
-    { p: 'performance', ico: '📈', label: 'Performance' },
-    { p: 'pipeline', ico: '⚙', label: 'Pipeline' },
-    { p: 'posts', ico: '📤', label: 'Posts' },
-    { p: 'agents', ico: '🤖', label: 'Agents' },
-    { p: 'formulas', ico: '✦', label: 'Formulas' },
-    { p: 'cost', ico: '💰', label: 'Cost' },
-    { p: 'discover', ico: '🔍', label: 'Discover' }
+    { p: 'openclaw', ico: I('<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/>'), label: 'OpenClaw' },
+    { p: 'dashboard', ico: I('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>'), label: 'Dashboard' },
+    { p: 'sources', ico: I('<path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/>'), label: 'Sources' },
+    { p: 'clips', ico: I('<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/>'), label: 'Clips' },
+    { p: 'performance', ico: I('<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>'), label: 'Performance' },
+    { p: 'pipeline', ico: I('<line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/>'), label: 'Pipeline' },
+    { p: 'posts', ico: I('<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>'), label: 'Posts' },
+    { p: 'agents', ico: I('<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>'), label: 'Agents' },
+    { p: 'formulas', ico: I('<path d="M10 2v7.31"/><path d="M14 9.3V2"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>'), label: 'Formulas' },
+    { p: 'cost', ico: I('<line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'), label: 'Cost' },
+    { p: 'discover', ico: I('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>'), label: 'Discover' }
   ]
 
   let current = $state('dashboard')
@@ -91,7 +93,7 @@
     <nav class="nav">
       {#each NAV as n}
         <a class:active={current === n.p} onclick={() => page.set(n.p)}>
-          <span class="ico">{n.ico}</span> {n.label}
+          <span class="ico">{@html n.ico}</span> {n.label}
         </a>
       {/each}
     </nav>
