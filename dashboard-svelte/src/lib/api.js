@@ -54,16 +54,23 @@ export const api = {
   youtubeQuota: () => getJSON('/youtube/quota'),
   clipThis: (video_id) => postJSON('/youtube/clip-this', { video_id }),
 
+  chatSessions: () => getJSON('/dash/chat/sessions'),
+  chatSession: (sid) => getJSON(`/dash/chat/session/${encodeURIComponent(sid)}`),
+
   // Stream the agent's reply (SSE) from /dash/chat. Calls onDelta(textChunk)
   // per token, onError(msg) on failure, onDone() at end. Returns an abort fn.
-  streamChat(message, history, { onDelta, onError, onDone }) {
+  // When session_key is provided, history is ignored (OpenClaw manages it).
+  streamChat(message, history, { onDelta, onError, onDone }, session_key) {
     const ctrl = new AbortController()
     ;(async () => {
       try {
+        const body = session_key
+          ? { message, session_key }
+          : { message, history }
         const r = await fetch('/dash/chat', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ message, history }),
+          body: JSON.stringify(body),
           signal: ctrl.signal
         })
         if (!r.ok || !r.body) {

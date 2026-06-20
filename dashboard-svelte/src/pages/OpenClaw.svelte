@@ -2,15 +2,99 @@
   import { onMount, onDestroy, tick } from 'svelte'
   import { api, extractRunId } from '../lib/api.js'
 
-  // -- State --
-  let messages = $state([
-    {
+  // ── Session sidebar state ─────────────────────────────────────────────────
+  let sessions = $state([])          // [{key, title, model, updated}]
+  let activeKey = $state(null)       // OpenClaw UUID of the active session
+  let sidebarLoading = $state(false)
+
+  // Persist active session key across page refreshes.
+  const STORAGE_KEY = 'oc_active_session'
+
+  function saveActiveKey(k) {
+    try { localStorage.setItem(STORAGE_KEY, k || '') } catch (_) {}
+  }
+  function loadActiveKey() {
+    try { return localStorage.getItem(STORAGE_KEY) || null } catch (_) { return null }
+  }
+
+  // Generate a random UUID v4 for new sessions (frontend-side key).
+  // OpenClaw won't use this value as the filename — it assigns its own UUID —
+  // but passing it consistently on every request for the same "new chat" pins
+  // that exchange to one OpenClaw session. Once a reply arrives we refresh the
+  // session list and adopt the OpenClaw UUID as the canonical key.
+  function genUUID() {
+    return crypto.randomUUID
+      ? crypto.randomUUID()
+      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+          const r = (Math.random() * 16) | 0
+          return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16)
+        })
+  }
+
+  // Pending key used while a new chat is in progress (before the first reply
+  // lands and we can identify the OpenClaw UUID).
+  let pendingKey = $state(null)
+
+  async function fetchSessions() {
+    sidebarLoading = true
+    try {
+      const data = await api.chatSessions()
+      if (data && data.sessions) sessions = data.sessions
+    } finally {
+      sidebarLoading = false
+    }
+  }
+
+  async function newChat() {
+    pendingKey = genUUID()
+    activeKey = null
+    saveActiveKey(null)
+    messages = [WELCOME_MSG()]
+    scrollDown()
+  }
+
+  async function switchSession(key) {
+    if (key === activeKey) return
+    activeKey = key
+    pendingKey = null
+    saveActiveKey(key)
+    messages = [WELCOME_MSG()]
+    scrollDown()
+    // Load existing transcript
+    const data = await api.chatSession(key)
+    if (data && data.messages) {
+      messages = data.messages.map((m) => ({
+        role: m.role,
+        text: m.content,
+        streaming: false,
+        runId: null
+      }))
+      if (messages.length === 0) messages = [WELCOME_MSG()]
+      scrollDown()
+    }
+  }
+
+  // Relative time formatting for sidebar item age labels
+  function relAge(isoStr) {
+    if (!isoStr) return ''
+    const diff = (Date.now() - new Date(isoStr + (isoStr.endsWith('Z') ? '' : 'Z')).getTime()) / 1000
+    if (diff < 60) return 'just now'
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+    return `${Math.floor(diff / 86400)}d ago`
+  }
+
+  // ── Chat state ────────────────────────────────────────────────────────────
+  function WELCOME_MSG() {
+    return {
       role: 'assistant',
       text: 'Halo! Kirim URL YouTube atau topik. Untuk video panjang, aku bisa cariin momen clippable terbaik. 🎬',
       streaming: false,
       runId: null
     }
-  ])
+  }
+
+  let messages = $state([WELCOME_MSG()])
   let input = $state('')
   let busy = $state(false)
   let connStatus = $state('connecting') // 'connected' | 'down' | 'connecting'
@@ -19,10 +103,9 @@
 
   const AGENTS = ['reelbot', 'clipfinder', 'clipper', 'longvideo']
 
-  // NOTE: streamChat POSTs {message, history} — no agent field is sent to the backend.
-  // The backend uses a server-side fixed OPENCLAW_MODEL and does NOT route per-agent.
-  // The dropdown is wired and the selected value is visible in the UI, but the backend
-  // ignores it until agent-routing support is added server-side.
+  // NOTE: streamChat POSTs {message, session_key} when session is active.
+  // The backend forwards x-openclaw-session-key and does NOT resend history.
+  // The agent dropdown is cosmetic; backend uses a fixed OPENCLAW_MODEL.
   // Tooltip on select reads "agent routing pending backend support".
 
   const CHIPS = [
@@ -40,12 +123,10 @@
     try {
       const r = await api.services()
       if (r && r.services) {
-        // Check if openclaw service specifically is up
         const oc = r.services.find((s) => s.name && s.name.toLowerCase().includes('openclaw'))
         if (oc) {
           connStatus = oc.up ? 'connected' : 'down'
         } else {
-          // Fall back: if any services respond, consider connected
           connStatus = r.live > 0 ? 'connected' : 'down'
         }
       } else {
@@ -77,8 +158,6 @@
   // -- Chip: prefill composer --
   function chipClick(prompt) {
     input = prompt
-    // Focus + resize directly. Do NOT dispatch a synthetic 'input' event:
-    // bind:value would read the not-yet-updated DOM value and clobber `input`.
     const ta = document.querySelector('.oc-textarea')
     if (ta) {
       ta.focus()
@@ -92,42 +171,59 @@
     const msg = (textOverride ?? input).trim()
     if (!msg || busy) return
     input = ''
-    // Reset textarea height
     const ta = document.querySelector('.oc-textarea')
     if (ta) ta.style.height = 'auto'
     busy = true
 
     messages.push({ role: 'user', text: msg, streaming: false, runId: null })
     messages.push({ role: 'assistant', text: '', streaming: true, runId: null })
-    // Index of the assistant bubble — mutate via messages[ai] so updates go
-    // through the $state proxy (a captured object ref would not be reactive).
     const ai = messages.length - 1
     scrollDown()
 
-    // Build history from all prior messages (exclude the two just pushed)
-    const history = messages.slice(0, -2).map((m) => ({ role: m.role, content: m.text }))
+    // Use activeKey (existing session) or pendingKey (new chat in progress).
+    const sessionKey = activeKey || pendingKey
 
-    abortChat = api.streamChat(msg, history, {
-      onDelta: (chunk) => {
-        messages[ai].text += chunk
-        scrollDown()
+    // In stateless mode (no session key) build history from in-browser log.
+    const history = sessionKey
+      ? null
+      : messages.slice(0, -2).map((m) => ({ role: m.role, content: m.text }))
+
+    abortChat = api.streamChat(
+      msg,
+      history,
+      {
+        onDelta: (chunk) => {
+          messages[ai].text += chunk
+          scrollDown()
+        },
+        onError: (err) => {
+          messages[ai].text += (messages[ai].text ? '\n\n' : '') + `Gagal: ${err}`
+          messages[ai].streaming = false
+          busy = false
+          abortChat = null
+        },
+        onDone: () => {
+          messages[ai].streaming = false
+          busy = false
+          abortChat = null
+          const id = extractRunId(messages[ai].text)
+          if (id) messages[ai].runId = id
+          scrollDown()
+          // After the first reply in a new chat, refresh the session list so
+          // the new OpenClaw session UUID shows up in the sidebar.
+          fetchSessions().then(() => {
+            // If we were on a pending key (new chat), adopt the newest session
+            // as active so subsequent messages stay in the same session.
+            if (!activeKey && pendingKey && sessions.length > 0) {
+              activeKey = sessions[0].key
+              pendingKey = null
+              saveActiveKey(activeKey)
+            }
+          })
+        }
       },
-      onError: (err) => {
-        messages[ai].text += (messages[ai].text ? '\n\n' : '') + `Gagal: ${err}`
-        messages[ai].streaming = false
-        busy = false
-        abortChat = null
-      },
-      onDone: () => {
-        messages[ai].streaming = false
-        busy = false
-        abortChat = null
-        // Try to extract run_id from the reply
-        const id = extractRunId(messages[ai].text)
-        if (id) messages[ai].runId = id
-        scrollDown()
-      }
-    })
+      sessionKey
+    )
   }
 
   // -- Keyboard handler --
@@ -139,9 +235,19 @@
   }
 
   // -- Lifecycle --
-  onMount(() => {
+  onMount(async () => {
     checkConnection()
-    // Re-check every 30s (best-effort, no crash if fails)
+    await fetchSessions()
+
+    // Restore active session from localStorage
+    const saved = loadActiveKey()
+    if (saved && sessions.some((s) => s.key === saved)) {
+      await switchSession(saved)
+    } else if (sessions.length > 0) {
+      // Auto-select newest session on first load
+      await switchSession(sessions[0].key)
+    }
+
     const t = setInterval(checkConnection, 30000)
     timers.add(t)
   })
@@ -152,107 +258,280 @@
   })
 </script>
 
-<div class="oc-page">
-  <!-- Header -->
-  <div class="oc-top">
-    <h1 class="oc-title">🦅 OpenClaw</h1>
-    <span class="oc-status" class:down={connStatus === 'down'} class:connecting={connStatus === 'connecting'}>
-      <span class="oc-dot"></span>
-      {connStatus === 'connected' ? 'connected' : connStatus === 'down' ? 'down' : 'connecting…'}
-    </span>
-    <span class="oc-agent-wrap" title="agent routing pending backend support">
-      <span class="oc-agent-label">agent</span>
-      <select class="oc-select" bind:value={selectedAgent} aria-label="Select agent">
-        {#each AGENTS as a}
-          <option value={a}>{a}</option>
-        {/each}
-      </select>
-    </span>
-  </div>
+<div class="oc-layout">
+  <!-- ── Session Sidebar ──────────────────────────────────────────────── -->
+  <aside class="oc-sidebar">
+    <button class="oc-new-btn" onclick={newChat} aria-label="New chat">
+      <span class="oc-new-icon">＋</span> New chat
+    </button>
 
-  <!-- Thread -->
-  <div class="oc-thread" bind:this={scroller} role="log" aria-live="polite" aria-label="Chat thread">
-    {#each messages as m}
-      {#if m.role === 'user'}
-        <div class="oc-row oc-row-me">
-          <div class="oc-av" aria-hidden="true">🙂</div>
-          <div class="oc-bubble oc-bubble-user">
-            <div class="oc-who">Kamu</div>
-            <p class="oc-text">{m.text}</p>
-          </div>
-        </div>
+    <div class="oc-session-list" role="list" aria-label="Chat sessions">
+      {#if sidebarLoading && sessions.length === 0}
+        <div class="oc-sidebar-empty">Loading…</div>
+      {:else if sessions.length === 0}
+        <div class="oc-sidebar-empty">No sessions yet</div>
       {:else}
-        <div class="oc-row">
-          <div class="oc-av" aria-hidden="true">🦅</div>
-          <div class="oc-bubble oc-bubble-bot">
-            <div class="oc-who">
-              OpenClaw · {selectedAgent}
-              {#if m.runId}<span class="oc-badge">run {m.runId.slice(0, 8)}</span>{/if}
-            </div>
-            {#if m.streaming && !m.text}
-              <!-- Typing indicator: awaiting first token -->
-              <span class="oc-typing" aria-label="Typing">
-                <i></i><i></i><i></i>
-              </span>
-            {:else}
+        {#each sessions as s}
+          <button
+            class="oc-session-item"
+            class:active={s.key === activeKey}
+            onclick={() => switchSession(s.key)}
+            aria-current={s.key === activeKey ? 'true' : undefined}
+            title={s.title}
+          >
+            <span class="oc-session-title">{s.title}</span>
+            <span class="oc-session-meta">
+              {#if s.model}
+                <span class="oc-model-badge">{s.model.split('/').pop()}</span>
+              {/if}
+              <span class="oc-session-age">{relAge(s.updated)}</span>
+            </span>
+            <!-- TODO v2: delete session (store is read-only in v1) -->
+          </button>
+        {/each}
+      {/if}
+    </div>
+
+    <!-- Footer: active session short-id -->
+    {#if activeKey}
+      <div class="oc-sidebar-footer" title={activeKey}>
+        session: {activeKey.slice(0, 8)}
+      </div>
+    {/if}
+  </aside>
+
+  <!-- ── Main Chat Column ─────────────────────────────────────────────── -->
+  <div class="oc-page">
+    <!-- Header -->
+    <div class="oc-top">
+      <h1 class="oc-title">🦅 OpenClaw</h1>
+      <span class="oc-status" class:down={connStatus === 'down'} class:connecting={connStatus === 'connecting'}>
+        <span class="oc-dot"></span>
+        {connStatus === 'connected' ? 'connected' : connStatus === 'down' ? 'down' : 'connecting…'}
+      </span>
+      <span class="oc-agent-wrap" title="agent routing pending backend support">
+        <span class="oc-agent-label">agent</span>
+        <select class="oc-select" bind:value={selectedAgent} aria-label="Select agent">
+          {#each AGENTS as a}
+            <option value={a}>{a}</option>
+          {/each}
+        </select>
+      </span>
+    </div>
+
+    <!-- Thread -->
+    <div class="oc-thread" bind:this={scroller} role="log" aria-live="polite" aria-label="Chat thread">
+      {#each messages as m}
+        {#if m.role === 'user'}
+          <div class="oc-row oc-row-me">
+            <div class="oc-av" aria-hidden="true">🙂</div>
+            <div class="oc-bubble oc-bubble-user">
+              <div class="oc-who">Kamu</div>
               <p class="oc-text">{m.text}</p>
-              {#if m.streaming}
+            </div>
+          </div>
+        {:else}
+          <div class="oc-row">
+            <div class="oc-av" aria-hidden="true">🦅</div>
+            <div class="oc-bubble oc-bubble-bot">
+              <div class="oc-who">
+                OpenClaw · {selectedAgent}
+                {#if m.runId}<span class="oc-badge">run {m.runId.slice(0, 8)}</span>{/if}
+              </div>
+              {#if m.streaming && !m.text}
                 <span class="oc-typing" aria-label="Typing">
                   <i></i><i></i><i></i>
                 </span>
+              {:else}
+                <p class="oc-text">{m.text}</p>
+                {#if m.streaming}
+                  <span class="oc-typing" aria-label="Typing">
+                    <i></i><i></i><i></i>
+                  </span>
+                {/if}
               {/if}
-            {/if}
+            </div>
           </div>
-        </div>
-      {/if}
-    {/each}
-  </div>
-
-  <!-- Quick-action chips -->
-  <div class="oc-chips" role="group" aria-label="Quick actions">
-    {#each CHIPS as c}
-      <button class="oc-chip" onclick={() => chipClick(c.prompt)} aria-label={c.label}>
-        {c.label}
-      </button>
-    {/each}
-  </div>
-
-  <!-- Composer -->
-  <div class="oc-composer">
-    <div class="oc-box" class:focused={false}>
-      <textarea
-        class="oc-textarea"
-        rows="1"
-        placeholder="Kirim URL atau perintah ke OpenClaw…"
-        bind:value={input}
-        onkeydown={onKey}
-        disabled={busy}
-        use:autoGrow
-        aria-label="Message input"
-        aria-multiline="true"
-      ></textarea>
-      <button
-        class="oc-send"
-        onclick={() => send()}
-        disabled={busy || !input.trim()}
-        aria-label="Send message"
-      >{busy ? '…' : '↑'}</button>
+        {/if}
+      {/each}
     </div>
-    <div class="oc-hint">
-      <span>Enter kirim · Shift+Enter baris baru</span>
-      <span>via /dash/chat (streaming)</span>
+
+    <!-- Quick-action chips -->
+    <div class="oc-chips" role="group" aria-label="Quick actions">
+      {#each CHIPS as c}
+        <button class="oc-chip" onclick={() => chipClick(c.prompt)} aria-label={c.label}>
+          {c.label}
+        </button>
+      {/each}
+    </div>
+
+    <!-- Composer -->
+    <div class="oc-composer">
+      <div class="oc-box" class:focused={false}>
+        <textarea
+          class="oc-textarea"
+          rows="1"
+          placeholder="Kirim URL atau perintah ke OpenClaw…"
+          bind:value={input}
+          onkeydown={onKey}
+          disabled={busy}
+          use:autoGrow
+          aria-label="Message input"
+          aria-multiline="true"
+        ></textarea>
+        <button
+          class="oc-send"
+          onclick={() => send()}
+          disabled={busy || !input.trim()}
+          aria-label="Send message"
+        >{busy ? '…' : '↑'}</button>
+      </div>
+      <div class="oc-hint">
+        <span>Enter kirim · Shift+Enter baris baru</span>
+        <span>via /dash/chat (streaming)</span>
+      </div>
     </div>
   </div>
 </div>
 
 <style>
-  /* Page layout — fills the .main area */
+  /* Outer layout: sidebar + chat column */
+  .oc-layout {
+    display: flex;
+    height: calc(100vh - 48px);
+    overflow: hidden;
+  }
+
+  /* ── Sidebar ─────────────────────────────────────────────────────────── */
+  .oc-sidebar {
+    width: 268px;
+    min-width: 268px;
+    max-width: 268px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--line);
+    background: var(--bg);
+    overflow: hidden;
+  }
+
+  .oc-new-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 10px 8px;
+    padding: 9px 14px;
+    background: var(--accent);
+    color: #fff;
+    border: 0;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+  }
+  .oc-new-btn:hover { opacity: 0.87; }
+  .oc-new-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .oc-new-icon { font-size: 16px; line-height: 1; }
+
+  .oc-session-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .oc-sidebar-empty {
+    font-size: 12.5px;
+    color: var(--mut);
+    padding: 10px 8px;
+    text-align: center;
+  }
+
+  .oc-session-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: none;
+    cursor: pointer;
+    color: var(--txt);
+    transition: background 0.1s, border-color 0.1s;
+    width: 100%;
+  }
+  .oc-session-item:hover {
+    background: var(--panel);
+    border-color: var(--line);
+  }
+  .oc-session-item.active {
+    background: var(--panel);
+    border-color: var(--accent);
+  }
+  .oc-session-item:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .oc-session-title {
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+    display: block;
+  }
+
+  .oc-session-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .oc-model-badge {
+    font-size: 10.5px;
+    background: var(--panel2, #2a2a3a);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 1px 5px;
+    color: var(--mut);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+  }
+
+  .oc-session-age {
+    font-size: 11px;
+    color: var(--mut);
+    white-space: nowrap;
+  }
+
+  .oc-sidebar-footer {
+    padding: 8px 12px;
+    font-size: 11px;
+    color: var(--mut);
+    border-top: 1px solid var(--line);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+  }
+
+  /* ── Chat column ─────────────────────────────────────────────────────── */
   .oc-page {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 48px);
-    max-width: 860px;
-    margin: 0 auto;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
   }
 
   /* Header */
@@ -260,7 +539,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 4px 4px 14px;
+    padding: 4px 16px 14px;
     border-bottom: 1px solid var(--line);
     flex-shrink: 0;
   }
@@ -312,9 +591,7 @@
     gap: 6px;
     cursor: help;
   }
-  .oc-agent-label {
-    font-size: 12px;
-  }
+  .oc-agent-label { font-size: 12px; }
   .oc-select {
     background: var(--panel);
     color: var(--txt);
@@ -333,7 +610,7 @@
   .oc-thread {
     flex: 1;
     overflow-y: auto;
-    padding: 22px 4px;
+    padding: 22px 16px;
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -359,9 +636,7 @@
     background: var(--panel);
     border: 1px solid var(--line);
   }
-  .oc-row-me .oc-av {
-    background: #1f3a5f;
-  }
+  .oc-row-me .oc-av { background: #1f3a5f; }
 
   /* Bubbles */
   .oc-bubble {
@@ -430,7 +705,7 @@
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-    padding: 10px 4px 8px;
+    padding: 10px 16px 8px;
     flex-shrink: 0;
   }
   .oc-chip {
@@ -443,9 +718,7 @@
     cursor: pointer;
     transition: border-color 0.15s;
   }
-  .oc-chip:hover {
-    border-color: var(--accent);
-  }
+  .oc-chip:hover { border-color: var(--accent); }
   .oc-chip:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
@@ -453,7 +726,7 @@
 
   /* Composer */
   .oc-composer {
-    padding: 8px 0 18px;
+    padding: 8px 16px 18px;
     border-top: 1px solid var(--line);
     flex-shrink: 0;
   }
@@ -467,9 +740,7 @@
     padding: 8px 8px 8px 14px;
     transition: border-color 0.15s;
   }
-  .oc-box:focus-within {
-    border-color: var(--accent);
-  }
+  .oc-box:focus-within { border-color: var(--accent); }
   .oc-textarea {
     flex: 1;
     background: none;
@@ -483,9 +754,7 @@
     font-family: inherit;
     line-height: 1.5;
   }
-  .oc-textarea:disabled {
-    opacity: 0.6;
-  }
+  .oc-textarea:disabled { opacity: 0.6; }
   .oc-send {
     flex: none;
     background: var(--accent);
@@ -499,13 +768,8 @@
     font-weight: 700;
     transition: opacity 0.15s;
   }
-  .oc-send:disabled {
-    opacity: 0.35;
-    cursor: default;
-  }
-  .oc-send:not(:disabled):hover {
-    opacity: 0.85;
-  }
+  .oc-send:disabled { opacity: 0.35; cursor: default; }
+  .oc-send:not(:disabled):hover { opacity: 0.85; }
   .oc-send:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
@@ -518,10 +782,15 @@
     justify-content: space-between;
   }
 
-  /* Responsive */
-  @media (max-width: 640px) {
-    .oc-chips { gap: 6px; }
+  /* Responsive: collapse sidebar on narrow screens */
+  @media (max-width: 760px) {
+    .oc-sidebar {
+      display: none;
+    }
+    .oc-chips { gap: 6px; padding: 10px 8px 8px; }
     .oc-chip { font-size: 12px; padding: 5px 10px; }
-    .oc-thread { padding: 14px 2px; }
+    .oc-thread { padding: 14px 8px; }
+    .oc-composer { padding: 8px 8px 18px; }
+    .oc-top { padding: 4px 8px 14px; }
   }
 </style>

@@ -475,21 +475,177 @@ def dash_token_usage():
 OPENCLAW_URL = os.getenv("OPENCLAW_URL", "http://openclaw:18789").rstrip("/")
 OPENCLAW_MODEL = os.getenv("OPENCLAW_MODEL", "openclaw/reelbot")
 
+# NOTE on session storage: OpenClaw generates its own UUID for every session
+# regardless of the x-openclaw-session-key header value. The UUID is stored as
+# {"type":"session","id":"<uuid>",...} on the first line of each <uuid>.jsonl
+# file. Passing the same session key on subsequent requests resumes that session,
+# but the UUID is assigned by OpenClaw — not taken verbatim from the header.
+# Strategy: list/load sessions by scanning <uuid>.jsonl files in the store dir;
+# identify sessions by their OpenClaw UUID (from the first line). The frontend
+# generates a key per new chat — it is forwarded as x-openclaw-session-key so
+# OpenClaw pins the session, then the resulting UUID can be discovered by mtime.
+OPENCLAW_SESSIONS_DIR = os.getenv(
+    "OPENCLAW_SESSIONS_DIR",
+    "/openclaw-data/agents/reelbot/sessions"
+)
+
+import re as _re
+_SAFE_SID = _re.compile(r'^[a-f0-9\-]{8,64}$')
+
+
+def _parse_session_file(path: Path) -> Optional[dict]:
+    """Parse a <uuid>.jsonl session file.
+
+    Returns {key, title, model, updated} or None on any parse error.
+    The 'key' is the session UUID from the first line (assigned by OpenClaw).
+    'title' is the first user message text truncated to 48 chars.
+    'model' is the modelId from the last model_change event.
+    'updated' is the file mtime as an ISO timestamp.
+    """
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        session_id = None
+        model = ""
+        title = "(untitled)"
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+            except Exception:
+                continue
+            t = obj.get("type", "")
+            if t == "session":
+                session_id = obj.get("id", "")
+            elif t == "model_change":
+                model = obj.get("modelId", model)
+            elif t == "message" and title == "(untitled)":
+                msg = obj.get("message", {})
+                if msg.get("role") == "user":
+                    content = msg.get("content", "")
+                    if isinstance(content, list):
+                        # content is [{type,text},...]; grab first text block
+                        for block in content:
+                            if isinstance(block, dict) and block.get("type") == "text":
+                                content = block.get("text", "")
+                                break
+                        else:
+                            content = ""
+                    title = str(content)[:48] or "(untitled)"
+        if not session_id:
+            return None
+        import datetime as _dt
+        mtime = path.stat().st_mtime
+        updated = _dt.datetime.utcfromtimestamp(mtime).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return {"key": session_id, "title": title, "model": model, "updated": updated,
+                "_mtime": mtime}
+    except Exception:
+        return None
+
+
+@app.get("/dash/chat/sessions")
+def list_chat_sessions():
+    """List OpenClaw session files from the shared volume.
+
+    Returns {"sessions":[{key, title, model, updated}]} sorted by mtime desc.
+    Tolerates missing/empty directory (never 500).
+    """
+    sessions_dir = Path(OPENCLAW_SESSIONS_DIR)
+    if not sessions_dir.is_dir():
+        return _json({"sessions": []})
+    results = []
+    for p in sessions_dir.glob("*.jsonl"):
+        # Skip trajectory files (they contain internal tool traces)
+        if "trajectory" in p.name:
+            continue
+        parsed = _parse_session_file(p)
+        if parsed:
+            results.append(parsed)
+    # Sort by mtime descending (newest first)
+    results.sort(key=lambda s: s["_mtime"], reverse=True)
+    # Strip internal _mtime before returning
+    for s in results:
+        del s["_mtime"]
+    return _json({"sessions": results})
+
+
+@app.get("/dash/chat/session/{sid}")
+def get_chat_session(sid: str):
+    """Load a session's message turns by its OpenClaw UUID.
+
+    Returns {"messages":[{role, content}]} in order.
+    Rejects sid values that are not safe UUIDs (path traversal guard).
+    """
+    if not _SAFE_SID.match(sid):
+        raise HTTPException(status_code=400, detail="invalid session id")
+    sessions_dir = Path(OPENCLAW_SESSIONS_DIR)
+    target = sessions_dir / f"{sid}.jsonl"
+    if not target.exists() or "trajectory" in target.name:
+        raise HTTPException(status_code=404, detail="session not found")
+    messages_out = []
+    try:
+        for line in target.read_text(encoding="utf-8", errors="replace").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+            except Exception:
+                continue
+            if obj.get("type") != "message":
+                continue
+            msg = obj.get("message", {})
+            role = msg.get("role", "")
+            if role not in ("user", "assistant"):
+                continue
+            content = msg.get("content", "")
+            if isinstance(content, list):
+                parts = []
+                for block in content:
+                    if isinstance(block, dict) and block.get("type") == "text":
+                        parts.append(block.get("text", ""))
+                content = "".join(parts)
+            messages_out.append({"role": role, "content": str(content)})
+    except Exception:
+        raise HTTPException(status_code=500, detail="failed to read session")
+    return _json({"messages": messages_out})
+
 
 class ChatRequest(BaseModel):
     message: str
-    history: Optional[List[dict]] = None  # [{role, content}, ...] prior turns
+    history: Optional[List[dict]] = None  # [{role, content}, ...] prior turns (stateless mode)
+    session_key: Optional[str] = None     # OpenClaw session UUID; when set, session is stateful
 
 
 @app.post("/dash/chat")
 async def dash_chat(req: ChatRequest):
-    """Stream the agent's reply (SSE passthrough) from OpenClaw's chat endpoint."""
+    """Stream the agent's reply (SSE passthrough) from OpenClaw's chat endpoint.
+
+    When session_key is provided, the request uses x-openclaw-session-key so
+    OpenClaw maintains the session state server-side — only the new user message
+    is sent (history is managed by OpenClaw, not resent by the dashboard).
+    When session_key is absent, falls back to stateless mode (full history sent).
+    """
     token = os.getenv("OPENCLAW_GATEWAY_TOKEN", "")
     if not token:
         raise HTTPException(503, "OPENCLAW_GATEWAY_TOKEN not configured")
 
-    messages = list(req.history or [])
-    messages.append({"role": "user", "content": req.message})
+    headers: dict = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+
+    if req.session_key:
+        # Stateful mode: let OpenClaw manage history via its session store.
+        # Send only the new user message; do NOT forward the in-browser history.
+        messages = [{"role": "user", "content": req.message}]
+        headers["x-openclaw-session-key"] = req.session_key
+    else:
+        # Stateless (back-compat): full history included in each request.
+        messages = list(req.history or [])
+        messages.append({"role": "user", "content": req.message})
+
     payload = {"model": OPENCLAW_MODEL, "messages": messages, "stream": True}
 
     import httpx
@@ -501,8 +657,7 @@ async def dash_chat(req: ChatRequest):
             async with httpx.AsyncClient(timeout=timeout) as client:
                 async with client.stream(
                     "POST", f"{OPENCLAW_URL}/v1/chat/completions",
-                    headers={"Authorization": f"Bearer {token}",
-                             "Content-Type": "application/json"},
+                    headers=headers,
                     json=payload,
                 ) as resp:
                     if resp.status_code != 200:
