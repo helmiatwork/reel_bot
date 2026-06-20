@@ -56,6 +56,14 @@ export const api = {
 
   chatSessions: () => getJSON('/dash/chat/sessions'),
   chatSession: (sid) => getJSON(`/dash/chat/session/${encodeURIComponent(sid)}`),
+  chatSessionDelete: async (sid) => {
+    try {
+      const r = await fetch(`/dash/chat/session/${encodeURIComponent(sid)}`, { method: 'DELETE' })
+      return await r.json()
+    } catch (e) {
+      return null
+    }
+  },
 
   // Stream the agent's reply (SSE) from /dash/chat. Calls onDelta(textChunk)
   // per token, onError(msg) on failure, onDone() at end. Returns an abort fn.
