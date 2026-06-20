@@ -43,6 +43,11 @@ class YouTubeOAuthNotConfigured(Exception):
     pass
 
 
+class YouTubeMetricNotAvailable(Exception):
+    """Raised when a requested metric is not exposed by the YouTube Analytics API."""
+    pass
+
+
 def _get_service():
     """Build YouTube v3 service. Raises YouTubeNotConfigured if key is missing."""
     if not YOUTUBE_API_KEY:
@@ -672,23 +677,33 @@ def analytics_ctr(start_date: str, end_date: str, by: Optional[str] = None) -> D
     """
     Query click-through rate analytics (impressions, CTR).
 
+    **LIMITATION:** The YouTube Analytics API v2 does NOT expose `impressions` or
+    `impressionClickThroughRate` metrics. These metrics are only available via:
+    1. YouTube Reporting API (bulk CSV report jobs): https://developers.google.com/youtube/reporting
+    2. YouTube Studio UI
+
+    This function raises YouTubeMetricNotAvailable to signal the limitation clearly
+    rather than silently failing with HTTP 400.
+
     Args:
         start_date: Start date in YYYY-MM-DD format
         end_date: End date in YYYY-MM-DD format
         by: Optional dimension: 'day', 'video', or None (channel total)
 
+    Raises:
+        YouTubeMetricNotAvailable: Always raised because impressions metrics are not
+                                   available via the YouTube Analytics API.
+
     Returns:
-        Dict with analytics data including rows_as_dicts
+        Never returns; always raises YouTubeMetricNotAvailable.
     """
-    metrics = ["views", "impressions", "impressionClickThroughRate"]
-
-    dimensions = None
-    if by == "day":
-        dimensions = ["day"]
-    elif by == "video":
-        dimensions = ["video"]
-
-    return channel_analytics(start_date, end_date, metrics, dimensions=dimensions)
+    raise YouTubeMetricNotAvailable(
+        "Thumbnail impressions and impression click-through rate (CTR) are not available "
+        "via the YouTube Analytics API v2. These metrics are only accessible through:\n"
+        "  1. YouTube Reporting API (bulk CSV reports): https://developers.google.com/youtube/reporting\n"
+        "  2. YouTube Studio UI (Analytics > Advanced Analytics)\n"
+        "This is a Google platform limitation, not a bug in this client."
+    )
 
 
 def analytics_audience(start_date: str, end_date: str, kind: str) -> Dict:

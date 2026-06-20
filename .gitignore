@@ -20,3 +20,9 @@ openclaw/agents/*/sessions/
 .gitnexus
 .claude/
 docker-compose.override.yml
+
+# OAuth token (never commit)
+youtube_token.json
+
+# Playwright MCP artifacts (snapshots/screenshots/downloads)
+.playwright-mcp/
