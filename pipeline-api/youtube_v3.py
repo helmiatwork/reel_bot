@@ -375,10 +375,16 @@ def _get_oauth_service():
             except Exception as e:
                 raise YouTubeOAuthNotConfigured(f"OAuth setup failed: {e}")
 
-        # Save the refreshed token
+        # Save the refreshed token with owner-only perms (it's an OAuth credential).
+        # Use os.open with 0o600 at creation time to avoid a world-readable race window.
         try:
-            with open(token_file, "w") as f:
+            fd = os.open(str(token_file), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            with os.fdopen(fd, "w") as f:
                 f.write(creds.to_json())
+            try:
+                os.chmod(str(token_file), 0o600)  # defense-in-depth if the file pre-existed
+            except OSError:
+                pass
         except Exception:
             pass  # Best-effort; don't fail if we can't persist
 
