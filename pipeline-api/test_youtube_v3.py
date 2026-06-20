@@ -9,6 +9,7 @@ from youtube_v3 import (
     captions_list, captions_download,
     get_quota,
     YouTubeNotConfigured, YouTubeQuotaError, YouTubeOAuthNotConfigured,
+    YouTubeMetricNotAvailable,
     _parse_iso8601_duration, _record_quota
 )
 from googleapiclient.errors import HttpError
@@ -500,6 +501,7 @@ class TestCaptions:
         # Mock the OAuth flow
         with patch("youtube_v3.Credentials") as mock_creds_class:
             mock_creds = MagicMock()
+            mock_creds.valid = True
             mock_creds_class.from_authorized_user_file.return_value = mock_creds
             result = captions_list("dQw4w9WgXcQ")
 
@@ -527,6 +529,7 @@ class TestCaptions:
 
         with patch("youtube_v3.Credentials") as mock_creds_class:
             mock_creds = MagicMock()
+            mock_creds.valid = True
             mock_creds_class.from_authorized_user_file.return_value = mock_creds
 
             with pytest.raises(ValueError):
@@ -715,6 +718,549 @@ class TestNormalization:
 
         assert result["video_id"] == "vid123"
         assert result["channel_title"] == "Test Uploader"
+
+
+# ── YouTube Analytics API v2 tests ────────────────────────────────────
+
+class TestAnalyticsOAuthScopes:
+    """Test OAUTH_SCOPES constant includes analytics and monetary scopes."""
+
+    def test_oauth_scopes_includes_force_ssl(self):
+        """OAUTH_SCOPES includes the force-ssl scope for captions."""
+        from youtube_v3 import OAUTH_SCOPES
+        assert "https://www.googleapis.com/auth/youtube.force-ssl" in OAUTH_SCOPES
+
+    def test_oauth_scopes_includes_yt_analytics(self):
+        """OAUTH_SCOPES includes the yt-analytics.readonly scope."""
+        from youtube_v3 import OAUTH_SCOPES
+        assert "https://www.googleapis.com/auth/yt-analytics.readonly" in OAUTH_SCOPES
+
+    def test_oauth_scopes_includes_monetary(self):
+        """OAUTH_SCOPES includes the yt-analytics-monetary.readonly scope."""
+        from youtube_v3 import OAUTH_SCOPES
+        assert "https://www.googleapis.com/auth/yt-analytics-monetary.readonly" in OAUTH_SCOPES
+
+
+class TestGetAnalyticsService:
+    """Test _get_analytics_service() helper."""
+
+    @patch("youtube_v3.Path")
+    @patch("youtube_v3.build")
+    def test_get_analytics_service_success(self, mock_build, mock_path):
+        """Test successful analytics service creation with valid OAuth token."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = True
+        mock_path.return_value = mock_path_obj
+
+        mock_service = MagicMock()
+        mock_build.return_value = mock_service
+
+        with patch("youtube_v3.Credentials") as mock_creds_class:
+            mock_creds = MagicMock()
+            mock_creds.valid = True
+            mock_creds_class.from_authorized_user_file.return_value = mock_creds
+
+            from youtube_v3 import _get_analytics_service
+            result = _get_analytics_service()
+
+        assert result is not None
+        mock_build.assert_called_once()
+        # build is called as build("youtubeAnalytics", "v2", credentials=creds)
+        call_args = mock_build.call_args
+        assert call_args[0][0] == "youtubeAnalytics"
+        assert call_args[0][1] == "v2"
+        assert "credentials" in call_args[1]
+
+    @patch("youtube_v3.Path")
+    def test_get_analytics_service_no_oauth(self, mock_path):
+        """Test analytics service raises YouTubeOAuthNotConfigured when no token."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = False
+        mock_path.return_value = mock_path_obj
+
+        from youtube_v3 import _get_analytics_service, YouTubeOAuthNotConfigured
+        with pytest.raises(YouTubeOAuthNotConfigured):
+            _get_analytics_service()
+
+    @patch("youtube_v3.Path")
+    @patch("youtube_v3.build")
+    def test_get_analytics_service_refreshes_expired_token(self, mock_build, mock_path):
+        """Test analytics service refreshes expired token."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = True
+        mock_path.return_value = mock_path_obj
+
+        mock_service = MagicMock()
+        mock_build.return_value = mock_service
+
+        with patch("youtube_v3.Credentials") as mock_creds_class:
+            mock_creds = MagicMock()
+            mock_creds.valid = False
+            mock_creds.expired = True
+            mock_creds.refresh_token = "refresh_token"
+            mock_creds_class.from_authorized_user_file.return_value = mock_creds
+
+            # Patch filesystem calls to prevent writing mock files
+            with patch("youtube_v3.os.open") as mock_os_open, \
+                 patch("youtube_v3.os.fdopen", create=True) as mock_os_fdopen, \
+                 patch("youtube_v3.os.chmod") as mock_os_chmod:
+                mock_fd = MagicMock()
+                mock_os_open.return_value = mock_fd
+                mock_os_fdopen.return_value.__enter__.return_value = MagicMock()
+
+                from youtube_v3 import _get_analytics_service
+                result = _get_analytics_service()
+
+        # Should have called refresh
+        assert result is not None
+
+
+class TestChannelAnalytics:
+    """Test channel_analytics() query wrapper."""
+
+    @patch("youtube_v3.Path")
+    @patch("youtube_v3.build")
+    def test_channel_analytics_basic_query(self, mock_build, mock_path):
+        """Test basic analytics query with metrics and dimensions."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = True
+        mock_path.return_value = mock_path_obj
+
+        mock_service = MagicMock()
+        mock_build.return_value = mock_service
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
+            "columnHeaders": [
+                {"name": "views", "dataType": "INTEGER"},
+                {"name": "estimatedMinutesWatched", "dataType": "INTEGER"},
+            ],
+            "rows": [
+                ["1000", "5000"],
+                ["1500", "7000"],
+            ],
+        }
+
+        with patch("youtube_v3.Credentials") as mock_creds_class:
+            mock_creds = MagicMock()
+            mock_creds.valid = True
+            mock_creds_class.from_authorized_user_file.return_value = mock_creds
+
+            from youtube_v3 import channel_analytics
+            result = channel_analytics("2024-01-01", "2024-01-31", ["views", "estimatedMinutesWatched"])
+
+        assert result["columnHeaders"] == [
+            {"name": "views", "dataType": "INTEGER"},
+            {"name": "estimatedMinutesWatched", "dataType": "INTEGER"},
+        ]
+        assert len(result["rows"]) == 2
+        assert result["rows"][0] == ["1000", "5000"]
+
+        # Check rows_as_dicts convenience key
+        assert "rows_as_dicts" in result
+        assert len(result["rows_as_dicts"]) == 2
+        assert result["rows_as_dicts"][0]["views"] == "1000"
+        assert result["rows_as_dicts"][0]["estimatedMinutesWatched"] == "5000"
+        assert result["rows_as_dicts"][1]["views"] == "1500"
+        assert result["rows_as_dicts"][1]["estimatedMinutesWatched"] == "7000"
+
+    @patch("youtube_v3.Path")
+    @patch("youtube_v3.build")
+    def test_channel_analytics_with_dimensions_and_filters(self, mock_build, mock_path):
+        """Test analytics query with dimensions and filters."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = True
+        mock_path.return_value = mock_path_obj
+
+        mock_service = MagicMock()
+        mock_build.return_value = mock_service
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
+            "columnHeaders": [{"name": "day"}, {"name": "views"}],
+            "rows": [["2024-01-01", "100"], ["2024-01-02", "150"]],
+        }
+
+        with patch("youtube_v3.Credentials") as mock_creds_class:
+            mock_creds = MagicMock()
+            mock_creds.valid = True
+            mock_creds_class.from_authorized_user_file.return_value = mock_creds
+
+            from youtube_v3 import channel_analytics
+            result = channel_analytics(
+                "2024-01-01", "2024-01-31",
+                ["views"],
+                dimensions=["day"],
+                filters="video==dQw4w9WgXcQ",
+                sort="-views"
+            )
+
+        # Verify the call was made with expected kwargs
+        call_kwargs = mock_query_method.call_args.kwargs
+        assert call_kwargs["startDate"] == "2024-01-01"
+        assert call_kwargs["endDate"] == "2024-01-31"
+        assert call_kwargs["metrics"] == "views"
+        assert call_kwargs["dimensions"] == "day"
+        assert call_kwargs["filters"] == "video==dQw4w9WgXcQ"
+        assert call_kwargs["sort"] == "-views"
+
+    @patch("youtube_v3.Path")
+    @patch("youtube_v3.build")
+    def test_channel_analytics_quota_exceeded(self, mock_build, mock_path):
+        """Test quota exceeded handling."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = True
+        mock_path.return_value = mock_path_obj
+
+        mock_service = MagicMock()
+        mock_build.return_value = mock_service
+        mock_query = mock_service.reports().query()
+
+        mock_resp = MagicMock()
+        mock_resp.status = 403
+        mock_query.execute.side_effect = HttpError(
+            mock_resp, b'{"error": {"reason": "quotaExceeded"}}'
+        )
+
+        with patch("youtube_v3.Credentials") as mock_creds_class:
+            mock_creds = MagicMock()
+            mock_creds.valid = True
+            mock_creds_class.from_authorized_user_file.return_value = mock_creds
+
+            from youtube_v3 import channel_analytics, YouTubeQuotaError
+            with pytest.raises(YouTubeQuotaError):
+                channel_analytics("2024-01-01", "2024-01-31", ["views"])
+
+    @patch("youtube_v3.Path")
+    @patch("youtube_v3.build")
+    def test_channel_analytics_invalid_dates(self, mock_build, mock_path):
+        """Test empty date validation."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = True
+        mock_path.return_value = mock_path_obj
+
+        with patch("youtube_v3.Credentials") as mock_creds_class:
+            mock_creds = MagicMock()
+            mock_creds.valid = True
+            mock_creds_class.from_authorized_user_file.return_value = mock_creds
+
+            from youtube_v3 import channel_analytics
+            with pytest.raises(ValueError):
+                channel_analytics("", "2024-01-31", ["views"])
+
+            with pytest.raises(ValueError):
+                channel_analytics("2024-01-01", "", ["views"])
+
+
+class TestYouTubeMetricNotAvailable:
+    """Test YouTubeMetricNotAvailable exception class."""
+
+    def test_exception_exists_and_is_exception_subclass(self):
+        """Test that YouTubeMetricNotAvailable is defined and is an Exception."""
+        from youtube_v3 import YouTubeMetricNotAvailable
+        assert issubclass(YouTubeMetricNotAvailable, Exception)
+
+    def test_exception_can_be_raised_and_caught(self):
+        """Test that YouTubeMetricNotAvailable can be raised and caught."""
+        from youtube_v3 import YouTubeMetricNotAvailable
+        with pytest.raises(YouTubeMetricNotAvailable):
+            raise YouTubeMetricNotAvailable("Test message")
+
+    def test_exception_message_contains_youtube_reporting_api_link(self):
+        """Test that exception message mentions YouTube Reporting API as alternative."""
+        from youtube_v3 import analytics_ctr
+        with pytest.raises(YouTubeMetricNotAvailable) as exc_info:
+            analytics_ctr("2024-01-01", "2024-01-31")
+        assert "YouTube Reporting API" in str(exc_info.value)
+        assert "https://developers.google.com/youtube/reporting" in str(exc_info.value)
+
+
+class TestAnalyticsCore:
+    """Test analytics_core() convenience wrapper."""
+
+    @patch("youtube_v3.Path")
+    @patch("youtube_v3.build")
+    def test_analytics_core_channel_total(self, mock_build, mock_path):
+        """Test analytics_core with no dimension (channel total)."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = True
+        mock_path.return_value = mock_path_obj
+
+        mock_service = MagicMock()
+        mock_build.return_value = mock_service
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
+            "columnHeaders": [{"name": "views"}],
+            "rows": [["10000"]],
+        }
+
+        with patch("youtube_v3.Credentials") as mock_creds_class:
+            mock_creds = MagicMock()
+            mock_creds.valid = True
+            mock_creds_class.from_authorized_user_file.return_value = mock_creds
+
+            from youtube_v3 import analytics_core
+            result = analytics_core("2024-01-01", "2024-01-31")
+
+        # Verify the correct metrics are used
+        call_kwargs = mock_query_method.call_args.kwargs
+        expected_metrics = "views,estimatedMinutesWatched,averageViewDuration,averageViewPercentage,likes,comments,shares,subscribersGained,subscribersLost"
+        assert call_kwargs["metrics"] == expected_metrics
+        assert call_kwargs.get("dimensions") is None
+
+    @patch("youtube_v3.Path")
+    @patch("youtube_v3.build")
+    def test_analytics_core_by_day(self, mock_build, mock_path):
+        """Test analytics_core with by='day' dimension."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = True
+        mock_path.return_value = mock_path_obj
+
+        mock_service = MagicMock()
+        mock_build.return_value = mock_service
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
+            "columnHeaders": [{"name": "day"}, {"name": "views"}],
+            "rows": [["2024-01-01", "100"]],
+        }
+
+        with patch("youtube_v3.Credentials") as mock_creds_class:
+            mock_creds = MagicMock()
+            mock_creds.valid = True
+            mock_creds_class.from_authorized_user_file.return_value = mock_creds
+
+            from youtube_v3 import analytics_core
+            result = analytics_core("2024-01-01", "2024-01-31", by="day")
+
+        call_kwargs = mock_query_method.call_args.kwargs
+        assert call_kwargs["dimensions"] == "day"
+
+    @patch("youtube_v3.Path")
+    @patch("youtube_v3.build")
+    def test_analytics_core_by_video(self, mock_build, mock_path):
+        """Test analytics_core with by='video' dimension."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = True
+        mock_path.return_value = mock_path_obj
+
+        mock_service = MagicMock()
+        mock_build.return_value = mock_service
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
+            "columnHeaders": [{"name": "video"}, {"name": "views"}],
+            "rows": [["vid1", "1000"]],
+        }
+
+        with patch("youtube_v3.Credentials") as mock_creds_class:
+            mock_creds = MagicMock()
+            mock_creds.valid = True
+            mock_creds_class.from_authorized_user_file.return_value = mock_creds
+
+            from youtube_v3 import analytics_core
+            result = analytics_core("2024-01-01", "2024-01-31", by="video")
+
+        call_kwargs = mock_query_method.call_args.kwargs
+        assert call_kwargs["dimensions"] == "video"
+        assert call_kwargs["sort"] == "-views"
+        assert call_kwargs["maxResults"] == 200
+
+
+class TestAnalyticsCTR:
+    """Test analytics_ctr() convenience wrapper."""
+
+    def test_analytics_ctr_raises_metric_not_available(self):
+        """Test that analytics_ctr() raises YouTubeMetricNotAvailable immediately."""
+        from youtube_v3 import analytics_ctr
+
+        with pytest.raises(YouTubeMetricNotAvailable):
+            analytics_ctr("2024-01-01", "2024-01-31")
+
+    def test_analytics_ctr_raises_with_by_day(self):
+        """Test that analytics_ctr() raises even with by='day' dimension."""
+        from youtube_v3 import analytics_ctr
+
+        with pytest.raises(YouTubeMetricNotAvailable):
+            analytics_ctr("2024-01-01", "2024-01-31", by="day")
+
+    def test_analytics_ctr_raises_with_by_video(self):
+        """Test that analytics_ctr() raises even with by='video' dimension."""
+        from youtube_v3 import analytics_ctr
+
+        with pytest.raises(YouTubeMetricNotAvailable):
+            analytics_ctr("2024-01-01", "2024-01-31", by="video")
+
+
+class TestAnalyticsAudience:
+    """Test analytics_audience() convenience wrapper."""
+
+    @patch("youtube_v3.Path")
+    @patch("youtube_v3.build")
+    def test_analytics_audience_demographics(self, mock_build, mock_path):
+        """Test analytics_audience with demographics."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = True
+        mock_path.return_value = mock_path_obj
+
+        mock_service = MagicMock()
+        mock_build.return_value = mock_service
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
+            "columnHeaders": [{"name": "ageGroup"}, {"name": "gender"}, {"name": "viewerPercentage"}],
+            "rows": [["18-24", "MALE", "0.25"]],
+        }
+
+        with patch("youtube_v3.Credentials") as mock_creds_class:
+            mock_creds = MagicMock()
+            mock_creds.valid = True
+            mock_creds_class.from_authorized_user_file.return_value = mock_creds
+
+            from youtube_v3 import analytics_audience
+            result = analytics_audience("2024-01-01", "2024-01-31", kind="demographics")
+
+        call_kwargs = mock_query_method.call_args.kwargs
+        assert "ageGroup" in call_kwargs["dimensions"]
+        assert "gender" in call_kwargs["dimensions"]
+        assert call_kwargs["metrics"] == "viewerPercentage"
+
+    @patch("youtube_v3.Path")
+    @patch("youtube_v3.build")
+    def test_analytics_audience_geography(self, mock_build, mock_path):
+        """Test analytics_audience with geography."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = True
+        mock_path.return_value = mock_path_obj
+
+        mock_service = MagicMock()
+        mock_build.return_value = mock_service
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
+            "columnHeaders": [{"name": "country"}, {"name": "views"}],
+            "rows": [["JP", "5000"]],
+        }
+
+        with patch("youtube_v3.Credentials") as mock_creds_class:
+            mock_creds = MagicMock()
+            mock_creds.valid = True
+            mock_creds_class.from_authorized_user_file.return_value = mock_creds
+
+            from youtube_v3 import analytics_audience
+            result = analytics_audience("2024-01-01", "2024-01-31", kind="geography")
+
+        call_kwargs = mock_query_method.call_args.kwargs
+        assert call_kwargs["dimensions"] == "country"
+        assert "views" in call_kwargs["metrics"]
+        assert call_kwargs["sort"] == "-views"
+
+    @patch("youtube_v3.Path")
+    @patch("youtube_v3.build")
+    def test_analytics_audience_traffic(self, mock_build, mock_path):
+        """Test analytics_audience with traffic sources."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = True
+        mock_path.return_value = mock_path_obj
+
+        mock_service = MagicMock()
+        mock_build.return_value = mock_service
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
+            "columnHeaders": [{"name": "insightTrafficSourceType"}, {"name": "views"}],
+            "rows": [["SEARCH", "1000"]],
+        }
+
+        with patch("youtube_v3.Credentials") as mock_creds_class:
+            mock_creds = MagicMock()
+            mock_creds.valid = True
+            mock_creds_class.from_authorized_user_file.return_value = mock_creds
+
+            from youtube_v3 import analytics_audience
+            result = analytics_audience("2024-01-01", "2024-01-31", kind="traffic")
+
+        call_kwargs = mock_query_method.call_args.kwargs
+        assert call_kwargs["dimensions"] == "insightTrafficSourceType"
+
+    @patch("youtube_v3.Path")
+    @patch("youtube_v3.build")
+    def test_analytics_audience_device(self, mock_build, mock_path):
+        """Test analytics_audience with device type."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = True
+        mock_path.return_value = mock_path_obj
+
+        mock_service = MagicMock()
+        mock_build.return_value = mock_service
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
+            "columnHeaders": [{"name": "deviceType"}, {"name": "views"}],
+            "rows": [["MOBILE", "8000"]],
+        }
+
+        with patch("youtube_v3.Credentials") as mock_creds_class:
+            mock_creds = MagicMock()
+            mock_creds.valid = True
+            mock_creds_class.from_authorized_user_file.return_value = mock_creds
+
+            from youtube_v3 import analytics_audience
+            result = analytics_audience("2024-01-01", "2024-01-31", kind="device")
+
+        call_kwargs = mock_query_method.call_args.kwargs
+        assert call_kwargs["dimensions"] == "deviceType"
+
+
+class TestAnalyticsRevenue:
+    """Test analytics_revenue() convenience wrapper."""
+
+    @patch("youtube_v3.Path")
+    @patch("youtube_v3.build")
+    def test_analytics_revenue_success(self, mock_build, mock_path):
+        """Test analytics_revenue with monetized channel."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = True
+        mock_path.return_value = mock_path_obj
+
+        mock_service = MagicMock()
+        mock_build.return_value = mock_service
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
+            "columnHeaders": [{"name": "estimatedRevenue"}],
+            "rows": [["1500.50"]],
+        }
+
+        with patch("youtube_v3.Credentials") as mock_creds_class:
+            mock_creds = MagicMock()
+            mock_creds.valid = True
+            mock_creds_class.from_authorized_user_file.return_value = mock_creds
+
+            from youtube_v3 import analytics_revenue
+            result = analytics_revenue("2024-01-01", "2024-01-31")
+
+        call_kwargs = mock_query_method.call_args.kwargs
+        expected_metrics = "estimatedRevenue,estimatedAdRevenue,grossRevenue,cpm,playbackBasedCpm,monetizedPlaybacks"
+        assert call_kwargs["metrics"] == expected_metrics
+
+    @patch("youtube_v3.Path")
+    @patch("youtube_v3.build")
+    def test_analytics_revenue_by_video(self, mock_build, mock_path):
+        """Test analytics_revenue with video dimension."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = True
+        mock_path.return_value = mock_path_obj
+
+        mock_service = MagicMock()
+        mock_build.return_value = mock_service
+        mock_query_method = mock_service.reports.return_value.query
+        mock_query_method.return_value.execute.return_value = {
+            "columnHeaders": [{"name": "video"}, {"name": "estimatedRevenue"}],
+            "rows": [["vid1", "500.00"]],
+        }
+
+        with patch("youtube_v3.Credentials") as mock_creds_class:
+            mock_creds = MagicMock()
+            mock_creds.valid = True
+            mock_creds_class.from_authorized_user_file.return_value = mock_creds
+
+            from youtube_v3 import analytics_revenue
+            result = analytics_revenue("2024-01-01", "2024-01-31", by="video")
+
+        call_kwargs = mock_query_method.call_args.kwargs
+        assert call_kwargs["dimensions"] == "video"
 
 
 if __name__ == "__main__":

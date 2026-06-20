@@ -43,6 +43,11 @@ class YouTubeOAuthNotConfigured(Exception):
     pass
 
 
+class YouTubeMetricNotAvailable(Exception):
+    """Raised when a requested metric is not exposed by the YouTube Analytics API."""
+    pass
+
+
 def _get_service():
     """Build YouTube v3 service. Raises YouTubeNotConfigured if key is missing."""
     if not YOUTUBE_API_KEY:
@@ -323,9 +328,8 @@ def channel_uploads(channel_id: str, max_results: int = 10) -> List[Dict]:
 
 def _get_oauth_service():
     """Build YouTube v3 service with OAuth credentials (for own-channel operations like captions).
-    Reuses publisher.py's token-loading pattern: checks youtube_token.json, refreshes if expired,
-    else tries InstalledAppFlow with client_secrets_file.
-    Raises YouTubeOAuthNotConfigured if neither token nor client_secrets exist.
+    Reuses shared token-loading pattern: checks youtube_token.json, refreshes if expired.
+    Raises YouTubeOAuthNotConfigured if credentials are not available.
     """
     if Credentials is None:
         raise YouTubeOAuthNotConfigured("OAuth libraries not installed")
@@ -363,7 +367,7 @@ def _get_oauth_service():
             try:
                 fl = flow_module.InstalledAppFlow.from_client_secrets_file(
                     creds_file,
-                    scopes=["https://www.googleapis.com/auth/youtube.force-ssl"]
+                    scopes=OAUTH_SCOPES
                 )
                 # Note: run_local_server() is interactive — not suitable for headless servers.
                 # Instead, we raise an exception to signal that manual setup is needed.
@@ -481,6 +485,303 @@ def captions_download(caption_id: str, fmt: str = "srt") -> Dict:
     }
 
 
+# ── YouTube Analytics API v2 support ──────────────────────────────────────────
+
+OAUTH_SCOPES = [
+    "https://www.googleapis.com/auth/youtube.force-ssl",
+    "https://www.googleapis.com/auth/yt-analytics.readonly",
+    "https://www.googleapis.com/auth/yt-analytics-monetary.readonly",
+]
+
+
+def _load_oauth_creds():
+    """
+    Load and refresh OAuth credentials from youtube_token.json.
+    Reuses shared token-loading logic for both captions and analytics.
+    Raises YouTubeOAuthNotConfigured if credentials are not available.
+    """
+    if Credentials is None:
+        raise YouTubeOAuthNotConfigured("OAuth libraries not installed")
+    try:
+        from google.auth.transport.requests import Request
+    except ImportError:
+        raise YouTubeOAuthNotConfigured("OAuth libraries not installed")
+
+    token_file = Path("youtube_token.json")
+    creds_file = YOUTUBE_CREDENTIALS
+
+    # Check if token exists and is valid
+    creds = None
+    if token_file.exists():
+        try:
+            creds = Credentials.from_authorized_user_file(str(token_file))
+        except Exception:
+            creds = None
+
+    # If token missing or invalid, try to refresh
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            try:
+                creds.refresh(Request())
+            except Exception:
+                creds = None
+
+        if not creds:
+            # No token available and can't refresh; raise error
+            raise YouTubeOAuthNotConfigured(
+                f"OAuth not configured: youtube_token.json missing and {creds_file} not found"
+            )
+
+        # Save the refreshed token with owner-only perms.
+        try:
+            fd = os.open(str(token_file), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            with os.fdopen(fd, "w") as f:
+                f.write(creds.to_json())
+            try:
+                os.chmod(str(token_file), 0o600)
+            except OSError:
+                pass
+        except Exception:
+            pass  # Best-effort; don't fail if we can't persist
+
+    return creds
+
+
+def _get_analytics_service():
+    """Build YouTube Analytics v2 service with OAuth credentials.
+    Raises YouTubeOAuthNotConfigured if credentials are not available.
+    """
+    if Credentials is None:
+        raise YouTubeOAuthNotConfigured("OAuth libraries not installed")
+
+    creds = _load_oauth_creds()
+    return build("youtubeAnalytics", "v2", credentials=creds)
+
+
+def channel_analytics(
+    start_date: str,
+    end_date: str,
+    metrics: List[str],
+    dimensions: Optional[List[str]] = None,
+    filters: Optional[str] = None,
+    sort: Optional[str] = None,
+    max_results: Optional[int] = None,
+    ids: str = "channel==MINE",
+) -> Dict:
+    """
+    Query YouTube Analytics API v2 for channel analytics data.
+
+    Args:
+        start_date: Start date in YYYY-MM-DD format (required)
+        end_date: End date in YYYY-MM-DD format (required)
+        metrics: List of metric names (e.g., ['views', 'estimatedMinutesWatched'])
+        dimensions: Optional list of dimensions (e.g., ['day', 'video'])
+        filters: Optional filter expression (e.g., 'video==dQw4w9WgXcQ')
+        sort: Optional sort order (e.g., '-views')
+        max_results: Optional max results per page
+        ids: Resource IDs (default 'channel==MINE' for authenticated channel)
+
+    Returns:
+        Dict with columnHeaders, rows, and rows_as_dicts (convenience key zipping headers with rows)
+
+    Raises:
+        YouTubeOAuthNotConfigured, YouTubeQuotaError, ValueError, HttpError
+    """
+    if not start_date or not start_date.strip():
+        raise ValueError("start_date cannot be empty")
+    if not end_date or not end_date.strip():
+        raise ValueError("end_date cannot be empty")
+
+    service = _get_analytics_service()
+
+    try:
+        # Build the request with required and optional parameters
+        query_kwargs = {
+            "ids": ids,
+            "startDate": start_date,
+            "endDate": end_date,
+            "metrics": ",".join(metrics),
+        }
+
+        # Add optional parameters
+        if dimensions:
+            query_kwargs["dimensions"] = ",".join(dimensions)
+        if filters:
+            query_kwargs["filters"] = filters
+        if sort:
+            query_kwargs["sort"] = sort
+        if max_results is not None:
+            query_kwargs["maxResults"] = max_results
+
+        request = service.reports().query(**query_kwargs)
+        result = request.execute()
+    except HttpError as e:
+        if e.resp.status == 403:
+            error_content = e.content.decode("utf-8") if isinstance(e.content, bytes) else str(e.content)
+            if "quotaExceeded" in error_content or "dailyLimitExceeded" in error_content:
+                raise YouTubeQuotaError("YouTube API quota exceeded") from e
+        raise HttpError(e.resp, e.content)
+
+    # Add convenience key: rows_as_dicts, which zips columnHeaders names with each row
+    rows_as_dicts = []
+    if "columnHeaders" in result and "rows" in result:
+        col_names = [col["name"] for col in result["columnHeaders"]]
+        for row in result["rows"]:
+            rows_as_dicts.append(dict(zip(col_names, row)))
+
+    result["rows_as_dicts"] = rows_as_dicts
+
+    # Record quota cost (best-effort, non-blocking)
+    _record_quota("analytics.query", _QUOTA_COSTS.get("analytics.query", 1))
+
+    return result
+
+
+def analytics_core(start_date: str, end_date: str, by: Optional[str] = None) -> Dict:
+    """
+    Query core analytics metrics (views, watch time, audience growth, engagement).
+
+    Args:
+        start_date: Start date in YYYY-MM-DD format
+        end_date: End date in YYYY-MM-DD format
+        by: Optional dimension: 'day', 'video', or None (channel total)
+
+    Returns:
+        Dict with analytics data including rows_as_dicts
+    """
+    metrics = [
+        "views",
+        "estimatedMinutesWatched",
+        "averageViewDuration",
+        "averageViewPercentage",
+        "likes",
+        "comments",
+        "shares",
+        "subscribersGained",
+        "subscribersLost",
+    ]
+
+    dimensions = None
+    kwargs = {}
+    if by == "day":
+        dimensions = ["day"]
+    elif by == "video":
+        dimensions = ["video"]
+        kwargs["sort"] = "-views"
+        kwargs["max_results"] = 200
+
+    return channel_analytics(start_date, end_date, metrics, dimensions=dimensions, **kwargs)
+
+
+def analytics_ctr(start_date: str, end_date: str, by: Optional[str] = None) -> Dict:
+    """
+    Query click-through rate analytics (impressions, CTR).
+
+    **LIMITATION:** The YouTube Analytics API v2 does NOT expose `impressions` or
+    `impressionClickThroughRate` metrics. These metrics are only available via:
+    1. YouTube Reporting API (bulk CSV report jobs): https://developers.google.com/youtube/reporting
+    2. YouTube Studio UI
+
+    This function raises YouTubeMetricNotAvailable to signal the limitation clearly
+    rather than silently failing with HTTP 400.
+
+    Args:
+        start_date: Start date in YYYY-MM-DD format
+        end_date: End date in YYYY-MM-DD format
+        by: Optional dimension: 'day', 'video', or None (channel total)
+
+    Raises:
+        YouTubeMetricNotAvailable: Always raised because impressions metrics are not
+                                   available via the YouTube Analytics API.
+
+    Returns:
+        Never returns; always raises YouTubeMetricNotAvailable.
+    """
+    raise YouTubeMetricNotAvailable(
+        "Thumbnail impressions and impression click-through rate (CTR) are not available "
+        "via the YouTube Analytics API v2. These metrics are only accessible through:\n"
+        "  1. YouTube Reporting API (bulk CSV reports): https://developers.google.com/youtube/reporting\n"
+        "  2. YouTube Studio UI (Analytics > Advanced Analytics)\n"
+        "This is a Google platform limitation, not a bug in this client."
+    )
+
+
+def analytics_audience(start_date: str, end_date: str, kind: str) -> Dict:
+    """
+    Query audience composition analytics by demographics, geography, traffic source, or device.
+
+    Args:
+        start_date: Start date in YYYY-MM-DD format
+        end_date: End date in YYYY-MM-DD format
+        kind: One of 'demographics', 'geography', 'traffic', 'device'
+              - demographics: ageGroup, gender, viewerPercentage
+              - geography: country, views, estimatedMinutesWatched
+              - traffic: insightTrafficSourceType, views, estimatedMinutesWatched
+              - device: deviceType, views, estimatedMinutesWatched
+
+    Returns:
+        Dict with analytics data including rows_as_dicts
+
+    Raises:
+        ValueError if kind is not recognized
+    """
+    if kind == "demographics":
+        dimensions = ["ageGroup", "gender"]
+        metrics = ["viewerPercentage"]
+    elif kind == "geography":
+        dimensions = ["country"]
+        metrics = ["views", "estimatedMinutesWatched"]
+        kwargs = {"sort": "-views"}
+    elif kind == "traffic":
+        dimensions = ["insightTrafficSourceType"]
+        metrics = ["views", "estimatedMinutesWatched"]
+        kwargs = {}
+    elif kind == "device":
+        dimensions = ["deviceType"]
+        metrics = ["views", "estimatedMinutesWatched"]
+        kwargs = {}
+    else:
+        raise ValueError(f"kind must be one of: demographics, geography, traffic, device; got {kind}")
+
+    if kind == "geography":
+        return channel_analytics(start_date, end_date, metrics, dimensions=dimensions, **kwargs)
+    else:
+        return channel_analytics(start_date, end_date, metrics, dimensions=dimensions)
+
+
+def analytics_revenue(start_date: str, end_date: str, by: Optional[str] = None) -> Dict:
+    """
+    Query revenue analytics (estimated revenue, CPM, monetized playbacks).
+    REQUIRES: Monetized YouTube channel (YouTube Partner Program) and monetized OAuth scope.
+    Will return 403 Forbidden if channel is not monetized or scope is insufficient.
+
+    Args:
+        start_date: Start date in YYYY-MM-DD format
+        end_date: End date in YYYY-MM-DD format
+        by: Optional dimension: 'day', 'video', or None (channel total)
+
+    Returns:
+        Dict with analytics data including rows_as_dicts
+    """
+    metrics = [
+        "estimatedRevenue",
+        "estimatedAdRevenue",
+        "grossRevenue",
+        "cpm",
+        "playbackBasedCpm",
+        "monetizedPlaybacks",
+    ]
+
+    dimensions = None
+    kwargs = {}
+    if by == "day":
+        dimensions = ["day"]
+    elif by == "video":
+        dimensions = ["video"]
+
+    return channel_analytics(start_date, end_date, metrics, dimensions=dimensions, **kwargs)
+
+
 # ── Quota tracking (best-effort postgres persistence) ────────────────────────
 
 _QUOTA_COSTS = {
@@ -492,6 +793,7 @@ _QUOTA_COSTS = {
     "playlistItems.list": 1,
     "captions.list": 50,
     "captions.download": 200,
+    "analytics.query": 1,  # YouTube Analytics v2 query
 }
 
 
