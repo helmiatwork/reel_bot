@@ -24,6 +24,8 @@ async function postJSON(path, body) {
 
 export const api = {
   services: () => getJSON('/dash/services'),
+  restartService: (name) => postJSON(`/dash/restart/${name}`, {}),
+  restartAll: () => postJSON('/dash/restart-all', {}),
   overview: () => getJSON('/dash/overview'),
   table: (name) => getJSON(`/dash/table/${name}`),
   agents: () => getJSON('/dash/agents'),

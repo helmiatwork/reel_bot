@@ -37,6 +37,11 @@
   let total = $state(6)
   let timer
 
+  // per-row restart state: { [name]: { busy: bool, result: string|null } }
+  let rowState = $state({})
+  let restartingAll = $state(false)
+  let restartAllResult = $state(null)
+
   async function pollServices() {
     const r = await api.services()
     if (r && r.services) {
@@ -44,6 +49,33 @@
       live = r.live
       total = r.total
     }
+  }
+
+  async function restartSvc(name) {
+    rowState = { ...rowState, [name]: { busy: true, result: null } }
+    const r = await api.restartService(name)
+    const result = r ? r.status : 'error'
+    rowState = { ...rowState, [name]: { busy: false, result } }
+    // clear label after 3 s then refresh dots
+    setTimeout(() => {
+      rowState = { ...rowState, [name]: { busy: false, result: null } }
+    }, 3000)
+    await pollServices()
+  }
+
+  async function restartAllSvcs() {
+    if (!confirm('Restart all services? This will cycle every running service.')) return
+    restartingAll = true
+    restartAllResult = null
+    const r = await api.restartAll()
+    restartingAll = false
+    if (r) {
+      restartAllResult = `${r.restarted} restarted`
+    } else {
+      restartAllResult = 'error'
+    }
+    setTimeout(() => { restartAllResult = null }, 4000)
+    await pollServices()
   }
 
   onMount(() => {
@@ -64,11 +96,36 @@
       {/each}
     </nav>
     <div class="foot">
-      <div class="badge-live" class:partial={live < total}>stack — {live}/{total} live</div>
+      <div class="badge-row">
+        <div class="badge-live" class:partial={live < total}>stack — {live}/{total} live</div>
+        <button
+          class="btn-restart-all"
+          disabled={restartingAll}
+          onclick={restartAllSvcs}
+          title="Restart all services"
+        >{restartingAll ? '⟳' : '⟳ all'}</button>
+      </div>
+      {#if restartAllResult}
+        <div class="restart-result" class:err={restartAllResult === 'error'}>{restartAllResult}</div>
+      {/if}
       <div class="svclist">
         {#each services as s}
-          <div class="svc" class:up={s.up} class:down={!s.up}>
-            <span class="led"></span> {s.name} <span class="port">{s.port}</span>
+          {@const rs = rowState[s.name] || { busy: false, result: null }}
+          <div class="svc" class:up={s.up} class:down={!s.up} class:busy={rs.busy}>
+            <span class="led"></span>
+            <span class="svc-name">{s.name}</span>
+            <span class="port">{s.port}</span>
+            {#if s.name !== 'pipeline-api'}
+              <button
+                class="btn-restart-row"
+                disabled={rs.busy}
+                onclick={() => restartSvc(s.name)}
+                title="Restart {s.name}"
+              >{rs.busy ? '…' : '⟳'}</button>
+            {/if}
+            {#if rs.result}
+              <span class="row-result" class:ok={rs.result === 'restarted'} class:err={rs.result === 'error' || rs.result === 'not_running'}>{rs.result}</span>
+            {/if}
           </div>
         {/each}
         {#if !services.length}
