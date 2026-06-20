@@ -500,6 +500,7 @@ class TestCaptions:
         # Mock the OAuth flow
         with patch("youtube_v3.Credentials") as mock_creds_class:
             mock_creds = MagicMock()
+            mock_creds.valid = True
             mock_creds_class.from_authorized_user_file.return_value = mock_creds
             result = captions_list("dQw4w9WgXcQ")
 
@@ -527,6 +528,7 @@ class TestCaptions:
 
         with patch("youtube_v3.Credentials") as mock_creds_class:
             mock_creds = MagicMock()
+            mock_creds.valid = True
             mock_creds_class.from_authorized_user_file.return_value = mock_creds
 
             with pytest.raises(ValueError):
@@ -797,8 +799,16 @@ class TestGetAnalyticsService:
             mock_creds.refresh_token = "refresh_token"
             mock_creds_class.from_authorized_user_file.return_value = mock_creds
 
-            from youtube_v3 import _get_analytics_service
-            result = _get_analytics_service()
+            # Patch filesystem calls to prevent writing mock files
+            with patch("youtube_v3.os.open") as mock_os_open, \
+                 patch("youtube_v3.os.fdopen", create=True) as mock_os_fdopen, \
+                 patch("youtube_v3.os.chmod") as mock_os_chmod:
+                mock_fd = MagicMock()
+                mock_os_open.return_value = mock_fd
+                mock_os_fdopen.return_value.__enter__.return_value = MagicMock()
+
+                from youtube_v3 import _get_analytics_service
+                result = _get_analytics_service()
 
         # Should have called refresh
         assert result is not None
