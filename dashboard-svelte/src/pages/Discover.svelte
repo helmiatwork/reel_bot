@@ -22,9 +22,43 @@
   let loading = $state(false)
   let error   = $state('')
 
+  // ── quota meter ───────────────────────────────────────────────────────────
+  let quota = $state(null)          // {used, limit, remaining, reset_at, day} | null
+  let quotaError = $state(false)    // true if fetch failed — hide meter gracefully
+
+  async function refreshQuota() {
+    const r = await api.youtubeQuota()
+    if (r && typeof r.used === 'number') {
+      quota = r
+      quotaError = false
+    } else {
+      quotaError = true
+    }
+  }
+
+  // relative time helper — "in 5h", "in 2h 30m", "in <1m", "expired"
+  function fmtResetIn(isoStr) {
+    if (!isoStr) return ''
+    try {
+      const diffMs = new Date(isoStr) - Date.now()
+      if (diffMs <= 0) return 'expired'
+      const totalMin = Math.floor(diffMs / 60000)
+      const h = Math.floor(totalMin / 60)
+      const m = totalMin % 60
+      if (h === 0 && m === 0) return 'in <1m'
+      if (h === 0) return `in ${m}m`
+      if (m === 0) return `in ${h}h`
+      return `in ${h}h ${m}m`
+    } catch { return '' }
+  }
+
   // ── "Send to clip pipeline" feedback ─────────────────────────────────────
-  let sentIds = $state(new Set())   // video_ids already sent
+  let sentIds = $state(new Set())   // video_ids already sent — maps to label text
   let sendingId = $state('')
+  let runLabels = $state({})        // video_id → short run_id label
+
+  // ── on mount: prime the quota meter ──────────────────────────────────────
+  $effect(() => { refreshQuota() })
 
   // ── helpers ──────────────────────────────────────────────────────────────
   function ytUrl(video_id) {
@@ -66,6 +100,7 @@
     if (!r) { error = 'Request failed — is the backend running?'; return }
     items  = r.items || []
     source = r.source || ''
+    refreshQuota()
   }
 
   async function runTrending() {
@@ -80,6 +115,7 @@
     }
     items  = r.items || []
     source = r.source || ''
+    refreshQuota()
   }
 
   async function runChannel() {
@@ -96,6 +132,7 @@
     }
     items  = r.items || []
     source = r.source || ''
+    refreshQuota()
   }
 
   function switchTab(t) {
@@ -104,22 +141,23 @@
   }
 
   // ── "Send to clip pipeline" ───────────────────────────────────────────────
-  // Calls api.research(youtube_url) — the same endpoint Studio uses when the
-  // user pastes a URL. This queues a pipeline run that downloads + analyzes the
-  // video and returns a run_id that shows up in the Pipeline page.
+  // Calls api.clipThis(video_id) — dedicated Discover → clip pipeline endpoint.
+  // On success labels the card with run_id (first 8 chars). On failure falls
+  // back to clipboard copy + alert (same UX as before).
   async function sendToClip(item) {
     if (sendingId === item.video_id) return
     sendingId = item.video_id
     const url = ytUrl(item.video_id)
-    const r = await api.research(url, item.title || '')
+    const r = await api.clipThis(item.video_id)
     sendingId = ''
     if (r && r.run_id) {
       const next = new Set(sentIds)
       next.add(item.video_id)
       sentIds = next
+      const shortId = String(r.run_id).slice(0, 8)
+      runLabels = { ...runLabels, [item.video_id]: shortId }
     } else {
-      // If research returns null, fall back to wiring the URL into Studio chat
-      // by navigating there — we at least copy the URL so the user can paste.
+      // Fallback: copy YouTube URL to clipboard
       try { await navigator.clipboard.writeText(url) } catch (_) {}
       alert(`Could not queue automatically. URL copied to clipboard:\n${url}`)
     }
@@ -137,6 +175,23 @@
       <h1>Discover</h1>
       <div class="sub">Find source videos via YouTube Data API v3 — search, trending, channel mining — then send any pick into the clip pipeline.</div>
     </div>
+
+    <!-- quota meter — only shown when data available and no persistent error -->
+    {#if quota && !quotaError}
+      {@const pct = quota.limit > 0 ? quota.used / quota.limit : 0}
+      {@const barClass = pct >= 0.95 ? 'bar-red' : pct >= 0.8 ? 'bar-amber' : 'bar-ok'}
+      <div class="quota-meter" aria-label="API quota usage">
+        <div class="quota-label">
+          <span class="quota-used">{quota.used.toLocaleString()} / {quota.limit.toLocaleString()} units</span>
+          {#if quota.reset_at}
+            <span class="quota-reset">resets {fmtResetIn(quota.reset_at)}</span>
+          {/if}
+        </div>
+        <div class="quota-track" role="progressbar" aria-valuenow={quota.used} aria-valuemin={0} aria-valuemax={quota.limit}>
+          <div class="quota-bar {barClass}" style="width: {Math.min(pct * 100, 100)}%"></div>
+        </div>
+      </div>
+    {/if}
   </div>
 
   <!-- ── tabs ───────────────────────────────────────────────────────────── -->
@@ -289,10 +344,12 @@
               class:sent
               onclick={() => sendToClip(item)}
               disabled={sendingId === item.video_id || sent}
-              aria-label={sent ? 'Already sent to pipeline' : 'Send to clip pipeline'}
+              aria-label={sent ? 'Already queued in clip pipeline' : 'Send to clip pipeline'}
             >
               {#if sendingId === item.video_id}
                 Sending…
+              {:else if sent && runLabels[item.video_id]}
+                Queued (run {runLabels[item.video_id]})
               {:else if sent}
                 ✓ Queued
               {:else}
@@ -309,13 +366,59 @@
   <div class="legend">
     <span><span class="dot v3"></span> Served by YouTube Data API v3</span>
     <span><span class="dot dlp"></span> Fell back to yt-dlp (quota exhausted / key missing)</span>
-    <span class="mut">Quota: 10,000 units / day. Each search costs 100 units.</span>
+    <span class="mut">Each search costs ~100 units. Trending / channel: ~1–3 units.</span>
   </div>
 </div>
 
 <style>
   /* ── layout ────────────────────────────────────────────────────────────── */
   .disc { padding-bottom: 60px; }
+
+  /* header row: title left, quota right */
+  .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+
+  /* ── quota meter ────────────────────────────────────────────────────────── */
+  .quota-meter {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 200px;
+    max-width: 280px;
+    flex: 0 0 auto;
+    padding-top: 4px;
+  }
+  .quota-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    font-size: 11.5px;
+    color: var(--mut);
+  }
+  .quota-used { font-variant-numeric: tabular-nums; color: var(--txt); }
+  .quota-reset { white-space: nowrap; }
+  .quota-track {
+    height: 5px;
+    background: var(--line);
+    border-radius: 999px;
+    overflow: hidden;
+    width: 100%;
+  }
+  .quota-bar {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.4s ease, background 0.3s ease;
+  }
+  .bar-ok    { background: var(--accent); }
+  .bar-amber { background: var(--amber, #f59e0b); }
+  .bar-red   { background: #ef4444; }
 
   /* ── tabs ──────────────────────────────────────────────────────────────── */
   .tabs {
