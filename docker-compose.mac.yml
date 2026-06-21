@@ -28,3 +28,10 @@ services:
       - /Users/ichigo/Downloads/ReelBot/sources:/videos
       - /Users/ichigo/Downloads/ReelBot/projects:/output
       - /Users/ichigo/Downloads/ReelBot/frames:/app/analyze-frames
+      # YouTube cookies for yt-dlp transcript fetch (login-gated / PO-token videos).
+      # Mount the secrets DIR read-only (mounting a not-yet-existing file would make
+      # Docker create a directory). Drop cookies.txt into ~/Downloads/ReelBot/secrets/.
+      # If the file is absent, get_timecoded_transcript skips --cookies gracefully.
+      - /Users/ichigo/Downloads/ReelBot/secrets:/app/secrets:ro
+    environment:
+      - YTDLP_COOKIES_FILE=/app/secrets/cookies.txt
