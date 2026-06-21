@@ -1,4 +1,8 @@
 .env
+# YouTube cookies / PO-token secrets — never commit (account credentials)
+cookies.txt
+**/cookies.txt
+secrets/
 credentials/client_secrets.json
 credentials/youtube_token.json
 cliproxy/cli-proxy-api
