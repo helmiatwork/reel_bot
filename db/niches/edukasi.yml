@@ -1,0 +1,1117 @@
+version: 1
+vertical:
+  slug: v-edukasi
+  name: Edukasi
+  description: Konten edukatif ringan hingga mendalam — fakta, sains, sejarah, dan tips praktis.
+  guide:
+    audience: "Penonton 15–35 tahun yang haus pengetahuan tapi tidak mau membaca artikel panjang; mahasiswa, pekerja muda, dan pelajar SMA yang konsumsi konten sambil rebahan; tertarik fakta mengejutkan, sejarah, sains, dan tips praktis hidup."
+    tone: "Informatif tapi kasual — seperti teman pintar yang cerita sesuatu seru, bukan guru yang kuliah. Nada antusias dan sedikit dramatis untuk fakta mengejutkan; tenang dan to-the-point untuk tips praktis."
+    format: "Video pendek 30–90 detik untuk fakta/trivia, hingga 2–3 menit untuk explainer mendalam. Dominan voiceover + stok visual/animasi + hard-subtitle. Struktur: hook fakta mengejutkan → penjelasan ringkas → takeaway. Faceless mayoritas."
+    boleh:
+      - "Mulai dengan fakta atau klaim yang terdengar tidak mungkin — memaksa penonton stay"
+      - "Gunakan analogi sehari-hari untuk menjelaskan konsep sulit"
+      - "Tampilkan sumber atau referensi singkat di caption atau overlay untuk kredibilitas"
+      - "Pakai hard-subtitle karena banyak yang tonton tanpa suara"
+      - "Akhiri dengan pertanyaan atau cliffhanger untuk komentar dan rewatch"
+    hindari:
+      - "Jangan buat klaim faktual tanpa dasar — edukasi yang salah lebih berbahaya dari tidak edukatif"
+      - "Jangan pakai jargon teknis tanpa penjelasan — kehilangan penonton umum"
+      - "Jangan durasi terlalu panjang tanpa hook ulang — perhatian turun di detik 15–20"
+      - "Jangan tampilkan grafik atau teks yang terlalu kecil untuk layar HP"
+      - "Jangan pakai musik ber-hak-cipta tanpa lisensi"
+    pola_hook: "Detik 0–3: klaim yang terdengar mustahil atau pertanyaan yang penonton yakin tahu jawabannya tapi ternyata salah. Contoh: 'Ini bukan yang diajarkan di sekolah' atau 'Kamu pasti salah soal ini'."
+    contoh_judul:
+      - "Fakta ini diajarkan terbalik di sekolah selama puluhan tahun"
+      - "Kamu gak akan percaya ini nyata sampai lihat buktinya"
+      - "Ilmu yang baru aku pelajari dan langsung ubah cara aku lihat dunia"
+
+  niches:
+    - slug: fakta-unik
+      name: Fakta Unik
+      description: "Fakta menarik/aneh + voiceover + stok visual."
+      faceless: true
+      difficulty: pemula
+      rpm: rendah
+      formats: voiceover + stok + hard-sub
+      example_hook: "Kamu gak akan percaya ini nyata..."
+      guide:
+        audience: "Penonton 14–28 yang suka scroll konten ringan dan mengejutkan; pelajar dan mahasiswa yang suka trivia; penonton yang suka share konten 'gak nyangka' ke teman."
+        tone: "Penuh takjub dan dramatis ringan. Seperti orang yang baru saja menemukan sesuatu dan langsung ingin cerita ke semua orang. Energi tinggi tapi tidak berlebihan."
+        format: "30–60 detik. Satu fakta per video. Struktur: klaim mengejutkan (hook) → bukti/penjelasan singkat → twist atau implikasi yang bikin mikir. Voiceover + stok visual relevan + hard-sub besar."
+        boleh:
+          - "Satu video = satu fakta yang benar-benar mengejutkan, bukan listicle"
+          - "Tampilkan visual yang langsung relevan dengan fakta yang disebutkan"
+          - "Beri konteks singkat agar fakta terasa nyata, bukan asal klaim"
+          - "Akhiri dengan pertanyaan ke penonton untuk dorong komentar"
+        hindari:
+          - "Jangan buat klaim fakta tanpa bisa diverifikasi — misinformasi merusak kepercayaan channel"
+          - "Jangan gunakan stok visual yang tidak relevan atau menyesatkan konteks"
+          - "Jangan berikan terlalu banyak fakta dalam satu video — fokus itu kekuatan format ini"
+          - "Jangan gunakan musik yang terlalu keras sehingga voiceover tenggelam"
+        pola_hook: "Detik 0: pernyataan yang terdengar mustahil + visual langsung relevan. Contoh: 'Planet ini hujan berlian setiap hari' + visual planet. Langsung penjelasan di detik 3."
+        contoh_judul:
+          - "Fakta alam semesta yang bikin kamu merasa sangat kecil"
+          - "Hewan ini punya kemampuan yang bikin ilmuwan sampai sekarang bingung"
+          - "Ini yang tidak diajarkan di sekolah soal Indonesia"
+      micro:
+        - slug: fakta-unik-luar-angkasa
+          name: Fakta Luar Angkasa yang Bikin Ngeri
+          description: Fenomena kosmik yang gak masuk akal tapi nyata, untuk penonton sains kasual yang suka rasa takjub sekaligus merinding.
+          example_hook: "Planet ini hujan berlian setiap hari dan gak ada yang bisa ambilnya..."
+          guide:
+            audience: "Pria dan wanita 15–30 yang suka sains tapi tidak punya latar belakang astronomi; penonton yang suka merasa kecil dan takjub oleh skala alam semesta; fans konten space seperti National Geographic kasual."
+            tone: "Dramatis dan sedikit menakjubkan — seperti membuka pintu ke realitas yang terasa sci-fi tapi nyata. Nada penuh rasa heran yang tulus."
+            format: "45–75 detik. Satu fenomena kosmik per video. Voiceover + stok visual NASA/ESA yang relevan + hard-sub. Struktur: klaim mengejutkan → skala/konteks → implikasi yang bikin merinding."
+            boleh:
+              - "Gunakan perbandingan skala yang familiar (misal: 'matahari sebesar bola basket, bumi sebesar biji pasir')"
+              - "Pakai stok visual resmi NASA/ESA yang tersedia bebas untuk akurasi"
+              - "Sebutkan nama fenomena ilmiahnya singkat agar penonton bisa riset lebih lanjut"
+              - "Akhiri dengan implikasi yang bikin penonton merasakan sesuatu secara emosional"
+            hindari:
+              - "Jangan klaim fakta kosmik tanpa dasar sains — pseudosains merusak channel edukasi"
+              - "Jangan gunakan angka astronomis tanpa konteks yang bisa dibayangkan penonton"
+              - "Jangan mix dengan konten konspirasi alien yang tidak berdasar sains"
+              - "Jangan gunakan stok visual yang tidak akurat (misal gambar fiksi untuk klaim fakta)"
+            pola_hook: "Detik 0: klaim fenomena yang terdengar fiksi tapi nyata + visual langsung. Contoh: 'Planet ini hujan berlian setiap hari' disertai animasi visual planet es."
+            contoh_judul:
+              - "Planet ini hujan berlian setiap hari dan tidak ada yang bisa ambilnya"
+              - "Lubang hitam ini begitu besar sampai tata surya kita cuma debu di sisinya"
+              - "Bintang ini meledak 2 juta tahun lalu dan cahayanya baru sampai ke bumi sekarang"
+              - "Ada planet di luar sana yang setengahnya besi cair dan setengahnya beku"
+              - "Alam semesta ini sudah tua 13,8 miliar tahun dan ini artinya buat kita"
+            content_runway: "Alam semesta menyimpan miliaran objek kosmik — planet, bintang, galaksi, fenomena seperti pulsar, quasar, dan nebula — setiap penemuan astronomi baru menghasilkan satu video; NASA/ESA rutin rilis temuan baru setiap bulan."
+
+        - slug: fakta-unik-hewan-ekstrem
+          name: Hewan dengan Kemampuan Gila
+          description: Fakta hewan yang bikin otak nge-lag karena terlalu luar biasa, cocok untuk penonton nature yang suka konten pendek penuh kejutan.
+          example_hook: "Ubur-ubur ini secara teknis gak bisa mati karena bisa balik jadi bayi..."
+          guide:
+            audience: "Penonton 14–28 yang suka konten alam dan wildlife tapi tidak perlu konteks sains mendalam; penggemar fakta mengejutkan yang suka share ke teman; penonton nature kasual."
+            tone: "Terkejut dan penasaran. Seperti orang yang baru nonton dokumenter dan langsung harus cerita ke semua orang. Energi antusias tapi singkat."
+            format: "30–60 detik. Satu kemampuan hewan per video. Voiceover + footage atau stok hewan yang relevan + hard-sub. Struktur: kemampuan mengejutkan (hook) → penjelasan singkat cara kerjanya → fakta bonus atau implikasi."
+            boleh:
+              - "Pilih kemampuan yang benar-benar di luar nalar manusia untuk hook maksimal"
+              - "Jelaskan cara kerja kemampuan tersebut secara singkat untuk memuaskan rasa ingin tahu"
+              - "Gunakan perbandingan dengan kemampuan manusia agar relatable"
+              - "Tampilkan footage hewan nyata jika tersedia — lebih kuat dari ilustrasi"
+            hindari:
+              - "Jangan klaim kemampuan hewan yang tidak akurat secara sains — cek sumber dulu"
+              - "Jangan gunakan footage hewan yang tidak relevan dengan kemampuan yang diceritakan"
+              - "Jangan berikan terlalu banyak fakta dalam satu video — satu kemampuan, satu video"
+              - "Jangan sensasionalkan kemampuan melebihi yang sebenarnya ada"
+            pola_hook: "Detik 0: nama hewan + kemampuan yang terdengar mustahil. Langsung visual hewan tersebut di detik 1."
+            contoh_judul:
+              - "Ubur-ubur ini secara teknis gak bisa mati dan sains belum bisa jelaskan sepenuhnya"
+              - "Gurita ini punya tiga jantung dan darahnya biru, bukan merah"
+              - "Tardigrade adalah hewan yang bisa hidup di luar angkasa tanpa perlindungan apapun"
+              - "Hewan ini bisa tumbuhkan kembali organ yang hilang dalam hitungan minggu"
+              - "Mantis shrimp punya pukulan lebih keras dari peluru kaliber 22 milimeter"
+            content_runway: "Estimasi 8,7 juta spesies di Bumi dengan adaptasi unik masing-masing; setiap penemuan spesies baru atau studi perilaku hewan menghasilkan konten segar; kombinasi kemampuan × spesies hampir tak terbatas."
+
+        - slug: fakta-unik-indonesia
+          name: Fakta Indonesia yang Gak Diajarkan di Sekolah
+          description: Fakta tersembunyi tentang Indonesia — geografis, historis, budaya — yang tidak masuk kurikulum, untuk penonton lokal yang suka bangga dengan negaranya.
+          example_hook: "Kamu lahir di sini tapi gak tahu kalau ini ada di Indonesia..."
+          guide:
+            audience: "Warga Indonesia 15–35 yang nasionalis kasual; penonton yang suka konten kebanggaan lokal; pelajar dan mahasiswa yang ingin tahu lebih dari apa yang diajarkan buku pelajaran."
+            tone: "Bangga dan sedikit mengejutkan — seperti teman yang baru balik dari perjalanan dan bilang 'tau gak sih, ternyata Indonesia itu...'. Hangat dan lokal."
+            format: "45–75 detik. Satu fakta Indonesia per video. Voiceover + stok visual atau peta Indonesia + hard-sub. Bisa pakai peta interaktif atau visualisasi data singkat."
+            boleh:
+              - "Pilih fakta yang benar-benar mengejutkan dan tidak ada di buku pelajaran standar"
+              - "Hubungkan fakta dengan kebanggaan lokal yang bisa di-share"
+              - "Gunakan data resmi atau sumber akademik agar fakta tidak bisa dibantah"
+              - "Pakai visual yang spesifik lokasi Indonesia, bukan stok generik"
+            hindari:
+              - "Jangan sebar fakta Indonesia yang tidak terverifikasi — ini sensitif secara nasional"
+              - "Jangan buat klaim sejarah yang kontroversial tanpa sumber yang kuat"
+              - "Jangan gunakan stok visual negara lain untuk mewakili Indonesia"
+              - "Jangan buat konten yang menyinggung SARA atau sensitivitas lokal"
+            pola_hook: "Detik 0: klaim tentang Indonesia yang sebagian besar penonton tidak akan percaya + visual Indonesia yang relevan. Contoh: 'Indonesia punya danau terbesar ketiga di dunia dan mungkin kamu belum pernah dengarnya'."
+            contoh_judul:
+              - "Kamu lahir di Indonesia tapi belum tentu tahu fakta geografi ini"
+              - "Bahasa daerah di Indonesia lebih banyak dari total bahasa di seluruh Eropa"
+              - "Ada peradaban di Indonesia yang umurnya lebih tua dari piramida Mesir"
+              - "Hutan Indonesia menyimpan spesies yang belum semua punya nama ilmiah"
+              - "Fakta laut Indonesia yang bikin negara lain iri tapi jarang dibahas"
+            content_runway: "Indonesia dengan 17.000+ pulau, 700+ bahasa daerah, 300+ suku, sejarah ribuan tahun, dan keanekaragaman hayati tertinggi dunia menyediakan materi fakta yang hampir tidak ada habisnya."
+
+    - slug: top-list
+      name: "Top List / Ranking"
+      description: "Listicle \"5 terbaik...\", \"3 hal...\"."
+      faceless: true
+      difficulty: pemula
+      rpm: sedang
+      formats: voiceover + ranking visual
+      example_hook: "5 barang ini bikin hidup lebih mudah..."
+      guide:
+        audience: "Penonton 16–30 yang suka konten terstruktur dan mudah dicerna; pengguna yang suka debat ranking di komentar; penonton yang ingin rekomendasi cepat tanpa riset panjang."
+        tone: "Percaya diri dan sedikit provokatif — urutan ranking harus terasa seperti keputusan yang bisa diperdebatkan, bukan fakta mati. Mendorong opini di komentar."
+        format: "45–90 detik. 3–7 item per listicle. Voiceover + teks ranking visual (nomor besar, animasi masuk) + stok visual per item. Struktur: hook klaim tebal → countdown dari terbawah → reveal nomor 1 sebagai klimaks."
+        boleh:
+          - "Buat urutan yang sedikit kontroversial untuk memancing komentar 'harusnya nomor X'"
+          - "Tampilkan angka atau data singkat per item untuk kredibilitas"
+          - "Gunakan transisi animasi ranking yang satisfying"
+          - "Tease item nomor 1 di hook tanpa reveal langsung"
+        hindari:
+          - "Jangan buat ranking tanpa dasar atau kriteria yang jelas — terasa asal-asalan"
+          - "Jangan masukkan item yang tidak relevan hanya untuk genapi angka"
+          - "Jangan klaim fakta dalam ranking tanpa bisa diverifikasi"
+          - "Jangan buat listicle yang terlalu panjang — lebih dari 7 item biasanya kehilangan perhatian"
+        pola_hook: "Detik 0: angka listicle + klaim kuat yang memancing penasaran. Contoh: '5 hal yang lebih besar dari yang kamu kira' + teaser visual item nomor 1."
+        contoh_judul:
+          - "5 negara yang ternyata lebih besar dari yang kamu bayangkan"
+          - "3 kesalahan umum yang hampir semua orang lakukan setiap hari"
+          - "7 produk Indonesia yang lebih bagus dari versi luar negerinya"
+      micro:
+        - slug: top-list-produk-lokal
+          name: Ranking Produk Lokal Indonesia Terbaik
+          description: Listicle berbasis riset tentang produk buatan Indonesia yang bersaing di kelasnya, menyasar penonton yang ingin bangga dan belanja lokal.
+          example_hook: "5 produk Indonesia ini lebih bagus dari merek luar tapi jarang yang tahu..."
+          guide:
+            audience: "Konsumen Indonesia 20–35 yang peduli produk lokal; penonton yang suka rekomendasi praktis; ibu rumah tangga dan pekerja muda yang ingin belanja lebih cerdas."
+            tone: "Informatif dan bangga lokal. Seperti teman yang sudah riset duluan dan sharing hasilnya. Nada rekomendasional, bukan promosi berbayar."
+            format: "60–90 detik. 3–5 produk per video. Voiceover + visual produk yang jelas + hard-sub. Struktur: hook 'produk lokal yang kamu gak sangka sekualitas ini' → countdown → tiap produk dengan satu keunggulan konkret."
+            boleh:
+              - "Bandingkan harga dengan produk impor sekelas untuk memperlihatkan value"
+              - "Sebutkan di mana bisa beli produk tersebut untuk relevansi langsung"
+              - "Gunakan data penjualan atau penghargaan sebagai bukti kualitas"
+              - "Pilih produk yang tersedia secara nasional, bukan hanya kota besar"
+            hindari:
+              - "Jangan terima endorsement tanpa disclosure — melanggar aturan dan merusak kepercayaan"
+              - "Jangan rekomendasikan produk yang belum diverifikasi kualitasnya"
+              - "Jangan klaim produk lokal 'terbaik' tanpa kriteria yang jelas"
+              - "Jangan gunakan visual produk yang menyesatkan atau tidak akurat"
+            pola_hook: "Detik 0: klaim mengejutkan tentang kualitas produk lokal vs impor + visual produk yang menarik. Langsung masuk item pertama di detik 5."
+            contoh_judul:
+              - "5 produk lokal ini lebih bagus dari versi impor dan harganya 5 kali lebih murah"
+              - "Produk skincare Indonesia ini menang penghargaan internasional tapi jarang yang tahu"
+              - "Ranking sepatu lokal Indonesia yang kualitasnya setara merek global"
+              - "3 makanan kemasan Indonesia yang ekspor ke 50 negara tapi kita sering skip"
+              - "Brand fashion lokal ini dipakai artis internasional tapi harganya masih masuk akal"
+            content_runway: "Ribuan produk UMKM dan brand lokal Indonesia tersebar di berbagai kategori — kuliner, skincare, fashion, elektronik, peralatan rumah — menghasilkan konten baru setiap bulan seiring munculnya brand baru."
+
+        - slug: top-list-negara-unik
+          name: Ranking Negara dengan Fakta Paling Unik
+          description: Komparasi negara-negara dengan keunikan statistik atau budaya yang mengejutkan, untuk penonton geography dan trivia global.
+          example_hook: "Negara ini punya lebih banyak piramida dari Mesir, tapi gak ada yang bahas..."
+          guide:
+            audience: "Penonton 15–28 yang suka geography dan trivia internasional; penonton yang suka konten 'ternyata' dan share fakta mengejutkan; pelajar yang belajar geografi secara informal."
+            tone: "Penasaran dan mengejutkan — setiap fakta negara harus terasa seperti cheat code pengetahuan yang penonton belum punya. Energi discovery yang tulus."
+            format: "45–75 detik. 3–5 negara per ranking. Voiceover + peta atau visual negara + grafik data + hard-sub. Transisi antar negara harus cepat dan visual."
+            boleh:
+              - "Pilih negara yang tidak biasa (bukan US, UK, atau negara mainstream) untuk surprise value"
+              - "Gunakan data statistik konkret sebagai dasar ranking"
+              - "Tampilkan peta lokasi negara setiap kali — banyak penonton tidak tahu letaknya"
+              - "Bandingkan dengan Indonesia untuk relevansi lokal"
+            hindari:
+              - "Jangan gunakan data yang tidak terverifikasi atau outdated"
+              - "Jangan buat klaim tentang negara yang sensitif secara geopolitik tanpa konteks"
+              - "Jangan skip visual peta — banyak penonton tidak kenal negara yang dibahas"
+              - "Jangan pakai stereotip budaya yang menyinggung"
+            pola_hook: "Detik 0: klaim tentang negara yang terdengar salah tapi nyata. Langsung visual peta atau lokasi negara tersebut."
+            contoh_judul:
+              - "Negara ini punya lebih banyak piramida dari Mesir dan lokasinya tak terduga"
+              - "5 negara terkecil di dunia yang totalnya lebih kecil dari Jakarta"
+              - "Negara ini punya 4 musim dalam satu hari dan warganya biasa saja"
+              - "Ranking negara dengan bahasa resmi terbanyak, Indonesia tidak masuk lima besar"
+              - "Negara yang tidak punya tentara dan belum pernah diserang dalam 200 tahun"
+            content_runway: "195 negara di dunia masing-masing dengan statistik unik di ratusan dimensi — ekonomi, geografi, budaya, bahasa, hukum, rekor — menghasilkan kombinasi ranking yang hampir tidak terbatas."
+
+        - slug: top-list-kesalahan-umum
+          name: Kesalahan Umum yang Ternyata Salah
+          description: Listicle hal-hal yang dianggap benar oleh kebanyakan orang tapi sebenarnya mitos atau salah kaprah, format ringan untuk penonton umum.
+          example_hook: "3 hal yang selalu kamu lakukan salah tanpa sadar..."
+          guide:
+            audience: "Penonton umum 16–35 yang suka debunking dan konten 'kamu sudah salah selama ini'; sangat shareable karena ego-threatening dalam cara yang menyenangkan."
+            tone: "Sedikit menggoda dan mengejutkan — 'kamu salah, dan ini bukan salah kamu'. Nada tidak menghakimi tapi membuka mata."
+            format: "45–75 detik. 3–5 kesalahan per video. Voiceover + visual yang menunjukkan 'cara salah' vs 'cara benar' + hard-sub. Struktur: hook klaim 'kamu pasti melakukan ini salah' → tiap item dengan penjelasan singkat cara yang benar."
+            boleh:
+              - "Pilih kesalahan yang benar-benar dilakukan hampir semua orang — bukan edge case"
+              - "Tunjukkan cara benar yang mudah diterapkan langsung"
+              - "Gunakan visual before-after untuk cara salah vs benar"
+              - "Sertakan sumber ilmiah atau alasan singkat kenapa cara tersebut salah"
+            hindari:
+              - "Jangan debunk sesuatu tanpa dasar yang kuat — bisa jadi kamu yang salah"
+              - "Jangan buat nada menghakimi atau merendahkan penonton"
+              - "Jangan pilih 'kesalahan' yang sebenarnya matter of preference, bukan fakta"
+              - "Jangan klaim satu cara benar kalau konteksnya berbeda-beda"
+            pola_hook: "Detik 0: pernyataan langsung 'kamu pasti melakukan ini salah' + visual tindakan yang salah tersebut. Memancing penonton bertanya-tanya apakah mereka termasuk."
+            contoh_judul:
+              - "3 hal yang hampir semua orang lakukan salah setiap hari tanpa sadar"
+              - "Cara minum air putih yang salah dan 90% orang Indonesia masih melakukannya"
+              - "Kebiasaan pagi ini bikin hari kamu lebih buruk padahal kamu pikir itu sehat"
+              - "Cara charge HP yang ternyata merusak baterai dan kamu sudah lakukan bertahun-tahun"
+              - "5 mitos makanan yang diajarkan orang tua kita tapi ternyata salah secara sains"
+            content_runway: "Setiap aspek kehidupan sehari-hari — kesehatan, teknologi, makanan, keuangan, produktivitas, kebersihan — menyimpan kesalahpahaman umum; penelitian baru terus mengkoreksi kepercayaan lama."
+
+    - slug: history
+      name: Sejarah
+      description: Kisah sejarah + footage arsip + narasi.
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: voiceover + arsip + peta
+      example_hook: "Kerajaan ini hilang dalam semalam..."
+      guide:
+        audience: "Penonton 17–35 yang suka sejarah tapi tidak mau baca buku teks; generasi muda yang ingin konteks sejarah di balik kejadian modern; penonton yang suka drama dan plot twist historis."
+        tone: "Naratif dan dramatis — sejarah diceritakan seperti thriller atau drama, bukan laporan kering. Suara voiceover berwibawa tapi tidak kaku; penuh emosi di momen yang tepat."
+        format: "60–120 detik. Satu peristiwa atau tokoh per video. Voiceover naratif + footage arsip atau animasi peta + hard-sub. Struktur: konteks singkat → krisis atau momen puncak → resolusi + pelajaran."
+        boleh:
+          - "Mulai dari momen paling dramatis, baru jelaskan konteks setelahnya"
+          - "Gunakan peta animasi untuk menunjukkan perpindahan wilayah atau pergerakan pasukan"
+          - "Hubungkan peristiwa historis dengan dampak yang masih dirasakan sampai hari ini"
+          - "Kutip sumber primer seperti surat, pidato, atau catatan harian untuk autentisitas"
+        hindari:
+          - "Jangan distorsi fakta sejarah demi drama — akurasi tidak bisa dikompromikan"
+          - "Jangan bahas peristiwa sejarah sensitif tanpa konteks yang memadai"
+          - "Jangan gunakan footage atau gambar yang tidak sesuai periode sejarah yang dibahas"
+          - "Jangan berpihak secara berlebihan dalam peristiwa sejarah yang masih diperdebatkan"
+        pola_hook: "Detik 0: momen paling dramatis dari peristiwa tersebut — bukan dari awal kronologis. Contoh: 'Dalam satu malam, kerajaan terbesar di Asia Tenggara ini lenyap dari peta'."
+        contoh_judul:
+          - "Kerajaan ini lebih besar dari Majapahit dan hilang dari sejarah hampir tanpa jejak"
+          - "Tokoh ini yang sebenarnya ubah jalannya kemerdekaan Indonesia tapi namanya dilupakan"
+          - "Peristiwa ini diajarkan terbalik di buku sejarah Indonesia selama 50 tahun"
+      micro:
+        - slug: history-kerajaan-nusantara
+          name: Kerajaan Nusantara yang Terlupakan
+          description: Kisah kerajaan-kerajaan Indonesia yang pernah berjaya tapi jarang dibahas di buku sejarah sekolah, dengan peta dan visualisasi wilayah.
+          example_hook: "Kerajaan ini lebih besar dari Majapahit, tapi gak ada di buku pelajaran kamu..."
+          guide:
+            audience: "Penonton Indonesia 17–35 yang bangga sejarah lokal; mahasiswa sejarah dan humaniora; penonton yang merasa kurikulum sekolah tidak cukup mengajarkan kejayaan Nusantara."
+            tone: "Bangga dan sedikit terkejut — nada 'ternyata nenek moyang kita sekeren ini dan tidak banyak yang tahu'. Naratif dramatis tapi tetap faktual."
+            format: "75–120 detik. Satu kerajaan per video. Voiceover + peta animasi wilayah + visual atau ilustrasi arkeologis + hard-sub. Struktur: kerajaan di puncak kejayaan (hook) → sejarah singkat → kejatuhan → warisan yang masih ada."
+            boleh:
+              - "Tampilkan peta animasi yang menunjukkan luas wilayah kerajaan — selalu mengejutkan"
+              - "Sebutkan peninggalan fisik yang masih bisa dikunjungi untuk relevansi"
+              - "Bandingkan skala kerajaan dengan negara modern untuk konteks"
+              - "Gunakan sumber prasasti atau kronik untuk detail yang autentik"
+            hindari:
+              - "Jangan distorsi fakta sejarah kerajaan demi narasi yang lebih dramatis"
+              - "Jangan klaim fakta sejarah yang masih diperdebatkan akademisi sebagai kepastian"
+              - "Jangan hanya fokus ke kerajaan Jawa — Nusantara jauh lebih luas"
+              - "Jangan tampilkan ilustrasi yang tidak akurat secara historis tanpa disclaimer"
+            pola_hook: "Detik 0: klaim mengejutkan tentang skala atau pencapaian kerajaan + peta wilayahnya yang luas. Contoh: 'Kerajaan ini pada abad ke-13 menguasai wilayah dari Burma sampai Filipina'."
+            contoh_judul:
+              - "Kerajaan ini lebih besar dari Majapahit dan tidak ada di buku pelajaran kamu"
+              - "Sriwijaya pernah jadi kekuatan maritim terbesar Asia dan kenapa dilupakan"
+              - "Kerajaan Kutai adalah kerajaan tertua Asia Tenggara dan ini yang tersisa"
+              - "Kerajaan ini di Sulawesi pernah miliki armada laut yang ditakuti Belanda"
+              - "Pajajaran hilang tiba-tiba dari sejarah dan penyebabnya masih diperdebatkan"
+            content_runway: "Indonesia punya lebih dari 400 kerajaan sepanjang sejarahnya — dari Aceh hingga Papua — masing-masing dengan kisah berdiri, kejayaan, dan kejatuhan yang berbeda; ini setara ratusan video."
+
+        - slug: history-peristiwa-dunia-tersembunyi
+          name: Peristiwa Dunia yang Sejarahnya Diputarbalikkan
+          description: Momen sejarah dunia yang versi resminya berbeda dari fakta di lapangan, disajikan dengan sumber arsip dan narasi kronologis.
+          example_hook: "Kejadian ini diajarkan terbalik di sekolah selama puluhan tahun..."
+          guide:
+            audience: "Penonton 18–35 yang kritis terhadap narasi resmi; penggemar sejarah alternatif yang berbasis fakta; penonton yang suka konten 'versi yang tidak diajarkan di sekolah'."
+            tone: "Investigatif dan sedikit mengejutkan — seperti jurnalis yang baru buka arsip tertutup. Faktual dan berbasis sumber, bukan konspirasi."
+            format: "90–150 detik. Satu peristiwa per video. Voiceover + footage arsip/dokumentasi + peta atau timeline animasi + hard-sub. Struktur: versi resmi singkat → kontradiksi dari arsip → apa yang sebenarnya terjadi."
+            boleh:
+              - "Tampilkan dokumen atau arsip asli sebagai bukti visual"
+              - "Bedakan dengan jelas antara fakta yang sudah terverifikasi dan yang masih diperdebatkan"
+              - "Gunakan kronologi visual untuk membantu penonton mengikuti alur"
+              - "Sebutkan nama sejarawan atau akademisi yang mendukung temuan ini"
+            hindari:
+              - "Jangan sajikan teori konspirasi sebagai fakta historis — ini menghancurkan kredibilitas"
+              - "Jangan klaim 'versi yang benar' tanpa sumber yang bisa diverifikasi"
+              - "Jangan sensasionalisasi peristiwa tanpa dasar dokumen yang kuat"
+              - "Jangan menyederhanakan peristiwa kompleks menjadi hitam-putih"
+            pola_hook: "Detik 0: versi yang diajarkan secara umum + langsung kontradiksi. Contoh: 'Ini yang diajarkan di sekolah tentang peristiwa X. Tapi dokumen yang baru dibuka publik bilang hal yang berbeda'."
+            contoh_judul:
+              - "Perang ini diajarkan terbalik dan dokumen rahasia akhirnya dibuka"
+              - "Tokoh ini dianggap pahlawan tapi arsip militer cerita hal yang berbeda"
+              - "Bencana alam terbesar abad 20 ini bukan kecelakaan menurut dokumen yang baru dibuka"
+              - "Pendaratan di bulan: ini bukan konspirasi, tapi ada fakta yang sengaja tidak diajarkan"
+              - "Versi resmi peristiwa ini berubah tiga kali dan ini kenapa"
+            content_runway: "Setiap dekade dalam sejarah dunia menyimpan puluhan peristiwa yang narasi resminya masih diperdebatkan; arsip pemerintah berbagai negara terus dibuka setiap tahun menghasilkan konten sejarah revisionist baru."
+
+        - slug: history-tokoh-terlupakan
+          name: Pahlawan dan Tokoh Sejarah yang Dilupakan
+          description: Biografi singkat tokoh berpengaruh yang kontribusinya besar tapi namanya jarang disebut, termasuk perempuan dan tokoh non-Jawa dalam sejarah Indonesia.
+          example_hook: "Perempuan ini yang sebenarnya merancang strategi pertempuran itu, tapi namanya hilang..."
+          guide:
+            audience: "Penonton 17–35 yang suka biografi dan kisah manusia; aktivis dan penonton yang peduli representasi perempuan dan daerah dalam sejarah; penggemar underdog story."
+            tone: "Empatik dan sedikit marah atas ketidakadilan sejarah — 'orang ini berjasa besar tapi dilupakan, dan itu tidak adil'. Naratif yang menghormati kontribusi sang tokoh."
+            format: "75–120 detik. Satu tokoh per video. Voiceover naratif + foto arsip atau ilustrasi + peta lokasi + hard-sub. Struktur: kontribusi terbesar (hook) → biografi singkat → kenapa dilupakan → warisan yang tersisa."
+            boleh:
+              - "Fokus pada kontribusi konkret yang bisa diukur, bukan hanya sifat baik"
+              - "Jelaskan konteks historis yang membuat tokoh tersebut dilupakan"
+              - "Sertakan kutipan langsung dari tokoh jika tersedia"
+              - "Tampilkan foto atau ilustrasi yang akurat secara historis"
+            hindari:
+              - "Jangan over-glorifikasi tokoh tanpa membahas kompleksitas atau kekurangannya"
+              - "Jangan klaim kontribusi yang tidak bisa diverifikasi dari sumber sejarah"
+              - "Jangan diskreditkan tokoh yang lebih terkenal untuk meninggikan yang dilupakan"
+              - "Jangan gunakan gambar atau foto yang tidak akurat untuk tokoh historis"
+            pola_hook: "Detik 0: kontribusi terbesar tokoh tersebut yang mengejutkan + pertanyaan 'tapi apakah kamu tahu siapa dia?'. Visual tokoh atau peristiwa yang terkait."
+            contoh_judul:
+              - "Perempuan ini yang merancang sistem pendidikan Indonesia tapi namanya tidak ada di buku"
+              - "Pria ini tolak tanda tangan dokumen yang bisa ubah sejarah dunia dan tidak ada yang tahu"
+              - "Pahlawan dari Kalimantan ini berjuang lebih lama dari Diponegoro tapi tidak di kurikulum"
+              - "Ilmuwan Indonesia ini temuan karyanya dipakai seluruh dunia tapi namanya asing"
+              - "Perempuan Aceh ini pimpin pasukan selama 30 tahun dan masih sering terlupakan"
+            content_runway: "Setiap provinsi di Indonesia punya puluhan tokoh lokal yang berkontribusi besar tapi tidak masuk kurikulum nasional; secara global, ratusan ilmuwan, pemimpin, dan seniman yang diabaikan sejarah menunggu untuk diceritakan."
+
+    - slug: science
+      name: Sains Populer
+      description: Penjelasan sains sederhana + animasi.
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: animasi + voiceover
+      example_hook: "Kenapa langit biru? Bukan alasan yang kamu kira..."
+      guide:
+        audience: "Penonton 15–30 yang penasaran dengan cara kerja dunia; mahasiswa sains dan non-sains; penonton yang suka konten 'otak-otak' tapi tidak mau kuliah di YouTube."
+        tone: "Intelektual tapi aksesibel — seperti guru favorit yang bisa jelaskan hal rumit dalam 60 detik. Antusias terhadap sains tapi tidak menggurui."
+        format: "60–120 detik. Satu fenomena atau konsep per video. Voiceover + animasi sederhana atau stok visual + hard-sub. Struktur: pertanyaan yang terasa mudah tapi jawabannya mengejutkan → penjelasan dengan analogi → implikasi yang mengejutkan."
+        boleh:
+          - "Mulai dengan pertanyaan yang penonton pikir mereka tahu jawabannya"
+          - "Gunakan analogi objek sehari-hari untuk konsep abstrak"
+          - "Tunjukkan implikasi praktis dari konsep sains tersebut"
+          - "Sebutkan nama ilmuwan atau teori terkait untuk penonton yang ingin belajar lebih"
+        hindari:
+          - "Jangan simplifikasi sampai distorsi fakta ilmiah"
+          - "Jangan klaim sains settled untuk topik yang masih dalam penelitian aktif"
+          - "Jangan gunakan animasi yang menyesatkan atau tidak akurat secara ilmiah"
+          - "Jangan buat klaim medis atau kesehatan tanpa disclaimer atau sumber yang kuat"
+        pola_hook: "Detik 0: pertanyaan sains familiar yang terdengar mudah + klaim bahwa jawabannya berbeda dari yang kebanyakan orang pikirkan. Langsung mulai penjelasan."
+        contoh_judul:
+          - "Kenapa langit biru? Jawaban sekolah itu tidak salah, tapi tidak lengkap"
+          - "Cara kerja otak ini bikin kamu sadar kamu tidak bisa percaya ingatanmu sendiri"
+          - "Fisika ini ada di setiap gelas air yang kamu minum dan jarang yang sadar"
+      micro:
+        - slug: science-tubuh-manusia
+          name: Fakta Tubuh Manusia yang Mengejutkan
+          description: Penjelasan sains tentang cara kerja tubuh manusia yang jarang diketahui, disajikan dengan analogi sederhana dan visual animasi untuk penonton umum.
+          example_hook: "Otakmu sekarang sedang bohongi kamu, dan ini buktinya..."
+          guide:
+            audience: "Penonton 16–35 yang tertarik self-awareness dan psikologi tubuh; penonton kesehatan kasual; siapa saja yang penasaran kenapa tubuh melakukan hal-hal aneh."
+            tone: "Sedikit mengejutkan dan reflektif — 'tubuhmu melakukan ini dan kamu tidak sadar'. Mendorong penonton berpikir tentang diri sendiri dengan cara baru."
+            format: "60–90 detik. Satu fakta atau mekanisme tubuh per video. Voiceover + animasi tubuh sederhana atau stok visual anatomi + hard-sub. Struktur: fakta mengejutkan tentang tubuh → penjelasan cara kerja → implikasi untuk kehidupan sehari-hari."
+            boleh:
+              - "Gunakan ilustrasi atau animasi sederhana untuk proses biologis kompleks"
+              - "Hubungkan mekanisme tubuh dengan pengalaman sehari-hari yang relatable"
+              - "Sertakan konteks evolusioner untuk menjelaskan kenapa tubuh melakukan ini"
+              - "Tambahkan disclaimer untuk konten yang bisa disalahartikan sebagai saran medis"
+            hindari:
+              - "Jangan buat klaim medis atau diagnosis — ini edukasi sains, bukan konsultasi dokter"
+              - "Jangan simplifikasi proses biologis sampai tidak akurat"
+              - "Jangan gunakan animasi atau gambar yang menyesatkan tentang anatomi"
+              - "Jangan klaim sesuatu 'terbukti' jika bukti ilmiahnya masih terbatas"
+            pola_hook: "Detik 0: klaim mengejutkan tentang tubuh yang terasa tidak mungkin. Contoh: 'Otakmu sedang aktif menciptakan realita palsu sekarang dan ini bukan metafora'."
+            contoh_judul:
+              - "Otakmu sedang berbohong ke kamu sekarang dan ini bukti ilmiahnya"
+              - "Kenapa kamu menangis saat bahagia: sains di balik emosi yang membingungkan"
+              - "Tubuh kamu sepenuhnya diganti setiap 7-10 tahun, tapi ini lebih rumit dari itu"
+              - "Proses ini terjadi di tubuhmu 100.000 kali sehari dan kamu tidak pernah sadar"
+              - "Kenapa kamu tidak bisa menggelitik diri sendiri: jawaban ini lebih dalam dari yang kamu kira"
+            content_runway: "Tubuh manusia terdiri dari 37 triliun sel dengan ratusan sistem yang saling berinteraksi; setiap organ, proses metabolisme, respons imun, dan mekanisme neurologis bisa menjadi satu video — pasokan konten hampir tidak terbatas."
+
+        - slug: science-fisika-sehari-hari
+          name: Fisika di Balik Kejadian Sehari-hari
+          description: Menjelaskan prinsip fisika yang bekerja di balik hal biasa seperti es batu, cermin, dan balon, membuat sains terasa relevan bukan abstrak.
+          example_hook: "Kenapa es batu mengapung? Jawaban ini selamatkan bumi kita..."
+          guide:
+            audience: "Penonton 15–28 yang suka sains tapi tidak suka rumus; pelajar SMA dan mahasiswa yang cari motivasi kenapa fisika itu penting; penonton yang suka konten 'oh, jadi gitu cara kerjanya'."
+            tone: "Ingin tahu dan sedikit wow — seperti menemukan bahwa hal biasa menyimpan rahasia yang mengubah cara pandang. Membuat fisika terasa relevan dan menakjubkan."
+            format: "60–90 detik. Satu fenomena fisika per video. Voiceover + stok visual atau animasi fisika + hard-sub. Struktur: benda biasa yang semua orang tahu → pertanyaan yang terdengar mudah → penjelasan fisika yang mengejutkan → implikasi yang lebih besar."
+            boleh:
+              - "Selalu mulai dari objek yang 100% penonton sudah familiar"
+              - "Tunjukkan implikasi fisika tersebut di skala yang lebih besar (bumi, alam semesta)"
+              - "Gunakan demonstrasi visual sederhana yang bisa dilakukan penonton sendiri"
+              - "Sebutkan nama hukum atau prinsip fisikanya — penonton bisa riset lebih lanjut"
+            hindari:
+              - "Jangan gunakan persamaan matematika dalam video — kehilangan penonton non-sains"
+              - "Jangan oversimplify sampai penjelasan tidak lagi akurat"
+              - "Jangan pilih fenomena yang terlalu niche atau tidak relevan dengan kehidupan sehari-hari"
+              - "Jangan klaim aplikasi fisika yang tidak didukung sains"
+            pola_hook: "Detik 0: objek familiar + pertanyaan yang terdengar mudah + klaim bahwa jawabannya punya konsekuensi besar. Contoh: 'Kenapa es batu mengapung? Jawaban ini satu-satunya alasan kehidupan di bumi bisa ada'."
+            contoh_judul:
+              - "Kenapa es batu mengapung dan ini adalah alasan kehidupan bisa eksis di bumi"
+              - "Fisika di balik kenapa langit berwarna berbeda saat pagi, siang, dan matahari terbenam"
+              - "Kenapa bayangan di cermin dibalik kiri-kanan tapi tidak atas-bawah: fisika ini bikin pusing"
+              - "Prinsip fisika yang bikin jembatan modern tidak roboh meski dilewati ribuan kendaraan"
+              - "Kenapa bunyi guntur datang setelah kilat dan cara pakai ini untuk tahu jarak badai"
+            content_runway: "Setiap benda di kehidupan sehari-hari — dari sendok hingga pesawat, dari lilin hingga microwave — beroperasi atas prinsip fisika yang bisa dijelaskan; ini menjamin suplai konten sepanjang teknologi modern terus berkembang."
+
+        - slug: science-psikologi-perilaku
+          name: Psikologi di Balik Perilaku Manusia
+          description: Penjelasan singkat fenomena psikologi yang menjelaskan kenapa manusia berperilaku tertentu, menyasar penonton yang suka self-awareness dan ilmu sosial.
+          example_hook: "Otak kamu sengaja lupa hal ini untuk melindungi dirimu sendiri..."
+          guide:
+            audience: "Penonton 18–32 yang tertarik self-development dan memahami diri sendiri; penonton yang suka konten psikologi populer; siapa saja yang pernah heran kenapa mereka melakukan sesuatu tanpa alasan jelas."
+            tone: "Insightful dan empatis — seperti terapis yang menjelaskan perilaku aneh kita dengan penuh pengertian. Tidak menghakimi, tapi membuka wawasan."
+            format: "60–90 detik. Satu bias kognitif atau fenomena psikologi per video. Voiceover + stok visual manusia dalam situasi sosial + animasi konsep + hard-sub."
+            boleh:
+              - "Berikan contoh situasi konkret yang penonton bisa langsung kenali dari pengalaman sendiri"
+              - "Sebutkan nama bias atau fenomena psikologinya — memberi penonton kata untuk mendeskripsikan pengalaman"
+              - "Tambahkan tips singkat cara mengenali atau mengatasi bias tersebut"
+              - "Referensikan studi atau psikolog terkenal untuk kredibilitas"
+            hindari:
+              - "Jangan buat diagnosis psikologis atau klaim klinis — ini edukasi, bukan terapi"
+              - "Jangan simplifikasi psikologi kompleks sampai menyesatkan"
+              - "Jangan gunakan psikologi untuk justify perilaku manipulatif sebagai 'normal'"
+              - "Jangan klaim penelitian psikologi yang sudah diretraksi atau tidak direplikasi"
+            pola_hook: "Detik 0: perilaku manusia yang terasa aneh atau tidak rasional + klaim bahwa ada penjelasan ilmiah yang mengejutkan. Langsung contoh situasi yang relatable."
+            contoh_judul:
+              - "Otak kamu sengaja hapus memori tertentu untuk melindungi kesehatan mentalmu"
+              - "Kenapa kamu lebih takut kehilangan Rp100rb dari senang dapat Rp100rb: prospect theory"
+              - "Efek ini bikin kamu yakin kamu lebih baik dari rata-rata dan hampir semua orang kena"
+              - "Kenapa kamu lebih percaya orang yang terlihat percaya diri meski sering salah"
+              - "Bias ini bikin kamu terus tambah investasi di sesuatu yang sudah jelas gagal"
+            content_runway: "Psikologi kognitif mendokumentasikan ratusan bias, heuristik, dan fenomena perilaku; setiap aspek kehidupan sosial — kerja, hubungan, belanja, media sosial — bisa dianalisis dengan lensa psikologi."
+
+    - slug: geography
+      name: "Geografi / Negara"
+      description: Perbandingan negara, peta, budaya.
+      faceless: true
+      difficulty: pemula
+      rpm: sedang
+      formats: peta + bar-chart + voiceover
+      example_hook: "Negara terkecil di dunia cuma..."
+      guide:
+        audience: "Penonton 15–28 yang suka trivia geografi dan perbandingan antar negara; penonton yang ingin tahu posisi Indonesia di dunia; pelajar dan mahasiswa yang suka konten peta dan data."
+        tone: "Informatif dan sedikit mengejutkan — menyajikan angka dan fakta yang belum penonton ketahui dengan cara yang memancing rasa ingin tahu. Nada netral dan berbasis data."
+        format: "45–75 detik. Satu topik geografi atau komparasi negara per video. Voiceover + animasi peta + grafik bar atau pie + hard-sub. Transisi visual antara negara harus cepat dan jelas."
+        boleh:
+          - "Gunakan peta animasi untuk menunjukkan skala atau lokasi yang mengejutkan"
+          - "Gunakan bar chart atau perbandingan visual untuk angka yang sulit dibayangkan"
+          - "Selalu hubungkan ke Indonesia untuk relevansi lokal"
+          - "Gunakan data dari sumber resmi (UN, World Bank, BPS)"
+        hindari:
+          - "Jangan buat klaim geopolitik sensitif tanpa konteks yang cukup"
+          - "Jangan gunakan data lama — update data setiap produksi"
+          - "Jangan tampilkan peta dengan klaim wilayah yang kontroversial tanpa disclaimer"
+          - "Jangan simpulkan lebih dari yang data tunjukkan"
+        pola_hook: "Detik 0: angka atau fakta geografi yang terdengar tidak masuk akal + visual peta langsung. Contoh: 'Negara ini lebih kecil dari Jakarta tapi punya kursi PBB'."
+        contoh_judul:
+          - "Peta dunia ini berbohong tentang ukuran sebenarnya setiap negara"
+          - "Indonesia vs semua negara ASEAN digabung: hasilnya mengejutkan"
+          - "Negara-negara yang tidak punya pantai meski dikelilingi negara lain"
+      micro:
+        - slug: geography-perbandingan-negara-asean
+          name: Perbandingan Negara ASEAN
+          description: Komparasi data ekonomi, budaya, dan kualitas hidup negara-negara ASEAN, menyasar penonton Indonesia yang penasaran posisi negaranya di kawasan.
+          example_hook: "Indonesia vs Vietnam 10 tahun lalu vs sekarang, siapa yang menang..."
+          guide:
+            audience: "Penonton Indonesia 18–35 yang melek ekonomi dan geopolitik kawasan; mahasiswa hubungan internasional dan ekonomi; penonton yang penasaran posisi Indonesia di antara negara tetangga."
+            tone: "Netral berbasis data tapi dengan sentuhan bangga Indonesia — bukan chauvinisme, tapi rasa ingin tahu yang jujur. Terbuka jika Indonesia tidak menang di semua metrik."
+            format: "60–90 detik. Komparasi 3–5 negara ASEAN per topik. Voiceover + bar chart animasi atau peta ASEAN + hard-sub. Satu metrik per video (GDP, pendidikan, infrastruktur, kualitas hidup)."
+            boleh:
+              - "Gunakan data multi-tahun untuk menunjukkan tren, bukan hanya snapshot"
+              - "Jadikan Indonesia sebagai anchor pembanding yang selalu ada di setiap video"
+              - "Tampilkan sumber data secara singkat (World Bank, IMF, UN) untuk kredibilitas"
+              - "Bahas implikasi: apa artinya angka ini untuk warga biasa"
+            hindari:
+              - "Jangan gunakan data yang sudah lebih dari 3 tahun untuk topik ekonomi dinamis"
+              - "Jangan buat kesimpulan superioritas satu negara atas yang lain"
+              - "Jangan abaikan konteks sejarah dan geografi yang mempengaruhi perbedaan data"
+              - "Jangan gunakan sumber data yang tidak kredibel atau tidak bisa diverifikasi"
+            pola_hook: "Detik 0: komparasi head-to-head yang mengejutkan antara Indonesia dan negara ASEAN lain + visual peta ASEAN. Contoh: 'Vietnam 20 tahun lalu GDP-nya setengah Indonesia. Sekarang berbeda'."
+            contoh_judul:
+              - "Vietnam vs Indonesia: pertumbuhan ekonomi 20 tahun terakhir dalam 60 detik"
+              - "Kenapa Singapura dengan luas Jakarta Selatan bisa GDP lebih besar dari Indonesia"
+              - "Indeks pendidikan ASEAN 2024: posisi Indonesia dibanding negara tetangga"
+              - "Infrastruktur ASEAN diranking dan hasilnya bikin Indonesia perlu banyak kerja"
+              - "5 metrik di mana Indonesia unggul dari semua negara ASEAN dan jarang dibahas"
+            content_runway: "10 negara ASEAN dengan data di ratusan dimensi (ekonomi, sosial, lingkungan, teknologi, pendidikan) dan tren yang berubah setiap tahun menghasilkan konten komparasi yang tidak ada habisnya."
+
+        - slug: geography-batas-wilayah-unik
+          name: Batas Wilayah Negara yang Absurd
+          description: Kasus-kasus perbatasan negara yang aneh secara geografis atau historis — enklave, eksklave, dan sengketa wilayah yang tidak pernah selesai.
+          example_hook: "Ada desa di sini yang berada di dua negara sekaligus, warga pilih sendiri..."
+          guide:
+            audience: "Penonton 16–30 yang suka trivia geografi aneh; penggemar hal-hal absurd dalam kehidupan nyata; mahasiswa ilmu politik dan hubungan internasional."
+            tone: "Heran dan sedikit lucu — seperti membaca berita aneh tapi nyata. Mengakui keanehan situasi tanpa menghina negara atau warga yang terlibat."
+            format: "45–75 detik. Satu kasus batas wilayah unik per video. Voiceover + peta animasi zoom-in ke lokasi spesifik + hard-sub. Tampilkan konteks sejarah singkat kenapa situasi ini bisa terjadi."
+            boleh:
+              - "Gunakan zoom in peta yang dramatis ke lokasi absurd untuk reveal"
+              - "Jelaskan konteks sejarah singkat kenapa batas ini bisa terbentuk"
+              - "Tampilkan dampak praktis pada kehidupan warga yang tinggal di sana"
+              - "Sebutkan kasus-kasus serupa di Indonesia untuk relevansi lokal"
+            hindari:
+              - "Jangan tampilkan batas wilayah sengketa aktif tanpa disclaimer yang jelas"
+              - "Jangan berpihak dalam sengketa wilayah yang masih belum selesai"
+              - "Jangan sensasionalisasi situasi yang bagi warga setempat adalah kehidupan normal"
+              - "Jangan gunakan peta yang menampilkan klaim wilayah yang tidak diakui PBB tanpa penjelasan"
+            pola_hook: "Detik 0: peta zoom-in ke lokasi absurd + klaim situasi yang terdengar tidak mungkin. Contoh: close-up enklave dalam enklave di Belgia-Belanda."
+            contoh_judul:
+              - "Desa ini secara resmi berada di dua negara dan warganya bisa pilih kewarganegaraan"
+              - "Enklave dalam enklave: negara di dalam negara di dalam negara yang benar-benar ada"
+              - "Batas darat Indonesia-Malaysia ini absurd karena alasan yang masuk akal secara historis"
+              - "Kota ini dibagi dua tembok dan sampai hari ini warganya hidup di aturan berbeda"
+              - "Sungai ini batas negara tapi tiap musim banjir pindah dan status desa ikut berubah"
+            content_runway: "Dunia memiliki ratusan enklave, eksklave, sengketa wilayah aktif, dan kasus batas aneh yang terbentuk dari sejarah kolonial — setiap kasus menghasilkan satu video unik."
+
+        - slug: geography-indonesia-kepulauan
+          name: Fakta Geografi Indonesia yang Bikin Bangga
+          description: Angka dan fakta geografi Indonesia yang mengejutkan — luas laut, jumlah pulau, keanekaragaman hayati — disajikan sebagai konten kebanggaan lokal.
+          example_hook: "Indonesia punya lebih banyak pulau dari yang pernah dihitung resmi..."
+          guide:
+            audience: "Penonton Indonesia semua usia yang ingin lebih mengenal negerinya; pelajar yang cari fakta menarik soal Indonesia; konten yang cocok di-share saat hari nasional atau momen kebanggaan lokal."
+            tone: "Bangga dan kagum — nada yang mengajak penonton merasakan 'Indonesia itu luar biasa dan kadang kita lupa'. Positif dan berbasis data, bukan basa-basi."
+            format: "45–75 detik. Satu atau dua fakta geografi per video. Voiceover + peta Indonesia yang dramatis + data visualisasi + hard-sub. Gunakan skala perbandingan untuk membuat angka terasa nyata."
+            boleh:
+              - "Bandingkan skala Indonesia dengan kawasan atau negara lain untuk membuat angka terasa nyata"
+              - "Gunakan data resmi BPS, KKP, atau LIPI untuk akurasi"
+              - "Tampilkan visual peta Indonesia yang dramatis dan sinematik"
+              - "Akhiri dengan implikasi positif — apa artinya fakta ini buat masa depan Indonesia"
+            hindari:
+              - "Jangan gunakan angka yang tidak terverifikasi hanya untuk terlihat lebih besar"
+              - "Jangan abaikan tantangan geografi Indonesia (bencana, kesenjangan) di semua konten"
+              - "Jangan buat konten yang terasa propaganda — berbasis fakta tetap lebih kuat"
+              - "Jangan salah tampilkan peta Indonesia termasuk atau tidak termasuk wilayah tertentu"
+            pola_hook: "Detik 0: angka geografi Indonesia yang mengejutkan + visual peta nusantara yang dramatis. Contoh: 'Indonesia punya 17.000 lebih pulau. Jika kamu kunjungi satu per hari, butuh 46 tahun'."
+            contoh_judul:
+              - "Indonesia punya lebih dari 17.000 pulau dan ini artinya dalam ukuran yang bisa dibayangkan"
+              - "Laut Indonesia lebih luas dari daratan dan ini mengapa kita negara maritim sejati"
+              - "Keanekaragaman hayati Indonesia: angka ini bikin negara lain iri"
+              - "Panjang pantai Indonesia jika diluruskan bisa melingkari bumi lebih dari sekali"
+              - "Hutan hujan Indonesia adalah yang terbesar ketiga di dunia dan ini kondisinya"
+            content_runway: "Indonesia adalah negara kepulauan terbesar, negara dengan keanekaragaman hayati kedua, dan salah satu negara dengan bahasa terbanyak — setiap aspek geografi, biodiversitas, dan demografi menghasilkan konten baru."
+
+    - slug: language
+      name: Belajar Bahasa
+      description: Kosakata/frasa bahasa asing singkat.
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: teks + audio + repetisi
+      example_hook: "3 kata Inggris yang sering salah..."
+      guide:
+        audience: "Penonton 16–30 yang belajar bahasa asing secara informal; pekerja muda yang butuh bahasa Inggris profesional; penonton yang suka konten bahasa singkat dan aplikatif."
+        tone: "Santai dan praktikal — seperti teman yang baru pulang belajar atau kerja di luar negeri dan sharing hal berguna. Tidak formal, tidak bertele-tele."
+        format: "30–60 detik per video. 1–3 kata atau frasa per video. Teks besar di layar + audio pengucapan jelas + contoh kalimat + hard-sub. Struktur: kata/frasa → pengucapan → contoh penggunaan → cara salah yang umum."
+        boleh:
+          - "Tampilkan teks kata/frasa yang besar dan jelas sebagai visual utama"
+          - "Berikan contoh kalimat yang sangat praktis dan sering digunakan"
+          - "Koreksi kesalahan umum yang banyak orang Indonesia lakukan"
+          - "Tambahkan konteks kapan kata ini tepat dan tidak tepat digunakan"
+        hindari:
+          - "Jangan tampilkan pengucapan yang salah tanpa koreksi — akan dikopi penonton"
+          - "Jangan gunakan contoh kalimat yang terlalu formal atau tidak natural"
+          - "Jangan bahas terlalu banyak kata dalam satu video — fokus lebih baik"
+          - "Jangan ajarkan bahasa gaul terlalu kuno atau yang sudah tidak digunakan"
+        pola_hook: "Detik 0: kata atau frasa yang terlihat sederhana + klaim bahwa cara pakainya berbeda dari yang kebanyakan orang Indonesia pikirkan."
+        contoh_judul:
+          - "Kata Inggris yang selalu kamu pakai salah di email kantor"
+          - "3 frasa Korea yang viral tapi artinya tidak seperti yang kamu kira"
+          - "Bahasa daerah ini punya kata yang tidak ada padanannya di bahasa mana pun"
+      micro:
+        - slug: language-inggris-kerja
+          name: Bahasa Inggris untuk Dunia Kerja
+          description: Kosakata dan frasa Inggris yang sering dipakai di lingkungan profesional dan email kantor, untuk pekerja muda yang ingin terdengar lebih natural.
+          example_hook: "Jangan bilang 'noted' lagi di email kantor, ganti dengan ini..."
+          guide:
+            audience: "Pekerja muda Indonesia 22–32 yang bekerja di perusahaan multinasional atau startup; fresh graduate yang baru mulai kerja dan ingin terdengar profesional; penonton yang sering pakai bahasa Inggris tapi merasa kurang natural."
+            tone: "Collegial dan helpful — seperti senior di kantor yang kasih tips tidak diminta tapi berguna banget. Tidak menghakimi kemampuan bahasa penonton."
+            format: "30–60 detik. 1–2 frasa atau kosakata profesional per video. Teks besar + audio pengucapan + contoh email atau percakapan + hard-sub. Tunjukkan perbedaan 'versi yang terdengar aneh' vs 'versi yang natural'."
+            boleh:
+              - "Gunakan contoh situasi kerja yang sangat spesifik dan familiar (rapat, email, Slack)"
+              - "Tunjukkan versi yang salah dulu, baru koreksi — lebih memorable"
+              - "Sertakan tip kapan frasa ini tepat digunakan dan kapan tidak"
+              - "Gunakan font besar yang mudah dibaca untuk kata kuncinya"
+            hindari:
+              - "Jangan ajarkan bahasa Inggris British vs American tanpa konteks kapan mana yang lebih tepat"
+              - "Jangan pilih kosakata yang terlalu niche untuk industri tertentu"
+              - "Jangan buat contoh kalimat yang terdengar tidak natural oleh penutur asli"
+              - "Jangan gunakan audio pengucapan yang terdengar robot atau sintetis"
+            pola_hook: "Detik 0: frasa yang sangat umum dipakai orang Indonesia + klaim bahwa native speaker tidak pakai frasa itu. Langsung tampilkan alternatif yang lebih natural."
+            contoh_judul:
+              - "Jangan bilang 'noted' lagi di email kantor, ini yang native speaker pakai"
+              - "Cara minta clarification di rapat tanpa terdengar tidak kompeten"
+              - "3 frasa Inggris di email yang bikin kamu keliatan kurang profesional tanpa sadar"
+              - "Cara politely disagree dalam bahasa Inggris tanpa bikin suasana awkward"
+              - "Kata ini sering dipakai orang Indonesia tapi artinya berbeda untuk native speaker"
+            content_runway: "Dunia kerja profesional menyimpan ratusan frasa, idiom, dan konvensi linguistik yang berbeda dari bahasa Inggris di sekolah; setiap konteks (email, meeting, presentasi, networking) menghasilkan puluhan video."
+
+        - slug: language-slang-global
+          name: Slang Bahasa Asing yang Viral
+          description: Istilah slang dari bahasa Inggris, Korea, atau Jepang yang sering muncul di media sosial tapi jarang ada yang jelaskan artinya dengan benar.
+          example_hook: "Kata ini dipakai jutaan orang tapi artinya yang benar berbeda dari yang kamu kira..."
+          guide:
+            audience: "Penonton 15–27 yang aktif di media sosial dan sering lihat slang asing; K-pop dan anime fans; penonton yang malu tanya artinya langsung ke teman."
+            tone: "Santai dan sedikit humor — seperti teman yang baru nonton konten viral dan sharing artinya yang sebenarnya. Tidak menggurui, lebih seperti gosip teman."
+            format: "20–45 detik. Satu kata slang per video. Teks besar + contoh penggunaan asli (screenshot atau stiker) + penjelasan arti + hard-sub. Cepat dan padat."
+            boleh:
+              - "Gunakan screenshot media sosial asli (tanpa nama user) sebagai konteks"
+              - "Jelaskan asal-usul slang tersebut jika ada cerita menarik di baliknya"
+              - "Beri contoh cara pakai yang benar dan cara pakai yang cringe"
+              - "Update konten secara rutin karena slang cepat kadaluarsa"
+            hindari:
+              - "Jangan ajarkan slang yang berkonotasi ofensif tanpa warning yang jelas"
+              - "Jangan gunakan slang yang sudah terlalu lama — terasa ketinggalan zaman"
+              - "Jangan salah arti slang — verifikasi dulu dari sumber native"
+              - "Jangan campur-aduk asal bahasa tanpa memberikan konteks yang jelas"
+            pola_hook: "Detik 0: slang yang sudah tersebar luas + teks 'kamu pakai ini tapi tau artinya?'. Langsung penjelasan arti yang benar."
+            contoh_judul:
+              - "Kata ini dipakai jutaan orang di Twitter tapi artinya yang benar beda dari yang kamu kira"
+              - "Arti sebenarnya 'rizz' dan kenapa cara orang Indonesia pakainya sering salah"
+              - "Kata Korea ini viral di TikTok dan penggunaannya lebih luas dari yang kamu sangka"
+              - "Gen Z slang 2024 yang kamu perlu tahu sebelum terlihat outdated"
+              - "Istilah anime ini dipakai di luar konteks terus sampai artinya bergeser"
+            content_runway: "Media sosial global menghasilkan gelombang slang baru setiap beberapa bulan dari berbagai bahasa (Inggris, Korea, Jepang, Spanyol); komunitas internet Indonesia sangat aktif menyerap dan mengadaptasi slang asing."
+
+        - slug: language-bahasa-daerah-indonesia
+          name: Kosakata Bahasa Daerah yang Keren
+          description: Kata-kata unik dari bahasa daerah Indonesia yang tidak ada padanannya dalam Bahasa Indonesia atau Inggris, memperkenalkan kekayaan linguistik lokal.
+          example_hook: "Bahasa Jawa punya kata untuk perasaan ini yang gak bisa diterjemahkan..."
+          guide:
+            audience: "Penonton Indonesia 17–35 yang suka linguistics dan kekayaan budaya lokal; diaspora Indonesia yang ingin reconnect dengan bahasa daerah; siapa saja yang pernah merasakan emosi yang tidak bisa diungkapkan dengan kata Indonesia biasa."
+            tone: "Kagum dan bangga terhadap kekayaan bahasa lokal — seperti menemukan harta tersembunyi di dalam bahasa sendiri. Penuh penghargaan terhadap kekayaan linguistik Indonesia."
+            format: "30–60 detik. Satu kata atau konsep linguistik per video. Teks besar kata + transliterasi + penjelasan makna mendalam + contoh situasi + hard-sub."
+            boleh:
+              - "Pilih kata yang mencerminkan konsep yang universal tapi tidak ada padanannya"
+              - "Jelaskan konteks budaya atau filosofi di balik kata tersebut"
+              - "Sertakan audio pengucapan yang benar oleh penutur asli jika memungkinkan"
+              - "Ajak penonton share kata dari bahasa daerah mereka sendiri di komentar"
+            hindari:
+              - "Jangan salah transliterasi atau arti kata daerah — konsultasikan dengan penutur asli"
+              - "Jangan hanya fokus ke Jawa dan Sunda — 700+ bahasa daerah Indonesia perlu direpresentasikan"
+              - "Jangan simplifikasi makna budaya yang dalam menjadi terlalu dangkal"
+              - "Jangan gunakan kata daerah yang memiliki konotasi sensitif tanpa konteks yang cukup"
+            pola_hook: "Detik 0: nama bahasa daerah + klaim bahwa ada kata yang tidak bisa diterjemahkan + situasi emosional yang kata tersebut gambarkan."
+            contoh_judul:
+              - "Bahasa Jawa punya kata untuk kerinduan yang bahasa Indonesia tidak punya"
+              - "Kata Batak ini menggambarkan filosofi hidup yang tidak ada padanannya di dunia"
+              - "Bahasa Sunda punya konsep ini yang bahasa Inggris perlu satu paragraf untuk jelaskan"
+              - "Kata Bugis ini untuk loyalitas yang lebih dalam dari sekedar setia"
+              - "Bahasa Bali punya sistem kata yang mencerminkan filsafat Tri Hita Karana"
+            content_runway: "Indonesia memiliki 700+ bahasa daerah yang masih aktif, masing-masing dengan kosakata unik yang mencerminkan budaya dan filosofi lokal; ini setara ratusan hingga ribuan konten potensial."
+
+    - slug: data-viz
+      name: "Data / Statistik"
+      description: Visualisasi data, bar-chart race.
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: bar-race + voiceover
+      example_hook: "Negara terkaya 1900 vs 2025..."
+      guide:
+        audience: "Penonton 18–35 yang melek data dan ekonomi; mahasiswa ilmu sosial dan ekonomi; penonton yang suka konten data visualization dan melihat tren jangka panjang."
+        tone: "Analitis tapi aksesibel — data disajikan dengan cerita, bukan spreadsheet. Narasi mengikuti tren yang muncul dari data, bukan sebaliknya."
+        format: "60–120 detik. Satu dataset atau komparasi per video. Voiceover naratif + animasi bar chart race atau grafik + teks anotasi kunci + hard-sub. Visual data harus bisa dibaca di layar HP."
+        boleh:
+          - "Gunakan bar chart race untuk data historis yang berubah dari waktu ke waktu"
+          - "Sorot anomali atau twist di data dengan anotasi visual"
+          - "Ceritakan konteks historis di balik perubahan data yang dramatis"
+          - "Gunakan warna yang konsisten dan mudah dibedakan di layar kecil"
+        hindari:
+          - "Jangan gunakan chart yang terlalu kompleks untuk dibaca di layar HP"
+          - "Jangan pilih data yang tidak memiliki perubahan dramatis — visualisasi harus punya story"
+          - "Jangan salah presentasikan data (cherry-pick, misleading axis)"
+          - "Jangan gunakan data yang tidak bisa diverifikasi sumbernya"
+        pola_hook: "Detik 0: klaim yang mengejutkan dari data + animasi grafik langsung dimulai. Contoh: '100 tahun lalu, negara terkaya di Asia bukan Jepang atau China. Tonton ini'."
+        contoh_judul:
+          - "100 tahun ekonomi Indonesia dalam 60 detik: bar chart race yang bikin sedih dan bangga"
+          - "Negara terkaya dunia dari 1800 sampai 2024 dan pemenangnya tidak terduga"
+          - "Media sosial terpopuler dari 2010 sampai sekarang dan platform mana yang menang"
+      micro:
+        - slug: data-viz-ekonomi-indonesia
+          name: Ekonomi Indonesia dalam Grafik
+          description: Visualisasi data makroekonomi Indonesia — pertumbuhan, inflasi, pengangguran — dalam format yang mudah dipahami untuk penonton awam yang ingin melek ekonomi.
+          example_hook: "Gaji UMR 2010 vs 2024 vs daya belinya, ini yang terjadi sebenarnya..."
+          guide:
+            audience: "Penonton Indonesia 20–35 yang ingin melek ekonomi tapi tidak punya background ekonomi; pekerja muda yang merasakan dampak ekonomi tapi tidak mengerti konteksnya; mahasiswa ekonomi yang butuh visualisasi data."
+            tone: "Informatif dan jujur — tidak menghindari data yang kurang menyenangkan, tapi menyajikannya dengan konteks yang adil. Tidak partisan."
+            format: "75–120 detik. Satu metrik ekonomi per video. Voiceover + grafik animasi + timeline visual + hard-sub. Sertakan perbandingan historis untuk menunjukkan tren."
+            boleh:
+              - "Gunakan data BPS, Bank Indonesia, atau World Bank yang terverifikasi"
+              - "Tampilkan data dalam perspektif yang relatable untuk masyarakat biasa"
+              - "Sertakan konteks global untuk membandingkan posisi Indonesia"
+              - "Update data setiap kali ada rilis resmi terbaru"
+            hindari:
+              - "Jangan presentasikan data ekonomi dengan bias politik tanpa pengakuan"
+              - "Jangan gunakan data yang tidak terverifikasi atau dari sumber non-resmi"
+              - "Jangan buat kesimpulan kausalitas dari data korelasi"
+              - "Jangan simplifikasi ekonomi kompleks sampai menyesatkan penonton"
+            pola_hook: "Detik 0: angka ekonomi yang terasa langsung di kehidupan sehari-hari + pertanyaan yang bikin penonton bertanya-tanya. Contoh: 'UMR Jakarta naik 200% sejak 2010. Tapi kenapa kamu masih merasa tidak cukup?'."
+            contoh_judul:
+              - "Gaji UMR Jakarta 2010 vs 2024 vs harga kebutuhan pokok: ini yang sebenarnya terjadi"
+              - "Inflasi Indonesia 10 tahun terakhir dalam grafik yang bikin kamu merasakan dampaknya"
+              - "Pertumbuhan GDP Indonesia vs Vietnam vs Thailand: siapa yang menang dalam 2 dekade"
+              - "Harga rumah di Jakarta 2000 vs 2024: kenapa generasi ini tidak bisa beli rumah"
+              - "Pengangguran Indonesia dalam grafik: angkatan kerja baru vs lapangan kerja tersedia"
+            content_runway: "Indonesia merilis data ekonomi resmi setiap bulan (inflasi, pertumbuhan, pengangguran, neraca perdagangan); kombinasi metrik dan periode waktu menghasilkan ratusan konten; isu ekonomi juga selalu relevan secara sosial."
+
+        - slug: data-viz-bar-race-global
+          name: Bar Chart Race Sejarah Dunia
+          description: Animasi bar chart race menampilkan perubahan peringkat negara dalam berbagai metrik dari waktu ke waktu, format yang sudah terbukti viral.
+          example_hook: "10 negara terkuat 1800 sampai 2024 dalam 60 detik..."
+          guide:
+            audience: "Penonton 16–35 yang suka konten sejarah dan data; penonton yang pernah lihat bar chart race di YouTube dan langsung terpesona; siapa saja yang penasaran dengan dinamika kekuatan global dari waktu ke waktu."
+            tone: "Dramatis dan informatif — biarkan animasi bercerita sendiri dengan voiceover yang mengomentari momen-momen dramatis perubahan peringkat."
+            format: "60–90 detik. Satu metrik dengan timeline 50–200 tahun per video. Voiceover komentar singkat momen kunci + bar chart race animasi + hard-sub. Pastikan teks di grafik cukup besar untuk dibaca di HP."
+            boleh:
+              - "Komentari momen-momen drama (satu negara tiba-tiba melesat atau jatuh) dengan voiceover"
+              - "Gunakan warna bendera negara untuk visual yang lebih intuitif"
+              - "Sertakan marker tahun peristiwa penting (perang dunia, krisis ekonomi) di timeline"
+              - "Pastikan Indonesia selalu ada di grafik untuk relevansi lokal"
+            hindari:
+              - "Jangan gunakan data yang tidak konsisten metodologinya sepanjang timeline"
+              - "Jangan buat grafik dengan terlalu banyak negara sehingga tidak terbaca di HP"
+              - "Jangan pilih metrik yang datanya tidak tersedia secara historis dengan cukup"
+              - "Jangan buat klaim tentang masa depan berdasarkan tren historis"
+            pola_hook: "Detik 0: animasi bar chart race langsung jalan + klaim tren yang mengejutkan. Contoh: 'Negara yang jadi nomor satu ekonomi dunia di tahun 2024 bukan negara yang nomor satu di 1800'."
+            contoh_judul:
+              - "10 negara terkuat ekonomi 1800 hingga 2024 dalam 60 detik"
+              - "Populasi dunia 200 tahun terakhir: siapa yang meledak dan siapa yang stagnan"
+              - "Konsumsi energi per kapita dunia dari 1960 sampai sekarang: pola yang mengejutkan"
+              - "Ekspor terbesar dunia dari 1950 sampai 2023: komoditas mana yang turun dan naik"
+              - "Angka harapan hidup dunia 1900 vs 2024: transformasi yang tidak banyak orang sadari"
+            content_runway: "Ratusan metrik global (ekonomi, demografi, kesehatan, pendidikan, militer, teknologi) tersedia secara historis dari World Bank, UN, dan Gapminder — setiap kombinasi metrik dan periode menghasilkan video baru."
+
+        - slug: data-viz-media-sosial-indonesia
+          name: Statistik Media Sosial Indonesia
+          description: Visualisasi data penggunaan media sosial, tren platform, dan perilaku digital masyarakat Indonesia, relevan untuk kreator dan pemasar.
+          example_hook: "Platform ini kalahkan Instagram di Indonesia tanpa yang sadar..."
+          guide:
+            audience: "Kreator konten dan marketer Indonesia 20–35; penonton yang penasaran perilaku digital Indonesia; brand dan agensi yang mau tahu tren platform."
+            tone: "Informatif dan actionable — penonton harus merasa mendapat insight yang berguna setelah tonton, bukan hanya trivia. Relevan untuk pekerjaan atau bisnis."
+            format: "60–90 detik. Satu tren media sosial per video. Voiceover + grafik pie atau bar animasi + timeline tren + hard-sub. Data harus update dan spesifik Indonesia, bukan data global generik."
+            boleh:
+              - "Gunakan data survei resmi (We Are Social, Hootsuite, Kominfo) yang spesifik Indonesia"
+              - "Tunjukkan tren multi-tahun bukan hanya snapshot satu titik waktu"
+              - "Sertakan implikasi praktis bagi kreator atau brand Indonesia"
+              - "Update konten secara regular karena landscape media sosial berubah cepat"
+            hindari:
+              - "Jangan gunakan data global sebagai proxy data Indonesia tanpa konfirmasi"
+              - "Jangan gunakan data yang lebih dari 18 bulan untuk platform yang dinamis"
+              - "Jangan buat prediksi yang terlalu spekulatif tentang platform yang akan menang"
+              - "Jangan abaikan platform yang sedang naik hanya karena belum mainstream"
+            pola_hook: "Detik 0: klaim mengejutkan tentang tren media sosial Indonesia yang berbeda dari asumsi umum. Contoh: 'Indonesia adalah negara pengguna YouTube terbesar ke-2 di dunia dan hampir tidak ada yang tahu'."
+            contoh_judul:
+              - "Platform ini kalahkan Instagram di Indonesia dalam 2 tahun tanpa yang sadar"
+              - "Berapa jam rata-rata orang Indonesia buka media sosial per hari: angkanya mengejutkan"
+              - "Platform media sosial mana yang paling banyak dipakai usia 18-25 di Indonesia 2024"
+              - "TikTok vs YouTube vs Instagram di Indonesia: siapa yang menang di kategori mana"
+              - "Kreator konten Indonesia naik berapa persen dalam 5 tahun dan ini implikasinya"
+            content_runway: "Laporan penggunaan media sosial Indonesia dirilis setiap kuartal oleh berbagai lembaga riset; ditambah perubahan algoritma, platform baru, dan perilaku pengguna yang terus berevolusi — konten ini selalu relevan."
+
+    - slug: study-tips
+      name: Tips Belajar
+      description: Metode belajar, produktivitas pelajar.
+      faceless: true
+      difficulty: pemula
+      rpm: sedang
+      formats: teks + b-roll + voiceover
+      example_hook: "Cara belajar 2x lebih cepat..."
+      guide:
+        audience: "Pelajar SMA, mahasiswa, dan fresh graduate 16–28 yang sedang hadapi ujian atau ingin meningkatkan produktivitas belajar; orang tua yang cari tips untuk anak; siapa saja yang merasa cara belajarnya tidak efisien."
+        tone: "Supportif dan praktis — seperti kakak atau senior yang sudah duluan dan mau share cara yang berhasil. Tidak menggurui, tapi memberikan tools yang langsung bisa dipakai."
+        format: "45–90 detik. 1–3 tips konkret per video. Voiceover + teks poin-poin besar + b-roll belajar/studi + hard-sub. Tips harus langsung actionable, bukan teori abstrak."
+        boleh:
+          - "Sertakan basis ilmiah singkat kenapa teknik ini efektif"
+          - "Berikan langkah konkret yang bisa langsung dicoba hari itu"
+          - "Gunakan b-roll yang relatable (meja belajar, buku, laptop, HP)"
+          - "Akhiri dengan tantangan ke penonton untuk coba teknik tersebut"
+        hindari:
+          - "Jangan sarankan teknik yang terbukti tidak efektif secara sains (misal: belajar sambil tidur)"
+          - "Jangan buat tips yang membutuhkan tools mahal atau tidak tersedia di Indonesia"
+          - "Jangan overclaim hasil — 'belajar 2x lebih cepat' perlu konteks yang jujur"
+          - "Jangan plagiat konten study tips luar tanpa adaptasi ke konteks Indonesia"
+        pola_hook: "Detik 0: klaim hasil belajar yang mengejutkan + langsung masuk ke tips pertama. Contoh: 'Orang yang dapat nilai A bukan belajar lebih lama, tapi mereka tahu ini'."
+        contoh_judul:
+          - "Cara belajar yang dipakai orang yang selalu dapat A, dan bukan belajar lebih lama"
+          - "Teknik ini dari neurosains, dan ini kenapa kamu lupa pelajaran dalam 24 jam"
+          - "3 kesalahan belajar yang 90% pelajar Indonesia lakukan dan cara mengatasinya"
+      micro:
+        - slug: study-tips-ujian-nasional
+          name: Tips Persiapan Ujian dan Seleksi
+          description: Strategi belajar spesifik untuk ujian SNBT, CPNS, dan ujian sertifikasi populer Indonesia, menyasar pelajar dan fresh graduate.
+          example_hook: "Orang yang lulus SNBT gak belajar lebih lama, mereka belajar dengan cara ini..."
+          guide:
+            audience: "Pelajar kelas 12 dan mahasiswa tahun pertama yang mau ujian SNBT; fresh graduate yang persiapkan CPNS atau sertifikasi; siapa saja yang punya ujian besar di depannya."
+            tone: "Motivatif dan strategis — seperti senior yang sudah lulus dan mau share strategi bukan teori. Berbasis pengalaman nyata dan data kelulusan."
+            format: "60–90 detik. Satu ujian spesifik atau satu strategi per video. Voiceover + teks checklist besar + b-roll belajar + hard-sub. Selalu spesifik ke nama ujian dan tahun relevan."
+            boleh:
+              - "Berikan strategi yang spesifik ke format soal ujian tersebut"
+              - "Sertakan timeline belajar yang realistis berdasarkan jarak ujian"
+              - "Referensikan sumber belajar yang terbukti efektif (buku, platform online)"
+              - "Update konten sesuai perubahan format ujian terbaru"
+            hindari:
+              - "Jangan beri tips generik yang berlaku untuk semua ujian — nilai konten ada di spesifisitasnya"
+              - "Jangan klaim strategi tertentu pasti lulus tanpa disclaimer konteks"
+              - "Jangan gunakan data passing grade atau kuota yang sudah kadaluarsa"
+              - "Jangan rekomendasikan platform belajar berbayar tanpa disclosure jika mendapat komisi"
+            pola_hook: "Detik 0: klaim yang membantah asumsi umum tentang persiapan ujian tersebut. Contoh: 'Rata-rata waktu belajar peserta yang lulus SNBT bukan yang paling lama, tapi yang paling strategis'."
+            contoh_judul:
+              - "Strategi belajar SNBT yang dipakai peserta yang lulus tahun ini bukan yang terlama"
+              - "CPNS 2024: passing grade berubah dan ini cara adaptasi strategi belajarmu"
+              - "Timeline belajar SNBT 3 bulan dari nol yang realistis dan terbukti"
+              - "Tipe soal TPS SNBT yang sering bikin gagal dan cara mengatasinya"
+              - "Bukan ranking sekolah yang tentukan lulus SNBT, tapi kebiasaan belajar ini"
+            content_runway: "Indonesia memiliki puluhan jenis ujian seleksi (SNBT, CPNS, PPPK, sertifikasi profesi, beasiswa) yang formatnya berubah setiap tahun; setiap perubahan format dan setiap siklus pendaftaran menghasilkan konten baru yang relevan."
+
+        - slug: study-tips-fokus-era-digital
+          name: Cara Fokus Belajar di Era Distraksi
+          description: Teknik kognitif untuk mempertahankan fokus saat belajar di tengah notifikasi dan distraksi digital, berbasis riset psikologi.
+          example_hook: "Buka HP sekali saja saat belajar sudah hancurkan sesi studimu selama ini..."
+          guide:
+            audience: "Pelajar dan mahasiswa 15–28 yang merasa tidak bisa fokus belajar karena HP; pekerja muda yang struggle dengan deep work di era notifikasi; siapa saja yang pernah belajar 3 jam tapi hasilnya tidak terasa."
+            tone: "Empati dan ilmiah — mengakui bahwa distraksi bukan masalah moral tapi kognitif, lalu memberikan solusi berbasis sains. Tidak menyalahkan penonton."
+            format: "45–75 detik. Satu teknik fokus per video. Voiceover + b-roll belajar + animasi konsep kognitif sederhana + hard-sub. Sertakan nama teknik yang bisa dicari lebih lanjut."
+            boleh:
+              - "Jelaskan mekanisme kognitif di balik distraksi untuk validasi penonton"
+              - "Berikan instruksi konkret yang bisa langsung dicoba malam itu"
+              - "Referensikan penelitian atau buku yang jadi basis teknik tersebut"
+              - "Akui bahwa tidak ada teknik yang 100% sempurna untuk semua orang"
+            hindari:
+              - "Jangan sarankan 'matikan HP sepenuhnya' tanpa mengakui bahwa ini tidak realistis untuk banyak orang"
+              - "Jangan klaim teknik tertentu efektif untuk semua tipe belajar"
+              - "Jangan simplifikasi masalah fokus menjadi hanya masalah willpower"
+              - "Jangan gunakan riset yang sudah diretraksi atau tidak direplikasi"
+            pola_hook: "Detik 0: fakta mengejutkan tentang biaya kognitif distraksi + langsung relevansi ke kehidupan penonton. Contoh: 'Setiap kali kamu buka HP saat belajar, otak butuh 23 menit untuk kembali fokus penuh'."
+            contoh_judul:
+              - "Setiap kali buka HP saat belajar kamu habiskan 23 menit recovery tanpa sadar"
+              - "Teknik Pomodoro tidak cocok untuk semua orang dan ini alternatifnya"
+              - "Kenapa musik saat belajar kadang bantu kadang ganggu: neurosains menjelaskan"
+              - "Cara set up ruang belajar yang reduce cognitive load tanpa beli peralatan mahal"
+              - "Notifikasi ini yang paling merusak fokus belajar dan cara matikannya tanpa kehilangan kontak"
+            content_runway: "Riset neurokognitif tentang fokus dan distraksi terus berkembang; ditambah variasi teknik (Pomodoro, time-blocking, body doubling, ambient noise) dan adaptasinya untuk konteks pelajar Indonesia memberikan stok konten yang terus diperbarui."
+
+        - slug: study-tips-metode-hafalan
+          name: Teknik Hafalan yang Terbukti Sains
+          description: Metode menghafal berbasis ilmu saraf seperti spaced repetition dan memory palace, dijelaskan dengan cara praktis untuk pelajar Indonesia.
+          example_hook: "Cara hafal 100 kosakata dalam sehari yang dipakai juara olimpiade..."
+          guide:
+            audience: "Pelajar 14–25 yang harus hafal banyak materi (biologi, sejarah, kosakata bahasa); peserta ujian yang butuh retensi jangka panjang; siapa saja yang merasa hafalannya jelek."
+            tone: "Empowerment dan ilmiah — 'hafalanmu bukan jelek, kamu hanya belum tahu cara yang benar'. Memberikan tools yang terbukti, bukan motivasi kosong."
+            format: "60–90 detik. Satu metode hafalan per video. Voiceover + demonstrasi teknik singkat + b-roll + hard-sub. Demonstrasi konkret cara pakai metode sangat penting."
+            boleh:
+              - "Demonstrasikan teknik dengan contoh nyata (misalnya: memory palace dengan rumah sendiri)"
+              - "Jelaskan sains di balik kenapa teknik ini bekerja (kurva Ebbinghaus, dll)"
+              - "Rekomendasikan app atau tools gratis yang membantu implementasi"
+              - "Sertakan contoh penerapan untuk materi pelajaran spesifik Indonesia"
+            hindari:
+              - "Jangan klaim teknik bisa hafal dalam waktu sangat singkat tanpa konteks effort yang dibutuhkan"
+              - "Jangan rekomendasikan teknik yang butuh alat atau investasi yang tidak terjangkau"
+              - "Jangan ajarkan teknik hafalan yang bertentangan dengan riset memory science terkini"
+              - "Jangan abaikan bahwa setiap orang punya gaya belajar yang berbeda"
+            pola_hook: "Detik 0: klaim hasil hafalan yang mengejutkan + atribusi ke teknik tertentu yang terdengar tidak biasa. Contoh: 'Juara olimpiade bukan punya memori lebih baik, mereka pakai cara berbeda yang bisa dipelajari siapa saja'."
+            contoh_judul:
+              - "Cara hafal 50 kosakata baru sehari yang dipakai pemenang kompetisi bahasa"
+              - "Spaced repetition: metode hafalan yang sains buktikan 3x lebih efektif dari baca ulang"
+              - "Memory palace untuk hafal nama 20 orang sekaligus dan ini cara membuatnya"
+              - "Kenapa baca ulang catatan adalah cara hafalan yang paling tidak efisien"
+              - "Teknik chunking: cara otak benar-benar menyimpan informasi dan cara memanfaatkannya"
+            content_runway: "Ratusan teknik dan variasi metode hafalan terdokumentasi dalam literatur neurosains dan psikologi pendidikan; ditambah aplikasi spesifik untuk setiap mata pelajaran dan jenis ujian Indonesia menghasilkan konten yang tidak ada habisnya."
+
+    - slug: did-you-know
+      name: Tahukah Kamu
+      description: Trivia cepat satu topik per video.
+      faceless: true
+      difficulty: pemula
+      rpm: rendah
+      formats: voiceover + stok + teks
+      example_hook: "Tahukah kamu otak buang 1% sel tiap..."
+      guide:
+        audience: "Penonton umum 14–30 yang suka trivia cepat dan share ke teman; penonton yang scroll ketika bosan dan butuh fakta cepat yang mengejutkan; cocok untuk semua demografis karena sangat accessible."
+        tone: "Terkejut dan penasaran — nada 'kamu mungkin belum tahu ini, dan itu oke'. Singkat, tidak menggurui, selesai dalam satu napas."
+        format: "20–45 detik. Satu fakta per video. Voiceover singkat + teks besar + stok visual relevan + hard-sub. Struktur: klaim trivia → fakta singkat → bonus implikasi atau twist. Cepat dan padat."
+        boleh:
+          - "Satu fakta per video — jangan dilencerkan dengan informasi tambahan"
+          - "Gunakan teks besar yang bisa dibaca bahkan tanpa audio"
+          - "Akhiri dengan pertanyaan atau ajakan share ke teman yang juga belum tahu"
+          - "Verifikasi fakta dari sumber primer sebelum publish"
+        hindari:
+          - "Jangan publish trivia yang tidak terverifikasi — bahaya misinformasi sangat tinggi di format ini"
+          - "Jangan gunakan stok visual yang tidak relevan dengan fakta yang diceritakan"
+          - "Jangan buat lebih dari satu fakta per video — kehilangan fokus format"
+          - "Jangan plagiat trivia dari channel lain tanpa verifikasi ulang akurasi"
+        pola_hook: "Detik 0: 'Tahukah kamu bahwa...' + klaim yang mengejutkan. Visual langsung relevan. Penjelasan mulai detik 3."
+        contoh_judul:
+          - "Tahukah kamu bahwa madu tidak pernah kadaluarsa secara kimia"
+          - "Tahukah kamu otak manusia bisa menyimpan lebih banyak data dari semua internet"
+          - "Tahukah kamu Indonesia punya gunung berapi lebih banyak dari negara mana pun"
+      micro:
+        - slug: did-you-know-makanan-indonesia
+          name: Tahukah Kamu Soal Makanan Indonesia
+          description: Trivia mengejutkan tentang asal-usul dan fakta di balik makanan populer Indonesia yang sering dimakan tapi jarang diketahui sejarahnya.
+          example_hook: "Tahukah kamu rendang bukan asli Padang? Ini asal-usul sebenarnya..."
+          guide:
+            audience: "Penonton Indonesia semua usia yang suka makanan lokal; foodies yang ingin tahu lebih dari sekedar rasa; konten yang sangat shareable di grup keluarga dan teman."
+            tone: "Heran dan hangat — seperti saat makan rendang dan tiba-tiba tahu fakta di baliknya. Menambah makna pada sesuatu yang sudah familier."
+            format: "25–45 detik. Satu makanan dengan satu fakta mengejutkan per video. Voiceover + visual makanan yang menggiurkan + teks fakta besar + hard-sub."
+            boleh:
+              - "Pilih makanan yang sangat familiar sehingga faktanya terasa lebih mengejutkan"
+              - "Sertakan konteks sejarah atau budaya singkat"
+              - "Gunakan visual makanan yang menarik dan menggiurkan sebagai hook visual"
+              - "Verifikasi fakta dengan sumber kuliner atau sejarah yang dapat dipercaya"
+            hindari:
+              - "Jangan klaim fakta sejarah kuliner yang masih diperdebatkan sebagai kepastian"
+              - "Jangan gunakan visual makanan yang tidak relevan atau terlihat tidak fresh"
+              - "Jangan buat konten yang secara tidak sengaja menyinggung budaya tertentu"
+              - "Jangan publish fakta makanan yang tidak bisa diverifikasi dari sumber credible"
+            pola_hook: "Detik 0: nama makanan yang sangat familiar + klaim mengejutkan tentang asal atau fakta di baliknya. Visual makanan tersebut langsung di detik pertama."
+            contoh_judul:
+              - "Tahukah kamu asal-usul rendang yang jarang diajarkan di sekolah"
+              - "Tahukah kamu nasi goreng sebenarnya punya sejarah yang lebih tua dari yang kamu kira"
+              - "Fakta di balik tempe yang membuat ilmuwan dunia tertarik riset ke Indonesia"
+              - "Tahukah kamu sate ayam dan sate kambing punya asal-usul yang berbeda daerah"
+              - "Tahukah kamu bakso sebenarnya punya kemiripan historis dengan hidangan dari Tiongkok"
+            content_runway: "Kuliner Indonesia memiliki ratusan makanan tradisional dari 34 provinsi, masing-masing dengan sejarah, asal-usul, dan fakta unik; setiap perayaan dan musim juga menghadirkan makanan khas yang relevan."
+
+        - slug: did-you-know-teknologi-sehari
+          name: Tahukah Kamu Teknologi yang Kamu Pakai
+          description: Fakta mengejutkan tentang teknologi yang digunakan sehari-hari — smartphone, internet, GPS — yang pengguna jarang menyadarinya.
+          example_hook: "Tahukah kamu GPS yang kamu pakai melibatkan relativitas Einstein setiap detik..."
+          guide:
+            audience: "Penonton 16–35 yang pakai teknologi tapi jarang tahu cara kerjanya; tech-curious tapi bukan tech-savvy; siapa saja yang pernah ingin tahu 'kok bisa HP tahu lokasi aku?'."
+            tone: "Kagum dan sedikit mind-blown — seperti tahu cara sulap untuk pertama kali. Mengungkap magis di balik teknologi yang terlihat biasa."
+            format: "30–60 detik. Satu teknologi dengan satu fakta mengejutkan per video. Voiceover + visual teknologi yang relevan + animasi cara kerja sederhana + hard-sub."
+            boleh:
+              - "Gunakan analogi sederhana untuk menjelaskan konsep teknologi yang kompleks"
+              - "Tunjukkan implikasi jika teknologi tersebut tidak ada atau tidak bekerja"
+              - "Sebutkan nama prinsip atau teknologi yang bisa dicari lebih lanjut"
+              - "Pilih teknologi yang benar-benar digunakan sehari-hari oleh penonton Indonesia"
+            hindari:
+              - "Jangan oversimplify cara kerja teknologi sampai tidak akurat"
+              - "Jangan gunakan jargon teknis tanpa penjelasan"
+              - "Jangan klaim fakta teknologi yang sudah kadaluarsa atau tidak akurat"
+              - "Jangan buat konten yang terkesan mempertanyakan privasi tanpa konteks yang adil"
+            pola_hook: "Detik 0: nama teknologi yang sangat familiar + klaim fakta di baliknya yang mengejutkan. Contoh: 'GPS di HP kamu melibatkan persamaan relativitas Einstein setiap saat'."
+            contoh_judul:
+              - "GPS di HP kamu menggunakan relativitas Einstein dan tanpa itu lokasimu akan meleset kilometer"
+              - "Tahukah kamu bagaimana foto di HP kamu langsung masuk ke server tanpa kabel"
+              - "Cara kerja sidik jari di smartphone yang sangat berbeda dari yang kebanyakan orang bayangkan"
+              - "Fakta di balik Wi-Fi yang akan ubah cara kamu lihat sinyal di pojok ruangan"
+              - "Tahukah kamu enkripsi WhatsApp kamu lebih kuat dari sistem militer era 1990"
+            content_runway: "Setiap perangkat, aplikasi, dan layanan digital yang digunakan sehari-hari menyimpan fakta teknis yang mengejutkan; teknologi terus berkembang menghasilkan fakta baru setiap tahun."
+
+        - slug: did-you-know-tubuh-tidur
+          name: Tahukah Kamu Apa Terjadi Saat Kamu Tidur
+          description: Trivia sains tentang proses yang terjadi di tubuh dan otak manusia selama tidur, disajikan dalam format satu fakta per video yang mengejutkan.
+          example_hook: "Tahukah kamu otak aktif membuang racun hanya saat kamu tidur nyenyak..."
+          guide:
+            audience: "Penonton 17–35 yang penasaran tentang tidur dan kesehatan; penonton yang sering begadang dan butuh motivasi tidur cukup; siapa saja yang pernah heran kenapa mereka mimpi atau susah bangun."
+            tone: "Ingin tahu dan sedikit mengkhawatirkan — 'selama ini kamu tidak tahu ini terjadi setiap malam'. Membuat penonton lebih menghargai tidur tanpa menggurui."
+            format: "25–45 detik. Satu fakta tentang tidur per video. Voiceover + visual orang tidur + animasi proses biologis sederhana + hard-sub."
+            boleh:
+              - "Pilih fakta yang relevan dengan masalah tidur yang umum di Indonesia (begadang, insomnia)"
+              - "Sertakan implikasi kesehatan yang konkret dari fakta tersebut"
+              - "Gunakan animasi otak sederhana untuk proses neurologis"
+              - "Hubungkan ke kebiasaan sehari-hari yang bisa diubah berdasarkan fakta ini"
+            hindari:
+              - "Jangan buat klaim medis atau diagnosis tentang gangguan tidur"
+              - "Jangan gunakan fakta yang belum terverifikasi atau dari studi yang tidak direplikasi"
+              - "Jangan oversimplify proses biologis kompleks sampai tidak akurat"
+              - "Jangan buat konten yang bisa meningkatkan kecemasan tentang tidur tanpa solusi"
+            pola_hook: "Detik 0: 'Tahukah kamu bahwa saat kamu tidur, otakmu...' + klaim yang mengejutkan. Visual orang tidur atau animasi otak langsung di detik pertama."
+            contoh_judul:
+              - "Tahukah kamu otak aktif buang racun berbahaya hanya saat tidur nyenyak"
+              - "Proses ini terjadi di otakmu tiap malam dan tanpanya kamu tidak bisa belajar apapun"
+              - "Tahukah kamu fase tidur REM yang satu ini yang bikin kamu bisa kreatif saat bangun"
+              - "Kenapa kamu lebih mudah ingat mimpi kalau langsung ditulis saat bangun: neurosains"
+              - "Tahukah kamu jantung kamu melambat signifikan saat fase tidur tertentu malam ini"
+            content_runway: "Sains tidur adalah bidang yang terus berkembang dengan ratusan fenomena yang terjadi di tubuh dan otak selama tidur; penelitian baru tentang memori, imun, metabolisme, dan regenerasi saat tidur terus menghasilkan fakta baru."
+
+    - slug: life-hack
+      name: Life Hack
+      description: Trik praktis sehari-hari yang bikin hidup lebih mudah.
+      faceless: true
+      difficulty: pemula
+      rpm: sedang
+      formats: demo + teks + voiceover
+      example_hook: "Trik dapur ini gak ada yang kasih tahu kamu..."
+      guide:
+        audience: "Penonton 18–35 yang suka konten praktis dan langsung bisa diterapkan; ibu rumah tangga, anak kos, dan pekerja muda yang ingin hidup lebih efisien; konten yang sangat shareable karena value langsung."
+        tone: "Helpful dan sedikit conspiratorial — 'kenapa tidak ada yang kasih tahu aku ini dari dulu'. Nada penemuan yang bikin penonton merasa dapat insider knowledge."
+        format: "30–60 detik. 1–3 trik per video. Voiceover + demonstrasi visual langsung + teks step-by-step + hard-sub. Demonstrasi harus jelas dan mudah ditiru."
+        boleh:
+          - "Demonstrasikan trik secara visual — show don't tell"
+          - "Gunakan bahan atau tools yang tersedia di Indomaret/Alfamart atau rumah biasa"
+          - "Tunjukkan hasil sebelum dan sesudah untuk membuktikan trik berhasil"
+          - "Akhiri dengan 'coba hari ini' untuk mendorong action"
+        hindari:
+          - "Jangan publish trik yang tidak benar-benar diverifikasi bekerja dulu"
+          - "Jangan rekomendasikan trik yang membutuhkan alat mahal tanpa alternatif murah"
+          - "Jangan buat life hack yang berpotensi berbahaya tanpa disclaimer"
+          - "Jangan ajarkan trik yang sudah sangat umum diketahui — nilai ada di novelty"
+        pola_hook: "Detik 0: masalah sehari-hari yang relatable + klaim ada cara lebih mudah yang tidak diketahui umum. Langsung demonstrasi di detik 5."
+        contoh_judul:
+          - "Cara potong bawang yang tidak bikin nangis dan 3x lebih cepat"
+          - "Trik HP yang 90% orang tidak pernah tahu padahal ada dari dulu"
+          - "Cara hemat listrik ini jarang diketahui padahal tagihan bisa turun signifikan"
+      micro:
+        - slug: life-hack-dapur-masak
+          name: Life Hack Dapur & Memasak
+          description: Trik memasak dan menyimpan bahan makanan yang praktis dan menghemat waktu, didemonstrasikan secara visual untuk ibu rumah tangga dan anak kos.
+          example_hook: "Cara potong bawang ini gak bikin nangis dan 3x lebih cepat..."
+          guide:
+            audience: "Ibu rumah tangga 25–45 dan anak kos 18–28 yang masak sendiri; siapa saja yang mencari cara lebih efisien di dapur; konten yang sangat shareable di grup keluarga dan teman kos."
+            tone: "Praktis dan sedikit mengejutkan — 'ternyata cara ini ada dan lebih mudah'. Sangat helpful tanpa basa-basi."
+            format: "30–60 detik. Satu trik dapur per video. Demonstrasi visual langsung + voiceover + teks step singkat + hard-sub. Pastikan tangan dan bahan terlihat jelas."
+            boleh:
+              - "Demonstrasikan dengan close-up tangan dan bahan yang jelas"
+              - "Gunakan bahan yang ada di dapur Indonesia tipikal"
+              - "Tunjukkan hasil trik vs cara biasa untuk membuktikan efektivitas"
+              - "Sertakan tip penyimpanan bahan makanan yang relevan untuk iklim Indonesia"
+            hindari:
+              - "Jangan demo trik yang sebenarnya tidak lebih mudah dari cara biasa"
+              - "Jangan gunakan alat khusus yang tidak mudah didapat di Indonesia"
+              - "Jangan rekomendasikan cara menyimpan makanan yang tidak aman secara food safety"
+              - "Jangan tampilkan wajah jika channel faceless"
+            pola_hook: "Detik 0: masalah dapur yang relatable (nangis potong bawang, sayur cepat layu) + langsung demonstrasi solusi. Tidak ada intro panjang."
+            contoh_judul:
+              - "Cara potong bawang ini tidak bikin nangis sama sekali dan tidak butuh alat khusus"
+              - "Simpan cabai dengan cara ini dan tahan 3 bulan tanpa freezer"
+              - "Cara masak nasi lebih pulen yang chef hotel selalu pakai tapi jarang dishare"
+              - "Cara kupas bawang putih 10 siung dalam 10 detik tanpa bau di tangan"
+              - "Teknik ini bikin sayur tetap segar 5 hari lebih lama di kulkas"
+            content_runway: "Dapur Indonesia dengan kekayaan bahan baku lokal, teknik memasak tradisional, dan tantangan iklim tropis menghasilkan life hack dapur yang hampir tak terbatas; setiap bahan makanan dan teknik memasak bisa menjadi satu video."
+
+        - slug: life-hack-produktivitas-hp
+          name: Trik Tersembunyi di Smartphone
+          description: Fitur dan shortcut tersembunyi di Android dan iOS yang jarang diketahui pengguna rata-rata, disajikan sebagai discovery yang memberdayakan.
+          example_hook: "Tombol ini ada di HP kamu tapi 90% orang gak pernah tahu fungsinya..."
+          guide:
+            audience: "Pengguna smartphone Indonesia 16–35; siapa saja yang pakai HP setiap hari tapi merasa tidak memaksimalkan fiturnya; konten yang sangat shareable karena langsung berguna."
+            tone: "Discovery dan empowerment — 'HP kamu lebih powerful dari yang kamu kira dan ini buktinya'. Menyenangkan dan tidak teknis berlebihan."
+            format: "30–60 detik. Satu fitur atau shortcut per video. Screen record HP + voiceover + teks step + hard-sub. Tampilkan langkah-langkah yang sangat jelas dan mudah diikuti."
+            boleh:
+              - "Gunakan screen recording yang jernih dengan teks pointer yang jelas"
+              - "Uji fitur di model HP yang populer di Indonesia (Samsung mid-range, Xiaomi, iPhone)"
+              - "Tunjukkan skenario use-case konkret kapan fitur ini berguna"
+              - "Verifikasi fitur masih ada di versi OS terbaru sebelum publish"
+            hindari:
+              - "Jangan publish trik yang sudah tidak bekerja di versi OS terbaru"
+              - "Jangan rekomendasikan fitur yang membutuhkan root atau jailbreak tanpa warning risiko"
+              - "Jangan tampilkan informasi pribadi di screen recording"
+              - "Jangan klaim fitur yang hanya ada di flagship sebagai fitur universal semua HP"
+            pola_hook: "Detik 0: HP ditunjukkan + klaim ada fitur yang 90% orang tidak tahu. Langsung screen record masuk ke pengaturan di detik 3."
+            contoh_judul:
+              - "Fitur tersembunyi di HP Android yang bikin baterai tahan 30% lebih lama"
+              - "Tombol ini ada di semua iPhone sejak iOS 14 tapi hampir tidak ada yang pakai"
+              - "Cara screenshot scroll panjang di semua HP Android tanpa app tambahan"
+              - "Fitur kamera HP ini bikin foto malam jadi jernih tanpa beli HP baru"
+              - "Shortcut keyboard ini di HP kamu hemat 10 menit sehari dan kamu belum tahu"
+            content_runway: "Android dan iOS merilis update besar setiap tahun dengan fitur baru yang tersembunyi; ratusan model HP beredar di Indonesia masing-masing dengan fitur unik; landscape smartphone terus berevolusi menghasilkan konten baru tanpa henti."
+
+        - slug: life-hack-hemat-uang
+          name: Trik Hemat Uang Sehari-hari
+          description: Cara-cara konkret menghemat pengeluaran harian yang tidak membutuhkan perubahan gaya hidup drastis, relevan untuk kelas menengah Indonesia.
+          example_hook: "Kebiasaan kecil ini hemat Rp500rb per bulan tanpa terasa..."
+          guide:
+            audience: "Pekerja muda dan mahasiswa 20–32 yang merasa gaji tidak cukup; kelas menengah Indonesia yang ingin menabung lebih tapi tidak tahu mulai dari mana; penonton yang butuh tips keuangan praktis bukan teori."
+            tone: "Realistis dan empatis — mengakui bahwa hidup di kota Indonesia mahal, dan memberikan trik konkret yang benar-benar bisa diterapkan. Tidak judgmental tentang gaya hidup."
+            format: "45–75 detik. 1–3 trik hemat per video. Voiceover + teks angka yang jelas + b-roll aktivitas yang relevan + hard-sub. Selalu sertakan estimasi penghematan dalam rupiah."
+            boleh:
+              - "Sertakan estimasi penghematan konkret dalam rupiah per bulan"
+              - "Gunakan contoh harga yang relevan dengan kota besar Indonesia"
+              - "Pilih trik yang tidak membutuhkan perubahan drastis gaya hidup"
+              - "Hitung cumulative savings jika diterapkan setahun untuk motivasi"
+            hindari:
+              - "Jangan rekomendasikan trik yang secara nyata tidak hemat setelah dihitung"
+              - "Jangan buat asumsi pengeluaran yang tidak realistis untuk kebanyakan orang"
+              - "Jangan oversimplify masalah keuangan yang sebetulnya lebih dalam dari life hack"
+              - "Jangan endorse produk atau layanan keuangan tanpa disclosure"
+            pola_hook: "Detik 0: masalah keuangan yang sangat relatable + trik konkret yang mengejutkan dalam angka rupiah. Contoh: 'Kebiasaan ini hemat Rp300rb per bulan dan kamu bahkan tidak akan terasa'."
+            contoh_judul:
+              - "Kebiasaan kopi ini hemat Rp400rb per bulan dan kamu tidak akan terasa bedanya"
+              - "Cara belanja bulanan lebih hemat Rp500rb tanpa kurangi kualitas dengan trik ini"
+              - "Fitur ini di semua e-commerce yang bisa hemat 15-20% dari total belanjaan kamu"
+              - "Tagihan listrik bisa turun Rp200rb per bulan dengan ubah kebiasaan kecil ini"
+              - "Cara masak di kos yang hemat Rp600rb per bulan dibanding makan di luar terus"
+            content_runway: "Setiap kategori pengeluaran orang Indonesia (makanan, transportasi, hiburan, tagihan, belanja) menyimpan potensi penghematan yang bisa dieksplor; trik hemat baru muncul seiring perubahan aplikasi, promo, dan kebiasaan konsumen."

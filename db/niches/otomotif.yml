@@ -1,0 +1,354 @@
+version: 1
+vertical:
+  slug: v-otomotif
+  name: Otomotif
+  description: Konten seputar kendaraan — modifikasi, detailing, fakta, dan tips berkendara untuk pecinta otomotif Indonesia.
+  guide:
+    audience: "Pria 18–45 yang memiliki atau tertarik kendaraan bermotor; komunitas otomotif Indonesia yang besar dan aktif; dari pemilik motor harian yang ingin tips praktis hingga pecinta modifikasi yang ingin inspirasi."
+    tone: "Percaya diri dan berwawasan. Berbicara sebagai sesama pecinta otomotif, bukan pakar yang menggurui. Bahasa kasual tapi tepat — menyebut nama produk dan istilah teknis dengan benar tanpa membingungkan."
+    format: "Video 45–90 detik, dominan footage kendaraan close-up dan wide shot. Vertikal 9:16 untuk daily tips dan before-after; landscape 16:9 untuk riding vlog. Musik energik atau ambient sesuai mood konten."
+    boleh:
+      - "Sebut merk dan model kendaraan spesifik — penonton yang punya motor/mobil sama lebih engaged"
+      - "Tampilkan produk yang dipakai dengan teks singkat nama + harga untuk relevansi praktis"
+      - "Gunakan footage kendaraan di bawah cahaya samping untuk maksimalkan kilap dan detail"
+      - "Before-after dalam satu frame atau wipe reveal — selalu efektif untuk konten detailing dan modif"
+      - "Gunakan istilah komunitas yang dikenal (detailing, modif, plug-in, remap, dll)"
+    hindari:
+      - "Jangan rekomendasikan modifikasi ilegal (lampu strobo, knalpot brong) tanpa konteks hukum yang jelas"
+      - "Jangan pakai musik ber-hak-cipta — pilih royalty-free yang energik"
+      - "Jangan klaim produk bisa atasi masalah yang butuh perbaikan mekanik profesional"
+      - "Jangan skip langkah keselamatan berkendara jika konten menyangkut teknik berkendara"
+      - "Jangan gunakan footage kendaraan di jalan yang menunjukkan pelanggaran lalu lintas"
+    pola_hook: "Detik 0–2: close-up detail kendaraan yang paling menarik perhatian (baret, cat kusam, part baru) + teks singkat konteks. Langsung masuk ke aksi di detik 3."
+    contoh_judul:
+      - "Mobil bekas ini disulap mewah dengan modal yang bikin kaget"
+      - "Brand otomotif ini kuasai Indonesia bukan karena paling bagus, dan ini faktanya"
+      - "Jalur ini 3 jam dari kota, hampir tidak ada yang tahu, ini dokumentasi lengkapnya"
+
+  niches:
+    - slug: car-auto
+      name: "Otomotif / Detailing"
+      description: "Mobil, modif, detailing."
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: footage + before-after + voiceover
+      example_hook: "Mobil bekas ini disulap mewah..."
+      guide:
+        audience: "Pria 20–45 pemilik mobil yang ingin merawat atau meningkatkan kendaraannya sendiri; penggemar modifikasi yang mencari inspirasi budget-friendly; penonton DIY otomotif yang frustrasi dengan harga salon dan bengkel."
+        tone: "Praktis dan empowering. Setiap langkah terlihat bisa dilakukan sendiri di rumah. Jargon teknis dijelaskan singkat, tidak diasumsikan diketahui."
+        format: "60–90 detik. Struktur: kondisi awal (baret, kusam, atau standar) → proses dengan close-up produk dan tangan bekerja → reveal hasil. Before-after dalam satu frame di akhir. Vertikal 9:16."
+        boleh:
+          - "Tampilkan perbandingan satu panel yang sudah dikerjakan vs yang belum untuk dampak visual instan"
+          - "Sebutkan nama produk dan harga — penonton menghargai transparansi biaya"
+          - "Gunakan cahaya dari samping saat reveal untuk memaksimalkan kilap yang terlihat"
+          - "SFX suara compound, lap microfiber, dan mesin buffer sangat efektif"
+        hindari:
+          - "Jangan tampilkan wajah — channel ini faceless"
+          - "Jangan gunakan produk yang tidak tersedia di toko otomotif Indonesia"
+          - "Jangan rekam kondisi kendaraan yang sudah bersih — kondisi awal harus terlihat bermasalah"
+          - "Jangan skip langkah — penonton butuh tahu prosesnya nyata, bukan instan"
+        pola_hook: "Detik 0: close-up baret atau cat kusam paling parah + teks singkat ('7 tahun tidak dipoles'). Langsung ambil produk di detik 3."
+        contoh_judul:
+          - "Mobil bekas ini disulap mewah dengan modal yang bikin kaget"
+          - "Baret halus ini hilang tanpa cat ulang — ini produk dan tekniknya"
+          - "Modifikasi tampilan mobil di bawah Rp1jt yang hasilnya bikin dealer iri"
+      micro:
+        - slug: car-auto-detailing-poles-diy
+          name: Poles Mobil Sendiri di Rumah — Hasil Salon
+          description: Tutorial detailing mobil DIY langkah-langkah poles cat hingga hasil mendekati salon profesional, menggunakan produk yang tersedia di toko otomotif lokal dengan harga terjangkau.
+          example_hook: "Cat baret ini dihilangkan sendiri di garasi dengan alat seharga Rp200rb..."
+          guide:
+            audience: "Pria 22–45 pemilik mobil yang sadar salon detailing mahal; penonton DIY yang percaya bisa lakukan sendiri jika diberi panduan yang benar; penggemar before-after kendaraan."
+            tone: "Percaya diri dan teknis tanpa rumit. Gerakan tangan yang terampil dan terukur — setiap pass compound dan polish dilakukan dengan ritme yang konsisten. Hasil berbicara sendiri."
+            format: "75–90 detik. Struktur: close-up cat kusam/baret → aplikasi compound (gerakan melingkar terlihat jelas) → buffing → aplikasi polish → lap microfiber → reveal kilap panel per panel → wide shot mobil selesai. Vertikal 9:16, pencahayaan dari samping untuk kilap maksimal."
+            boleh:
+              - "Tampilkan split: satu panel selesai vs panel sebelahnya belum — efek dramatis instan"
+              - "Sebut nama produk (compound, polish, microfiber) dengan teks overlay singkat"
+              - "SFX suara buffer dan lap diboost sedikit untuk kepuasan audio"
+              - "Reveal akhir di bawah cahaya samping dengan kamera bergerak lambat di sepanjang bodi"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan rekam mobil dengan cat yang sudah terlalu parah sehingga tidak bisa dipoles — misleading"
+              - "Jangan pakai musik keras yang kalahkan suara proses buffer"
+              - "Jangan skip langkah dekontaminasi sebelum compound — penonton butuh lihat proses lengkap"
+            pola_hook: "Detik 0: close-up baret atau swirl mark terburuk di panel + teks 'salon minta Rp800rb, aku kerjain sendiri'. Langsung aplikasi compound di detik 3."
+            contoh_judul:
+              - "Salon minta Rp800rb, aku poles sendiri di garasi dengan hasil yang sama"
+              - "Baret halus di Toyota Avanza ini hilang total tanpa cat ulang"
+              - "Cara poles mobil sendiri yang benar — step by step dari compound sampai coating"
+              - "Cat mobil kusam 5 tahun ini balik kilap dalam 2 jam dengan alat Rp300rb"
+              - "Ini perbedaan compound vs polish yang tidak pernah dijelaskan sales toko otomotif"
+            content_runway: "Setiap merek dan model mobil, tingkat keparahan cat, jenis produk (compound, polish, coating), dan teknik (manual vs mesin buffer) menghasilkan video yang berbeda secara visual dan teknis; pasar mobil Indonesia menjamin audiens yang sangat besar."
+
+        - slug: car-auto-modif-budget-minim
+          name: Modifikasi Tampilan Mobil dengan Budget Rp1jt
+          description: Panduan modifikasi estetik mobil yang memberikan perubahan visual signifikan dengan budget di bawah Rp1 juta — wrap parsial, lampu DRL, dan aksesoris interior murah.
+          example_hook: "Mobil ini terlihat 10 juta lebih mahal setelah modifikasi seharga Rp800rb..."
+          guide:
+            audience: "Pria 20–35 pemilik mobil harian yang ingin tampilan lebih fresh tanpa biaya besar; penonton modifikasi budget yang mencari inspirasi konkret; pemilik MPV atau LCGC yang ingin berbeda dari standar."
+            tone: "Kreatif dan resource-conscious. Menunjukkan bahwa tampilan premium bisa dicapai dengan budget terbatas jika tahu caranya. Setiap rupiah yang dikeluarkan harus terlihat hasilnya."
+            format: "60–90 detik. Struktur: mobil kondisi standar → proses pemasangan modifikasi per bagian (close-up tangan dan part) → reveal setiap perubahan → wide shot mobil setelah semua terpasang. Vertikal 9:16."
+            boleh:
+              - "Tampilkan price tag setiap modifikasi sebagai teks overlay — transparansi membangun kepercayaan"
+              - "Perlihatkan proses pemasangan yang terlihat bisa dilakukan sendiri tanpa ke bengkel"
+              - "Before-after dari sudut yang sama di akhir video untuk perbandingan adil"
+              - "Sebut nama toko atau marketplace tempat beli part untuk relevansi penonton"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan rekomendasikan modifikasi yang membutuhkan pembongkaran mesin tanpa bantuan mekanik"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan gunakan part yang tidak bisa ditemukan di toko otomotif atau marketplace Indonesia"
+            pola_hook: "Detik 0: wide shot mobil tampilan pabrik biasa + teks 'mobil ini akan berubah dengan budget Rp800rb'. Langsung mulai pemasangan di detik 3."
+            contoh_judul:
+              - "Mobil ini terlihat 10 juta lebih mahal setelah modifikasi seharga Rp800rb"
+              - "5 modifikasi tampilan yang bikin Avanza keliatan seperti SUV premium"
+              - "DRL, wrap parsial, dan karpet baru — total habis Rp750rb dan hasilnya ini"
+              - "Cara buat interior mobil terlihat mahal tanpa ke bengkel modif"
+              - "Modifikasi mobil LCGC budget mahasiswa yang dealer gak akan kasih tahu kamu"
+            content_runway: "Setiap model mobil (ada ratusan di Indonesia), setiap jenis modifikasi (eksterior, interior, audio, lampu), dan setiap range budget menghasilkan video unik; komunitas modifikasi Indonesia sangat aktif dan selalu mencari inspirasi baru."
+
+        - slug: car-auto-beli-bekas-jebakan
+          name: Jebakan Tersembunyi saat Beli Mobil Bekas
+          description: Panduan inspeksi mobil bekas yang mengungkap masalah yang disembunyikan penjual — bekas tabrakan, odometer mundur, dan kerusakan mesin yang baru terasa setelah dibeli.
+          example_hook: "Mobil ini sempurna di foto, tapi cek satu titik ini dan terungkap semuanya..."
+          guide:
+            audience: "Calon pembeli mobil bekas 25–40 yang tidak punya background otomotif; penonton yang pernah tertipu atau takut tertipu saat beli second; mereka yang ingin tahu cara cek sendiri sebelum bayar."
+            tone: "Investigatif dan protektif. Setiap trik penjual diungkap dengan nada 'aku tahu rahasianya'. Penonton harus merasa dilindungi dan dipersenjatai setelah nonton."
+            format: "60–90 detik. Satu video = satu jenis jebakan dengan demonstrasi visual langsung di kendaraan. Close-up titik inspeksi spesifik. Teks overlay menandai area yang diperiksa. Vertikal 9:16."
+            boleh:
+              - "Tunjukkan fisik bagian yang diperiksa secara close-up — penonton harus tahu persis di mana"
+              - "Gunakan contoh nyata (mobil yang sudah diperiksa) untuk demonstrasi autentik"
+              - "Tambahkan teks 'tanda bahaya' dengan warna merah saat masalah ditemukan"
+              - "Akhiri dengan satu kalimat ringkas: 'kalau ada ini, jangan beli'"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan buat konten yang terasa seperti menyerang penjual jujur — fokus pada edukasi pembeli"
+              - "Jangan pakai istilah teknis tanpa penjelasan singkat di teks overlay"
+              - "Jangan rekomendasikan cek yang membutuhkan alat mahal — harus bisa dilakukan siapa saja"
+            pola_hook: "Detik 0: close-up foto listing mobil yang terlihat sempurna + teks 'foto ini menyembunyikan sesuatu'. Langsung ke inspeksi fisik di detik 3."
+            contoh_judul:
+              - "Mobil ini sempurna di foto, cek titik ini dulu sebelum bayar uang muka"
+              - "Odometer mobil ini sudah dimundurkan — ini cara deteksinya tanpa alat"
+              - "Bekas tabrakan yang disembunyikan dengan cat ulang — ini yang penjual tidak ingin kamu periksa"
+              - "3 titik inspeksi yang wajib dicek sebelum beli mobil bekas apapun"
+              - "Mesin ini terlihat mulus karena baru dibersihkan — ini cara membedakannya"
+            content_runway: "Setiap jenis penipuan mobil bekas (bekas banjir, odometer mundur, cat ulang, mesin tukar), setiap komponen yang bisa dimanipulasi, dan setiap model mobil populer menghasilkan episode berbeda; pasar mobil bekas Indonesia sangat besar dan masalah ini selalu relevan."
+
+    - slug: car-facts
+      name: "Fakta Otomotif"
+      description: "Fakta mobil/motor, sejarah brand."
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: footage + voiceover
+      example_hook: "Kenapa mobil ini dilarang di Indonesia..."
+      guide:
+        audience: "Pria 20–40 yang suka konten informatif seputar industri otomotif; penggemar sejarah brand dan teknologi kendaraan; penonton yang ingin tahu 'kenapa' di balik fakta otomotif yang selama ini tidak diketahui."
+        tone: "Investigatif dan mengungkap. Gaya 'kamu tidak pernah diceritakan ini' — setiap fakta disampaikan seolah insider information. Tidak menggurui, lebih ke sesama yang baru tahu sesuatu menarik."
+        format: "45–75 detik. Struktur: pertanyaan atau fakta mengejutkan (hook) → konteks singkat → data atau kejadian nyata → punchline atau takeaway. Voiceover dengan footage relevan dan teks overlay kunci. Vertikal 9:16."
+        boleh:
+          - "Gunakan footage arsip atau stock video kendaraan dan pabrik untuk visualisasi"
+          - "Sertakan angka atau tahun spesifik sebagai teks overlay untuk kredibilitas"
+          - "Tutup dengan pertanyaan atau fakta tambahan yang mendorong komentar"
+          - "Bandingkan dengan konteks Indonesia untuk relevansi lokal"
+        hindari:
+          - "Jangan tampilkan wajah — channel ini faceless"
+          - "Jangan klaim fakta tanpa bisa diverifikasi dari sumber publik"
+          - "Jangan pakai musik ber-hak-cipta"
+          - "Jangan narasi terlalu panjang — satu video, satu fakta utama"
+        pola_hook: "Detik 0: pertanyaan atau pernyataan mengejutkan sebagai teks besar + footage kendaraan yang dimaksud. Jawaban mulai di detik 4."
+        contoh_judul:
+          - "Kenapa brand ini kuasai 90% pasar Indonesia padahal bukan yang terbaik"
+          - "Fitur ini sudah ada di mobilmu tapi sales tidak pernah memberitahu kamu"
+          - "Desain ini membunuh ratusan orang sebelum pabrikan akhirnya mengakuinya"
+      micro:
+        - slug: car-facts-sejarah-brand-jepang
+          name: Sejarah Gelap Brand Otomotif Jepang yang Kuasai Indonesia
+          description: Kisah di balik dominasi brand Jepang di pasar otomotif Indonesia — keputusan politik, perjanjian eksklusif, dan persaingan yang mematikan brand lokal — yang jarang dibahas.
+          example_hook: "Brand ini kuasai 90% pasar Indonesia bukan karena paling bagus, tapi karena ini..."
+          guide:
+            audience: "Pria 25–45 yang penasaran dengan industri dan bisnis otomotif; penonton berita ekonomi dan bisnis yang suka konten sejarah; pecinta otomotif yang ingin tahu konteks di balik pilihan kendaraan di Indonesia."
+            tone: "Investigatif dan sedikit provokatif. Nada 'ada yang tidak pernah diceritakan ke kamu' — mengungkap keputusan bisnis dan politik di balik fakta pasar yang selama ini dianggap natural."
+            format: "60–75 detik. Struktur: data dominasi pasar yang mengejutkan (hook) → flashback historis → keputusan kunci (perjanjian, kebijakan, atau momen pivotal) → dampak yang masih terasa hari ini. Voiceover + teks overlay kunci + footage arsip/stock. Vertikal 9:16."
+            boleh:
+              - "Gunakan angka market share spesifik sebagai teks overlay untuk kredibilitas"
+              - "Referensikan nama brand dan tahun kejadian konkret — specificity membangun kepercayaan"
+              - "Tutup dengan pertanyaan 'apakah ini fair?' untuk memancing diskusi di kolom komentar"
+              - "Bandingkan dengan negara lain di ASEAN yang situasinya berbeda"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan buat klaim yang tidak bisa diverifikasi dari sumber publik"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan buat narasi terlalu panjang — fokus satu keputusan atau momen kunci per video"
+            pola_hook: "Detik 0: statistik market share besar sebagai teks besar (mis. '90% mobil di jalan ini dari negara yang sama') + footage jalanan Indonesia. Mulai narasi di detik 3."
+            contoh_judul:
+              - "Brand ini kuasai 90% pasar Indonesia bukan karena paling bagus, ini cerita sebenarnya"
+              - "Kenapa Eropa punya ratusan brand mobil tapi Indonesia hanya terima tiga brand ini"
+              - "Perjanjian ini di tahun 1970-an yang bikin kamu tidak punya pilihan mobil sampai sekarang"
+              - "Brand lokal Indonesia yang mati karena kebijakan impor, dan kamu mungkin tidak pernah dengar namanya"
+              - "Toyota, Honda, Suzuki — ketiganya dari negara yang sama, dan ini bukan kebetulan"
+            content_runway: "Setiap brand Jepang memiliki sejarah masuk Indonesia yang berbeda; ditambah perbandingan dengan negara ASEAN lain, era kebijakan yang berganti, dan brand lokal yang gagal, topik ini bisa menghasilkan seri panjang yang saling terkait."
+
+        - slug: car-facts-teknologi-tersembunyi
+          name: Fitur Tersembunyi di Mobil yang Kamu Punya
+          description: Showcase fitur-fitur yang sudah ada di mobil populer Indonesia tapi jarang diketahui pemiliknya karena tidak ada di buku manual atau sales tidak menjelaskan.
+          example_hook: "Tombol ini ada di dasbor mobilmu dan hampir tidak ada yang tahu fungsinya..."
+          guide:
+            audience: "Pemilik mobil 22–50 dari semua latar belakang; penonton yang merasa mobilnya biasa-biasa saja padahal ada fitur yang belum dimanfaatkan; siapa saja yang pernah bertanya-tanya fungsi tombol misterius di dashboard."
+            tone: "Discovery dan empowering. Seolah memberikan kunci rahasia yang sudah dimiliki penonton selama ini tapi tidak diketahui. 'Kamu sudah punya ini dari dulu' lebih kuat dari 'ini teknologi baru'."
+            format: "45–60 detik. Satu fitur per video. Close-up tombol atau bagian yang dimaksud → demonstrasi cara kerja secara real-time → dampak atau manfaat nyata. Teks overlay nama fitur dan cara aktivasinya. Vertikal 9:16."
+            boleh:
+              - "Sebut model mobil spesifik di judul dan awal video — penonton yang punya mobil sama auto tertarik"
+              - "Demonstrasikan fitur secara real-time di dalam mobil nyata, bukan animasi"
+              - "Tutup dengan 'coba sekarang' untuk mendorong penonton langsung praktek"
+              - "Tambahkan teks lokasi fisik tombol/fitur dengan panah atau highlight"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan bahas fitur yang hanya ada di model top-of-the-line yang jarang dimiliki"
+              - "Jangan pakai musik keras yang ganggu narasi"
+              - "Jangan buat klaim fitur yang tidak ada di model yang disebutkan"
+            pola_hook: "Detik 0: close-up tombol atau bagian dasbor yang tidak jelas fungsinya + teks 'hampir tidak ada pemilik mobil ini yang tahu ini ada'. Langsung demonstrasi di detik 3."
+            contoh_judul:
+              - "Tombol ini ada di semua Avanza dan hampir tidak ada yang pernah gunakannya"
+              - "Fitur ini sudah ada di Honda Jazz kamu dari hari pertama beli, coba sekarang"
+              - "5 fungsi tersembunyi di Rush yang sales tidak jelaskan saat test drive"
+              - "Cara aktifkan mode ini di Innova — penjual tidak kasih tahu karena gak tahu juga"
+              - "Tombol misterius di dasbor Xenia ini punya fungsi yang lebih berguna dari yang kamu kira"
+            content_runway: "Setiap model mobil populer Indonesia (Avanza, Innova, Xpander, Brio, dll) memiliki sejumlah fitur yang underutilized; ditambah versi dan tahun produksi yang berbeda, konten ini hampir tidak ada habisnya selama pasar mobil Indonesia terus berkembang."
+
+        - slug: car-facts-kecelakaan-desain
+          name: Kecelakaan Desain Mobil yang Mengubah Industri
+          description: Kisah recall dan kegagalan desain otomotif bersejarah yang merugikan atau membahayakan dan akhirnya mengubah standar keselamatan industri secara permanen.
+          example_hook: "Kesalahan desain ini membunuh ratusan orang sebelum pabrikan akhirnya mengakuinya..."
+          guide:
+            audience: "Pria 25–45 yang suka konten sejarah industri dan investigasi korporat; penonton true crime yang tertarik versi otomotif; pecinta mobil yang ingin tahu di balik angka penjualan ada cerita gelap."
+            tone: "Investigatif dan sedikit sinematik. Narasi dibangun seperti thriller: ada momen ketika semuanya berjalan baik, ada momen ketika sesuatu mulai salah, ada puncak tragedi, dan ada perubahan yang dipaksa terjadi."
+            format: "60–90 detik. Struktur: fakta awal yang mengejutkan (hook) → konteks produk dan masalah → laporan insiden pertama → respons pabrikan yang lambat → titik puncak (recall atau tuntutan) → perubahan standar industri. Voiceover + footage/stock + teks kronologis. Vertikal 9:16."
+            boleh:
+              - "Gunakan angka korban atau unit yang di-recall sebagai teks overlay untuk dampak"
+              - "Referensikan nama pabrikan, model, dan tahun secara spesifik — informasi publik"
+              - "Tutup dengan pelajaran yang relevan untuk pembeli mobil hari ini"
+              - "Bandingkan dengan standar keselamatan yang berlaku sekarang sebagai kontras"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan sensasionalisasi korban secara berlebihan — fakta sudah cukup kuat"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan buat klaim yang tidak bisa diverifikasi dari berita atau dokumen publik"
+            pola_hook: "Detik 0: angka korban atau jumlah unit recall sebagai teks besar + footage model mobil yang dimaksud. Mulai narasi konteks di detik 4."
+            contoh_judul:
+              - "Kesalahan desain ini membunuh ratusan orang sebelum Toyota akhirnya mengakuinya"
+              - "Recall terbesar dalam sejarah otomotif dimulai dari satu laporan keluhan yang diabaikan"
+              - "Airbag yang seharusnya menyelamatkan nyawa justru membunuh — kronologi Takata"
+              - "Desain ini lolos uji keselamatan tapi gagal di jalan nyata — ini kenapa"
+              - "Pabrikan ini tahu ada masalah 5 tahun sebelum recall dilakukan, ini dokumen internalnya"
+            content_runway: "Sejarah otomotif penuh dengan kasus recall besar dan kegagalan desain dari berbagai dekade dan pabrikan; setiap kasus baru di berita global juga menjadi peluang konten segar yang relevan."
+
+    - slug: moto-vlog
+      name: "Moto / Riding"
+      description: "Riding, touring, tips motor."
+      faceless: false
+      difficulty: menengah
+      rpm: sedang
+      formats: helmet-cam + voiceover
+      example_hook: "Jalur ini berbahaya tapi indah..."
+      guide:
+        audience: "Pria 18–40 yang aktif berkendara motor; komunitas touring Indonesia yang besar; penonton yang bermimpi touring jarak jauh tapi belum pernah melakukannya; pencari jalur dan destinasi baru."
+        tone: "Adventurous dan jujur. Tidak menutupi tantangan perjalanan — justru tantangan adalah kontennya. Berbicara seperti teman riding yang menceritakan pengalaman langsung."
+        format: "60–120 detik untuk tips dan guide; 2–5 menit untuk vlog perjalanan penuh. Helmet-cam footage utama, dikombinasi drone shot untuk konteks lokasi. Voiceover kasual atau on-camera narasi. Vertikal 9:16 atau landscape 16:9."
+        boleh:
+          - "Sebut nama jalur dan lokasi spesifik — komunitas touring sangat menghargai informasi konkret"
+          - "Tampilkan kondisi jalan jujur termasuk yang jelek atau berbahaya — autentisitas membangun kepercayaan"
+          - "Gunakan footage drone untuk reveal pemandangan yang tidak bisa ditangkap helmet-cam"
+          - "Ceritakan pengalaman personal — momen mogok, tersesat, atau ketemu orang lokal selalu menarik"
+        hindari:
+          - "Jangan tampilkan riding di luar batas kecepatan atau pelanggaran lalu lintas yang jelas"
+          - "Jangan pakai musik ber-hak-cipta"
+          - "Jangan over-claim soal kondisi jalan — penonton yang kemudian kecewa akan komplain"
+          - "Jangan rekam dengan helmet-cam yang goyang berlebihan tanpa stabilisasi — menyiksa penonton"
+        pola_hook: "Detik 0: footage pemandangan paling dramatis dari jalur atau drone shot menakjubkan + teks lokasi dan jarak dari kota terdekat. Mulai narasi perjalanan di detik 3."
+        contoh_judul:
+          - "Jalur ini 3 jam dari Jakarta dan hampir tidak ada yang tahu, ini dokumentasinya"
+          - "Touring pertama 500km dan ini semua yang hampir bikin aku menyesal tidak persiapkan"
+          - "Belajar motor kopling dari nol dalam satu hari — ini yang sebenarnya terjadi"
+      micro:
+        - slug: moto-vlog-jalur-tersembunyi-jawa
+          name: Jalur Motor Tersembunyi di Pulau Jawa
+          description: Dokumentasi riding melewati jalur pegunungan atau pedesaan di Jawa yang belum banyak dikenal komunitas touring, dengan tips waktu terbaik dan kondisi jalan yang jujur.
+          example_hook: "Jalur ini 3 jam dari Jakarta dan hampir tidak ada yang tahu, ini dokumentasinya..."
+          guide:
+            audience: "Rider 20–40 di Pulau Jawa yang bosan dengan jalur touring yang sudah ramai; komunitas trail dan adventure yang mencari discovery konten; penonton yang ingin tahu jalur baru sebelum mencobanya sendiri."
+            tone: "Explorer dan jujur. Tidak melebih-lebihkan keindahan, tidak menyembunyikan kondisi jalan yang sulit. Penonton merasa mendapat informasi dari teman yang sudah survei duluan."
+            format: "90–120 detik. Struktur: reveal awal pemandangan terbaik (hook) → titik mulai perjalanan dengan peta overlay singkat → footage sepanjang jalur dengan komentar kondisi → highlight momen terbaik → tips praktis di akhir (waktu terbaik, kondisi motor yang cocok, kontak warung/bengkel lokal). Landscape 16:9 atau vertikal 9:16."
+            boleh:
+              - "Sertakan koordinat GPS atau nama desa sebagai teks overlay untuk penonton yang ingin coba"
+              - "Tunjukkan kondisi jalan terburuk secara jujur — jangan hanya edit bagian bagus"
+              - "Drone shot pemandangan dari udara adalah aset konten yang sangat kuat untuk jalur ini"
+              - "Tampilkan interaksi dengan warga lokal — menambah dimensi human interest"
+            hindari:
+              - "Jangan riding dengan kecepatan berbahaya di jalur sempit yang direkam untuk konten"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan klaim jalur 'bebas kendaraan' jika kondisi sebenarnya tidak selalu begitu"
+              - "Jangan rekam dengan stabilisasi buruk di jalur mulus — kualitas footage harus terjaga"
+            pola_hook: "Detik 0: drone shot pemandangan paling dramatis dari jalur + teks 'X jam dari [kota besar], hampir tidak ada yang tahu ini ada'. Langsung masuk footage riding di detik 4."
+            contoh_judul:
+              - "Jalur pegunungan ini 3 jam dari Jakarta dan belum masuk Google Maps yang populer"
+              - "Riding ke desa ini dan bertemu pemandangan yang lebih bagus dari Bromo tapi sepi"
+              - "Jalur tersembunyi Garut ini kondisinya jujur aku ceritakan sebelum kamu berangkat"
+              - "5 jalur motor di Jawa Tengah yang hanya diketahui komunitas lokal — ini koordinatnya"
+              - "Riding ke sini sendirian dan tidak ketemu satu motor lain pun selama 2 jam"
+            content_runway: "Pulau Jawa memiliki ratusan jalur pegunungan dan pedesaan yang belum terdokumentasi; setiap musim, kondisi jalan berubah; setiap kota besar memiliki jalur circuitnya sendiri — konten ini hampir tidak ada habisnya selama ada jalur yang belum pernah difilmkan."
+
+        - slug: moto-vlog-tips-touring-pemula
+          name: Tips Touring Motor Pertama Kali Tanpa Panik
+          description: Panduan persiapan touring motor jarak jauh untuk pemula — checklist motor, barang bawaan, manajemen stamina, dan apa yang dilakukan saat mogok di jalan.
+          example_hook: "Touring pertama aku 500km tanpa persiapan ini, dan ini yang hampir buat aku menyesal..."
+          guide:
+            audience: "Rider pemula 18–30 yang bermimpi touring jarak jauh tapi belum berani karena tidak tahu harus persiapkan apa; penonton yang baru beli motor dan ingin langsung touring; orang yang baru join komunitas motor."
+            tone: "Supportive dan dari pengalaman nyata. Bukan ceramah teori — tapi cerita 'ini yang aku pelajari dari pengalaman burukku sendiri'. Penonton harus merasa lebih percaya diri, bukan lebih takut."
+            format: "75–90 detik. Format listicle dengan demonstrasi visual per poin. Setiap tip ditampilkan dengan close-up barang atau situasinya. Teks overlay untuk setiap poin kunci. Vertikal 9:16."
+            boleh:
+              - "Tampilkan barang bawaan secara fisik — penonton suka lihat packing yang nyata"
+              - "Ceritakan satu pengalaman buruk nyata sebagai opening — membangun kredibilitas"
+              - "Gunakan checklist visual yang bisa di-screenshot penonton"
+              - "Sertakan estimasi biaya realistis (bensin, makan, penginapan darurat) untuk rute umum"
+            hindari:
+              - "Jangan rekomendasikan touring jarak jauh dengan motor yang belum di-servis"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan skip tips keselamatan dasar (jaket, helm SNI, sepatu) — ini tanggung jawab konten"
+              - "Jangan over-romantisasi touring — jujur tentang kelelahan fisik dan risiko cuaca"
+            pola_hook: "Detik 0: footage mogok di pinggir jalan sepi atau kondisi hujan deras saat touring + teks 'hal ini terjadi di touring pertamaku karena aku tidak tahu ini'. Masuk ke tips di detik 4."
+            contoh_judul:
+              - "Touring pertama 500km tanpa persiapan ini dan hampir tidak selesai — jangan ulangi kesalahanku"
+              - "Checklist motor sebelum touring yang mekanik selalu sarankan tapi jarang dilakukan"
+              - "Berapa uang yang harus dibawa untuk touring Jakarta-Yogyakarta pertama kali"
+              - "Mogok di jalur sepi malam hari — ini yang harus dilakukan dan yang pertama kali aku tidak tahu"
+              - "Packing touring motor yang benar untuk pemula — ini yang muat, ini yang tidak perlu dibawa"
+            content_runway: "Setiap aspek touring (persiapan, navigasi, keselamatan, keuangan, fisik, mekanik) menghasilkan video tersendiri; setiap rute populer Indonesia (Jawa, Sumatera, Sulawesi) menghasilkan panduan spesifik; komunitas touring Indonesia sangat besar dan selalu ada anggota baru."
+
+        - slug: moto-vlog-kopling-manual-belajar
+          name: Belajar Motor Kopling Manual dalam Satu Hari
+          description: Dokumentasi proses belajar motor kopling manual dari nol hingga bisa jalan sendiri dalam satu hari, dengan penjelasan teknis yang menghilangkan rasa takut pemula.
+          example_hook: "Aku tidak pernah pegang motor kopling, ini yang terjadi setelah 8 jam latihan..."
+          guide:
+            audience: "Pemula 17–30 yang ingin belajar motor kopling tapi takut atau tidak tahu mulai dari mana; pengguna matic yang ingin upgrade ke manual untuk touring atau gaya; orang tua yang ingin ajari anaknya motor manual."
+            tone: "Jujur dan encouraging. Dokumentasikan kegagalan dan frustrasi nyata — bukan langsung bisa. Penonton yang sedang berjuang harus merasa tervalidasi dan termotivasi bahwa bisa, asal tahu tekniknya."
+            format: "90–120 detik. Struktur: kondisi awal (belum bisa sama sekali) → penjelasan mekanisme kopling dalam 20 detik → latihan pertama yang gagal → progres bertahap → momen pertama kali bisa jalan mulus → tips ringkasan di akhir. Vertikal 9:16."
+            boleh:
+              - "Tampilkan kegagalan dan mati mesin berkali-kali — ini yang paling relatable"
+              - "Gunakan animasi atau diagram sederhana untuk menjelaskan mekanisme kopling dalam 10 detik"
+              - "Dokumentasikan jam demi jam progres yang nyata"
+              - "Tampilkan momen 'aha' ketika akhirnya berhasil — ini klimaks emosional konten"
+            hindari:
+              - "Jangan latihan di jalan raya umum — area parkir kosong untuk keselamatan"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan skip teknik keselamatan dasar — helm dan sepatu wajib tampil dalam video"
+              - "Jangan buat terlihat mudah jika kenyataannya susah — autentisitas lebih berharga"
+            pola_hook: "Detik 0: footage mesin mati berkali-kali saat mencoba kopling + teks 'hari 1 belajar kopling manual, dan ini kondisi jam pertama'. Langsung masuk ke proses latihan di detik 3."
+            contoh_judul:
+              - "Aku tidak pernah pegang motor kopling, ini yang terjadi setelah 8 jam latihan"
+              - "Belajar motor manual dalam satu hari — semua momen gagal dan akhirnya berhasil"
+              - "Teknik kopling yang benar yang instruktur kursus tidak pernah jelaskan sejelas ini"
+              - "Dari matic ke manual dalam satu hari — timeline jujur dari tidak bisa sama sekali"
+              - "Rasa takut belajar kopling ini hilang setelah aku pahami satu hal sederhana ini"
+            content_runway: "Setiap jenis motor manual (sport, bebek, trail, adventure) memiliki karakteristik kopling berbeda; bisa dikembangkan ke seri 'skill motor lanjutan' seperti wheelie aman, menikung tajam, dan riding off-road; audiens pemula motor di Indonesia sangat besar dan terus bertambah."

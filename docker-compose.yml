@@ -220,6 +220,9 @@ services:
       - ./youtube_token.json:/app/youtube_token.json
       - /var/run/docker.sock:/var/run/docker.sock  # Enable container restart via docker SDK (gated by nginx basic auth)
       - ./openclaw/agents:/openclaw-agents:rw      # Read-write access to OpenClaw session store (rw needed for session delete)
+      - ./analyze-frames:/app/analyze-frames        # Shared frame dir: host bridge + container see same files
+    extra_hosts:
+      - "host.docker.internal:host-gateway"         # Linux: reach host bridge; harmless on Docker Desktop
     environment:
       - OPENCLAW_SESSIONS_DIR=/openclaw-agents/reelbot/sessions
       - CLIPROXY_URL=http://cliproxy:8317/v1
@@ -246,6 +249,8 @@ services:
       - VPS_HOST=${DOMAIN:-general-creation.xyz}
       - ANALYTICS_DB=/output/analytics.json
       - DATABASE_URL=postgresql://admin:${POSTGRES_PASSWORD}@postgres:5432/content_automation
+      - ANALYZE_FRAME_DIR=/app/analyze-frames
+      - CLAUDE_BRIDGE_URL=${CLAUDE_BRIDGE_URL:-http://host.docker.internal:9999}
     mem_limit: 512m
     cpus: "0.5"
     depends_on:

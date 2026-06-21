@@ -1,0 +1,678 @@
+version: 1
+vertical:
+  slug: v-hiburan
+  name: Hiburan
+  description: Konten hiburan ringan — komedi, reaksi, meme, dan konten relatable untuk penonton yang ingin tertawa dan terhibur.
+  guide:
+    audience: "Penonton 15–35 tahun yang scroll untuk hiburan cepat; campuran pelajar, mahasiswa, dan pekerja muda yang butuh tawa setelah hari panjang; tertarik pada konten relatable kehidupan Indonesia sehari-hari."
+    tone: "Ringan, energik, dan relatable. Humor yang tidak perlu dijelaskan — langsung ngena di momen pertama. Gaya kasual anak muda Indonesia, tidak formal, tidak lecturing."
+    format: "Video 15–60 detik, vertikal 9:16. Hook wajib dalam 2 detik pertama. Punchline atau payoff sebelum detik 15 agar tidak di-skip. Caption dan teks overlay penting — banyak penonton nonton tanpa suara."
+    boleh:
+      - "Gunakan situasi kehidupan nyata Indonesia yang langsung dikenali penonton"
+      - "Teks overlay besar dan kontras untuk penonton tanpa suara"
+      - "Sound effect komedi atau musik trending sebagai amplifier humor"
+      - "Format POV, split-screen, atau punchline cut sangat efektif"
+    hindari:
+      - "Jangan gunakan humor yang menghina suku, agama, ras, atau gender tertentu"
+      - "Jangan hook lebih dari 3 detik — penonton hiburan paling cepat skip"
+      - "Jangan gunakan musik ber-hak-cipta tanpa lisensi"
+      - "Jangan punchline yang butuh penjelasan panjang — kalau perlu dijelaskan, tidak lucu"
+    pola_hook: "Detik 0–2: tunjukkan situasi yang langsung dikenali penonton ('POV:', 'pas kamu...', 'ketika...') atau visual absurd yang memancing penasaran. Langsung ke konflik di detik 3."
+    contoh_judul:
+      - "POV kamu yang paling kalem di grup tapi selalu disalahin"
+      - "Kenapa ini terjadi persis sama aku setiap minggu"
+
+  niches:
+    - slug: comedy-skit
+      name: "Komedi / Skit"
+      description: Sketsa lucu, butuh akting.
+      faceless: false
+      difficulty: menengah
+      rpm: rendah
+      formats: skit + punchline cepat
+      example_hook: "Pas kamu minta tolong istri..."
+      guide:
+        audience: "Remaja dan dewasa muda 17–30 yang suka humor situasional Indonesia; penonton yang ingin validasi bahwa pengalaman sehari-hari mereka memang lucu; fans konten kreator komedi lokal."
+        tone: "Ekspresif dan over-the-top tapi tetap grounded di realita Indonesia. Akting tidak perlu sempurna — keaslian dan timing lebih penting dari teknik. Humor yang memancing komentar 'gue banget'."
+        format: "20–45 detik. Struktur: setup singkat (situasi familiar) → eskalasi absurd → punchline tajam. Satu skit = satu situasi, tidak perlu subplot. Ekspresi wajah adalah senjata utama."
+        boleh:
+          - "Gunakan setting yang sangat spesifik Indonesia (kos, kantor, warteg, angkot)"
+          - "Exaggerate reaksi untuk efek komedi maksimal — ini bukan film realis"
+          - "Casting diri sendiri sebagai beberapa karakter berbeda dengan kostum minimal"
+          - "Teks caption besar untuk punchline — banyak yang nonton tanpa suara"
+        hindari:
+          - "Jangan skit yang butuh lebih dari 5 detik untuk setup — langsung ke konflik"
+          - "Jangan gunakan humor yang merendahkan satu pihak secara tidak adil"
+          - "Jangan rekam di lokasi dengan pencahayaan buruk — ekspresi harus jelas terlihat"
+          - "Jangan punchline yang terlalu panjang — kurang dari 3 kata lebih kuat"
+        pola_hook: "Detik 0: teks 'POV:' atau 'pas kamu...' + langsung masuk ke situasi yang dikenali. Penonton harus bisa predict skenario dan penasaran bagaimana ending-nya dalam 2 detik."
+        contoh_judul:
+          - "Pas kamu minta tolong teman sekali dan tiba-tiba jadi panitia tetap"
+          - "Tipe orang yang selalu ada di setiap grup chat dan tidak pernah berguna"
+          - "Skit ini terlalu akurat untuk tidak di-share ke orang yang kamu maksud"
+      micro:
+        - slug: comedy-skit-anak-kos
+          name: Drama Kehidupan Anak Kos
+          description: Skit komedi pendek tentang situasi absurd sehari-hari anak kos — tagihan listrik mendadak, kompor meledak, dan drama sama pemilik kos — menyasar mahasiswa dan perantau.
+          example_hook: "Pas kamu lagi tidur nyenyak tiba-tiba pemilik kos ketuk pintu jam 7 pagi..."
+          guide:
+            audience: "Mahasiswa dan perantau 18–25 yang tinggal di kos; siapapun yang pernah merasakan drama kos-kosan Indonesia; penonton yang ingin validasi bahwa penderitaan anak kos itu universal."
+            tone: "Melodramatis dan sarkas. Situasi yang sebenarnya sepele di-treat seperti bencana nasional — itulah sumber humornya. Penonton harus merasa 'persis banget situasi gue'."
+            format: "20–40 detik. Setup: situasi kos yang familiar → eskalasi absurd → reaksi lebay → punchline relatable. Satu situasi per video — tidak perlu bercerita panjang. Ekspresi wajah close-up sangat penting."
+            boleh:
+              - "Gunakan props kos yang langsung dikenal: ember, magic jar, kabel colokan panjang"
+              - "Setting kamar kos nyata lebih efektif dari set yang terlalu rapi"
+              - "Suara ketukan pintu atau notif HP bisa jadi sound effect yang langsung dikenali"
+              - "Caption overlay dengan font besar untuk dialog punchline"
+            hindari:
+              - "Jangan setup lebih dari 5 detik sebelum konflik mulai"
+              - "Jangan rekam kamar yang terlalu rapi — autentisitas kos adalah bagian dari charm"
+              - "Jangan humor yang merendahkan pemilik kos atau profesi tertentu secara kasar"
+              - "Jangan resolusi yang terlalu panjang setelah punchline — cut langsung setelah payoff"
+            pola_hook: "Detik 0: teks situasi kos yang universal ('pas mau bayar listrik...' atau 'jam 7 pagi pintu diketuk') + ekspresi tidur atau santai. Langsung ke konflik di detik 2."
+            contoh_judul:
+              - "Pas kamu lagi tidur nyenyak tiba-tiba pemilik kos ketuk pintu jam 7 pagi"
+              - "Tagihan listrik kos naik Rp200rb dan investigasi dimulai"
+              - "Drama nyalain kompor kos yang sudah minta pensiun sejak semester 1"
+              - "Teman sekos pinjam charger 'sebentar' dan ini adalah hari ke-14"
+              - "Pemilik kos tiba-tiba mau masuk kamar dan kondisi kamarnya seperti ini"
+            content_runway: "Kehidupan kos memiliki ratusan situasi unik (tagihan, fasilitas rusak, tetangga berisik, pemilik kos, teman sekos) yang terus berulang dan selalu relevan selama mahasiswa Indonesia masih kos."
+
+        - slug: comedy-skit-meeting-kantor
+          name: Meeting Kantor yang Bisa Jadi Email
+          description: Skit relatable tentang rapat kerja yang tidak produktif, atasan yang minta revisi tidak jelas, dan drama zoom meeting, untuk pekerja kantoran yang butuh validasi.
+          example_hook: "Meeting 2 jam ini bisa jadi satu kalimat email, tapi bos tetap minta hadir semua..."
+          guide:
+            audience: "Pekerja kantoran 22–35 yang frustrasi dengan budaya rapat Indonesia; fresh graduate yang baru masuk dunia kerja dan culture shock; siapapun yang pernah duduk di meeting dan bertanya 'kenapa aku di sini'."
+            tone: "Sinis tapi lucu — bukan keluhan, tapi validasi kolektif. Penonton harus merasa lega karena ada yang akhirnya bilang apa yang mereka rasakan. Humor kantor Indonesia yang sangat spesifik."
+            format: "25–45 detik. Setup: meeting yang bisa jadi email → eskalasi absurd (atasan minta 'feedback', tapi tidak ada yang berani bicara) → punchline yang tepat sasaran. Bisa pakai format POV atau skit dengan 2 karakter."
+            boleh:
+              - "Referensikan budaya kantor Indonesia yang sangat spesifik: 'jangan lupa cc atasan'"
+              - "Gunakan laptop atau kamera sebagai prop Zoom meeting untuk relevansi"
+              - "Caption teks di layar sebagai 'isi pikiran' karakter yang tidak bisa diucapkan"
+              - "Ekspresi pasrah dan smile palsu adalah visual utama humor ini"
+            hindari:
+              - "Jangan sindir perusahaan atau individu nyata secara spesifik"
+              - "Jangan setup terlalu panjang — penonton sudah tahu konteks kantor Indonesia"
+              - "Jangan humor yang bisa diinterpretasikan sebagai sabotase atau ketidakprofesionalan serius"
+              - "Jangan resolusi yang terlalu panjang — cut setelah punchline"
+            pola_hook: "Detik 0: teks 'meeting 2 jam ini bisa jadi...' atau visual notifikasi meeting tiba-tiba. Langsung masuk ke situasi meeting absurd di detik 2."
+            contoh_judul:
+              - "Meeting 2 jam ini bisa jadi satu kalimat email dan semua tahu itu"
+              - "Atasan minta revisi tapi tidak bisa jelaskan mau direvisi apa"
+              - "Zoom meeting dan semua orang matikan kamera 'karena koneksi'"
+              - "POV kamu yang kasih ide bagus tapi atasan anggap ide dia sendiri"
+              - "5 menit pertama meeting diisi perkenalan meskipun semua sudah kenal 3 tahun"
+            content_runway: "Budaya kerja kantoran Indonesia menawarkan ratusan situasi absurd yang terus berulang — meeting, revisi, cc email, deadline, senioritas, finger pointing — dan selalu relevan selama budaya kerja ini tidak berubah."
+
+        - slug: comedy-skit-bucin-toxic
+          name: Skit Pasangan Bucin & Red Flag
+          description: Komedi pendek yang satirkan perilaku bucin dan hubungan penuh red flag dengan cara yang mengundang tawa tapi tetap relatable untuk anak muda.
+          example_hook: "Dia bilang 'bebas mau ke mana', tapi ini yang terjadi kalau kamu pergi..."
+          guide:
+            audience: "Remaja dan dewasa muda 17–27 yang aktif di media sosial dan familiar dengan istilah bucin dan red flag; penonton yang bisa ketawa pada diri sendiri tentang dinamika hubungan; siapapun yang pernah atau sedang bucin."
+            tone: "Sarkas dan self-aware. Humor yang tidak menghakimi — semua pernah bucin, dan itulah yang membuatnya lucu. Karakter harus terasa bodoh tapi simpatik, bukan villain."
+            format: "20–40 detik. Setup: situasi pasangan yang familiar → keputusan yang jelas red flag → reaksi yang lebay tapi predictable → punchline yang memvalidasi pengalaman penonton. Format POV atau dua karakter."
+            boleh:
+              - "Gunakan istilah yang viral di kalangan anak muda Indonesia (bucin, red flag, ghosting)"
+              - "Caption overlay sebagai 'inner monologue' karakter yang kontras dengan aksinya"
+              - "Sound effect dramatis (musik sinetron, suara hati hancur) sebagai komentar komedi"
+              - "Format 'ekspektasi vs realita' sangat efektif untuk niche ini"
+            hindari:
+              - "Jangan glorifikasi perilaku controlling atau toxic sebagai hal yang romantis"
+              - "Jangan humor yang merendahkan salah satu gender secara sistematis"
+              - "Jangan setup panjang — penonton harus bisa connect dalam 3 detik"
+              - "Jangan punchline yang membutuhkan pengetahuan meme spesifik yang cepat basi"
+            pola_hook: "Detik 0: dialog atau situasi yang langsung dikenal sebagai red flag + ekspresi yang terlalu polos. 'Dia bilang bebas mau ke mana, tapi...' — tension langsung terbentuk."
+            contoh_judul:
+              - "Dia bilang bebas mau ke mana, tapi ini yang terjadi kalau kamu pergi"
+              - "POV kamu yang bilang tidak bucin tapi cek HP dia 10 menit sekali"
+              - "Red flag yang tetap kamu abaikan karena dia perhatian di hari pertama"
+              - "Ekspektasi vs realita pas akhirnya chat duluan setelah 3 hari ghosting"
+              - "Cara dia bilang maaf yang entah kenapa tetap berhasil setiap kali"
+            content_runway: "Dinamika hubungan muda Indonesia menawarkan variasi tanpa habis — bucin, red flag, ghosting, orbiting, situationship — dan terus diperbarui dengan istilah baru yang viral setiap bulan."
+
+    - slug: reaction
+      name: Reaction
+      description: Reaksi ke konten lain.
+      faceless: false
+      difficulty: pemula
+      rpm: rendah
+      formats: split-screen + ekspresi
+      example_hook: "Pertama kali nonton ini..."
+      guide:
+        audience: "Penonton 16–32 yang menikmati melihat reaksi orang lain sebagai validasi atau hiburan; penggemar konten autentik yang tidak terskenario; penonton yang ingin discover konten lama atau ekstrem melalui perspektif orang baru."
+        tone: "Jujur dan spontan. Nilai utama channel ini adalah reaksi yang tidak dibuat-buat — tawa, kaget, atau ngeri yang genuine. Narasi minimal; biarkan ekspresi berbicara."
+        format: "30–60 detik. Split-screen: konten yang direaksi di satu sisi, wajah reaktor di sisi lain. Atau: full frame wajah dengan audio konten. Reaksi harus tampil dominan — bukan konten aslinya."
+        boleh:
+          - "Pilih konten yang memancing reaksi ekstrem — sangat kocak, sangat mengejutkan, atau sangat nostalgia"
+          - "Potong langsung ke momen reaksi paling intense untuk hook"
+          - "Tambahkan caption teks untuk konteks konten yang direaksi"
+          - "Pause dan komentar singkat setelah momen kunci untuk menambah lapisan humor"
+        hindari:
+          - "Jangan reaksi yang dipaksakan atau terlalu dibuat-buat — penonton bisa baca itu"
+          - "Jangan gunakan konten yang bisa kena copyright strike tanpa permisi"
+          - "Jangan reaksi yang merendahkan pembuat konten asli — komentari konten, bukan orangnya"
+          - "Jangan over-explain — reaksi cukup, analisis panjang bunuh ritme"
+        pola_hook: "Detik 0: potong langsung ke momen reaksi paling ekstrem dari video, bukan awal kronologis. Penonton harus langsung merasakan energi dan penasaran konteksnya."
+        contoh_judul:
+          - "Pertama kali nonton ini dan reaksi aku gak bisa aku kendalikan"
+          - "Video ini viral 10 tahun lalu dan baru sekarang aku lihat, ini reaksiku"
+          - "Challenge yang terlihat mudah ini ternyata membuat semua orang gagal total"
+      micro:
+        - slug: reaction-makanan-ekstrem
+          name: Reaksi Cobain Makanan Ekstrem Pertama Kali
+          description: Rekaman reaksi jujur saat mencoba makanan ekstrem — durian montong, pete mentah, ceker pedas level 100 — format yang autentik dan mudah dibuat ulang.
+          example_hook: "Pertama kali cobain ini, dan reaksi aku gak bisa bohong..."
+          guide:
+            audience: "Penonton 15–30 yang suka konten food challenge; penonton yang menikmati melihat ekspresi orang kesakitan atau terkejut secara aman; foodie yang penasaran tentang makanan ekstrem Indonesia."
+            tone: "Jujur dan sedikit dramatis. Reaksi yang genuine — kesakitan, kagum, atau ngeri — adalah kontennya. Tidak perlu akting, ekspresi asli selalu lebih baik dari yang dibuat-buat."
+            format: "30–60 detik. Tampilkan makanan dulu (2 detik) → tunjukkan reaksi pertama kali gigit/cicip → biarkan reaksi berkembang tanpa dipotong terlalu cepat → komentar singkat setelah. Close-up wajah, vertikal 9:16."
+            boleh:
+              - "Pilih makanan yang divisualisasikan dengan jelas sebelum dicoba"
+              - "Biarkan jeda setelah gigitan pertama — penonton menunggu reaksi itu"
+              - "Slow replay momen reaksi paling extreme sebelum komentar"
+              - "Bandingkan ekspektasi vs sensasi aktual dalam caption singkat"
+            hindari:
+              - "Jangan makan sesuatu yang benar-benar berbahaya atau menjijikkan tanpa konteks"
+              - "Jangan pura-pura reaksi lebih ekstrem dari aslinya — langsung terasa palsu"
+              - "Jangan potong reaksi terlalu cepat — biarkan penonton menikmati momen itu"
+              - "Jangan tampilkan makanan yang bisa dianggap melanggar norma agama tanpa disclaimer"
+            pola_hook: "Detik 0: close-up makanan ekstrem + ekspresi sebelum makan yang antara penasaran dan takut. Tidak perlu narasi — langsung gigit di detik 3."
+            contoh_judul:
+              - "Pertama kali cobain pete mentah dan ini reaksi aku yang tidak bisa dibohongi"
+              - "Durian montong paling legit yang pernah ada masuk mulut untuk pertama kalinya"
+              - "Ceker pedas level 100 di warung ini dan aku gak bisa bicara 5 menit setelahnya"
+              - "Jengkol goreng pertama kali di umur 25 tahun dan ini pendapat jujurku"
+              - "Makanan ini tidak ada gambar di warungnya dan ini alasannya setelah aku coba"
+            content_runway: "Makanan ekstrem Indonesia sangat beragam — pedas, fermentasi, tekstur unik, bau kuat — dan terus berkembang dengan tren makanan baru; setiap daerah Indonesia punya makanan khas yang bisa jadi konten reaksi."
+
+        - slug: reaction-video-nostalgia
+          name: Reaksi Nonton Video Viral Lawas
+          description: Reaksi terhadap video viral Indonesia dari 10-15 tahun lalu yang mungkin sudah dilupakan generasi baru, memancing nostalgia dan komentar.
+          example_hook: "Baru pertama kali nonton video ini yang viral tahun 2010, dan ternyata..."
+          guide:
+            audience: "Penonton 20–35 yang hidup di era YouTube awal Indonesia dan ingin nostalgia; penonton muda 15–20 yang penasaran dengan internet culture sebelum mereka lahir; siapapun yang menikmati konten yang memancing memori."
+            tone: "Nostalgia hangat campur tawa. Reaktor harus autentik — kalau memang sudah pernah lihat, sampaikan emosi nostalgia; kalau belum, ekspresikan shock atau keheranan terhadap era itu."
+            format: "30–60 detik. Buka dengan konteks singkat video asli (tahun, kenapa viral) → putar klip pendek dengan reaksi → pause untuk komentar atau nostalgia → closing yang memancing komentar penonton."
+            boleh:
+              - "Sertakan tahun dan konteks sosial saat video itu viral untuk dimensi historis"
+              - "Minta penonton di caption: 'siapa yang masih ingat ini?'"
+              - "Bandingkan internet Indonesia tahun itu vs sekarang sebagai lapisan humor tambahan"
+              - "Gunakan reaksi campur nostalgia — tawa tapi ada rasa rindu era itu"
+            hindari:
+              - "Jangan gunakan video yang menyinggung, melecehkan, atau melanggar privasi seseorang"
+              - "Jangan reaksi yang meremehkan kreator asli — mereka pelopor di zamannya"
+              - "Jangan copyright penuh video lama — potong pendek sebagai fair use"
+              - "Jangan memalsukan tidak tahu jika memang sudah tahu — penonton bisa baca itu"
+            pola_hook: "Detik 0: sebutkan tahun dan judul video langsung ('video ini viral 2010 dan...') + ekspresi penasaran atau nostalgia. Langsung putar klip pendeknya di detik 3."
+            contoh_judul:
+              - "Video viral Indonesia 2010 ini baru aku tonton sekarang dan ini reaksiku"
+              - "Siapa yang masih ingat ini? Aku baru nonton dan ternyata lebih bagus dari yang diingat"
+              - "Meme Indonesia pertama yang pernah ada, dan reaksiku setelah lihat konteksnya"
+              - "Video ini dapat jutaan views di era dial-up dan ini alasannya masih relevan"
+              - "Internet Indonesia tahun 2008 itu seperti ini, dan generasi sekarang perlu tahu"
+            content_runway: "Arsip konten viral Indonesia dari 2005–2020 sangat besar — video musik, meme pertama, konten kreator awal, berita viral — dan terus relevan karena penonton muda selalu penasaran tentang masa lalu internet Indonesia."
+
+        - slug: reaction-challenge-gagal
+          name: Reaksi Lihat Challenge yang Gagal Total
+          description: Komentar dan reaksi terhadap challenge media sosial yang gagal lucu tanpa menyakiti siapapun, format split-screen yang mengundang tawa bersama.
+          example_hook: "Challenge ini terlihat mudah sampai giliran mereka coba sendiri..."
+          guide:
+            audience: "Penonton 14–28 yang suka fail compilation dan challenge content; penonton yang menikmati Schadenfreude ringan tanpa ada yang terluka; pengikut tren challenge media sosial yang senang lihat orang gagal dengan cara lucu."
+            tone: "Geli dan empati sekaligus. Tawa bersama, bukan tawa menghina — tone harus 'ini lucu karena kita semua pasti akan gagal juga'. Komentar singkat reaktor menambah lapisan humor, bukan penghakiman."
+            format: "30–60 detik. Split-screen: challenge original di satu sisi, reaksi di sisi lain. Atau sekuensial: klip gagal → reaksi → komentar → klip gagal berikutnya. Potong ke momen gagal paling epic dulu."
+            boleh:
+              - "Pilih challenge yang gagalnya tidak menyakiti siapapun secara serius"
+              - "Komentar singkat reaktor harus memperkuat humor, bukan menjelaskan yang sudah jelas"
+              - "Slow replay momen gagal paling epic — visual itu sendiri sudah lucu"
+              - "Tambahkan teks overlay untuk timing komentar yang lebih presisi"
+            hindari:
+              - "Jangan gunakan klip yang menunjukkan cedera serius atau memalukan seseorang secara berlebihan"
+              - "Jangan tertawa terlalu lama pada satu orang — tone tidak boleh jadi bullying"
+              - "Jangan paksa komentar yang tidak lucu — silence setelah gagal sering lebih efektif"
+              - "Jangan gunakan klip tanpa izin kreator atau dari sumber yang tidak jelas"
+            pola_hook: "Detik 0: potong langsung ke momen gagal paling lucu, bukan awal challenge — penonton langsung tertawa sebelum tahu konteksnya, lalu penasaran bagaimana awalnya."
+            contoh_judul:
+              - "Challenge ini terlihat mudah sampai mereka coba sendiri dan ini hasilnya"
+              - "Semua orang di video ini yakin berhasil dan tidak ada yang benar"
+              - "Challenge yang sudah gagal 100 kali tapi orang masih percaya mereka beda"
+              - "Reaksi aku nonton fail challenge yang tidak ada satupun sukses di video ini"
+              - "Tantangan Rp0 yang ternyata butuh bakat yang tidak dimiliki satupun orang di sini"
+            content_runway: "Challenge media sosial baru muncul setiap minggu di Indonesia, dan sebagian besar selalu ada yang gagal dengan cara lucu — sumber konten yang tidak akan pernah habis selama tren challenge terus ada."
+
+    - slug: memes
+      name: "Meme / Relatable"
+      description: Meme video, momen relatable.
+      faceless: true
+      difficulty: pemula
+      rpm: rendah
+      formats: klip + caption + musik
+      example_hook: "POV: kamu anak terakhir..."
+      guide:
+        audience: "Penonton 15–30 yang aktif di media sosial Indonesia; gen Z dan millennial yang familiar dengan internet culture lokal; penonton yang ingin feel 'gue banget' dan langsung share ke teman."
+        tone: "Singkat, tajam, dan langsung ngena. Tidak ada penjelasan — kalau relatable, penonton langsung tahu. Gaya bahasa sangat kasual, sering pakai singkatan dan bahasa gaul Indonesia terkini."
+        format: "10–30 detik. Format POV, ekspektasi vs realita, atau klip singkat + caption yang jadi punchline. Musik trending atau sound viral sebagai latar. Teks overlay besar dan jelas adalah kunci karena banyak nonton tanpa suara."
+        boleh:
+          - "Gunakan sound atau musik yang sedang trending untuk boost distribusi"
+          - "Teks overlay besar, kontras, dan singkat — maksimal satu frasa per frame"
+          - "Format POV langsung tanpa setup — 'POV: kamu yang...' dan penonton langsung ada di sana"
+          - "Tag situasi yang sangat spesifik — semakin spesifik, semakin relatable"
+        hindari:
+          - "Jangan pakai meme format yang sudah expired lebih dari 2 bulan"
+          - "Jangan caption yang terlalu panjang — potong sampai hanya yang esensial"
+          - "Jangan gunakan musik ber-hak-cipta tanpa clearance"
+          - "Jangan terlalu berusaha lucu — yang organik selalu menang"
+        pola_hook: "Detik 0: teks POV atau situasi langsung tampil tanpa intro — penonton harus langsung bisa kategorikan diri mereka ('itu aku' atau 'itu teman aku') dalam 1 detik."
+        contoh_judul:
+          - "POV kamu anak terakhir dan semua keputusan keluarga sudah dibuat sebelum kamu lahir"
+          - "Ekspektasi vs realita yang terlalu akurat untuk tidak di-share"
+          - "Situasi ini terjadi setiap minggu dan semua orang pura-pura tidak tahu kenapa"
+      micro:
+        - slug: memes-pov-kerja-indonesia
+          name: POV Kerja di Indonesia
+          description: Video meme POV yang menangkap situasi kerja spesifik Indonesia — lembur tanpa bayar, budaya senioritas, dan chat bos tengah malam — dengan caption yang tepat sasaran.
+          example_hook: "POV: bos chat jam 11 malam 'bisa minta tolong sebentar'..."
+          guide:
+            audience: "Pekerja kantoran dan freelancer 22–35 yang akrab dengan budaya kerja Indonesia; fresh graduate yang baru merasakan dunia kerja; siapapun yang pernah menerima chat bos tengah malam."
+            tone: "Pasrah tapi lucu. Humor yang lahir dari rasa tidak berdaya — bukan amarah, tapi acceptance komedi bahwa 'ini memang Indonesia'. Caption harus persis kata-kata yang penonton sudah familiar."
+            format: "10–25 detik. Teks besar 'POV:' + situasi spesifik → klip singkat atau gambar diam yang mewakili ekspresi pasrah/shock → musik atau sound yang cocok dengan mood. Teks adalah kontennya, klip hanya backdrop."
+            boleh:
+              - "Gunakan bahasa dan frasa yang sangat spesifik budaya kerja Indonesia"
+              - "Sound pasrah atau dramatic sebagai ironic contrast dengan situasi mundane"
+              - "Buat seri — setiap video satu POV kerja berbeda, penonton yang relate akan follow"
+              - "Caption harus bisa di-screenshot dan di-share sendiri tanpa konteks video"
+            hindari:
+              - "Jangan sebutkan nama perusahaan, brand, atau atasan nyata"
+              - "Jangan konten yang bisa diinterpretasikan sebagai ajakan resign massal atau agitasi"
+              - "Jangan overthink — kalau harus dijelaskan, bukan meme yang baik"
+              - "Jangan gunakan format terlalu panjang — meme harus selesai dalam 15 detik"
+            pola_hook: "Detik 0: teks 'POV:' besar + situasi kerja yang langsung dikenali. Tidak ada intro — penonton sudah ada di dalam momen itu sebelum mereka sadar."
+            contoh_judul:
+              - "POV bos chat jam 11 malam 'bisa minta tolong sebentar' padahal bukan sebentar"
+              - "POV kamu yang paling junior jadi yang paling banyak kerjaan"
+              - "POV presentasi ke klien tapi slide masih direvisi 10 menit sebelum meeting"
+              - "POV lembur sampai jam 10 tapi tidak ada di slip gaji manapun"
+              - "POV ide kamu dipakai tapi kredit diberikan ke orang lain di depan semua"
+            content_runway: "Budaya kerja Indonesia memiliki ratusan keunikan yang tidak ada habisnya — sistem senioritas, budaya lembur, komunikasi tidak langsung, rapat tidak produktif — dan selalu relevan selama budaya kerja Indonesia tidak berubah drastis."
+
+        - slug: memes-mahasiswa-semester-akhir
+          name: Momen Paling Relatable Mahasiswa Tingkat Akhir
+          description: Meme video khusus penderitaan mahasiswa skripsi dan semester akhir — dosen pembimbing ghosting, sidang ditunda, dan wisuda yang terasa mustahil.
+          example_hook: "POV: dosen pembimbing baca drafmu lalu bilang 'ulangi dari bab 1'..."
+          guide:
+            audience: "Mahasiswa semester 6–12 yang sedang berjuang dengan skripsi; alumni yang sudah melewati masa itu dan ingin nostalgia; mahasiswa baru yang ingin tahu penderitaan apa yang menanti."
+            tone: "Gelap tapi lucu. Humor survival — tawa yang lahir dari dalam jurang penderitaan akademis. Penonton harus merasa tidak sendirian dalam perjuangan ini. Semakin spesifik detail penderitaannya, semakin viral."
+            format: "15–25 detik. Format POV atau teks deskriptif + klip reaktif + sound dramatic. Spesifisitas adalah kunci — 'bab 3 metodologi penelitian' lebih lucu dari 'skripsi sulit'."
+            boleh:
+              - "Referensikan jargon akademis spesifik Indonesia (BAB, sidang, revisi, ACC)"
+              - "Sound drama atau musik sedih sebagai ironic contrast dengan situasi akademis mundane"
+              - "Buat seri berdasarkan tahap skripsi — setiap video satu fase penderitaan berbeda"
+              - "Caption yang bisa langsung di-tag ke teman seperjuangan"
+            hindari:
+              - "Jangan sindir nama dosen atau universitas nyata secara spesifik"
+              - "Jangan humor yang bisa diinterpretasikan sebagai ajakan plagiat atau kecurangan"
+              - "Jangan terlalu negatif sampai demoralisasi — tujuannya validasi, bukan putus asa"
+              - "Jangan format terlalu panjang — meme skripsi harus selesai dalam 20 detik"
+            pola_hook: "Detik 0: teks POV + situasi skripsi yang sangat spesifik dan menyakitkan. Penonton yang merasakannya langsung tertawa pahit sebelum detik 2."
+            contoh_judul:
+              - "POV dosen pembimbing baca draft bab 3 dan bilang ulangi dari bab 1"
+              - "POV revisi sudah ke-7 tapi dosen minta font berubah jadi TNR 12"
+              - "POV sidang ditunda karena satu penguji tidak bisa hadir padahal sudah siap setahun"
+              - "POV wisuda teman seangkatan sementara kamu masih bergulat dengan BAB 2"
+              - "POV dosen pembimbing terakhir balas WhatsApp 3 minggu yang lalu"
+            content_runway: "Perjalanan skripsi Indonesia penuh tahap yang masing-masing memiliki penderitaan unik — dari proposal sampai sidang, setiap langkah adalah konten; dan setiap tahun ada angkatan baru yang mengalami hal yang sama."
+
+        - slug: memes-ekspektasi-vs-realita
+          name: Ekspektasi vs Realita Kehidupan Dewasa
+          description: Format split ekspektasi vs realita tentang milestone kehidupan dewasa Indonesia — dapat kerja, beli motor, dan pindah dari rumah orang tua.
+          example_hook: "Ekspektasi hidup mandiri vs realita setelah cek harga kos per bulan..."
+          guide:
+            audience: "Dewasa muda 20–30 yang sedang atau baru memasuki fase hidup mandiri; penonton yang merasakan gap besar antara mimpi dan realita kehidupan dewasa Indonesia; siapapun yang pernah shock dengan harga sewa atau biaya hidup kota."
+            tone: "Self-deprecating dan lucu. Tertawa pada diri sendiri dan ekspektasi naif masa lalu. Penonton harus merasa 'persis banget' — bukan sedih, tapi tertawa karena itu universal."
+            format: "15–30 detik. Dua panel atau dua klip: ekspektasi dulu (media massa, film, mimpi) → realita (kehidupan nyata Indonesia). Kontras harus tajam dan spesifik. Musik upbeat di ekspektasi, sad atau flat di realita."
+            boleh:
+              - "Gunakan angka spesifik di realita — harga kos, UMR, cicilan motor — semakin nyata semakin lucu"
+              - "Musik kontras antara dua bagian untuk efek komedi maksimal"
+              - "Sertakan detail yang sangat Indonesia (ojol, kos, warteg, gaji UMR)"
+              - "Caption ekspektasi bisa lebay, caption realita harus sangat datar dan spesifik"
+            hindari:
+              - "Jangan konten yang terasa mengeluh tanpa unsur humor — harus tetap funny"
+              - "Jangan angka atau situasi yang terlalu eksklusif kelas tertentu"
+              - "Jangan format terlalu panjang — dua panel harus selesai dalam 20 detik"
+              - "Jangan gunakan musik ber-hak-cipta"
+            pola_hook: "Detik 0: teks 'Ekspektasi:' besar + klip atau gambar yang mewakili mimpi naif. Langsung potong ke 'Realita:' di detik 5–8 untuk kontras maksimal."
+            contoh_judul:
+              - "Ekspektasi hidup mandiri vs realita setelah lihat harga kos di Jakarta"
+              - "Ekspektasi dapat kerja pertama vs realita gaji UMR minus kos dan transport"
+              - "Ekspektasi punya motor sendiri vs realita cicilan 3 tahun dengan DP dari orang tua"
+              - "Ekspektasi masak sendiri sehat vs realita langganan warteg karena lebih murah"
+              - "Ekspektasi kerja dari rumah enak vs realita tidak ada batas antara kerja dan istirahat"
+            content_runway: "Milestone kehidupan dewasa Indonesia sangat banyak dan masing-masing punya gap ekspektasi-realita yang khas — kerja, menikah, punya anak, beli rumah, cicilan — dan selalu ada angkatan baru yang merasakannya pertama kali."
+
+    - slug: fails
+      name: "Fails / Funny Clips"
+      description: "Kompilasi gagal/lucu (UGC)."
+      faceless: true
+      difficulty: pemula
+      rpm: rendah
+      formats: klip + SFX + caption
+      example_hook: "Dia gak nyangka bakal begini..."
+      guide:
+        audience: "Penonton 14–30 yang mencari hiburan ringan tanpa harus berpikir; penggemar fail compilation dan America's Funniest Videos versi Indonesia; penonton yang butuh tawa instan dalam 30 detik."
+        tone: "Ringan dan tidak menghakimi. Semua orang bisa gagal — tertawa bersama, bukan menertawakan. Komentar caption harus empati-lucu, bukan sarkasme kejam."
+        format: "30–60 detik. Kompilasi 3–5 klip fail per video, atau satu fail panjang dengan beberapa angle. SFX komedi diboost — suara jatuh, musik kartun, atau sound effect lucu meningkatkan nilai konten. Caption di setiap klip untuk konteks."
+        boleh:
+          - "SFX komedi (suara 'boing', 'womp womp', drum comedy) meningkatkan fail biasa jadi sangat lucu"
+          - "Caption singkat di setiap klip yang menambah lapisan humor"
+          - "Urutan klip dari yang paling ringan ke yang paling epic untuk build-up"
+          - "Slow-motion replay di momen gagal terbaik"
+        hindari:
+          - "Jangan gunakan klip di mana seseorang terluka serius atau dalam bahaya nyata"
+          - "Jangan tampilkan wajah orang tanpa persetujuan jika konten memalukan mereka"
+          - "Jangan SFX yang tidak sinkron dengan visual — merusak timing komedi"
+          - "Jangan gunakan klip dari akun yang tidak memberikan izin redistribusi"
+        pola_hook: "Detik 0: potong langsung ke momen sebelum gagal — bukan setelah. Penonton harus merasakan antisipasi 'ini pasti gagal' dalam 2 detik pertama."
+        contoh_judul:
+          - "Dia gak nyangka bakal begini dan kameranya kebetulan merekam semuanya"
+          - "Kompilasi orang yang terlalu percaya diri dan alam semesta tidak setuju"
+          - "Tiga detik sebelum semuanya berubah — edisi Indonesia"
+      micro:
+        - slug: fails-olahraga-dadakan
+          name: Fails Olahraga Dadakan yang Overconfident
+          description: Klip kompilasi momen seseorang terlalu percaya diri saat olahraga atau mencoba gerakan atletik padahal tidak terlatih, selalu mengundang tawa tanpa ada yang terluka serius.
+          example_hook: "Dia lihat tutorial 5 menit lalu yakin bisa langsung jago, ini hasilnya..."
+          guide:
+            audience: "Penonton 15–30 yang suka konten olahraga dan gym tapi tidak terlalu serius; penonton yang pernah mencoba gerakan olahraga tanpa latihan dan gagal; komunitas gym Indonesia yang punya selera humor."
+            tone: "Empati lucu. 'Aku juga pernah yakin bisa melakukan ini' — tawa yang inklusif. Komentar caption harus empati, bukan merendahkan kemampuan atletik seseorang secara permanen."
+            format: "30–50 detik. Kompilasi 3–4 klip: momen yakin sebelum → gagal → reaksi pasca-gagal. SFX impact dan musik komedi diboost. Urutan: dari yang paling ringan ke paling epic. Slow replay momen gagal terbaik."
+            boleh:
+              - "Pilih klip di mana orang yang gagal terlihat tidak terluka dan bisa tertawa sendiri"
+              - "SFX impact (boing, crash, air horn) di momen gagal meningkatkan komedi"
+              - "Caption yang menjelaskan apa yang mereka pikir bisa dilakukan vs apa yang terjadi"
+              - "Slow-motion replay momen paling absurd"
+            hindari:
+              - "Jangan gunakan klip di mana seseorang cedera serius — cedera bukan hiburan"
+              - "Jangan tambahkan komentar yang merendahkan fisik atau kemampuan seseorang secara personal"
+              - "Jangan gunakan klip tanpa izin dari kreator asli atau dari sumber tidak jelas"
+              - "Jangan SFX terlalu keras yang tidak natural dengan visual"
+            pola_hook: "Detik 0: tampilkan ekspresi percaya diri sebelum aksi + caption 'dia pikir...' — antisipasi kegagalan dibangun dalam 2 detik sebelum kejadian."
+            contoh_judul:
+              - "Dia tonton tutorial 5 menit dan yakin langsung bisa, ini yang terjadi"
+              - "Kompilasi orang gym yang terlalu percaya diri tanpa spotter"
+              - "Gerakan yoga yang terlihat mudah di video sampai kamu coba sendiri"
+              - "Lari maraton pertama kali dengan semangat sprint dari km pertama"
+              - "Orang-orang ini yakin bisa flip botol dan kamera merekam semua kegagalannya"
+            content_runway: "Setiap cabang olahraga menghasilkan jenis fail yang unik dan konten UGC dari gym, lapangan, dan taman olahraga Indonesia terus mengalir setiap hari di media sosial."
+
+        - slug: fails-masak-pertama-kali
+          name: Kompilasi Masak Pertama Kali yang Disaster
+          description: Klip lucu orang yang memasak untuk pertama kalinya dengan hasil yang jauh dari ekspektasi, relatable untuk siapapun yang pernah gagal masak.
+          example_hook: "Katanya resepnya simpel, tapi dapur dia berubah jadi begini..."
+          guide:
+            audience: "Penonton 18–30 yang baru belajar masak atau pernah gagal masak; mahasiswa yang baru tinggal sendiri dan pertama kali berhadapan dengan kompor; siapapun yang pernah buka resep dan underestimate tingkat kesulitannya."
+            tone: "Simpatik dan lucu. 'Aku juga pernah seperti ini' — tawa yang sangat inklusif. Bencana masak adalah rite of passage orang dewasa muda Indonesia dan konten ini merayakan itu."
+            format: "30–50 detik. Klip tunggal atau kompilasi 3 klip: show ekspektasi (resep atau foto jadi) → show proses chaos → show hasil disaster. Caption overlay yang menambah konteks humor. SFX api atau asap diboost komedi."
+            boleh:
+              - "Caption yang kontraskan resep yang 'simpel' vs hasil yang chaos"
+              - "Suara alarm asap atau api kecil sebagai SFX komedi (pastikan aman)"
+              - "Hasil akhir yang jauh dari ekspektasi ditampilkan dengan sudut kamera terbaik untuk efek komedi"
+              - "Tambahkan teks 'ekspektasi' vs 'realita' sebagai overlay"
+            hindari:
+              - "Jangan gunakan klip di mana ada bahaya kebakaran serius tanpa penanganan"
+              - "Jangan tambahkan komentar yang merendahkan kemampuan masak seseorang secara personal"
+              - "Jangan konten yang bisa dianggap mengajarkan cara berbahaya di dapur"
+              - "Jangan gunakan klip tanpa izin kreator"
+            pola_hook: "Detik 0: tunjukkan resep atau instruksi yang 'mudah' + ekspresi percaya diri kreator — antisipasi disaster langsung terbentuk dalam 3 detik."
+            contoh_judul:
+              - "Katanya resepnya simpel tapi dapurnya jadi begini dalam 10 menit"
+              - "Kompilasi masak pertama kali yang berakhir dengan telepon tukang baso"
+              - "Telur ceplok mestinya yang paling mudah, tapi lihat hasilnya"
+              - "Nasi goreng pertama kali dan 3 hal yang tidak ada di resep manapun terjadi"
+              - "Resep bilang 15 menit, jam ke-2 masih belum selesai dan dapur udah begini"
+            content_runway: "Setiap masakan Indonesia yang terlihat mudah tapi ternyata sulit (nasi goreng, mi rebus, telur ceplok) menghasilkan konten fail yang selalu relevan; mahasiswa baru yang pindah kos terus menjadi sumber konten segar setiap tahun."
+
+        - slug: fails-teknologi-orang-tua
+          name: Orang Tua vs Teknologi Modern
+          description: Kompilasi momen lucu orang tua yang berjuang dengan teknologi sehari-hari — video call terbalik, kirim pesan ke grup salah, dan screenshot yang tidak berhasil.
+          example_hook: "Ibu ini sudah 10 menit coba screenshot dan belum berhasil..."
+          guide:
+            audience: "Penonton 18–35 yang pernah jadi 'IT support' keluarga; penonton yang menikmati konten generasi dan gap teknologi; siapapun yang punya orang tua atau kakek-nenek yang berjuang dengan HP."
+            tone: "Hangat dan penuh kasih sayang — bukan merendahkan, tapi merayakan usaha orang tua yang tidak menyerah meski tidak mengerti. Tawa yang lahir dari rasa sayang, bukan ejekan."
+            format: "30–50 detik. Klip tunggal atau kompilasi 3 klip: situasi teknologi sederhana → usaha orang tua → hasil yang mengejutkan atau salah kaprah. Caption yang menjelaskan apa yang mereka coba lakukan vs yang terjadi."
+            boleh:
+              - "Caption yang menjelaskan apa yang orang tua pikir mereka lakukan vs yang sebenarnya"
+              - "Fokus pada usaha dan niat baik orang tua, bukan kegagalannya"
+              - "Teks overlay berupa 'apa yang ada di pikirannya' yang lucu tapi empatik"
+              - "Akhiri dengan momen sukses kecil orang tua jika ada — menghangatkan hati"
+            hindari:
+              - "Jangan konten yang membuat orang tua terlihat bodoh atau memalukan secara serius"
+              - "Jangan gunakan klip tanpa izin — privasi keluarga harus dijaga"
+              - "Jangan tone sarkastik yang kejam — ini harus hangat, bukan bullying"
+              - "Jangan konten yang bisa menyinggung orang tua yang menontonnya"
+            pola_hook: "Detik 0: tunjukkan situasi teknologi yang sangat sederhana + orang tua yang sangat serius menghadapinya. Kontras itu sendiri sudah lucu dalam 2 detik."
+            contoh_judul:
+              - "Ibu ini sudah 10 menit coba screenshot dan wajahnya semakin serius"
+              - "Ayah video call tapi kamera menghadap langit dan tidak sadar 15 menit"
+              - "Mama kirim pesan penting ke grup salah dan baru sadar setelah dibaca 200 orang"
+              - "Orang tua ini yakin sekali cara ini yang benar untuk zoom meeting"
+              - "Kompilasi orang tua yang tidak menyerah meski teknologi tidak berpihak pada mereka"
+            content_runway: "Gap generasi dan teknologi di Indonesia sangat besar dan terus berkembang — setiap teknologi baru (AI, aplikasi baru, fitur HP baru) menciptakan siklus konten baru dengan orang tua yang selalu berusaha mengikuti."
+
+    - slug: pranks
+      name: Prank
+      description: "Jahil ke orang, butuh talent."
+      faceless: false
+      difficulty: menengah
+      rpm: rendah
+      formats: hidden-cam + reaksi
+      example_hook: "Dia gak sadar lagi di-prank..."
+      guide:
+        audience: "Penonton 15–28 yang menikmati konten reaksi genuine; penonton yang suka momen kejutan yang berakhir baik; penggemar prank culture yang tidak ingin lihat orang disakiti atau dipermalukan."
+        tone: "Playful dan hangat. Prank terbaik adalah yang korbannya bisa tertawa bersama di akhir. Tidak ada rasa malu berlebihan, tidak ada kekerasan — kejutan yang akhirnya menjadi momen bonding."
+        format: "45–90 detik. Setup prank (hidden cam atau context) → execution → reaksi genuine korban → reveal bahwa itu prank → reaksi korban setelah tahu. Reaksi genuine adalah konten utama."
+        boleh:
+          - "Selalu tunjukkan consent atau tawa korban setelah reveal — penting untuk tone"
+          - "Setup yang sederhana tapi timing yang sempurna jauh lebih efektif dari setup rumit"
+          - "Hidden cam angle yang jelas untuk capture ekspresi genuine"
+          - "Prank yang berakhir dengan kejutan positif (surprise party, gift reveal) performanya lebih baik"
+        hindari:
+          - "Jangan prank yang melibatkan kekerasan fisik, ancaman, atau rasa malu berlebihan"
+          - "Jangan prank tanpa consent post-publication dari korban"
+          - "Jangan prank di tempat publik yang mengganggu orang lain yang tidak terlibat"
+          - "Jangan edit atau frame video untuk terlihat lebih ekstrem dari yang terjadi"
+        pola_hook: "Detik 0: tunjukkan korban dalam kondisi normal + whisper atau gesture ke kamera bahwa prank akan dimulai. Penonton menjadi 'kaki tangan' dan ini membangun antisipasi."
+        contoh_judul:
+          - "Dia gak sadar ada yang sembunyi di sana 10 menit menunggu momen ini"
+          - "Aku prank dia dengan caranya sendiri dan ini tidak berjalan seperti yang direncanakan"
+          - "Setup prank ini butuh 3 hari dan reaksi dia hanya 5 detik tapi worth it"
+      micro:
+        - slug: pranks-kaget-halus
+          name: Prank Kaget Halus yang Tidak Menyakiti
+          description: Prank ringan tanpa kekerasan atau rasa malu berlebihan — kejutan kecil di tempat yang tidak terduga — dengan reaksi yang genuine dan akhir yang hangat.
+          example_hook: "Dia gak sadar ada yang sembunyi di sana selama 5 menit menunggu momen ini..."
+          guide:
+            audience: "Penonton 15–28 yang suka konten jump scare ringan dan reaksi kaget; penonton yang menikmati momen genuine yang tidak bisa dibuat-buat; teman-teman yang ingin ide prank aman untuk dicoba."
+            tone: "Playful dan innocent. Tujuannya reaksi kaget yang berakhir dengan tawa bersama — bukan rasa malu atau marah. Korban harus terlihat bisa tertawa pada dirinya sendiri di akhir."
+            format: "30–60 detik. Setup hidden cam → korban tidak sadar → momen kaget genuine → reveal → tawa bersama. Close-up ekspresi kaget adalah nilai utama. Tidak perlu banyak editing — keaslian menang."
+            boleh:
+              - "Hidden camera stabil agar ekspresi kaget terekam jelas"
+              - "Tunggu sampai momen yang paling sempurna — timing adalah segalanya"
+              - "Tunjukkan tawa korban setelah reveal untuk memperkuat tone yang fun"
+              - "Setup yang sesederhana mungkin — kompleksitas mengurangi keaslian"
+            hindari:
+              - "Jangan prank di situasi yang bisa menyebabkan cedera (tangga, jalan raya, air)"
+              - "Jangan sembunyikan di tempat gelap yang benar-benar menakutkan"
+              - "Jangan publish tanpa consent korban terutama jika ekspresi sangat memalukan"
+              - "Jangan rekam reaksi yang berakhir dengan marah serius dan frame sebagai lucu"
+            pola_hook: "Detik 0: close-up prank setter berbisik ke kamera 'sudah 5 menit aku di sini' + tampilan korban yang tidak sadar. Penonton diajak jadi kaki tangan."
+            contoh_judul:
+              - "Dia tidak sadar ada yang sembunyi di sana 5 menit menunggu momen yang pas"
+              - "Prank paling innocent ini menghasilkan reaksi yang tidak bisa diulang"
+              - "Sembunyi di balik pintu ini sudah 3 kali berhasil dan kali ini paling epic"
+              - "Prank sederhana ini yang paling susah karena harus tunggu timing sempurna"
+              - "Reaksi dia setelah kaget ini yang membuatnya jadi video terbaik bulan ini"
+            content_runway: "Setiap hubungan (teman, pasangan, keluarga) dan setiap lokasi (rumah, kantor, taman) menawarkan momen unik untuk prank kaget halus; dan selalu ada yang belum pernah diprank sebelumnya."
+
+        - slug: pranks-pura-pura-lupa
+          name: Prank Pura-pura Lupa Hari Penting
+          description: Dokumentasi prank berpura-pura lupa ulang tahun atau anniversari pasangan, dengan reaksi asli yang kemudian dibalas dengan kejutan manis di akhir.
+          example_hook: "Dia pikir aku lupa hari ini sampai lihat yang ada di dalam pintu..."
+          guide:
+            audience: "Penonton 18–30 yang pernah khawatir pasangan atau teman lupa hari penting mereka; penonton yang menyukai konten hubungan yang hangat dengan twist; penggemar konten kejutan romantis atau persahabatan."
+            tone: "Dramatis dulu, mengharukan di akhir. Tegangan dipupuk selama prank berlangsung, lalu payoff emosional saat reveal kejutan. Penonton harus merasakan kedua emosi — was-was dan haru."
+            format: "45–90 detik. Setup: korban mulai curiga → drama 'dilupakan' → reaksi kecewa yang genuine → reveal kejutan → reaksi haru. Dua bagian harus seimbang — cukup drama tapi cukup warmth."
+            boleh:
+              - "Capture momen was-was korban yang genuine — ekspresi kecewa yang real adalah inti konten"
+              - "Reveal kejutan harus sebanding atau melebihi ekspektasi yang dibangun pranker"
+              - "Dokumentasikan persiapan tersembunyi untuk menunjukkan usaha yang sebenarnya"
+              - "Close-up reaksi haru saat reveal — itu momen yang paling shareable"
+            hindari:
+              - "Jangan biarkan prank berlangsung terlalu lama sampai korban benar-benar sakit hati"
+              - "Jangan publish tanpa consent korban — ini konten yang melibatkan emosi real"
+              - "Jangan frame sebagai lucu jika korban tampak benar-benar terluka"
+              - "Jangan gunakan musik ber-hak-cipta untuk bagian montase kejutan"
+            pola_hook: "Detik 0: teks setup ('hari ini hari penting dia, dan aku pura-pura lupa') + footage awal interaksi yang normal. Penonton tahu prank sedang berlangsung, korban tidak."
+            contoh_judul:
+              - "Dia pikir aku lupa ulang tahunnya sampai lihat apa yang ada di balik pintu itu"
+              - "Prank lupa anniversari yang hasilnya bikin dia nangis dua kali"
+              - "Aku pura-pura lupa hari ulang tahunnya dan ini ekspresinya 10 menit kemudian"
+              - "Setup kejutan ini butuh seminggu dan dia tidak curiga satu hari pun"
+              - "Reaksinya saat sadar aku tidak lupa adalah yang paling aku rekam tahun ini"
+            content_runway: "Setiap pasangan dan persahabatan memiliki hari-hari penting yang berbeda — ulang tahun, anniversary, kelulusan, pernikahan — dan format ini bisa diulang dengan variasi kejutan yang berbeda setiap kali."
+
+        - slug: pranks-review-jujur-masakan
+          name: Prank Review Jujur Masakan Pasangan
+          description: Prank meminta orang asing atau kritikus makanan tiba-tiba mengulas masakan buatan pasangan, dengan reaksi yang mengejutkan dan mengundang tawa kedua belah pihak.
+          example_hook: "Aku suruh food critic dadakan review masakannya tanpa dia tahu, ini ekspresinya..."
+          guide:
+            audience: "Penonton 18–32 yang suka konten pasangan dan hubungan; penggemar konten makanan dan food review; penonton yang menikmati momen awkward yang berakhir lucu tanpa ada yang terluka."
+            tone: "Awkward comedy yang warm. Tegangan saat reviewer mulai berkomentar kritis, lalu humor saat korban tidak tahu harus marah atau tertawa. Harus berakhir dengan tawa bersama."
+            format: "45–75 detik. Setup: masakan sudah jadi + reviewer datang tanpa sepengetahuan korban → review berlangsung dengan ekspresi korban yang mixed → reveal prank → tawa bersama. Dua kamera ideal: satu untuk food, satu untuk ekspresi korban."
+            boleh:
+              - "Reviewer boleh jujur tapi tetap sopan — kritik yang lucu, bukan kejam"
+              - "Capture ekspresi korban yang tidak tahu harus marah atau bangga"
+              - "Tambahkan teks overlay komentar reviewer yang paling lucu"
+              - "Reveal prank sebelum korban benar-benar marah — timing sangat penting"
+            hindari:
+              - "Jangan biarkan review terlalu kejam sampai korban benar-benar sakit hati"
+              - "Jangan publish tanpa consent korban — ekspresi mereka digunakan untuk konten"
+              - "Jangan gunakan reviewer yang tidak bisa menjaga tone lucu"
+              - "Jangan frame makanan yang sebenarnya enak sebagai buruk untuk drama — tidak fair"
+            pola_hook: "Detik 0: tampilkan masakan yang sudah jadi + bisik ke kamera 'dia tidak tahu seorang food critic akan review ini sekarang'. Reviewer masuk frame di detik 5."
+            contoh_judul:
+              - "Aku panggil food critic dadakan review masakan dia tanpa dia tahu dan ini ekspresinya"
+              - "Review jujur masakan pacar yang berlangsung awkward dari detik pertama"
+              - "Orang ini tidak tahu masakannya sedang dinilai dan ekspresinya tidak bisa dibuat ulang"
+              - "Food review spontan masakan mama yang hasilnya di luar dugaan semua pihak"
+              - "Prank review masakan ini berakhir dengan perdebatan yang lebih lucu dari reviewnya"
+            content_runway: "Setiap pasangan yang memasak dan setiap jenis masakan menawarkan dinamika berbeda; dan format ini mudah diulang dengan variasi reviewer (anak kecil, orang tua, teman kritis) yang masing-masing menghasilkan tone berbeda."
+
+    - slug: voice-over-funny
+      name: "Dubbing / VO Lucu"
+      description: Dubbing hewan/video dengan suara lucu.
+      faceless: true
+      difficulty: pemula
+      rpm: rendah
+      formats: klip + voiceover komedi
+      example_hook: "Kalau kucing bisa ngomong..."
+      guide:
+        audience: "Penonton 15–35 yang memelihara atau menyukai hewan; penonton yang menikmati humor absurd dan karakter yang tidak terduga; pecinta konten hewan yang ingin lapisan humor tambahan di atas visual yang sudah lucu."
+        tone: "Absurd dan playful. Karakter yang diberi suara harus punya kepribadian yang kontras tajam dengan penampilan — kucing yang terlihat malas tapi ternyata bos demanding, bayi yang imut tapi bicara seperti CEO. Kontras adalah sumber humor."
+        format: "15–45 detik. Klip video hewan atau manusia yang ekspresinya ambigu → dubbing suara yang kontras dengan ekspektasi → timing harus presisi — suara harus sync dengan gerakan mulut atau ekspresi wajah."
+        boleh:
+          - "Pilih klip dengan ekspresi wajah yang kuat dan ambigu — semakin ambigu, semakin banyak interpretasi lucu"
+          - "Suara yang dibuat sendiri jauh lebih lucu dari TTS — intonasi manusia tidak tergantikan"
+          - "Referensikan budaya pop atau situasi Indonesia terkini untuk relevansi"
+          - "Caption teks sync dengan voiceover untuk penonton tanpa suara"
+        hindari:
+          - "Jangan gunakan klip tanpa izin kreator asli jika untuk konten monetized"
+          - "Jangan dialog terlalu panjang — maksimal 3–4 kalimat per klip"
+          - "Jangan humor yang merendahkan individu nyata melalui mulut hewan atau bayi"
+          - "Jangan audio yang tidak sinkron dengan gerakan mulut — merusak ilusi"
+        pola_hook: "Detik 0: tampilkan ekspresi subjek yang paling ambigu dan intense + suara pertama yang langsung mengejutkan penonton dengan kontrasnya. Tidak ada intro — langsung ke dialog."
+        contoh_judul:
+          - "Kalau kucing bisa ngomong dan ternyata isi pikirannya seperti ini"
+          - "Hewan ini ekspresinya terlalu serius untuk tidak didubbing"
+          - "Bayi ini ekspresinya persis bos rapat senin pagi dan ini dialognya"
+      micro:
+        - slug: voice-over-funny-kucing-bos
+          name: Dubbing Kucing yang Berperilaku Seperti Bos
+          description: Footage kucing yang ekspresinya mirip bos kantor, didubbing dengan dialog atasan yang demanding dan tidak masuk akal, menyasar pekerja kantoran yang butuh tawa.
+          example_hook: "Kucing ini lirik aku persis kayak bos pas deadline besok pagi..."
+          guide:
+            audience: "Pekerja kantoran 22–35 yang butuh tawa dan validasi; pemilik kucing yang relate dengan kepribadian demanding kucing; penonton yang menikmati humor kantor dalam kemasan yang tidak langsung."
+            tone: "Sarkas dan relatable. Dialog kucing harus persis seperti hal-hal yang atasan nyata katakan tapi dalam konteks absurd. Semakin spesifik dan akurat dialognya ke budaya kerja Indonesia, semakin lucu."
+            format: "20–40 detik. Klip kucing dengan ekspresi serius atau demanding → dubbing dialog atasan yang persis → pause dramatik → dialog selanjutnya. Sync ekspresi kucing dengan konten dialog untuk efek maksimal."
+            boleh:
+              - "Gunakan jargon kantor Indonesia yang spesifik ('cc atasan', 'revisi', 'meeting mendadak')"
+              - "Ekspresi kucing yang paling kritis (tatapan hampa, duduk di laptop) adalah yang terbaik"
+              - "Buat seri dengan kucing yang sama — penonton akan menunggu episode berikutnya"
+              - "Caption teks dialog untuk penonton yang nonton tanpa suara"
+            hindari:
+              - "Jangan dialog yang terlalu panjang — 3–4 kalimat per klip maksimal"
+              - "Jangan referensikan nama atasan atau perusahaan nyata"
+              - "Jangan audio yang tidak sync dengan gerakan mulut atau ekspresi kucing"
+              - "Jangan gunakan klip kucing yang terlihat stres atau tidak nyaman"
+            pola_hook: "Detik 0: kucing dengan ekspresi paling intense + suara pertama yang langsung berbicara seperti bos yang demanding. Kontras antara hewan imut dan dialog serius harus terjadi dalam 1 detik."
+            contoh_judul:
+              - "Kucing ini lirik aku persis kayak bos pas deadline besok dan belum ada progres"
+              - "Isi pikiran kucing yang duduk di laptop saat kamu mau kerja"
+              - "Kucing ini tatap aku 10 detik lalu bilang hal yang paling aku takuti di kantor"
+              - "Bos aku vs kucing aku dan sudah tidak bisa dibedakan lagi ekspresinya"
+              - "Kucing ini duduk di depan pintu dan mengeluarkan ultimatum yang tidak bisa ditolak"
+            content_runway: "Setiap kucing memiliki ekspresi unik yang bisa diinterpretasikan sebagai berbagai persona bos; dan budaya kerja Indonesia terus menyediakan material dialog baru setiap hari."
+
+        - slug: voice-over-funny-hewan-drakor
+          name: Hewan Peliharaan Didubbing Drama Korea
+          description: Klip hewan peliharaan dengan pose dramatis yang didubbing dengan dialog drama Korea yang berlebihan, format humor lintas generasi yang mudah viral.
+          example_hook: "Anjing ini noleh pelan-pelan ke kamera dan yang keluar suaranya mengejutkan..."
+          guide:
+            audience: "Penonton 16–35 yang menonton atau familiar dengan drama Korea; pemilik hewan peliharaan yang punya video lucu hewan mereka; penonton lintas generasi karena K-drama ditonton dari remaja sampai ibu-ibu."
+            tone: "Melodramatis dan over-the-top — persis seperti drama Korea itu sendiri. Kontras antara hewan peliharaan yang biasa saja dengan dialog dramatis K-drama adalah seluruh sumber humor."
+            format: "25–45 detik. Klip hewan dengan pose atau ekspresi dramatis → dubbing dialog K-drama yang berlebihan dengan intonasi drama → pause + musik K-drama → dialog berikutnya. Musik drama Korea sebagai underscore komedi."
+            boleh:
+              - "Gunakan klip hewan yang pose atau gerakannya sudah natural dramatic (noleh, menatap jauh)"
+              - "Musik K-drama yang dikenal sebagai underscore meningkatkan komedi secara signifikan"
+              - "Dialog harus persis meniru struktur dan dramaturgi K-drama asli — itulah yang membuatnya lucu"
+              - "Referensikan drama Korea populer yang penonton kenal untuk recognition humor"
+            hindari:
+              - "Jangan dialog yang tidak ada koneksinya sama sekali dengan K-drama — humor berasal dari parodi yang tepat"
+              - "Jangan gunakan klip hewan yang terlihat tidak nyaman atau dipaksa"
+              - "Jangan dubbing terlalu panjang — 3–4 baris dialog dramatis sudah cukup"
+              - "Jangan musik K-drama ber-hak-cipta tanpa clearance — cari versi royalty-free atau transformatif"
+            pola_hook: "Detik 0: hewan dengan ekspresi paling dramatis + suara pertama dengan intonasi K-drama penuh. Penonton yang pernah nonton drakor langsung tertawa sebelum kata kedua selesai."
+            contoh_judul:
+              - "Anjing ini noleh pelan-pelan ke kamera dan isi dialognya lebih dramatis dari episode 16"
+              - "Kucing ini menatap langit sore dan mengatakan hal yang hanya ada di K-drama"
+              - "Hewan peliharaan ini ternyata hidup di dalam drama Korea dan tidak ada yang sadar"
+              - "Kelinci ini bermonolog sendiri dan scriptnya bisa jadi episode finalenya"
+              - "Ekspresi hewan ini terlalu dramatis untuk tidak didubbing dialog patah hati"
+            content_runway: "Setiap hewan peliharaan dengan ekspresi dramatis bisa didubbing, dan K-drama Indonesia terus memproduksi ratusan dialog dramatis baru setiap tahun; kombinasinya hampir tidak terbatas."
+
+        - slug: voice-over-funny-bayi-motivasi
+          name: Bayi Didubbing Sebagai Motivator Bisnis
+          description: Video bayi yang ekspresi seriusnya didubbing sebagai pemimpin bisnis atau motivator yang memberikan nasihat kehidupan absurd tapi terdengar profound.
+          example_hook: "Bayi 8 bulan ini kasih nasihat bisnis yang lebih masuk akal dari seminar mahal..."
+          guide:
+            audience: "Penonton 20–35 yang lelah dengan konten motivasi serius tapi menyukainya dalam kemasan absurd; penonton yang punya atau dekat dengan bayi; siapapun yang pernah menghabiskan uang untuk seminar motivasi dan merasa perlu ditertawakan."
+            tone: "Absurd tapi insightful. Humor paling kuat lahir ketika dialog bayi terdengar lebih masuk akal dari motivator nyata. Parodi motivasi bisnis yang tepat sasaran — tidak merendahkan bayi, tapi meledek genre motivasi yang berlebihan."
+            format: "20–40 detik. Klip bayi dengan ekspresi serius → dubbing nasihat bisnis yang absurd tapi terdengar profound → pause dramatik → nasihat berikutnya yang semakin absurd. Tone harus serius, bukan lucu — kontraslah yang lucu."
+            boleh:
+              - "Pilih klip bayi yang ekspresinya paling serius dan intense — kontraslah yang lucu, bukan bayi itu sendiri"
+              - "Dialog harus persis meniru bahasa motivator Indonesia (leverage, mindset, breakthrough)"
+              - "Buat seri — 'nasihat bayi untuk minggu ini' bisa jadi format recurring"
+              - "Caption teks untuk penonton yang nonton tanpa suara"
+            hindari:
+              - "Jangan gunakan klip bayi tanpa izin orang tua — ini konten yang melibatkan anak di bawah umur"
+              - "Jangan dialog yang bisa diinterpretasikan sebagai tidak sopan atau kasar"
+              - "Jangan over-edit suara sampai tidak natural — humor lahir dari suara yang masih terdengar seperti manusia"
+              - "Jangan dialog terlalu panjang — efek absurd paling kuat di kalimat pertama dan kedua"
+            pola_hook: "Detik 0: close-up wajah bayi dengan ekspresi paling serius + suara pertama dengan tone motivator penuh tanpa intro. Kontras langsung terjadi di detik pertama."
+            contoh_judul:
+              - "Bayi 8 bulan ini beri nasihat bisnis yang lebih actionable dari seminar Rp5 juta"
+              - "CEO termuda Indonesia bicara tentang leverage dan mindset dan usianya belum 1 tahun"
+              - "Motivator ini belum bisa berdiri tapi nasihatnya lebih masuk akal dari yang lain"
+              - "Bayi ini tatap kamu langsung dan bilang satu hal yang kamu perlu dengar hari ini"
+              - "Workshop gratis tapi materinya dari bayi ini lebih berguna dari kebanyakan yang berbayar"
+            content_runway: "Setiap ekspresi serius bayi bisa jadi konten baru; dan industri motivasi Indonesia terus memproduksi cliche baru yang bisa diparodi — siklus konten ini tidak akan berhenti selama dua industri itu ada."

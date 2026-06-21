@@ -1,0 +1,681 @@
+version: 1
+vertical:
+  slug: v-kreatif
+  name: Kreatif
+  description: Konten proses kreatif dan pembuatan — kerajinan, seni, woodworking, teknologi maker, dan fotografi.
+  guide:
+    audience: "Penonton 18–40 yang menikmati menonton proses pembuatan dari awal hingga selesai; campuran pria-wanita yang suka DIY, seni, dan teknologi; mereka yang terinspirasi untuk mencoba sendiri atau sekadar menikmati kepuasan visual proses kreatif."
+    tone: "Fokus pada proses, bukan hasil semata. Setiap langkah diperlihatkan dengan rasa bangga dan ketelitian. Tidak perlu narasi panjang — tangan yang bekerja sudah bercerita sendiri."
+    format: "Video 30–90 detik, dominan close-up tangan dan bahan, vertikal 9:16. Time-lapse untuk tahap panjang, real-time untuk momen kunci. Struktur: kondisi awal / bahan mentah → proses bertahap → reveal karya jadi."
+    boleh:
+      - "Perlihatkan kondisi bahan mentah atau alat sebelum mulai agar penonton tahu tantangannya"
+      - "Gunakan SFX proses asli (gergaji, kuas, printer berjalan) dan boost sedikit untuk kepuasan audio"
+      - "Reveal akhir: tampilkan karya di bawah pencahayaan yang memperlihatkan detail terbaik"
+      - "Tambahkan teks singkat nama bahan atau teknik yang dipakai agar penonton bisa meniru"
+      - "Variasi angle — bird-eye untuk layout, close-up untuk detail, medium untuk konteks"
+    hindari:
+      - "Jangan skip tahap yang membuat hasil terlihat tiba-tiba jadi tanpa usaha"
+      - "Jangan gunakan musik keras yang kalahkan suara proses — ambient lo-fi lebih tepat"
+      - "Jangan tampilkan wajah jika channel faceless"
+      - "Jangan klaim proyek mudah jika sebenarnya butuh keahlian khusus — jujur soal kurva belajar"
+      - "Jangan gunakan bahan atau alat yang tidak tersedia di Indonesia tanpa alternatif lokal"
+    pola_hook: "Detik 0–2: tampilkan bahan mentah atau kondisi awal yang tampak biasa/tidak menarik + teks singkat hasil akhir yang mengesankan. Penonton harus bertanya-tanya 'bagaimana bisa jadi begitu?'."
+    contoh_judul:
+      - "Dari bahan murah ini jadi sesuatu yang bikin orang nanya beli di mana"
+      - "Proses ini butuh 3 jam tapi kamu bisa tonton dalam 60 detik"
+      - "Tangan yang bekerja lebih menarik dari apapun di feed ini"
+
+  niches:
+    - slug: diy-craft
+      name: "DIY / Kerajinan"
+      description: Bikin barang dari bahan murah.
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: POV + time-lapse + hard-sub
+      example_hook: "Dari kardus bekas jadi ini..."
+      guide:
+        audience: "Penonton 18–35 yang suka konten kreatif praktis; ibu rumah tangga, mahasiswa, dan pekerja muda yang ingin menghasilkan sesuatu dengan tangan sendiri; penonton yang terdorong mencoba setelah menonton."
+        tone: "Inventif dan memberdayakan. Setiap video harus meninggalkan pesan implisit bahwa siapapun bisa membuat sesuatu berharga dari bahan yang dianggap tidak berguna."
+        format: "45–75 detik. Struktur: tampilkan bahan murah/bekas → proses kerajinan step-by-step (time-lapse + close-up detail) → reveal produk jadi yang terlihat lebih mahal dari bahan aslinya. Teks nama bahan dan estimasi harga di awal. Vertikal 9:16."
+        boleh:
+          - "Tampilkan harga total bahan di awal untuk impact 'murah tapi hasilnya begini'"
+          - "Gunakan bahan yang mudah ditemukan di toko Rp2000an, Daiso, atau pasar lokal"
+          - "Reveal akhir: taruh produk di konteks penggunaan nyata (di meja, di dinding, dibungkus sebagai hadiah)"
+          - "Teks overlay singkat nama teknik atau bahan spesifik yang dipakai"
+        hindari:
+          - "Jangan gunakan alat yang tidak umum atau terlalu mahal tanpa alternatif"
+          - "Jangan skip langkah kritis yang membuat penonton tidak bisa meniru di rumah"
+          - "Jangan tampilkan wajah — channel ini faceless"
+          - "Jangan klaim 'mudah' jika prosesnya membutuhkan ketelitian tinggi — set ekspektasi realistis"
+        pola_hook: "Detik 0: close-up bahan mentah yang tampak biasa + teks 'modal Rp X' atau 'dari sampah jadi ini'. Langsung mulai proses di detik 2–3."
+        contoh_judul:
+          - "Dari kardus bekas jadi organizer meja yang keliatan beli di IKEA"
+          - "Modal Rp30rb bikin hadiah ulang tahun yang terlihat Rp500rb"
+          - "Botol plastik ini biasanya dibuang, tapi jadi ini dalam 20 menit"
+      micro:
+        - slug: diy-craft-daur-ulang-plastik
+          name: Daur Ulang Sampah Plastik Jadi Barang Berguna
+          description: Proyek kerajinan yang mengubah botol plastik, kantong kresek, dan kemasan bekas menjadi item rumah tangga berguna, menyasar penonton yang peduli lingkungan dan hemat.
+          example_hook: "Botol plastik ini biasanya langsung dibuang, tapi jadi ini dalam 20 menit..."
+          guide:
+            audience: "Penonton 20–35 yang peduli lingkungan dan penghematan; ibu rumah tangga yang ingin kurangi sampah plastik rumah tangga; mahasiswa yang suka proyek DIY murah meriah."
+            tone: "Solutif dan mengejutkan. Setiap video harus membuat penonton berpikir dua kali sebelum membuang plastik. Nada kasual seperti ngobrol dengan teman yang kreatif."
+            format: "40–60 detik. Struktur: tampilkan sampah plastik yang akan digunakan → bersihkan → potong/bentuk → rakit → finishing → reveal produk jadi dalam penggunaan nyata. Time-lapse bagian proses panjang. Vertikal 9:16."
+            boleh:
+              - "Mulai dengan sampah yang paling sering ada di rumah (botol air mineral, kemasan sampo, kantong kresek)"
+              - "Tampilkan hasil akhir dalam penggunaan nyata — pot tanaman diisi tanaman, tempat pensil berisi pensil"
+              - "Gunakan teks 'biasanya dibuang' atau 'harga beli Rp X' untuk efek kontras"
+              - "Boost SFX gunting, pemotong, dan hot glue gun untuk kepuasan audio"
+            hindari:
+              - "Jangan gunakan bahan kimia berbahaya tanpa disclosure safety"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan skip langkah pembersihan sampah — hygiene penting untuk relevansi"
+              - "Jangan pilih proyek yang hasilnya terlihat murahan meski dari sampah — estetika tetap penting"
+            pola_hook: "Detik 0: close-up sampah plastik bekas (botol air mineral, kemasan sampo) + teks 'biasanya langsung dibuang'. Langsung ambil gunting di detik 2."
+            contoh_judul:
+              - "Botol plastik ini aku kumpul 5 hari, sekarang jadi rak dinding yang cakep"
+              - "Kantong kresek bekas jadi keset anyaman yang tahan bertahun-tahun"
+              - "Kemasan sampo ini jadi tempat sikat gigi yang lebih rapi dari yang dijual"
+              - "5 botol air mineral = 1 pot gantung yang bikin teras kos kelihatan hidup"
+              - "Tutup botol plastik ini dikumpul 2 minggu, hasilnya bikin tetangga nanya beli di mana"
+            content_runway: "Setiap jenis plastik rumah tangga (botol, kemasan, kantong, sedotan) dan setiap kebutuhan rumah (organizer, dekorasi, alat dapur, pot) menghasilkan kombinasi yang hampir tak terbatas; produksi sampah plastik Indonesia jaminan pasokan bahan baku."
+
+        - slug: diy-craft-hadiah-personal
+          name: Hadiah Buatan Tangan yang Terlihat Mahal
+          description: Proyek kerajinan yang menghasilkan hadiah personal bernilai tinggi dari bahan murah — bingkai foto unik, lilin aroma, dan hiasan — untuk penonton yang ingin berkesan tanpa budget besar.
+          example_hook: "Hadiah ini terlihat Rp500rb tapi aku buat sendiri dengan modal Rp30rb..."
+          guide:
+            audience: "Penonton 18–30 yang ingin memberi hadiah berkesan tapi budget terbatas; pasangan muda di momen ulang tahun dan anniversary; pemberi hadiah yang ingin sentuhan personal di atas segalanya."
+            tone: "Hangat dan personal. Setiap video memberi kesan bahwa hadiah terbaik adalah yang dibuat dengan tangan sendiri. Bukan tentang sempurna, tapi tentang niat yang terlihat nyata."
+            format: "45–70 detik. Struktur: tampilkan bahan mentah dengan harga → proses pembuatan (close-up detail tangan) → pengemasan yang rapi → reveal hadiah jadi yang siap diberikan. Vertikal 9:16."
+            boleh:
+              - "Tampilkan harga total bahan di awal untuk efek 'murah tapi berkesan'"
+              - "Pengemasan adalah bagian penting — tunjukkan cara bungkus yang rapi meski sederhana"
+              - "Tambahkan momen 'membayangkan reaksi penerima' di reveal akhir"
+              - "SFX suara kertas wrapping, selotip, dan pita ditarik untuk kepuasan audio"
+            hindari:
+              - "Jangan gunakan bahan yang sulit ditemukan di Indonesia tanpa alternatif lokal"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan skip langkah yang membuat hasil terlihat mahal — detail finishing adalah kuncinya"
+              - "Jangan proyek yang membutuhkan mesin khusus tanpa alternatif manual"
+            pola_hook: "Detik 0: close-up bahan-bahan murah tersusun di meja + teks 'modal Rp30rb, terlihat Rp500rb'. Langsung mulai proses di detik 2."
+            contoh_judul:
+              - "Hadiah ultah ini bikin pacar nangis, modal Rp35rb dan 1 jam bikin sendiri"
+              - "Lilin aroma custom ini terlihat dari toko premium tapi aku buat di dapur"
+              - "Bingkai foto vintage ini dari kardus bekas, cara buatnya lebih mudah dari yang kelihatan"
+              - "Anniversary gift Rp50rb yang lebih berkesan dari beli di mal — ini prosesnya"
+              - "Hadiah wisuda buatan tangan yang bikin orang tanya 'beli di mana?' padahal gak jual di mana-mana"
+            content_runway: "Setiap momen hadiah (ulang tahun, anniversary, wisuda, lebaran, natal) dan setiap jenis hadiah (foto, lilin, perhiasan, dekorasi) menghasilkan video berbeda; momen perayaan di Indonesia sangat sering dan beragam sepanjang tahun."
+
+        - slug: diy-craft-dekorasi-kos-murah
+          name: Dekorasi Kamar Kos dengan Budget Minimum
+          description: Proyek transformasi kamar kos dengan kerajinan tangan murah yang tidak merusak tembok dan tidak memerlukan izin pemilik kos, menyasar mahasiswa dan perantau.
+          example_hook: "Kamar kos ini totalnya Rp150rb untuk dekorasi dan sekarang terlihat kayak apartemen..."
+          guide:
+            audience: "Mahasiswa dan perantau 18–27 yang tinggal di kos; penonton yang ingin ruangan terasa lebih hidup tanpa renovasi; penghuni kos yang terbatas oleh aturan 'tidak boleh paku dinding'."
+            tone: "Relatable dan mendorong. Setiap video seperti ngobrol dengan teman sesama penghuni kos yang punya ide kreatif. Biaya selalu transparan karena itu kekhawatiran utama audiens."
+            format: "45–75 detik. Struktur: tampilkan kamar kos sebelum (polos/biasa) → proses beli bahan + buat dekorasi → proses pasang → reveal kamar setelah. Before-after dari sudut yang sama. Vertikal 9:16."
+            boleh:
+              - "Gunakan metode tanpa paku (command strip, selotip, tali) yang tidak merusak dinding"
+              - "Tampilkan total budget dengan rinci di layar — ini poin jual utama konten ini"
+              - "Reveal dari sudut pintu masuk agar penonton lihat transformasi keseluruhan"
+              - "Bahan dari Daiso, toko Rp2000an, atau marketplace dengan pengiriman cepat"
+            hindari:
+              - "Jangan proyek yang memerlukan palu, paku, atau modifikasi permanen"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan gunakan bahan yang total harganya di atas Rp300rb tanpa justifikasi nilai"
+              - "Jangan skip before shot — kontras sebelum-sesudah adalah inti konten ini"
+            pola_hook: "Detik 0: wide shot kamar kos polos + teks 'total budget Rp150rb'. Potong ke shots bahan-bahan di detik 3."
+            contoh_judul:
+              - "Kamar kos polos ini aku ubah total dengan Rp150rb dan 4 jam — tanpa paku"
+              - "Dekorasi dinding kos tanpa merusak cat, cara yang gak pernah dibilang pemilik kos"
+              - "String light + polaroid + Rp80rb = kamar kos yang bikin teman betah main ke sini"
+              - "Sudut baca kos ini dari kardus bekas dan kain sisa, totalnya di bawah Rp100rb"
+              - "Kamar kos 3x3 ini terasa lebih besar setelah trick dekorasi sederhana ini"
+            content_runway: "Setiap area kamar kos (meja belajar, dinding, sudut baca, area tidur, lemari) dan setiap gaya (minimalis, bohemian, estetik Korea, vintage) menghasilkan video berbeda; populasi anak kos Indonesia sangat besar dan terus berganti setiap tahun ajaran."
+
+    - slug: art-drawing
+      name: "Seni / Menggambar"
+      description: Proses menggambar/melukis time-lapse.
+      faceless: true
+      difficulty: menengah
+      rpm: rendah
+      formats: time-lapse + ASMR
+      example_hook: "Gambar ini cuma pakai 1 pensil..."
+      guide:
+        audience: "Penonton 16–35 yang mengagumi seni tapi tidak semua bisa menggambar sendiri; penggemar time-lapse proses artistik; seniman pemula yang mencari inspirasi dan teknik."
+        tone: "Meditatif dan penuh kekaguman. Setiap goresan diperlihatkan sebagai keputusan yang disengaja. Penonton harus merasa seperti menyaksikan sesuatu yang ajaib muncul di depan mata."
+        format: "60–90 detik. Time-lapse 8–15x untuk sebagian besar proses, real-time untuk detail akhir atau momen kunci. Struktur: kertas/kanvas kosong → sketsa awal → detail bertahap → finishing → reveal hasil jadi. ASMR suara pensil atau kuas di atas kertas diboost. Vertikal 9:16."
+        boleh:
+          - "Reveal di akhir: mundur dari close-up detail ke keseluruhan karya"
+          - "ASMR suara pensil, kuas, atau stylus sangat memuaskan — rekam dengan mic dekat"
+          - "Tampilkan alat yang digunakan sebentar di awal (jenis pensil, cat, software)"
+          - "Split-screen progress di titik tertentu untuk menunjukkan perkembangan"
+        hindari:
+          - "Jangan cut terlalu agresif sampai penonton kehilangan sense of progress"
+          - "Jangan tambahkan musik yang terlalu dominan mengalahkan suara menggambar"
+          - "Jangan tampilkan wajah — channel ini faceless"
+          - "Jangan skip dari sketsa kasar langsung ke hasil akhir — proses adalah kontennya"
+        pola_hook: "Detik 0: kertas/kanvas kosong atau sketsa awal yang belum jelas + teks hasil akhir ('potret realistis', 'hanya pakai pensil 2B'). Penonton harus penasaran bagaimana bisa."
+        contoh_judul:
+          - "Kertas kosong jadi potret ini hanya pakai satu pensil 2B"
+          - "60 menit proses ini dikompres jadi 60 detik — tonton dari awal"
+          - "Setiap goresan kuas ini ada alasannya, tonton prosesnya"
+      micro:
+        - slug: art-drawing-potret-1-jam
+          name: Potret Wajah Realistis dalam 1 Jam
+          description: Time-lapse menggambar potret wajah realistis dari blank canvas hingga selesai dalam format yang memperlihatkan keputusan artistis penting di setiap tahap.
+          example_hook: "Dari kertas kosong jadi potret ini dalam 60 menit, ini prosesnya step by step..."
+          guide:
+            audience: "Penonton 16–30 yang mengagumi seni potret realistis; seniman pemula yang ingin belajar struktur dan shading; penonton yang menikmati kepuasan melihat wajah muncul secara bertahap."
+            tone: "Presisi dan metodis. Setiap keputusan proporsi dan shading terlihat disengaja. Penonton bisa ikuti logika proses — proporsi → bentuk besar → nilai gelap-terang → detail."
+            format: "60–90 detik. Time-lapse 10–15x untuk sketsa dan shading dasar, real-time 1x untuk detail mata dan bibir. Struktur: kertas kosong → proporsi → bentuk wajah → shading bertahap → detail → reveal. Close-up tangan dan area yang sedang dikerjakan. Vertikal 9:16."
+            boleh:
+              - "Tampilkan alat: jenis pensil (2H, HB, 2B, 4B) dan blending tool yang dipakai"
+              - "ASMR suara pensil di atas kertas diboost — suara HB vs 4B beda dan menarik"
+              - "Momen mata mulai terlihat 'hidup' adalah klimaks yang harus real-time atau slow-down"
+              - "Tampilkan referensi foto vs hasil gambar di split-screen di akhir"
+            hindari:
+              - "Jangan skip proses shading bertahap — nilai gelap-terang yang bertahap adalah kepuasan utama"
+              - "Jangan tampilkan wajah orang nyata yang dikenali tanpa izin"
+              - "Jangan tampilkan tangan yang menggambar dengan getaran — stabilisasi penting"
+              - "Jangan gunakan musik terlalu keras — ASMR pensil lebih berharga"
+            pola_hook: "Detik 0: close-up kertas kosong + pensil diletakkan + teks '60 menit, satu pensil'. Goresan pertama sketsa proporsi dimulai di detik 2."
+            contoh_judul:
+              - "Dari kertas kosong jadi potret realistis ini, hanya pakai tiga jenis pensil"
+              - "60 menit gambar wajah ini dikompres jadi 60 detik — tonton prosesnya"
+              - "Momen mata mulai kelihatan 'hidup' di gambar ini selalu bikin merinding"
+              - "Potret pensil ini dikira foto sampai lihat dari dekat — ini proses lengkapnya"
+              - "Shading wajah dari terang ke gelap bertahap — proses ini terlalu memuaskan untuk diskip"
+            content_runway: "Setiap subjek potret (orang, hewan, tokoh ikonik), setiap media (pensil, arang, conté, ballpoint), dan setiap gaya (realistis, semi-realistis, sketchy) menghasilkan video yang berbeda; tidak ada dua potret yang sama."
+
+        - slug: art-drawing-digital-tablet
+          name: Proses Digital Art dari Sketch ke Final
+          description: Layar-rekam proses lengkap membuat digital illustration dari sketsa kasar hingga artwork final, termasuk tips layer management dan pilihan brush.
+          example_hook: "Ini yang berbeda antara sketsa awal dan hasil akhir, dan kenapa layer itu penting..."
+          guide:
+            audience: "Seniman digital 18–30 yang ingin belajar workflow; penonton yang penasaran dengan proses di balik ilustrasi digital yang sering dilihat di media sosial; gamer dan anime fan yang tertarik dunia seni digital."
+            tone: "Teknis tapi accessible. Screen recording yang rapid tapi bisa dipahami. Setiap keputusan layer dan warna terasa logis — bukan sihir, tapi skill yang bisa dipelajari."
+            format: "60–90 detik. Screen recording tablet/layar + tangan dan stylus di frame. Struktur: kanvas kosong → rough sketch → clean lineart → base color → shading → detail → final. Time-lapse 8x untuk blocking, real-time untuk detail kunci. Vertikal 9:16."
+            boleh:
+              - "Tampilkan panel layer di sisi layar agar penonton memahami struktur"
+              - "Zoom in ke area yang sedang dikerjakan untuk kejelasan visual"
+              - "Teks overlay nama brush atau teknik yang dipakai di momen kunci"
+              - "Split: WIP di tengah proses vs hasil final untuk menunjukkan jarak yang ditempuh"
+            hindari:
+              - "Jangan rekam dengan resolusi rendah — detail layar harus terlihat jelas"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan gunakan software yang tidak tersedia di Indonesia atau terlalu mahal tanpa alternatif"
+              - "Jangan loncat dari lineart langsung ke final tanpa proses warna yang jelas"
+            pola_hook: "Detik 0: tampilkan hasil akhir ilustrasi yang sudah jadi 0.5 detik → cut ke kanvas kosong + teks 'proses dari awal'. Penonton tahu tujuan akhirnya, sekarang penasaran bagaimana sampai di sana."
+            contoh_judul:
+              - "Dari sketsa berantakan ini aku buat ilustrasi yang masuk portofolio klien"
+              - "Kenapa 20 layer lebih baik dari 3 layer — workflow digital art ini jelaskan semuanya"
+              - "Proses digital art 4 jam ini dikompres jadi 90 detik — perhatikan keputusan warnanya"
+              - "Rough sketch jelek ini jadi ilustrasi final yang bikin klien bayar Rp2jt"
+              - "Setiap layer di file ini ada alasannya — ini workflow yang aku pakai tiap hari"
+            content_runway: "Setiap tema ilustrasi (karakter, landscape, fanart, komersial, pattern), setiap software (Procreate, Clip Studio, Krita, Photoshop), dan setiap gaya artistik menghasilkan video berbeda; dunia digital art terus berkembang dengan tren baru setiap bulan."
+
+        - slug: art-drawing-urban-sketching
+          name: Urban Sketching Lokasi Ikonik Indonesia
+          description: Time-lapse menggambar lokasi ikonik Indonesia secara langsung di lapangan — pasar, masjid, gedung tua — memadukan seni dengan dokumentasi budaya lokal.
+          example_hook: "Aku duduk di sini selama 40 menit dan gambar ini sebelum lokasi ini direnovasi..."
+          guide:
+            audience: "Seniman dan pecinta seni perjalanan 22–40; penonton yang tertarik dokumentasi visual kota dan budaya; wisatawan dan orang lokal yang bangga dengan keindahan arsitektur Indonesia."
+            tone: "Dokumentatif dan nostalgis. Ada rasa urgensi karena banyak lokasi ikonik di Indonesia sedang berubah atau hilang. Setiap sketsa adalah arsip visual yang berharga."
+            format: "60–90 detik. Setup kamera tertuju pada tangan dan buku sketsa dengan latar lokasi nyata. Time-lapse 10–20x. Struktur: tampilkan lokasi asli sebentar → tangan mulai sketsa → proses bertahap → reveal halaman penuh → bandingkan dengan foto lokasi. Vertikal 9:16."
+            boleh:
+              - "Tampilkan lokasi nyata (wide shot atau foto) di awal sebelum sketsa dimulai"
+              - "Suara ambient lokasi (pasar, adzan, lalu lintas jauh) sebagai latar — autentik"
+              - "Reveal akhir: halaman sketchbook dibandingkan langsung dengan lokasi asli"
+              - "Tambahkan teks nama lokasi dan kota untuk konteks dan discoverability"
+            hindari:
+              - "Jangan rekam di lokasi berbahaya atau yang larang pengambilan gambar"
+              - "Jangan tampilkan wajah — channel ini faceless (tangan dan buku sketsa saja)"
+              - "Jangan gunakan musik modern yang tidak cocok dengan suasana lokasi historis"
+              - "Jangan skip bagian sketsa yang menunjukkan kesalahan dan koreksi — keautentikan adalah nilainya"
+            pola_hook: "Detik 0: foto atau video lokasi ikonik yang indah + teks 'aku gambar ini langsung di sana'. Cut ke tangan membuka buku sketsa di detik 3."
+            contoh_judul:
+              - "Aku duduk di depan masjid ini 45 menit dan ini yang aku hasilkan sebelum hujan"
+              - "Gedung kolonial ini mau dirobohkan — aku sempat gambar sebelum hilang"
+              - "Urban sketching Pasar Baru Jakarta — suara pasar jadi musik latar terbaik"
+              - "Sketsa langsung Pura Bali ini dalam 30 menit sebelum rombongan turis datang"
+              - "Kampung warna-warni ini aku gambar dari atas bukit, hasilnya bikin mau balik lagi"
+            content_runway: "Indonesia punya ribuan lokasi ikonik (pasar, masjid, gereja, kuil, gedung kolonial, kampung adat, alam) di ratusan kota; setiap lokasi bisa dikunjungi ulang di musim atau waktu berbeda untuk hasil visual yang berbeda."
+
+    - slug: manufacturing
+      name: How It's Made
+      description: Proses produksi pabrik.
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: footage proses + voiceover
+      example_hook: "Begini cara pensil dibuat massal..."
+      guide:
+        audience: "Penonton 18–40 yang penasaran dengan proses di balik produk sehari-hari; penggemar konten 'how it's made'; mereka yang tidak pernah memikirkan kompleksitas produk yang mereka gunakan setiap hari."
+        tone: "Ingin tahu dan mengedukasi tanpa terasa berat. Setiap video menjawab pertanyaan 'bagaimana bisa jadi seperti ini?' dengan cara yang membuat penonton merasa lebih menghargai produk tersebut."
+        format: "60–90 detik. Struktur: tampilkan produk jadi yang familiar → zoom in ke detail → flashback ke bahan baku → proses produksi step-by-step (footage pabrik atau pengrajin) → produk jadi lagi di akhir. Voiceover singkat menjelaskan tahap penting. Vertikal 9:16."
+        boleh:
+          - "Mulai dengan produk yang penonton gunakan setiap hari untuk relevansi instan"
+          - "Angka yang mengejutkan (durasi proses, jumlah langkah) selalu menarik perhatian"
+          - "Close-up mesin atau tangan pengrajin di momen kunci proses"
+          - "Kontras: produk dalam bungkus rapi di toko vs asal-muasalnya yang tidak diduga"
+        hindari:
+          - "Jangan gunakan footage pabrik yang memperlihatkan kondisi kerja yang sensitif tanpa konteks"
+          - "Jangan tampilkan wajah pekerja tanpa izin — fokus pada tangan dan mesin"
+          - "Jangan voiceover terlalu panjang — visual proses lebih kuat dari penjelasan"
+          - "Jangan pilih produk yang proses produksinya sudah sangat dikenal"
+        pola_hook: "Detik 0: tampilkan produk jadi yang familiar + teks 'kamu gak akan percaya bagaimana ini dibuat'. Cut ke bahan baku atau tahap paling mengejutkan di detik 3."
+        contoh_judul:
+          - "Begini cara indomie dibuat sebelum sampai ke tanganmu"
+          - "Proses bikin pensil yang kamu pakai sehari-hari lebih rumit dari yang dikira"
+          - "Pabrik ini bikin sepatu lokal yang kamu pakai, begini prosesnya dari dalam"
+      micro:
+        - slug: manufacturing-produk-lokal-indonesia
+          name: Begini Cara Produk Lokal Indonesia Dibuat
+          description: Behind-the-scenes proses produksi produk Indonesia yang dikenal luas — kecap, batik, keramik Kasongan — memperlihatkan keahlian dan kerumitan di balik produk sehari-hari.
+          example_hook: "Kecap yang kamu pakai tiap hari melalui proses ini selama 6 bulan sebelum sampai ke meja makanmu..."
+          guide:
+            audience: "Penonton Indonesia 20–45 yang ingin lebih menghargai produk lokal; konsumen yang penasaran dengan proses di balik merek yang mereka kenal; penonton yang bangga produk Indonesia."
+            tone: "Bangga dan mendidik. Setiap video memperkuat apresiasi terhadap kerumitan di balik produk lokal yang sering dianggap sederhana. Nada hangat dan informatif."
+            format: "60–90 detik. Struktur: produk jadi yang familiar (kecap Bango, batik Pekalongan, keramik Kasongan) → bahan baku → proses produksi berurutan → quality control → pengemasan → produk di tangan konsumen. Voiceover singkat di titik kunci. Vertikal 9:16."
+            boleh:
+              - "Tampilkan nama brand atau daerah asal produk untuk koneksi emosional"
+              - "Angka mengejutkan: '6 bulan fermentasi', '127 langkah', '4 generasi pengrajin'"
+              - "Footage tangan pengrajin tua yang terampil — selalu menarik dan menghormati"
+              - "Bandingkan produk lokal dengan produk impor sejenis untuk bangkitkan kebanggaan"
+            hindari:
+              - "Jangan kritisi proses produksi yang legal meski berbeda dari standar internasional"
+              - "Jangan tampilkan wajah pekerja tanpa izim — fokus pada tangan dan proses"
+              - "Jangan gunakan footage pabrik dari internet yang tidak terverifikasi keasliannya"
+              - "Jangan voiceover teknis yang membuat penonton bingung — keep it accessible"
+            pola_hook: "Detik 0: close-up produk lokal yang sangat familiar di dapur atau lemari + teks 'kamu pakai ini setiap hari, tapi tahu gak gimana buatnya?' Langsung cut ke bahan baku di detik 3."
+            contoh_judul:
+              - "Kecap manis ini difermentasi 6 bulan sebelum sampai ke dapur kamu"
+              - "Batik tulis asli ini butuh 3 bulan kerja satu pengrajin untuk satu lembar kain"
+              - "Di dalam pabrik Indomie — proses yang gak pernah kamu lihat sebelumnya"
+              - "Keramik Kasongan ini dibuat dengan teknik yang sama sejak 400 tahun lalu"
+              - "Sepatu kulit lokal ini melalui 60 langkah tangan sebelum sampai ke tokomu"
+            content_runway: "Indonesia punya ratusan produk lokal ikonik dari berbagai kategori (makanan, tekstil, kerajinan, kosmetik, minuman); setiap daerah punya produk khas dengan proses produksi unik yang belum pernah difilmkan dengan baik."
+
+        - slug: manufacturing-kerajinan-tangan-pengrajin
+          name: Tangan Pengrajin Lokal yang Hampir Punah
+          description: Dokumentasi pengrajin tua Indonesia yang masih menggunakan teknik tradisional untuk membuat produk artisan, menyasar penonton yang menghargai warisan budaya.
+          example_hook: "Pengrajin 70 tahun ini adalah satu-satunya yang masih tahu cara membuat ini di seluruh Indonesia..."
+          guide:
+            audience: "Penonton 25–50 yang menghargai warisan budaya dan kerajinan tangan; generasi muda yang ingin tahu tentang tradisi yang menghilang; kolektor dan pecinta seni kerajinan Indonesia."
+            tone: "Penuh penghormatan dan rasa urgensi. Ada kesadaran bahwa setiap video ini mendokumentasikan sesuatu yang mungkin tidak ada lagi dalam beberapa generasi. Bukan melankolis, tapi menghargai."
+            format: "75–90 detik. Dominan close-up tangan tua yang terampil. Struktur: perkenalan singkat pengrajin (tangan, bukan wajah) → bahan baku tradisional → teknik yang dipelajari puluhan tahun → karya jadi. Suara ambient kerja menjadi latar. Vertikal 9:16."
+            boleh:
+              - "Close-up tangan keriput yang masih terampil — visual yang sangat kuat dan menghormati"
+              - "Suara proses kerja (ketukan, gesekan, tenunan) adalah latar terbaik tanpa musik"
+              - "Teks singkat: usia pengrajin, berapa tahun berlatih, berapa yang tersisa"
+              - "Tampilkan karya selesai di konteks penggunaan tradisional"
+            hindari:
+              - "Jangan tampilkan wajah pengrajin tanpa izin yang jelas"
+              - "Jangan framing sebagai 'museum' — ini kehidupan dan pekerjaan nyata mereka"
+              - "Jangan gunakan musik yang tidak cocok dengan suasana tradisional"
+              - "Jangan klaim teknik 'hampir punah' tanpa verifikasi — harus berbasis fakta"
+            pola_hook: "Detik 0: close-up tangan tua yang sedang bekerja dengan cepat dan terampil + teks 'pengrajin 70 tahun, satu-satunya yang tersisa'. Langsung masuk ke close-up teknik di detik 3."
+            contoh_judul:
+              - "Pengrajin 74 tahun ini satu-satunya yang masih bisa buat wayang kulit dengan teknik ini"
+              - "Tangan ini sudah tenun 50 tahun, dan tidak ada yang mau belajar melanjutkan"
+              - "Pembuat gamelan terakhir di desa ini masih kerja setiap hari di umur 68"
+              - "Teknik ukir ini hampir punah — hanya 3 pengrajin di Indonesia yang masih bisa"
+              - "Proses bikin keris ini tidak berubah sejak 500 tahun lalu, dan ini yang melakukannya sekarang"
+            content_runway: "Indonesia punya ribuan pengrajin tradisional di ratusan keahlian — ukir, tenun, batik, tempa, anyam, gerabah, gamelan — di setiap daerah; setiap pengrajin dan setiap keahlian menghasilkan video yang unik dan berharga."
+
+        - slug: manufacturing-makanan-skala-industri
+          name: Proses Produksi Makanan Favorit Skala Pabrik
+          description: Footage dan penjelasan proses produksi makanan yang dikonsumsi jutaan orang Indonesia setiap hari dalam skala industri, memenuhi rasa ingin tahu yang universal.
+          example_hook: "Indomie yang kamu masak 3 menit itu melalui proses ini selama berjam-jam di pabrik..."
+          guide:
+            audience: "Penonton 16–40 yang penasaran dengan di balik dapur besar merek makanan favorit; konsumen yang belum pernah melihat skala produksi industri pangan Indonesia; penonton yang tertarik food science."
+            tone: "Mengagumkan dan informatif. Skala industri makanan Indonesia yang besar adalah fakta yang mengejutkan bagi sebagian besar konsumen. Nada bangga pada kapasitas industri pangan lokal."
+            format: "60–90 detik. Struktur: tampilkan produk di toko/dapur → cut ke pabrik (bahan baku masuk) → proses mesin → quality control → pengemasan otomatis → produk keluar ke distribusi. Voiceover angka-angka yang mengejutkan. Vertikal 9:16."
+            boleh:
+              - "Angka mengagumkan: '5 juta bungkus per hari', 'pabrik seluas 50 lapangan bola'"
+              - "Close-up mesin yang bergerak cepat dan presisi — selalu menarik secara visual"
+              - "Kontras: tangan manusia masak 15 menit vs pabrik produksi jutaan dalam waktu sama"
+              - "Tampilkan merek yang dikenal untuk relevansi instan"
+            hindari:
+              - "Jangan tampilkan informasi rahasia produksi yang bisa jadi masalah hukum"
+              - "Jangan gunakan footage yang mengandung kondisi kerja negatif tanpa konteks"
+              - "Jangan klaim proses spesifik yang tidak terverifikasi — stick to footage resmi atau yang sudah dipublikasikan"
+              - "Jangan narasi berlebihan — visual pabrik sudah berbicara sendiri"
+            pola_hook: "Detik 0: close-up produk makanan yang sangat familiar + teks 'kamu makan ini setiap hari, tapi tahu gak di mana dan bagaimana buatnya?' Langsung cut ke aerial pabrik di detik 3."
+            contoh_judul:
+              - "Pabrik Indomie ini produksi 5 juta bungkus sehari — dari dalam begini kelihatannya"
+              - "Proses bikin tahu pabrik vs tahu rumahan — skala dan perbedaannya mengejutkan"
+              - "Kopi sachet favorit kamu melalui 40 tahap ini sebelum sampai ke gelas kamu"
+              - "Di dalam pabrik kerupuk terbesar Indonesia — 200 ton per hari dari tangan ke mesin"
+              - "Proses bikin tempe skala pabrik vs cara nenek — ada yang berubah dan ada yang tidak"
+            content_runway: "Setiap produk makanan favorit Indonesia (mie instant, tahu, tempe, kecap, kopi, kerupuk, biskuit) memiliki proses produksi yang menarik; industri pangan Indonesia adalah salah satu terbesar di Asia Tenggara."
+
+    - slug: woodworking
+      name: Woodworking
+      description: "Kerajinan kayu, furniture."
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: POV + time-lapse + ASMR
+      example_hook: "Kayu bekas ini jadi meja mewah..."
+      guide:
+        audience: "Pria 22–45 yang tertarik kerajinan tangan dan DIY; pemilik rumah yang ingin furniture custom tanpa harga tukang; penonton yang menikmati kepuasan membuat sesuatu dari kayu dengan tangan."
+        tone: "Terampil dan penuh kepuasan. Setiap suara gergaji, amplas, dan palu terasa seperti musik. Penonton harus merasakan kepuasan membangun dari bahan mentah hingga produk fungsional."
+        format: "60–90 detik. Dominan close-up tangan, kayu, dan alat. Struktur: kayu mentah/bekas → pengukuran dan pemotongan → perakitan → pengamplasan → finishing → reveal produk jadi dalam penggunaan. ASMR suara kayu dan alat diboost. Vertikal 9:16."
+        boleh:
+          - "ASMR suara gergaji, amplas, dan getaran mesin — ini bagian yang paling memuaskan"
+          - "Tampilkan tekstur kayu setelah amplas — selalu memukau secara visual"
+          - "Reveal: produk ditempatkan dalam ruangan nyata dan difungsikan"
+          - "Teks singkat spesifikasi: jenis kayu, ukuran, estimasi biaya bahan"
+        hindari:
+          - "Jangan tampilkan penggunaan alat yang tidak aman tanpa proteksi yang terlihat"
+          - "Jangan tampilkan wajah — channel ini faceless"
+          - "Jangan skip proses pengamplasan — itu bagian paling satisfying secara visual dan audio"
+          - "Jangan gunakan kayu dengan kualitas buruk yang hasilnya tidak memuaskan"
+        pola_hook: "Detik 0: close-up kayu bekas atau mentah yang tampak biasa + teks 'kayu bekas ini jadi [produk]'. Langsung mulai pengukuran atau pemotongan di detik 2."
+        contoh_judul:
+          - "Kayu palet bekas truk ini jadi meja kerja yang bisa dijual Rp2jt"
+          - "Hanya pakai 3 alat tangan ini, ini furniture yang aku selesaikan minggu ini"
+          - "Teknik finishing ini bikin kayu biasa terlihat seperti antik ribuan tahun"
+      micro:
+        - slug: woodworking-kayu-palet-bekas
+          name: Furniture dari Palet Kayu Bekas
+          description: Proyek woodworking menggunakan palet kayu gratis dari gudang atau toko untuk membuat furniture fungsional seperti meja, rak, dan bangku, menyasar yang ingin hemat sekaligus kreatif.
+          example_hook: "Palet kayu ini dibuang supir truk, aku ambil gratis dan sekarang jadi meja kerja seharga Rp2jt..."
+          guide:
+            audience: "Pria 22–40 yang ingin furniture murah tapi custom; penghuni kos atau rumah kecil yang butuh furniture fungsional; penonton woodworking pemula yang ingin tahu titik mulai."
+            tone: "Praktis dan mengejutkan. 'Gratis dan jadi ini' adalah inti emosi video ini. Penonton harus merasa bahwa mereka juga bisa melakukan ini akhir pekan ini."
+            format: "60–90 detik. Struktur: palet kayu kotor ditunjukkan → dibersihkan → dipotong dan didesain ulang → perakitan → amplas → finishing (cat, stain, atau natural oil) → reveal furniture dalam ruangan. Time-lapse bagian amplas. Vertikal 9:16."
+            boleh:
+              - "Tunjukkan di mana mendapatkan palet gratis (gudang, toko bangunan, marketplace) di awal"
+              - "ASMR suara amplas dan ketukan palu di kayu sangat memuaskan"
+              - "Reveal: furniture diletakkan di ruangan nyata, difoto dari sudut yang flattering"
+              - "Estimasi biaya total (biasanya hanya cat dan hardware) di teks overlay"
+            hindari:
+              - "Jangan tampilkan palet yang kondisi kayunya terlalu rusak untuk hasil bagus"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan skip proses pembersihan palet — palet bekas bisa kotor dan perlu perlakuan"
+              - "Jangan gunakan bahan finishing yang tidak tersedia di toko bangunan Indonesia"
+            pola_hook: "Detik 0: close-up palet kayu kotor di jalanan atau tempat sampah + teks 'ambil gratis, jadi meja kerja'. Langsung proses di detik 2."
+            contoh_judul:
+              - "Palet kayu ini dibuang di pinggir jalan, sekarang jadi meja kerja di ruang tamuku"
+              - "Bikin rak buku dari 2 palet gratis — modal cuma cat dan 4 jam waktu luang"
+              - "Bangku kopi dari palet bekas ini terlihat seperti dari toko furnitur Skandinavia"
+              - "Cara dapat palet kayu gratis dan apa yang aku buat dari satu batch bulan ini"
+              - "Headboard kamar dari 3 palet — lebih sturdy dari yang beli jadi seharga Rp1jt"
+            content_runway: "Setiap jenis furniture (meja, rak, bangku, headboard, patio furniture, TV stand) dari palet memberikan proyek berbeda; teknik finishing yang berbeda (cat, stain, whitewash, natural) menghasilkan tampilan yang beragam; palet tersedia gratis hampir di mana-mana."
+
+        - slug: woodworking-alat-tangan-minimal
+          name: Woodworking dengan Alat Tangan Minimal
+          description: Proyek furniture dan kerajinan kayu yang hanya menggunakan alat tangan dasar tanpa mesin mahal, membuktikan bahwa woodworking bisa dimulai siapapun dengan modal kecil.
+          example_hook: "Hanya pakai 3 alat tangan ini yang total Rp150rb, ini yang aku buat dalam seminggu..."
+          guide:
+            audience: "Pemula woodworking 20–35 yang takut butuh mesin mahal; penonton yang ingin mulai hobi tapi ragu soal biaya peralatan; pria muda yang ingin membuktikan bisa membuat sesuatu nyata."
+            tone: "Memberdayakan dan realistis. Pesan utama: kamu tidak butuh workshop penuh mesin untuk mulai. Setiap video seperti teman yang membuktikan bahwa dengan cukup sabar dan alat tangan dasar, hasilnya bisa luar biasa."
+            format: "60–90 detik. Struktur: tampilkan 3–5 alat tangan yang digunakan (dengan harga) → proses pembuatan → time-lapse tahap panjang → detail finishing manual → reveal produk. ASMR suara alat tangan di kayu lebih menonjol dari mesin. Vertikal 9:16."
+            boleh:
+              - "Tampilkan alat yang dipakai di awal beserta harganya — rendahnya harga adalah hook utama"
+              - "ASMR suara pahat, gergaji tangan, dan amplas manual — lebih intim dari mesin"
+              - "Akui keterbatasan alat tangan vs mesin — kejujuran membangun kepercayaan"
+              - "Tampilkan hasil akhir berdampingan dengan benda setara yang dijual jadi di toko"
+            hindari:
+              - "Jangan tampilkan proyek yang membutuhkan presisi mesin yang tidak bisa dicapai alat tangan"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan underestimate waktu yang dibutuhkan — set ekspektasi realistis soal durasi"
+              - "Jangan pilih kayu yang terlalu keras untuk alat tangan biasa"
+            pola_hook: "Detik 0: 3–5 alat tangan tersusun di meja + teks 'total alat Rp150rb'. Langsung mulai pemotongan di detik 2."
+            contoh_judul:
+              - "Hanya 3 alat tangan ini dan aku buat rak dinding yang kokoh dalam seminggu"
+              - "Woodworking tanpa mesin listrik sama sekali — ini yang bisa dibuat dengan sabar"
+              - "Gergaji tangan, pahat, dan amplas — furniture pertama aku dari 3 alat ini"
+              - "Membuktikan kamu tidak butuh workshop mewah untuk mulai woodworking"
+              - "Meja kerja ini dibuat hanya dengan alat tangan total Rp200rb, ini hasilnya"
+            content_runway: "Setiap jenis proyek (kotak, rak, meja kecil, kursi, frame) yang bisa diselesaikan dengan alat tangan dasar memberikan satu video; tingkat kesulitan bisa naik bertahap dari video ke video, menciptakan seri progression yang bisa diikuti penonton."
+
+        - slug: woodworking-finishing-cat-unik
+          name: Teknik Finishing Kayu dengan Hasil Unik
+          description: Tutorial teknik pewarnaan dan finishing kayu yang menghasilkan tampilan unik — efek terbakar, stain gradien, dan distressing — untuk pembuat yang ingin karya berbeda dari standard.
+          example_hook: "Teknik ini bikin kayu biasa terlihat seperti antik berumur 100 tahun dalam 30 menit..."
+          guide:
+            audience: "Pembuat kayu 22–40 yang sudah melewati dasar dan ingin karya yang menonjol; desainer interior DIY yang mencari tampilan unik; penonton yang mengagumi kayu dengan karakter kuat."
+            tone: "Artistik dan revealing. Setiap teknik terasa seperti trik rahasia yang sedikit orang tahu. Penonton harus merasa mendapat insider knowledge yang akan membuat karya mereka berbeda."
+            format: "45–70 detik. Satu teknik per video — fokus dan mendalam. Struktur: tampilkan kayu sebelum vs sesudah (split-screen) → proses teknik step-by-step → detail aplikasi → reveal akhir dengan pencahayaan dramatis. Real-time untuk langkah kunci. Vertikal 9:16."
+            boleh:
+              - "Split-screen sebelum-sesudah di awal sebagai hook — kontras harus dramatis"
+              - "Nama teknik yang unik sebagai teks di awal (shou sugi ban, ebonizing, ceruse)"
+              - "Tampilkan tekstur dan kilap akhir dengan pencahayaan dari samping"
+              - "Gunakan produk yang tersedia di toko bangunan atau marketplace Indonesia"
+            hindari:
+              - "Jangan gunakan teknik yang memerlukan bahan kimia berbahaya tanpa safety disclosure"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan pilih teknik yang hasilnya sangat bergantung pada jenis kayu tertentu tanpa penjelasan"
+              - "Jangan skip hasil yang tidak sempurna — transparansi soal kurva belajar membangun trust"
+            pola_hook: "Detik 0: split-screen kayu biasa vs kayu yang sudah di-finishing dengan teknik unik + teks nama teknik. Langsung mulai proses di detik 2."
+            contoh_judul:
+              - "Teknik bakar kayu ini bikin permukaan terlihat seperti antik 100 tahun dalam 20 menit"
+              - "Cara buat efek kayu tua dan lapuk di kayu baru — tidak ada yang tahu ini buatan baru"
+              - "Stain gradien dari satu warna ke putih di atas kayu — lebih mudah dari yang kelihatan"
+              - "Ceruse finish ini bikin serat kayu keluar dramatis dengan cara yang hampir gratis"
+              - "Dua teknik finishing ini bikin furniture workshop kamu terlihat custom order mahal"
+            content_runway: "Puluhan teknik finishing kayu (oil, wax, lacquer, stain, bleach, burn, wire brush, milk paint, chalk paint, ebonizing) masing-masing bisa jadi satu video; setiap teknik bisa dikombinasikan atau diaplikasikan ke jenis kayu berbeda untuk variasi tak terbatas."
+
+    - slug: 3d-print
+      name: "3D Print / Maker"
+      description: "Cetak 3D, gadget DIY."
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: time-lapse + voiceover
+      example_hook: "Aku print alat ini sendiri..."
+      guide:
+        audience: "Penonton 20–40 yang tertarik teknologi dan maker culture; pemilik printer 3D yang mencari inspirasi proyek; penonton yang belum punya printer tapi penasaran apa yang bisa dibuat."
+        tone: "Praktis dan inovatif. Setiap video menjawab 'masalah apa yang terpecahkan?' bukan sekadar 'objek apa yang dicetak?'. Teknologi sebagai alat pemecah masalah nyata."
+        format: "45–75 detik. Struktur: tampilkan masalah atau kebutuhan → proses desain singkat (screen recording 5–10 detik) → time-lapse printer berjalan → post-processing → reveal objek jadi dalam penggunaan nyata. Vertikal 9:16."
+        boleh:
+          - "Tampilkan masalah nyata yang dipecahkan sebelum solusinya — konteks penting"
+          - "Time-lapse printer berjalan selalu menarik — suara printer dan pergerakan kepala"
+          - "Reveal: objek dicetak lalu langsung digunakan / dipasang / difungsikan"
+          - "Bandingkan harga cetak sendiri vs beli jadi untuk impact biaya"
+        hindari:
+          - "Jangan skip proses gagal jika ada — pembelajaran dari kegagalan sangat berharga"
+          - "Jangan tampilkan wajah — channel ini faceless"
+          - "Jangan hanya cetak objek dekoratif tanpa utility — audiens Indonesia lebih tertarik solusi praktis"
+          - "Jangan gunakan filamen atau printer yang tidak tersedia di pasar Indonesia tanpa alternatif"
+        pola_hook: "Detik 0: tampilkan masalah nyata (komponen rusak, kebutuhan khusus, ruang yang tidak efisien) + teks 'aku print solusinya sendiri'. Cut ke printer berjalan di detik 3."
+        contoh_judul:
+          - "Aku print pengganti komponen ini sendiri seharga Rp15rb, harga beli asli Rp500rb"
+          - "Masalah di rumah ini gak ada solusinya di toko, jadi aku desain dan cetak sendiri"
+          - "3D print pertamaku gagal 6 kali, ini yang akhirnya berhasil"
+      micro:
+        - slug: 3d-print-masalah-rumah-terpecahkan
+          name: Masalah Rumah yang Dipecahkan dengan 3D Print
+          description: Showcase solusi cetak 3D untuk masalah kecil di rumah yang sulit ditemukan di toko — bracket khusus, pengganti komponen rusak, organizer custom — memperlihatkan nilai praktis 3D printing.
+          example_hook: "Komponen ini sudah discontinue dan harga Rp500rb, aku print sendiri Rp15rb dalam 2 jam..."
+          guide:
+            audience: "Pemilik rumah 25–40 yang frustrasi dengan masalah kecil yang tidak ada solusi standar di toko; penonton yang tertarik ROI praktis dari printer 3D; maker yang mencari inspirasi proyek nyata."
+            tone: "Problem-solving yang memuaskan. Ada rasa 'aha' di setiap video — masalah yang terlihat tidak ada solusinya ternyata bisa dipecahkan dengan cetak sendiri. Penonton harus merasa diberdayakan."
+            format: "45–70 detik. Struktur: tampilkan masalah konkret di rumah → cari di toko tidak ada / terlalu mahal → design singkat (screen recording) → print → post-process → pasang / gunakan → masalah terpecahkan. Vertikal 9:16."
+            boleh:
+              - "Tampilkan harga beli solusi di toko vs biaya filamen untuk print sendiri"
+              - "Video langsung masuk ke masalah — tidak perlu intro 3D printing panjang"
+              - "Tampilkan ukuran dan presisi fitting ketika solusi dipasang"
+              - "Tunjukkan masalah yang sangat spesifik — semakin unik semakin menarik"
+            hindari:
+              - "Jangan tampilkan proyek yang memerlukan post-processing kompleks tanpa penjelasan"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan buat klaim kekuatan atau daya tahan yang berlebihan untuk objek cetak 3D"
+              - "Jangan pilih masalah yang solusinya sudah tersedia murah di toko"
+            pola_hook: "Detik 0: tampilkan komponen rusak atau kebutuhan khusus yang tidak ada di toko + teks 'tidak ada solusinya, jadi aku buat sendiri'. Langsung cut ke printer berjalan di detik 3."
+            contoh_judul:
+              - "Engsel lemari ini sudah discontinue 10 tahun, aku print penggantinya dalam 2 jam"
+              - "Bracket TV ini ukurannya tidak standar, solusinya aku cetak sendiri seharga Rp8rb"
+              - "3 masalah kecil di rumah ini akhirnya terpecahkan dengan printer 3D dan filamen seharga Rp50rb"
+              - "Remote AC ini tombolnya lepas, pengganti asli Rp200rb — aku print Rp5rb"
+              - "Organizer laci dapur custom yang pas persis ukurannya karena aku desain dan print sendiri"
+            content_runway: "Setiap rumah punya puluhan masalah kecil yang tidak ada solusi standarnya di toko; kombinasi ruangan (dapur, kamar mandi, garasi, kantor) dan jenis masalah (komponen rusak, organizer custom, bracket, adapter) menghasilkan konten hampir tak terbatas."
+
+        - slug: 3d-print-gagal-belajar
+          name: 3D Print Gagal dan Cara Mendiagnosis Masalahnya
+          description: Konten jujur memperlihatkan hasil cetak 3D yang gagal beserta analisis penyebab dan solusinya, membantu komunitas maker pemula belajar dari kesalahan nyata.
+          example_hook: "Print ke-7 ini akhirnya berhasil, dan ini perbedaan yang aku lakukan di setiap iterasi..."
+          guide:
+            audience: "Pemilik printer 3D pemula 20–35 yang frustasi dengan hasil gagal berulang; penonton yang mempertimbangkan beli printer dan ingin tahu learning curve nyatanya; maker yang suka konten troubleshooting jujur."
+            tone: "Jujur dan edukatif. Kegagalan bukan memalukan — itu proses normal yang semua maker lalui. Nada seperti teman senior yang membimbing tanpa menghakimi, bahkan mentertawakan kegagalannya sendiri."
+            format: "60–90 detik. Struktur: tampilkan hasil cetak gagal → analisis visual masalah (warping, stringing, layer separation) → sebutkan penyebab → perbaikan setting / model → cetak ulang → hasil yang lebih baik. Vertikal 9:16."
+            boleh:
+              - "Tunjukkan kegagalan sedekat mungkin — close-up warping, stringing, dan layer shift"
+              - "Buat perbandingan visual: gagal vs berhasil dalam satu frame"
+              - "Gunakan terminologi teknis tapi selalu sertakan penjelasan singkat dalam bahasa biasa"
+              - "Format seri: '7 iterasi sampai sempurna' mendorong penonton untuk kembali"
+            hindari:
+              - "Jangan sembunyikan atau edit kegagalan — kejujuran adalah nilai utama channel ini"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan gunakan setting printer yang terlalu spesifik satu merk tanpa generalisasi"
+              - "Jangan hanya tampilkan kegagalan tanpa solusi — penonton butuh takeaway yang actionable"
+            pola_hook: "Detik 0: close-up hasil cetak gagal yang jelas gagal (melengkung parah, berserabut) + teks 'ini gagal ke-6, ini pelajarannya'. Langsung diagnosis di detik 2."
+            contoh_judul:
+              - "Print ke-7 akhirnya berhasil — ini kesalahan yang aku buat di 6 iterasi sebelumnya"
+              - "Kenapa print ini melengkung parah dan cara aku akhirnya mengatasinya"
+              - "Satu bulan belajar 3D printing, semua kegagalannya ada di video ini"
+              - "Stringing parah di semua print aku — ini penyebab sebenarnya dan solusinya"
+              - "Layer separation di jam ke-8 print — kenapa terjadi dan cara cegah di next build"
+            content_runway: "Setiap jenis kegagalan cetak 3D (warping, stringing, layer adhesion, supports, calibration, filamen) menghasilkan video diagnostik berbeda; komunitas maker terus bertumbuh dan selalu ada pemula baru yang menghadapi masalah yang sama."
+
+        - slug: 3d-print-miniatur-arsitektur
+          name: Cetak Miniatur Bangunan Ikonik Indonesia
+          description: Proses modeling dan printing miniatur bangunan ikonik Indonesia — Monas, Borobudur, rumah adat — sebagai showcase sekaligus panduan untuk penggemar arsitektur dan maker.
+          example_hook: "Aku print Borobudur dalam skala 1:500 dan butuh 47 jam cetak, ini hasilnya..."
+          guide:
+            audience: "Penonton 22–45 yang mencintai arsitektur dan heritage Indonesia; kolektor miniatur dan model kit; maker yang ingin proyek ambisius dengan hasil yang bisa dipajang."
+            tone: "Ambisius dan bangga. Mencetak bangunan ikonik Indonesia adalah perpaduan antara teknologi modern dan kebanggaan budaya. Setiap detail yang tercetak adalah penghormatan terhadap arsitektur aslinya."
+            format: "75–90 detik. Struktur: tampilkan foto bangunan asli → proses modeling singkat (screen recording) → printer berjalan time-lapse (highlight lapisan per lapisan) → post-processing (support removal, sanding, painting) → reveal miniatur final. Vertikal 9:16."
+            boleh:
+              - "Bandingkan foto bangunan asli dengan miniatur yang dicetak dalam satu frame"
+              - "Angka yang mengesankan: durasi print, jumlah lapisan, ukuran file"
+              - "Tampilkan detail arsitektur yang berhasil ditangkap printer dengan baik"
+              - "Reveal: miniatur diletakkan di rak atau dijadikan desk display yang estetik"
+            hindari:
+              - "Jangan tampilkan miniatur dengan kualitas cetak buruk sebagai produk final"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan klaim model yang kamu desain sendiri jika menggunakan file dari Thingiverse tanpa credit"
+              - "Jangan skip proses post-processing — finishing adalah yang membuat miniatur terlihat premium"
+            pola_hook: "Detik 0: foto bangunan ikonik yang dikenal luas + teks 'aku print ini dalam skala 1:500'. Langsung cut ke printer berjalan di detik 3."
+            contoh_judul:
+              - "Aku print Borobudur dalam skala 1:500 — printer berjalan 47 jam non-stop"
+              - "Miniatur Monas ini lebih detail dari yang dijual di toko souvenir, dan aku buat sendiri"
+              - "Rumah adat Toraja ini aku modeling dari foto asli dan cetak dalam seminggu"
+              - "Print Masjid Istiqlal dalam skala kecil — detail kubah yang berhasil tertangkap mengejutkan"
+              - "Koleksi rumah adat Indonesia dari 34 provinsi — satu printer, setahun proyek"
+            content_runway: "Indonesia punya ratusan bangunan ikonik (Borobudur, Prambanan, Monas, masjid bersejarah, rumah adat 34 provinsi, benteng kolonial) yang masing-masing bisa jadi satu proyek; setiap bangunan bisa dicetak dalam skala, material, dan tingkat detail berbeda."
+
+    - slug: photography
+      name: "Fotografi / Editing"
+      description: "Tips foto, edit, before-after."
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: before-after + tutorial
+      example_hook: "Foto HP biasa jadi pro dengan..."
+      guide:
+        audience: "Penonton 18–35 yang ingin foto mereka terlihat lebih baik; kreator konten pemula yang frustrasi dengan kualitas foto; fotografer amatir yang ingin naik level tanpa beli kamera mahal."
+        tone: "Memberdayakan dan praktis. Setiap video memberikan satu insight atau teknik yang bisa langsung diterapkan. Penonton harus merasa 'saya bisa lakukan ini sekarang' setelah menonton."
+        format: "45–75 detik. Before-after adalah inti — tampilkan foto sebelum dan sesudah dengan perbedaan yang jelas. Struktur: foto biasa/buruk → penjelasan masalah → teknik atau edit → foto yang lebih baik. Screen recording untuk editing, real demo untuk teknik lapangan. Vertikal 9:16."
+        boleh:
+          - "Before-after yang kontrasnya sangat jelas — keduanya harus tampil di video"
+          - "Gunakan foto yang bisa diambil oleh siapapun dengan HP biasa untuk relevansi"
+          - "Tampilkan satu teknik per video — fokus lebih kuat dari banyak tips sekaligus"
+          - "Teks overlay menjelaskan parameter yang diubah (suhu warna +40, exposure -0.5)"
+        hindari:
+          - "Jangan gunakan software berbayar tanpa menyebut alternatif gratis"
+          - "Jangan tampilkan wajah — channel ini faceless (tangan dan layar saja)"
+          - "Jangan pilih foto yang perbedaan before-after-nya kecil — dampak visual harus dramatis"
+          - "Jangan klaim hasil bisa dicapai dengan HP entry-level jika sebenarnya butuh hardware yang lebih baik"
+        pola_hook: "Detik 0: tampilkan foto biasa-biasa yang bisa diambil siapapun + teks 'sama HP, beda teknik'. Cut ke hasil foto yang jauh lebih baik di detik 2, lalu proses bagaimana."
+        contoh_judul:
+          - "Foto ini dari HP yang sama, tapi yang kanan pakai satu teknik yang kiri tidak"
+          - "5 slider di Lightroom gratis ini mengubah foto HP jadi terlihat kamera mirrorless"
+          - "Aturan komposisi ini bikin foto kamu langsung lebih baik tanpa edit apapun"
+      micro:
+        - slug: photography-lightroom-preset-lokal
+          name: Editing Foto dengan Tone Warna Estetik Indonesia
+          description: Tutorial Lightroom mobile untuk menciptakan tone warna yang cocok dengan lanskap dan cahaya Indonesia — golden hour tropis, tone hijau hutan — dengan preset yang bisa diunduh.
+          example_hook: "Foto biasa ini diubah dengan 5 slider di Lightroom gratis, sebelum dan sesudahnya..."
+          guide:
+            audience: "Kreator konten dan fotografer pemula 18–30 yang ingin tone foto yang konsisten dan estetik; pengguna Instagram dan TikTok yang sadar pentingnya estetika feed; fotografer mobile yang ingin looks profesional."
+            tone: "Praktis dan visual-driven. Penonton hadir karena mereka melihat hasil foto yang bagus dan ingin mencapai hal yang sama. Setiap video adalah jalan pintas menuju estetika yang selama ini dilihat di akun-akun besar."
+            format: "50–70 detik. Screen recording Lightroom mobile dengan tangan di frame. Struktur: foto asli → import ke Lightroom → adjustment bertahap (setiap slider diperlihatkan) → before-after wipe → tampilkan preset nilai akhir. Vertikal 9:16."
+            boleh:
+              - "Sebutkan nilai slider yang tepat sebagai teks overlay — konkret dan actionable"
+              - "Gunakan foto yang bisa diambil siapapun (makanan, pantai, pegunungan Indonesia)"
+              - "Before-after wipe reveal selalu memuaskan — gunakan di tengah dan di akhir"
+              - "Tawaran download preset di caption untuk engagement dan follow"
+            hindari:
+              - "Jangan gunakan Lightroom versi desktop tanpa menyebut bahwa mobile version sudah cukup"
+              - "Jangan tampilkan wajah — channel ini faceless (layar dan tangan saja)"
+              - "Jangan edit foto sampai terlihat tidak realistis — tone harus masih natural"
+              - "Jangan pilih foto dengan masalah exposure terlalu ekstrem yang tidak bisa diperbaiki di edit"
+            pola_hook: "Detik 0: foto asli yang flat dan biasa + teks 'sebelum'. Wipe reveal ke foto setelah editing yang dramatis di detik 2. Lalu mulai tutorial dari awal."
+            contoh_judul:
+              - "5 slider ini ubah foto pantai Indonesia jadi terlihat dari majalah travel"
+              - "Tone warna golden hour tropis — cara repro look ini di Lightroom mobile gratis"
+              - "Foto hutan Indonesia jadi cinematik dengan 3 adjustment ini, tanpa preset berbayar"
+              - "Feed Instagram yang konsisten dari satu preset — ini nilai-nilainya untuk cahaya Indonesia"
+              - "Foto sore hari di Indonesia selalu bisa bagus dengan tweak ini, ini buktinya"
+            content_runway: "Setiap kondisi cahaya (golden hour, siang terik, mendung, indoor), setiap subjek foto (lanskap, kuliner, portrait tanpa wajah, arsitektur, street), dan setiap mood estetik (warm, moody, bright, matte) menghasilkan tutorial yang berbeda."
+
+        - slug: photography-golden-hour-hp
+          name: Teknik Foto Golden Hour Hanya dengan HP
+          description: Panduan teknis memaksimalkan cahaya golden hour untuk foto dramatis menggunakan smartphone, termasuk posisi, sudut, dan pengaturan kamera bawaan yang sering diabaikan.
+          example_hook: "Foto HP ini dikira pakai kamera mirrorless Rp20jt, ini tekniknya yang bisa kamu coba hari ini..."
+          guide:
+            audience: "Pengguna HP 18–35 yang frustrasi foto mereka tidak seindah yang dilihat di Instagram; penonton yang tidak ingin beli kamera mahal tapi ingin hasil dramatis; creator konten yang sadar pentingnya cahaya."
+            tone: "Mengungkap dan memberdayakan. 'Kamu sudah punya semua yang dibutuhkan' adalah inti pesan. Cahaya gratis, HP ada di saku — tinggal tahu caranya."
+            format: "50–70 detik. Demonstrasi langsung di luar ruangan saat golden hour atau simulasinya. Struktur: tampilkan foto yang dianggap mustahil dari HP → tunjukkan setting HP yang diubah → posisi dan sudut yang digunakan → hasil foto. Real demo, bukan hanya penjelasan. Vertikal 9:16."
+            boleh:
+              - "Demo langsung di lapangan lebih kuat dari slideshow teknik"
+              - "Tampilkan perbedaan foto dari sudut yang berbeda dalam kondisi cahaya yang sama"
+              - "Tunjukkan setting kamera manual HP (ISO, shutter) yang biasanya diabaikan"
+              - "Tampilkan bayangan dan siluet sebagai teknik yang mudah dan selalu keren di golden hour"
+            hindari:
+              - "Jangan tampilkan teknik yang hanya bisa dilakukan di HP flagship mahal"
+              - "Jangan tampilkan wajah — channel ini faceless (tangan memegang HP, foto di layar)"
+              - "Jangan hanya teori — setiap teknik harus ada demo dan contoh foto hasilnya"
+              - "Jangan rekam di kondisi cahaya yang tidak bisa direplikasi penonton"
+            pola_hook: "Detik 0: tampilkan foto dramatis golden hour + teks 'ini dari HP biasa'. Penonton langsung skeptis dan penasaran — langsung masuk ke cara di detik 2."
+            contoh_judul:
+              - "Foto siluet golden hour ini dari HP seharga Rp2jt, ini posisi dan setting-nya"
+              - "Kenapa foto kamu di sore hari tidak pernah sebagus yang kamu bayangkan — dan cara fixnya"
+              - "Satu setting di kamera HP ini mengubah foto sore jadi sinematik — 90% orang tidak tahu"
+              - "Posisi ini di golden hour selalu hasilkan foto yang dikira pakai kamera mahal"
+              - "HP apapun bisa hasilkan foto golden hour dramatis dengan teknik sederhana ini"
+            content_runway: "Setiap kondisi cahaya unik di Indonesia (golden hour tropis, cahaya pantai, cahaya pegunungan, cahaya urban), setiap jenis subjek, dan setiap teknik (siluet, bayangan, refleksi, lens flare) menghasilkan tutorial berbeda yang bisa diproduksi setiap hari cerah."
+
+        - slug: photography-komposisi-otomatis
+          name: Aturan Komposisi yang Bikin Foto Langsung Lebih Baik
+          description: Penjelasan visual 5 aturan komposisi fotografi yang bisa langsung diterapkan siapapun tanpa pengetahuan teknis kamera — rule of thirds, leading lines, dan framing.
+          example_hook: "Foto ini biasa, foto ini luar biasa. Satu-satunya beda adalah aturan komposisi ini..."
+          guide:
+            audience: "Pemula fotografi 16–30 yang ingin foto mereka 'lebih bagus' tapi tidak tahu kenapa foto orang lain lebih menarik; penonton yang belum pernah formal belajar fotografi; kreator konten yang sadar feed mereka perlu diperbaiki."
+            tone: "Sederhana dan langsung ke intinya. Setiap aturan dijelaskan dalam satu kalimat dan langsung didemonstrasikan sebelum-sesudah. Tidak ada teori panjang — visual proof yang bicara."
+            format: "45–65 detik. Satu aturan komposisi per video, didemonstrasikan dengan dua foto perbandingan: yang melanggar aturan vs yang menerapkan aturan. Struktur: tampilkan dua foto → highlight perbedaan → penjelasan singkat aturan → contoh aplikasi lain. Vertikal 9:16."
+            boleh:
+              - "Before-after yang jelas dan kontras — satu foto terasa biasa, satu lagi menarik"
+              - "Grid overlay atau garis panduan di foto untuk visualisasi aturan"
+              - "Gunakan foto dari lokasi yang dikenal di Indonesia untuk relevansi"
+              - "Satu aturan per video — lebih mudah diingat dan diterapkan"
+            hindari:
+              - "Jangan jejalkan 5 aturan dalam satu video — terlalu banyak tidak mudah diterapkan"
+              - "Jangan tampilkan wajah — channel ini faceless (gambar dan layar saja)"
+              - "Jangan gunakan foto dari luar Indonesia yang tidak dikenal audiens"
+              - "Jangan terlalu teknis — aturan komposisi harus bisa dijelaskan dalam satu kalimat"
+            pola_hook: "Detik 0: dua foto berdampingan — satu biasa satu menarik — dari subjek yang sama + teks 'satu aturan yang membedakan keduanya'. Penonton langsung penasaran aturan apa itu."
+            contoh_judul:
+              - "Dua foto ini diambil dari posisi yang sama, tapi yang kanan punya aturan komposisi ini"
+              - "Rule of thirds ini bikin foto kamu langsung lebih menarik tanpa edit apapun"
+              - "Leading lines — aturan komposisi yang bikin mata penonton ikut ke mana kamu arahkan"
+              - "Kenapa foto kamu selalu terasa 'ada yang kurang' — ini jawaban yang sebenarnya"
+              - "Framing dengan elemen alami: teknik komposisi yang bisa kamu terapkan di mana saja"
+            content_runway: "Ada minimal 20 aturan komposisi klasik (rule of thirds, golden ratio, leading lines, framing, symmetry, negative space, depth, dll) yang masing-masing bisa jadi satu video; setiap aturan bisa didemonstrasikan dengan berbagai subjek foto berbeda."

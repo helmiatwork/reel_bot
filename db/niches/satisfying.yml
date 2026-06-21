@@ -1,0 +1,796 @@
+version: 1
+vertical:
+  slug: v-satisfying
+  name: Satisfying
+  description: Konten visual dan audio yang memuaskan — restorasi, ASMR, cleaning, dan proses yang menenangkan.
+  guide:
+    audience: "Penonton 16-35 tahun yang mencari konten relaksasi dan kepuasan visual; campuran pria-wanita yang menikmati tonton sebelum tidur atau saat istirahat; tertarik pada transformasi, kerapian, dan proses."
+    tone: "Tenang, tanpa komentar berlebihan, membiarkan visual dan audio bicara. Gaya 'slow TV' — penonton datang untuk menikmati proses, bukan informasi."
+    format: "Video pendek 30–90 detik, dominan close-up tangan dan bahan, vertikal 9:16. Musik minimal atau tidak ada — suara proses diutamakan. Struktur: kondisi awal (hook) → proses → reveal/hasil."
+    boleh:
+      - "Mulai dari kondisi paling parah atau kotor untuk hook yang kuat"
+      - "Gunakan suara proses asli (ASMR) — naikkan gain sedikit di editing"
+      - "Tampilkan reveal akhir slow-mo 2–3 detik untuk kepuasan maksimal"
+      - "Loop-friendly — akhir video bisa menyambung kembali ke awal"
+      - "Pakai pencahayaan natural atau ring light untuk warna akurat"
+    hindari:
+      - "Jangan banyak narasi atau voiceover — bunuh vibe satisfying"
+      - "Jangan pakai musik ber-hak-cipta; pilih royalty-free ambient/tenang"
+      - "Jangan skip langkah proses yang membuat hasil terlihat 'instan' tanpa kerja keras"
+      - "Jangan tampilkan wajah jika channel faceless"
+      - "Jangan gunakan caption berlebihan yang mengalihkan dari visual"
+    pola_hook: "Detik 0–2: close-up kondisi terburuk + teks singkat konteks ('dibuang', '10 tahun tidak disentuh'). Langsung mulai proses di detik 3."
+    contoh_judul:
+      - "Barang ini dibuang tetangga, 3 jam kemudian seperti baru"
+      - "Proses ini bikin otak tenang, tonton sampai habis"
+      - "Transformasi yang gak akan kamu percaya sebelum lihat sendiri"
+
+  niches:
+    - slug: restoration
+      name: "Restorasi Barang"
+      description: "Perbaiki barang rusak jadi baru."
+      faceless: true
+      difficulty: pemula
+      rpm: sedang
+      formats: POV + time-lapse + before-after
+      example_hook: "Barang karatan ini dibuang orang..."
+      guide:
+        audience: "Pria 18–40 yang suka konten 'puas' dan before-after; penggemar DIY dan pertukangan; penonton yang suka melihat nilai tersembunyi pada barang yang dianggap sampah."
+        tone: "Fokus dan metodis. Suara proses — gosok, kikir, cat — jadi aktor utama. Tidak perlu penjelasan panjang; visual proses cukup bercerita."
+        format: "45–90 detik. Urutan: kondisi terparah (hook 0–3 detik) → proses bertahap (time-lapse atau real-time) → reveal final slow-mo. Close-up tangan dan material, vertikal 9:16."
+        boleh:
+          - "Pilih barang dengan kondisi paling ekstrem sebagai bahan baku untuk hook kuat"
+          - "Tampilkan alat dan bahan sebentar di awal agar penonton tahu prosesnya nyata"
+          - "Gunakan SFX suara gosok, amplas, dan semprot untuk kepuasan audio"
+          - "Reveal akhir: bandingkan langsung kondisi awal vs akhir dalam satu frame"
+        hindari:
+          - "Jangan gunakan narasi panjang — cukup teks singkat di frame jika perlu"
+          - "Jangan pakai musik keras yang kalahkan suara proses"
+          - "Jangan tampilkan wajah — channel ini faceless"
+          - "Jangan potong proses terlalu agresif sampai penonton tidak merasakan 'kerja keras'-nya"
+        pola_hook: "Detik 0: close-up kondisi terburuk + teks 'dibuang orang' atau 'ditemukan di gudang'. Langsung mulai proses di detik 2–3."
+        contoh_judul:
+          - "Barang karatan ini dibuang orang, ini yang terjadi setelah 3 jam"
+          - "Restorasi barang tua yang sudah dianggap tidak bisa diselamatkan"
+          - "Dari sampah jadi koleksi — proses restorasi yang menenangkan"
+      micro:
+        - slug: restoration-sepatu-jadul
+          name: Restorasi Sepatu Jadul Jadi Seperti Baru
+          description: Proses restorasi sepatu lawas yang tampak tidak terselamatkan — sol rekat, kulit mengelupas, warna pudar — hingga kembali layak pakai, dengan produk yang mudah ditemukan di Indonesia.
+          example_hook: "Sepatu ini dibuang tetangga, 3 jam kemudian terlihat seperti baru dari toko..."
+          guide:
+            audience: "Pria dan wanita 18–35 yang suka sneaker culture dan thrift; penonton DIY yang ingin tahu cara merawat sepatu lama; penggemar konten sebelum-sesudah yang memuaskan."
+            tone: "Hati-hati dan detail — setiap gerakan sikat, lem, dan poles terlihat disengaja. Suara sikat dan cat jadi melodi utama."
+            format: "60–90 detik. Mulai dari kondisi terparah (kulit mengelupas, sol lepas) → pembersihan → perbaikan sol → pewarnaan ulang → poles final → reveal. Vertikal 9:16, close-up tangan dan bahan."
+            boleh:
+              - "Tampilkan merk sepatu di awal jika terkenal — menambah nostalgia"
+              - "Gunakan SFX suara sikat dan semprotan cleaner"
+              - "Reveal akhir: sepatu dipegang di bawah cahaya agar kilap terlihat"
+              - "Tambahkan teks overlay singkat nama produk yang dipakai (tanpa endorsement berlebihan)"
+            hindari:
+              - "Jangan skip langkah pembersihan awal — itu bagian yang paling satisfying"
+              - "Jangan gunakan musik keras; ambient lo-fi cukup"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan klaim hasil bisa dicapai tanpa produk khusus jika memang butuh produk khusus"
+            pola_hook: "Detik 0: close-up bagian sepatu paling parah (sol mengelupas atau kulit retakretak) + teks 'dibuang tetangga'. Langsung mulai sikat di detik 2."
+            contoh_judul:
+              - "Sepatu Nike ini dibuang tetangga, 3 jam kemudian seperti baru dari toko"
+              - "Sol sepatu kulit ini sudah mau lepas, ini cara betulkan tanpa ke tukang"
+              - "Sneaker jadul tahun 2005 aku restorasi sampai kilap lagi"
+              - "Sepatu kulit retak parah ini masih bisa diselamatkan dengan cara ini"
+              - "Buang sayang, restorasi dulu — sepatu lawas ini jadi kayak beli kemarin"
+            content_runway: "Setiap model, merek, dan material sepatu (kulit, kanvas, suede, karet) menghasilkan video yang berbeda; pasokan sepatu lawas dari pasar loak atau donasi tidak ada habisnya."
+
+        - slug: restoration-furnitur-kayu-lapuk
+          name: Furnitur Kayu Lapuk Dijadikan Kembali Fungsional
+          description: Proses restorasi furniture kayu tua yang lapuk dan rusak menjadi fungsional dan estetik kembali, memperlihatkan nilai yang tersembunyi dalam barang yang tampak tidak berguna.
+          example_hook: "Kursi kayu ini sudah 40 tahun tidak dipakai, ini yang terjadi setelah 5 jam di bengkel..."
+          guide:
+            audience: "Pecinta desain interior dan DIY berusia 25–45; pemilik rumah yang ingin memperbaiki furnitur lama daripada beli baru; penonton yang menghargai nilai historis dan estetika kayu tua."
+            tone: "Sabar dan penuh perhatian — setiap proses pengamplasan dan pelapisan dilakukan dengan penuh kontrol. Suara amplas, kuas, dan kayu jadi bagian narasi."
+            format: "75–90 detik. Struktur: kondisi lapuk di awal → pembersihan dan pengupasan → perbaikan struktur → pengamplasan → finishing (cat atau natural oil) → reveal dengan furniture difungsikan. Vertikal 9:16."
+            boleh:
+              - "Tunjukkan tekstur kayu asli yang muncul setelah lapisan lama diangkat — selalu memuaskan"
+              - "Gunakan time-lapse untuk proses pengamplasan panjang"
+              - "Reveal akhir: furniture diletakkan di sudut ruangan, terlihat kontras dengan sekelilingnya"
+              - "Tambahkan sedikit teks tentang usia barang untuk konteks emosional"
+            hindari:
+              - "Jangan skip proses pengamplasan — itu inti kepuasan channel ini"
+              - "Jangan gunakan musik yang terlalu upbeat; pilih ambient tenang"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan klaim hasil sempurna jika ada cacat kecil yang tersisa — kejujuran membangun kepercayaan"
+            pola_hook: "Detik 0: close-up furnitur lapuk dengan kaki patah atau jamur terlihat + teks usia barang. Langsung ambil alat pertama di detik 3."
+            contoh_judul:
+              - "Kursi kayu ini sudah 40 tahun di gudang, aku butuh 5 jam untuk hidupkan kembali"
+              - "Lemari kayu jati lapuk ini aku poles sampai serat kayunya terlihat lagi"
+              - "Meja makan nenek yang hampir dibuang aku jadikan centerpiece ruang tamu"
+              - "Kayu lapuk ini di bawah cat tua menyimpan sesuatu yang luar biasa"
+              - "Restorasi kursi vintage yang sudah dianggap sampah — hasilnya di luar dugaan"
+            content_runway: "Jenis furnitur (kursi, meja, lemari, rak) dan jenis kayu (jati, mahoni, pinus) sudah menghasilkan ratusan kombinasi; ditambah gaya finishing (natural, cat, stain) yang berbeda-beda."
+
+        - slug: restoration-elektronik-rusak
+          name: Barang Elektronik Rusak Diperbaiki dari Nol
+          description: Proses perbaikan barang elektronik yang dinyatakan mati — radio tua, kalkulator vintage, atau tape player — mulai dari diagnosis kerusakan hingga berhasil menyala kembali.
+          example_hook: "Radio tahun 1975 ini ditemukan di gudang, terakhir menyala saat aku belum lahir..."
+          guide:
+            audience: "Pria 20–45 yang tertarik elektronik, hobi reparasi, atau nostalgia teknologi lawas; penonton yang menikmati momen 'menyala kembali' setelah perbaikan panjang."
+            tone: "Penuh fokus dan presisi — gerakan tangan kecil dengan alat solder dan multimeter menjadi inti visual. Suara klik, bip, dan derak komponen lama sangat memuaskan."
+            format: "60–90 detik. Struktur: kondisi mati total → buka casing (reveal komponen dalam) → diagnosis visual → perbaikan (solder, ganti komponen) → test nyala → reveal berfungsi penuh. Close-up extreme, vertikal 9:16."
+            boleh:
+              - "Perlihatkan kondisi dalam komponen yang kotor atau berkarat sebelum dibersihkan"
+              - "Gunakan SFX suara solder, klik tombol, dan suara radio menyala pertama kali"
+              - "Tampilkan momen pertama kali alat menyala kembali sebagai klimaks video"
+              - "Tambahkan teks tahun produksi barang untuk konteks nostalgia"
+            hindari:
+              - "Jangan skip proses diagnosis — penonton ingin mengerti kenapa rusak"
+              - "Jangan gunakan narasi teknis panjang; visual proses lebih kuat"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan klaim repair mudah jika perlu keahlian khusus — bisa menyesatkan"
+            pola_hook: "Detik 0: close-up barang mati ditekan tombol dan tidak ada respons + teks tahun produksi. Langsung buka casing di detik 3."
+            contoh_judul:
+              - "Radio tahun 1975 ini tidak menyala sejak aku belum lahir — aku coba perbaiki"
+              - "Kalkulator vintage ini mati total, ternyata masalahnya sesederhana ini"
+              - "Tape player jadul ditemukan di gudang, 2 jam kemudian musik mengalun lagi"
+              - "Walkman rusak dari tahun 1988 aku buka dan perbaiki dari nol"
+              - "TV tabung tua ini aku nyalakan kembali setelah 15 tahun tidak disentuh"
+            content_runway: "Setiap dekade menghasilkan ratusan jenis elektronik vintage yang berbeda (radio, TV, kamera, komputer, audio equipment); kombinasi merek dan model hampir tidak terbatas."
+
+    - slug: satisfying
+      name: "Oddly Satisfying"
+      description: "Visual/proses memuaskan, loop."
+      faceless: true
+      difficulty: pemula
+      rpm: rendah
+      formats: close-up + SFX + loop
+      example_hook: "Tonton sampai habis, dijamin lega..."
+      guide:
+        audience: "Penonton 14–30 yang mencari konten relaksasi instan; sering scroll malam hari atau saat bosan; tertarik pada kerapian, presisi, dan kesempurnaan visual."
+        tone: "Meditif dan non-verbal — tidak ada narasi, tidak ada musik keras. Membiarkan proses berbicara. Ritme video mengikuti ritme proses itu sendiri."
+        format: "15–45 detik, dioptimalkan untuk loop seamless. Satu aksi per video — tidak perlu cerita panjang. Close-up ekstrem, pencahayaan merata, vertikal 9:16."
+        boleh:
+          - "Buat akhir video bisa di-loop kembali ke awal tanpa cut terasa"
+          - "Pilih subjek dengan kontras warna atau tekstur yang kuat"
+          - "Gunakan SFX suara proses asli yang sedikit di-boost"
+          - "Tambahkan slow-motion di momen kunci untuk efek maksimal"
+        hindari:
+          - "Jangan tambahkan narasi atau teks berlebihan — mengalihkan dari visual"
+          - "Jangan gunakan musik yang terlalu dominan"
+          - "Jangan tampilkan wajah — channel ini faceless"
+          - "Jangan rekam dengan pencahayaan buruk atau kamera goyang — kualitas visual adalah produknya"
+        pola_hook: "Detik 0: langsung masuk ke aksi paling memuaskan tanpa intro. Tidak perlu penjelasan — biarkan visual menarik perhatian sendiri."
+        contoh_judul:
+          - "Tonton ini sampai habis, dijamin lega"
+          - "Proses ini sempurna dari awal sampai akhir"
+          - "Gak ada yang lebih satisfying dari ini hari ini"
+
+      micro:
+        - slug: satisfying-cat-rata-sempurna
+          name: Cat Dinding Rata Sempurna Tanpa Noda
+          description: Footage close-up proses pengecatan dinding dengan teknik yang menghasilkan lapisan sempurna rata dan bebas brush mark, format yang memuaskan bagi penonton yang obsesif dengan kerapian.
+          example_hook: "Kuas bergerak sekali ini dan hasilnya tidak ada yang menandingi..."
+          guide:
+            audience: "Penonton 20–40 yang obsesif dengan kerapian dan perfeksionisme visual; pemilik rumah yang baru renovasi; penggemar konten DIY dan interior."
+            tone: "Slow dan metodis. Suara kuas di dinding — gerakan panjang satu arah — menjadi asmr tersendiri. Tidak perlu kata-kata."
+            format: "20–40 detik. Satu gerakan kuas panjang yang mengisi frame dari atas ke bawah, close-up sangat dekat hingga terlihat tekstur cat, vertikal 9:16. Loop-friendly."
+            boleh:
+              - "Pilih cat dengan warna kontras terhadap latar — putih di dinding kusam sangat efektif"
+              - "Gunakan roller untuk area luas dan kuas untuk tepi — tampilkan keduanya"
+              - "Boost suara gesek roller di dinding untuk kepuasan audio"
+              - "Tampilkan garis tepi yang sempurna menggunakan masking tape"
+            hindari:
+              - "Jangan rekam dengan cat yang tidak rata atau ada bubble — defeat the purpose"
+              - "Jangan potong di tengah gerakan kuas — satu gerakan harus utuh dalam satu shot"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan gunakan musik cepat; ambient atau silence lebih cocok"
+            pola_hook: "Detik 0: kuas dicelup cat lalu langsung ditempel ke dinding, gerakan pertama dimulai. Tidak ada intro."
+            contoh_judul:
+              - "Satu sapuan kuas ini bikin dinding seperti baru, tidak ada satupun noda"
+              - "Cara cat dinding satu arah yang hasilnya sempurna rata tanpa brush mark"
+              - "Rolling cat dinding ini terlalu memuaskan untuk tidak ditonton ulang"
+              - "Batas cat yang sempurna menggunakan masking tape — tonton reveal-nya"
+              - "Cat putih di atas dinding kuning — transformasi paling satisfying hari ini"
+            content_runway: "Setiap warna, teknik (roller vs kuas vs spray), dan permukaan (tembok, kayu, besi) menghasilkan konten berbeda; proyek renovasi rumah di Indonesia sangat umum sebagai sumber konten."
+
+        - slug: satisfying-packaging-rapi
+          name: Proses Packing Produk dengan Ketelitian Ekstrem
+          description: Footage proses pengemasan produk secara sangat teliti dan presisi — lipatan kertas sempurna, pita simetris, dan label rata — yang memenuhi kebutuhan penonton yang obsesif dengan kerapian.
+          example_hook: "Kotak ini dilipat dan dikemas dengan cara yang bikin tangan gatal ingin coba sendiri..."
+          guide:
+            audience: "Penonton 16–35 yang obsesif dengan kerapian; penggemar unboxing dan packaging aesthetics; pelaku UMKM yang ingin belajar packaging rapi."
+            tone: "Presisi dan penuh perhatian. Setiap lipatan, potongan pita, dan tempelan label dilakukan dengan kontrol penuh. Suara kertas dan selotip menjadi ASMR."
+            format: "25–45 detik. Close-up tangan melipat, memotong, dan menempel secara sistematis. Satu paket dari awal sampai selesai dalam satu video. Loop-friendly, vertikal 9:16."
+            boleh:
+              - "Pilih produk dengan warna atau branding yang estetik secara visual"
+              - "Gunakan gerakan simetris yang bisa diantisipasi penonton — kepuasan ada di ekspektasi terpenuhi"
+              - "SFX suara gunting, selotip, dan kertas diboost untuk kepuasan audio"
+              - "Tampilkan hasil akhir dari berbagai sudut sebelum video selesai"
+            hindari:
+              - "Jangan ada lipatan tidak rata atau gelembung pada stiker — otomatis tidak satisfying"
+              - "Jangan rekam dengan tangan gemetar atau pencahayaan tidak merata"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan insert narasi produk atau promosi di tengah video"
+            pola_hook: "Detik 0: bahan packing tersusun rapi di meja, tangan masuk frame dan langsung mulai melipat. Tidak ada intro."
+            contoh_judul:
+              - "Cara packing produk yang terlalu rapi untuk dilihat sekali saja"
+              - "Lipatan kotak ini sempurna sampai sudutnya bisa jadi penggaris"
+              - "Proses packing ini bikin tangan gatal ingin coba sendiri"
+              - "Packaging UMKM yang terlihat semahal brand internasional — ini caranya"
+              - "Stiker label ditempel dan tidak ada satu gelembung pun — tonton sampai habis"
+            content_runway: "Setiap jenis produk (makanan, kosmetik, pakaian, elektronik), material packaging (karton, kain, bubble wrap), dan event (lebaran, natal, ulang tahun) menghasilkan video baru yang relevan sepanjang tahun."
+
+        - slug: satisfying-grouting-keramik
+          name: Grouting Nat Keramik Sampai Sempurna
+          description: Footage proses mengisi nat keramik dari yang kotor dan tidak merata hingga putih bersih dan rata sempurna, format satisfying yang sangat populer di komunitas rumah tangga.
+          example_hook: "Nat keramik ini hitam selama 10 tahun, 20 menit kemudian terlihat seperti baru dipasang..."
+          guide:
+            audience: "Pemilik rumah 25–45 yang peduli kebersihan dan renovasi; penonton yang obsesif dengan garis-garis keramik bersih; penggemar konten cleaning dan home improvement."
+            tone: "Bersih dan metodis. Gerakan spatula yang mengisi nat dalam satu arah menghasilkan ritme visual yang sangat memuaskan. Suara scraping dan air jadi melodi."
+            format: "30–60 detik. Mulai dari nat kotor gelap → proses pengisian/pembersihan → wipe bersih → reveal nat putih sempurna. Close-up eksetrem pada garis-garis keramik, vertikal 9:16."
+            boleh:
+              - "Pilih keramik dengan nat yang kontras warna — hitam vs putih paling efektif"
+              - "Tampilkan proses wipe basah yang mengangkat sisa grout — sangat satisfying"
+              - "SFX suara gesek spatula dan air diboost"
+              - "Reveal akhir: zoom out dari close-up ke area keramik yang sudah selesai"
+            hindari:
+              - "Jangan ada garis nat yang tidak rata atau tidak penuh — mengalahkan tujuan video"
+              - "Jangan gunakan musik cepat atau distraktif"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan rekam dengan pencahayaan redup — kontras hitam-putih nat harus terlihat jelas"
+            pola_hook: "Detik 0: close-up extreme nat keramik hitam kotor + teks '10 tahun tidak dibersihkan'. Langsung mulai aplikasi grout di detik 2."
+            contoh_judul:
+              - "Nat keramik ini hitam 10 tahun, 20 menit kemudian putih seperti baru dipasang"
+              - "Grouting ulang kamar mandi dan hasilnya bikin gak percaya"
+              - "Cara bersihkan nat keramik hitam membandel yang belum pernah kamu coba"
+              - "Sela keramik ini diisi ulang dan transformasinya terlalu memuaskan"
+              - "Dapur lama terlihat baru hanya dengan perbaiki nat keramiknya"
+            content_runway: "Setiap ruangan (kamar mandi, dapur, teras, garasi) dan setiap pola keramik menghasilkan video yang berbeda secara visual; setiap rumah di Indonesia punya keramik yang bisa direstorasi."
+
+    - slug: asmr
+      name: "ASMR"
+      description: "Suara memuaskan, dominan audio."
+      faceless: true
+      difficulty: menengah
+      rpm: rendah
+      formats: audio + close-up + no-talk
+      example_hook: "Pakai headset, dengerin ini..."
+      guide:
+        audience: "Penonton 16–35 yang menggunakan ASMR untuk relaksasi, tidur, atau fokus; campuran pria-wanita yang sensitif terhadap suara; sering tonton malam hari dengan headset."
+        tone: "Sunyi, lambat, dan intim. Tidak ada suara manusia berbicara. Setiap suara — gesek, ketuk, alir — diperkuat dan dimurnikan. Konten yang mengundang penonton untuk menutup mata."
+        format: "1–3 menit. Dominan audio: rekam dengan mic eksternal atau binaural jika memungkinkan. Visual mendukung audio — close-up tangan, bahan, dan gerakan. Tidak ada musik, tidak ada teks berlebihan. Vertikal 9:16."
+        boleh:
+          - "Rekam dengan mic kondenser atau directional untuk kualitas audio lebih baik"
+          - "Eksperimen dengan teknik 3D binaural untuk pengalaman headset yang lebih imersif"
+          - "Variasi suara dalam satu video: mulai pelan, naik ke suara yang lebih kaya, lalu turun lagi"
+          - "Tambahkan teks 'pakai headset' di awal sebagai instruksi sederhana"
+        hindari:
+          - "Jangan tambahkan musik latar — mengalahkan suara ASMR asli"
+          - "Jangan ada suara ambient tidak sengaja (AC, kendaraan) yang terlalu keras tanpa sengaja"
+          - "Jangan tampilkan wajah — channel ini faceless"
+          - "Jangan bicara atau berbisik jika bukan ASMR talking — jaga konsistensi format"
+        pola_hook: "Detik 0: teks 'pakai headset' + suara pertama yang langsung intens dan menarik. Tidak ada intro visual panjang — suara harus menarik perhatian di detik pertama."
+        contoh_judul:
+          - "Pakai headset, dengerin ini sebelum tidur"
+          - "Suara ini akan reset pikiran kamu yang penuh"
+          - "ASMR Indonesia — suara yang kamu rindukan tapi gak tahu kenapa"
+
+      micro:
+        - slug: asmr-masak-tradisional
+          name: ASMR Memasak Masakan Tradisional Indonesia
+          description: Rekaman close-up dan binaural memasak masakan tradisional Indonesia — tumisan, goreng bawang, dan ulek sambal — tanpa narasi, hanya suara proses memasak yang autentik.
+          example_hook: "Suara cobek ini akan membawa kamu ke dapur nenek, pakai headset..."
+          guide:
+            audience: "Penonton Indonesia 20–40 yang rindu suasana dapur tradisional; diaspora Indonesia yang kangen suasana masak di kampung; penonton ASMR yang mencari konten dengan konteks budaya lokal."
+            tone: "Nostalgia dan hangat. Suara cobek, sodet di wajan besi, dan uap panas menjadi karakter utama. Tidak ada kata — suara masak cukup menceritakan segalanya."
+            format: "1–2 menit. Fokus pada satu proses masak (ulek sambal, tumis bawang, goreng ikan). Mic dekat ke sumber suara. Close-up tangan dan bahan, vertikal 9:16. Tidak ada narasi."
+            boleh:
+              - "Gunakan alat masak tradisional (cobek, wajan besi, kukusan bambu) untuk suara yang lebih kaya"
+              - "Rekam di dapur terbuka atau dapur bergaya tradisional untuk visual autentik"
+              - "Tampilkan variasi suara dalam satu video: cincang, goreng, ulek, tuang"
+              - "Sedikit asap di wajan dengan pencahayaan backlit — visual sangat cinematic"
+            hindari:
+              - "Jangan tambahkan musik apapun — suara memasak adalah musiknya"
+              - "Jangan gunakan dapur modern dengan keramik putih jika ingin nuansa tradisional"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan berbicara atau memberikan instruksi masak — ini bukan tutorial"
+            pola_hook: "Detik 0: teks 'pakai headset' + suara pertama yang kuat (ulek sambal atau bawang masuk minyak panas). Langsung ke proses."
+            contoh_judul:
+              - "Suara cobek ini akan bawa kamu ke dapur nenek, pakai headset dulu"
+              - "ASMR ulek sambal terasi — suara yang paling Indonesia"
+              - "Bawang merah masuk minyak panas dan suaranya langsung bikin tenang"
+              - "ASMR masak ikan asin dan tempe — suara yang kamu rindukan dari kampung"
+              - "Proses masak gulai tradisional tanpa satu kata pun — hanya suara dan aroma yang kamu bayangkan"
+            content_runway: "Setiap masakan tradisional Indonesia (ada ratusan) menghasilkan profil suara unik; kombinasi alat masak dan bahan baku menciptakan variasi audio yang hampir tidak ada habisnya."
+
+        - slug: asmr-hujan-atap-seng
+          name: ASMR Hujan di Atap Seng Indonesia
+          description: Rekaman binaural hujan menimpa atap seng yang ikonik di Indonesia — suara yang sangat familier bagi jutaan penonton lokal tapi hampir tidak ada konten berkualitas tentangnya.
+          example_hook: "Suara ini akan membuat kamu tertidur dalam 5 menit jika kamu dengarkan dengan headset..."
+          guide:
+            audience: "Penonton Indonesia dari semua usia yang dibesarkan dengan suara hujan di atap seng; penonton insomnia yang mencari white noise alami; diaspora Indonesia yang rindu suara kampung halaman."
+            tone: "Meditif dan sedikit melankolis — seperti terlindungi di dalam rumah saat hujan di luar. Tidak ada kata, tidak ada musik. Suara hujan adalah segalanya."
+            format: "3–10 menit. Rekam dari dalam rumah dengan mic menghadap atap, atau pasang mic di dekat atap seng. Variasikan intensitas hujan dalam satu video. Visual opsional — bisa hanya audio dengan visualizer sederhana atau tampilan jendela hujan. Vertikal atau landscape 16:9."
+            boleh:
+              - "Rekam saat intensitas hujan bervariasi — rintik, sedang, lebat — dalam satu sesi"
+              - "Tambahkan sesekali suara petir jauh untuk dimensi tambahan"
+              - "Visual bisa berupa tampilan jendela berkabut atau atap seng dari bawah"
+              - "Rekam di beberapa lokasi berbeda (rumah desa, warung tua) untuk variasi timbre"
+            hindari:
+              - "Jangan tambahkan musik apapun — suara hujan adalah musik itu sendiri"
+              - "Jangan edit terlalu banyak — autentisitas suara hujan asli adalah nilainya"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan rekam saat ada suara kendaraan atau manusia yang terlalu mengganggu"
+            pola_hook: "Detik 0: teks 'pakai headset' + suara hujan langsung masuk full — tidak ada fade-in panjang. Biarkan intensitas hujan menarik penonton dalam 3 detik pertama."
+            contoh_judul:
+              - "Suara hujan di atap seng ini akan buat kamu tertidur dalam 5 menit"
+              - "ASMR hujan deras di atap seng — suara paling Indonesia untuk tidur"
+              - "Hujan malam ini menemani kamu belajar atau istirahat, pakai headset"
+              - "Rekaman hujan di rumah desa — suara yang dirindukan orang kota"
+              - "60 menit suara hujan atap seng tanpa gangguan untuk tidur nyenyak"
+            content_runway: "Setiap intensitas hujan, lokasi (desa, kota, pegunungan), dan jenis atap (seng, genteng, bambu) menghasilkan rekaman yang berbeda; musim hujan Indonesia menjamin pasokan konten sepanjang tahun."
+
+        - slug: asmr-ukir-kayu
+          name: ASMR Proses Ukiran Kayu Tangan
+          description: Rekaman close-up proses pengukiran kayu tangan dengan berbagai pahat — suara ketukan, serpihan, dan gerakan presisi — tanpa musik atau narasi, murni suara dan visual proses.
+          example_hook: "Suara pahat ini menenangkan dengan cara yang sulit dijelaskan, coba sendiri..."
+          guide:
+            audience: "Penonton 20–45 yang tertarik kerajinan tangan dan craft; penggemar woodworking dan seni tradisional; penonton ASMR yang mencari suara bertekstur dan berirama."
+            tone: "Fokus dan meditatif. Setiap ketukan pahat berirama dan dapat diprediksi — kepuasan datang dari ritme yang konsisten. Suara kayu, logam, dan serpihan menjadi orkestra."
+            format: "1–3 menit. Mulai dari kayu utuh → ukiran bertahap → detail halus → pembersihan serpihan. Close-up ekstrem pada titik kontak pahat dan kayu. Mic dekat sumber suara. Vertikal 9:16."
+            boleh:
+              - "Gunakan pencahayaan dari samping untuk memperlihatkan tekstur ukiran dengan jelas"
+              - "Tampilkan berbagai ukuran pahat untuk variasi suara dalam satu video"
+              - "Slow-motion sesekali untuk memperlihatkan serpihan kayu beterbangan"
+              - "Tampilkan motif ukiran yang hampir selesai di akhir sebagai reward visual"
+            hindari:
+              - "Jangan tambahkan musik latar apapun — ritme pahat sudah cukup"
+              - "Jangan rekam dengan ambient noise terlalu keras (mesin, lalu lintas)"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan skip ke hasil jadi terlalu cepat — proses adalah kontennya"
+            pola_hook: "Detik 0: teks 'pakai headset' + suara ketukan pahat pertama yang kuat dan berirama. Langsung masuk ke ritme ukiran."
+            contoh_judul:
+              - "Suara pahat kayu ini menenangkan dengan cara yang sulit dijelaskan"
+              - "ASMR ukir kayu tangan — setiap ketukan seperti mengetuk bagian otak yang tenang"
+              - "Pengrajin ini ukir kayu tanpa bicara satu kata, dan ini hasilnya"
+              - "Ritme pahat ini akan buat kamu lupa waktu, coba dengarkan dengan headset"
+              - "ASMR woodcarving Indonesia — suara yang belum banyak kreator rekam"
+            content_runway: "Setiap motif ukiran (flora, fauna, geometris, batik), jenis kayu, dan ukuran karya menghasilkan video baru; kerajinan ukir Indonesia dari Jepara, Bali, dan Kalimantan menawarkan variasi hampir tak terbatas."
+
+    - slug: cleaning
+      name: "Cleaning / Deep Clean"
+      description: "Bersih-bersih ekstrem, before-after."
+      faceless: true
+      difficulty: pemula
+      rpm: sedang
+      formats: time-lapse + before-after
+      example_hook: "Rumah sejorok ini disulap..."
+      guide:
+        audience: "Perempuan dan pria 20–40 yang menyukai konten rumah tangga; pemilik rumah yang terinspirasi dari kebersihan orang lain; penonton yang merasakan kepuasan vikarial dari proses bersih-bersih."
+        tone: "Energik tapi bersih. Proses membersihkan harus terlihat efektif dan sedikit dramatis. Transformasi adalah emosi utama — penonton harus merasakan 'lega' di akhir."
+        format: "45–90 detik. Struktur: kondisi kotor ekstrem (hook) → proses cleaning step-by-step → reveal bersih total. Time-lapse untuk proses panjang. Split-screen before-after di akhir sangat efektif. Vertikal 9:16."
+        boleh:
+          - "Tampilkan kondisi terkotor yang mungkin di awal untuk hook maksimal"
+          - "Gunakan produk pembersih yang mudah ditemukan di Indonesia untuk relevansi"
+          - "SFX suara sikat, semprotan, dan kuas diboost"
+          - "Split-screen atau wipe reveal di akhir — selalu memuaskan"
+        hindari:
+          - "Jangan rekam hasil yang tidak benar-benar bersih — kepercayaan penonton taruhannya"
+          - "Jangan skip tahap sebelum cleaning — kontras kotor-bersih adalah inti konten"
+          - "Jangan tampilkan wajah — channel ini faceless"
+          - "Jangan promosikan produk berberbayar tanpa disclosure jika diminta"
+        pola_hook: "Detik 0: close-up kondisi paling kotor + teks deskripsi singkat ('tidak dibersihkan 2 tahun'). Langsung ambil alat di detik 2."
+        contoh_judul:
+          - "Rumah sejorok ini disulap bersih dalam 2 jam — lihat hasilnya"
+          - "Deep clean yang paling memuaskan hari ini"
+          - "Sebelum dan sesudah yang bikin pengen bersihin rumah sendiri sekarang"
+
+      micro:
+        - slug: cleaning-kamar-mandi-ekstrem
+          name: Deep Clean Kamar Mandi yang Tidak Pernah Disikat
+          description: Proses pembersihan kamar mandi yang kondisinya sangat kotor karena lama tidak dibersihkan — jamur, kerak, dan noda membandel — dengan produk lokal yang mudah didapat.
+          example_hook: "Kamar mandi ini tidak pernah disikat 2 tahun, ini yang terjadi dalam 1 jam..."
+          guide:
+            audience: "Pemilik rumah 25–45 yang ingin terinspirasi untuk berbenah; penonton yang merasakan kepuasan dari transformasi ruang menjadi bersih; pembeli kos atau rumah second yang perlu tips cleaning ekstrem."
+            tone: "Terstruktur dan efisien. Setiap produk pembersih memiliki perannya. Penonton harus merasa 'aku bisa lakukan ini' sekaligus puas menyaksikan prosesnya."
+            format: "60–90 detik. Struktur: kondisi awal jorok → spray produk dan tunggu → sikat → bilas → repeat per area (lantai, dinding, toilet, wastafel) → reveal akhir mengkilap. Time-lapse bagian waiting, real-time bagian sikat. Vertikal 9:16."
+            boleh:
+              - "Mulai dari sudut paling kotor (biasanya pojok bawah atau sekitar toilet)"
+              - "Tampilkan perbandingan air kotor vs bersih saat membilas untuk dampak visual"
+              - "Gunakan produk yang dijual di Indomaret/Alfamart untuk relevansi maksimal"
+              - "Reveal akhir: tampilkan kamar mandi dari pintu agar penonton lihat keseluruhan transformasi"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan klaim produk bisa bersihkan semua tanpa sikat — tidak realistis dan menyesatkan"
+              - "Jangan rekam dengan pencahayaan yang membuat kotoran tidak terlihat di awal"
+              - "Jangan potong terlalu agresif — penonton butuh merasakan 'kerja keras' proses"
+            pola_hook: "Detik 0: close-up jamur atau kerak paling parah di kamar mandi + teks '2 tahun tidak dibersihkan'. Langsung ambil sikat di detik 2."
+            contoh_judul:
+              - "Kamar mandi ini tidak pernah disikat 2 tahun — ini hasilnya setelah 1 jam"
+              - "Deep clean kamar mandi kos yang kondisinya bikin bergidik"
+              - "Jamur di kamar mandi ini hilang total dengan produk dari Indomaret"
+              - "Kerak toilet paling membandel ini akhirnya kalah juga, ini caranya"
+              - "Transformasi kamar mandi jorok ke bersih mengkilap — nonton sampai akhir"
+            content_runway: "Setiap rumah, kos, atau kontrakan memiliki kamar mandi dengan kondisi berbeda; dikombinasikan dengan teknik (steam, kimia, mekanis) dan produk yang berbeda, konten ini bisa diproduksi setiap minggu tanpa pengulangan."
+
+        - slug: cleaning-dapur-minyak-membatu
+          name: Bersihkan Dapur dari Kerak Minyak yang Mengeras
+          description: Tutorial dan footage time-lapse membersihkan dapur dari kerak minyak tebal yang menempel di kompor, dinding, dan exhaust — transformasi ekstrem yang selalu mengundang tonton ulang.
+          example_hook: "Kerak minyak ini sudah 3 tahun menempel, ini produk dan teknik yang akhirnya berhasil..."
+          guide:
+            audience: "Ibu rumah tangga dan penghuni kos 22–45 yang bergumul dengan dapur berminyak; penonton yang mencari solusi nyata untuk masalah yang sudah lama tidak teratasi."
+            tone: "Problem-solving yang memuaskan. Setiap lapisan kerak yang terangkat adalah kemenangan kecil. Suara sikat dan scraper di permukaan berbecak minyak sangat memuaskan."
+            format: "60–90 detik. Struktur: close-up kerak minyak tertebal → spray dan tunggu (time-lapse) → scraping lapis demi lapis → lap bersih → reveal permukaan bersih. Vertikal 9:16."
+            boleh:
+              - "Gunakan scraper logam di permukaan kompor untuk efek visual dan suara terbaik"
+              - "Tampilkan tisu atau kain yang menjadi hitam saat mengangkat minyak — bukti visual kerja keras"
+              - "Sebelum-sesudah untuk kompor, dinding, dan exhaust secara terpisah"
+              - "Tampilkan produk yang digunakan dengan teks nama produk singkat"
+            hindari:
+              - "Jangan gunakan bahan kimia keras yang tidak tersedia di pasaran umum"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan skip proses tunggu setelah spray — time-lapse proses tunggu tetap valuable"
+              - "Jangan rekam dapur yang tidak terlalu kotor — kunci adalah kondisi ekstrem"
+            pola_hook: "Detik 0: close-up kerak minyak paling tebal di dinding atau kompor + teks '3 tahun menempel'. Langsung spray produk di detik 2."
+            contoh_judul:
+              - "Kerak minyak ini 3 tahun menempel, ini satu-satunya yang berhasil mengangkatnya"
+              - "Dinding dapur hitam karena minyak — bersih total dalam 45 menit"
+              - "Exhaust dapur yang tidak pernah dibersihkan, ini kondisinya dari dalam"
+              - "Kompor berminyak membatu ini bersih lagi dengan cara yang tidak terduga"
+              - "Deep clean dapur kos yang terakhir dibersihkan entah kapan — hasilnya mengejutkan"
+            content_runway: "Setiap jenis permukaan dapur (stainless, email, keramik, kaca), tingkat keparahan kotoran, dan produk pembersih berbeda menghasilkan video yang unik; dapur adalah sumber konten cleaning yang paling konsisten."
+
+        - slug: cleaning-motor-full-detailing
+          name: Motor Kusam Dijadikan Seperti Baru dengan Detailing
+          description: Proses detailing motor dari eksterior kotor dan cat kusam hingga bersih mengkilap — cocok untuk pemilik motor yang ingin tahu cara merawat kendaraan tanpa harus ke bengkel.
+          example_hook: "Motor ini terakhir dicuci 6 bulan lalu, ini hasil setelah 2 jam detailing sendiri..."
+          guide:
+            audience: "Pria 18–40 pemilik motor yang ingin merawat kendaraan sendiri; penggemar otomotif yang menyukai konten before-after kendaraan; komunitas motor Indonesia yang besar."
+            tone: "Percaya diri dan terampil. Setiap gerakan kuas, sikat, dan lap polish terlihat dikuasai. Suara mesin air, sikat, dan lap microfiber menjadi ritme video."
+            format: "60–90 detik. Struktur: motor kotor kusam → cuci dasar → degreaser mesin → polish eksterior → detail velg dan ban → reveal motor mengkilap di bawah cahaya. Time-lapse untuk bagian cuci, real-time untuk polish. Vertikal 9:16."
+            boleh:
+              - "Tampilkan perbandingan satu bagian yang sudah polish vs yang belum untuk efek dramatis"
+              - "Gunakan cahaya dari samping saat reveal untuk memaksimalkan kilap cat"
+              - "SFX suara air bertekanan dan lap microfiber diboost"
+              - "Tampilkan merk motor di awal — penonton yang punya motor sama lebih engaged"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan gunakan produk yang tidak tersedia di toko aksesoris motor Indonesia"
+              - "Jangan rekam kondisi motor yang sudah cukup bersih — kondisi awal harus ekstrem"
+              - "Jangan skip bagian velg dan ban — itu bagian yang paling transformation-worthy"
+            pola_hook: "Detik 0: close-up cat motor kusam dan velg kotor + teks 'terakhir dicuci 6 bulan lalu'. Langsung ambil selang atau semprotan di detik 2."
+            contoh_judul:
+              - "Motor ini tidak dicuci 6 bulan, 2 jam detailing sendiri — hasilnya ini"
+              - "Honda Beat lusuh ini aku detailing sampai cermin bisa melihat pantulannya"
+              - "Cat motor kusam kembali mengkilap tanpa cat ulang — ini polishnya"
+              - "Full detailing motor sendiri di rumah tanpa peralatan mahal"
+              - "Velg motor hitam berminyak ini bisa sekinclong ini ternyata"
+            content_runway: "Setiap merek dan model motor di Indonesia (ratusan varian), tingkat kekusaman berbeda, dan teknik detailing yang berkembang menghasilkan konten tanpa batas; komunitas motor Indonesia sangat besar dan loyal."
+
+    - slug: soap-cutting
+      name: "Cutting / Crushing"
+      description: "Potong sabun/slime, hydraulic press."
+      faceless: true
+      difficulty: pemula
+      rpm: rendah
+      formats: close-up + SFX + loop
+      example_hook: "Apa jadinya kalau ini dipress?"
+      guide:
+        audience: "Penonton 14–30 yang mencari konten relaksasi impulsif; penggemar ASMR tekstur dan suara; penonton yang menikmati antisipasi sebelum sesuatu dipotong atau dihancurkan."
+        tone: "Penasaran dan memuaskan. Penonton harus merasa antisipasi sebelum potongan pertama, lalu kepuasan langsung saat suara dan visual terjadi."
+        format: "15–45 detik. Satu aksi utama per video. Close-up ekstrem pada titik kontak alat dan bahan. SFX diboost secara signifikan. Loop-friendly — akhir bisa menyambung ke awal. Vertikal 9:16."
+        boleh:
+          - "Tampilkan bahan dalam kondisi utuh sebentar sebelum dipotong — membangun antisipasi"
+          - "SFX crunch, snap, dan press diboost — ini inti kepuasan channel"
+          - "Gunakan pencahayaan yang memperlihatkan tekstur dan warna dengan jelas"
+          - "Slow-motion di momen kunci (pisau masuk bahan, benda retak)"
+        hindari:
+          - "Jangan tampilkan alat berbahaya dengan cara yang tidak aman"
+          - "Jangan rekam dengan SFX lemah — suara adalah 70% nilai konten ini"
+          - "Jangan tampilkan wajah — channel ini faceless"
+          - "Jangan pilih bahan yang tidak memiliki suara atau tekstur yang menarik"
+        pola_hook: "Detik 0: close-up bahan utuh + teks pertanyaan ('apa yang ada di dalam?' atau 'seberapa keras?'). Potongan/press pertama dilakukan di detik 3."
+        contoh_judul:
+          - "Apa jadinya kalau ini dipress sampai hancur?"
+          - "Suara ini bikin tangan gatal untuk coba sendiri"
+          - "Tidak ada yang tahu apa yang ada di dalam sampai kita potong sekarang"
+
+      micro:
+        - slug: soap-cutting-sabun-vintage
+          name: Potong Sabun Keras Vintage dengan Pisau
+          description: Footage close-up memotong sabun batang tua yang sudah mengeras dengan pisau tajam — suara dan tekstur yang sangat satisfying — menggunakan sabun lokal Indonesia yang familier.
+          example_hook: "Sabun batang ini keras seperti batu, tapi dengarkan suaranya saat dipotong..."
+          guide:
+            audience: "Penonton 16–30 yang familiar dengan sabun batang Indonesia; penggemar ASMR tekstur dan suara crunch; penonton yang suka antisipasi dan kepuasan instan."
+            tone: "Antisipasi dan memuaskan. Gerakan pisau lambat lalu cepat — kontras yang menghasilkan respons maksimal. Suara crunch dan snap sabun dibesarkan."
+            format: "20–40 detik. Tampilkan sabun utuh sebentar → pisau diletakkan → dipotong perlahan → suara crunch → serpihan jatuh → potong lagi dengan variasi. Close-up eksetrem. Loop-friendly. Vertikal 9:16."
+            boleh:
+              - "Gunakan sabun lokal yang dikenal (Lifebuoy, Giv, Nuvo) untuk nostalgia"
+              - "Variasi angle potongan (horizontal, diagonal, vertikal) dalam satu video"
+              - "Boost SFX crunch secara signifikan — ini nilai utama konten"
+              - "Slow-motion di momen pisau masuk sabun"
+            hindari:
+              - "Jangan gunakan sabun yang terlalu baru dan lembek — tidak ada suara satisfying"
+              - "Jangan tampilkan pisau secara tidak aman atau mengarah ke tangan"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan rekam dengan SFX lemah atau ambient noise mengganggu"
+            pola_hook: "Detik 0: close-up sabun batang keras vintage + ketuk-ketuk sabun dengan pisau untuk tunjukkan kekerasan. Mulai potong di detik 3."
+            contoh_judul:
+              - "Sabun batang ini keras seperti batu, tapi suaranya saat dipotong luar biasa"
+              - "Potong sabun Lifebuoy tua yang sudah setahun tidak dipakai"
+              - "Tekstur sabun vintage ini bikin tangan gatal ingin pegang sendiri"
+              - "Sabun bar ini dipotong 20 cara berbeda dan tiap suaranya beda"
+              - "Crunch sabun batang ini lebih satisfying dari yang pernah kamu dengar"
+            content_runway: "Setiap merek sabun, usia sabun (semakin tua semakin keras), bentuk (bulat, kotak, oval), dan cara pemotongan menghasilkan suara berbeda; sabun batang Indonesia sangat mudah didapat dan murah."
+
+        - slug: soap-cutting-resin-warna
+          name: Cutting Resin Berwarna yang Sudah Mengering
+          description: Proses memotong lempengan resin epoksi yang sudah mengeras dengan berbagai warna, mengungkap tekstur dan pola warna di bagian dalam yang tidak terlihat dari luar.
+          example_hook: "Tidak ada yang tahu apa yang ada di dalam resin ini sampai dipotong sekarang..."
+          guide:
+            audience: "Penonton 18–35 yang tertarik craft dan seni resin; penggemar misteri visual (tidak tahu apa yang akan muncul sebelum dipotong); komunitas DIY Indonesia yang berkembang."
+            tone: "Penuh misteri dan discovery. Penonton harus merasakan antisipasi maksimal sebelum potongan pertama — ada sesuatu tersembunyi yang akan terungkap. Reveal warna dalam resin adalah klimaks."
+            format: "30–60 detik. Tampilkan permukaan luar resin yang opak → persiapkan gergaji atau pisau → mulai potong perlahan → reveal warna dalam secara bertahap → tampilkan penampang penuh. Close-up sangat dekat. Vertikal 9:16."
+            boleh:
+              - "Gunakan resin dengan warna yang tidak terlihat dari luar — kejutan visual adalah kuncinya"
+              - "Slow-motion saat blade pertama kali masuk resin"
+              - "Variasi potongan (tipis, tebal, diagonal) untuk reveal yang berbeda"
+              - "Tampilkan cahaya yang dipantulkan dari permukaan resin untuk efek dramatis"
+            hindari:
+              - "Jangan gunakan gergaji atau alat yang berbahaya tanpa safety yang terlihat"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan spoil warna dalam resin sebelum dipotong — antisipasi adalah nilainya"
+              - "Jangan rekam dengan pencahayaan buruk — warna resin harus terlihat cerah dan akurat"
+            pola_hook: "Detik 0: close-up permukaan resin opak yang tidak menunjukkan apa yang ada di dalam + teks 'tidak ada yang tahu apa yang tersembunyi di sini'. Mulai potong di detik 3."
+            contoh_judul:
+              - "Resin ini opak dari luar, tapi ini yang tersembunyi di dalamnya"
+              - "Potong resin beku ini dan temukan warna yang tidak terduga di dalam"
+              - "Setiap irisan resin ini berbeda — tidak ada yang bisa diprediksi"
+              - "Resin galaxy yang baru mengering aku potong untuk pertama kali"
+              - "Warna di dalam resin ini bikin kamera gagal tangkap dengan akurat"
+            content_runway: "Setiap warna resin, teknik mixing (swirl, layer, bloom), dan objek yang dikubur di dalam (bunga, glitter, batu) menghasilkan reveal yang berbeda; resin epoksi semakin populer di komunitas craft Indonesia."
+
+        - slug: soap-cutting-es-kristal
+          name: Crushing Bongkahan Es Kristal Besar
+          description: Footage meremukkan atau memecah bongkahan es besar dengan berbagai alat, memadukan visual yang dramatis dengan suara renyah yang konsisten memuaskan.
+          example_hook: "Es sebesar kepala ini dipecah satu pukulan dan suaranya bisa didengar dari jauh..."
+          guide:
+            audience: "Penonton 14–30 yang suka konten sensori dan destruksi memuaskan; penggemar ASMR suara crunch dan snap; penonton yang menikmati skala — sesuatu yang besar dipecah jadi kecil."
+            tone: "Dramatis dan langsung memuaskan. Tidak ada build-up panjang — suara retakan es adalah payoff-nya. Sedikit mendebarkan karena es bisa pecah tidak terduga."
+            format: "20–45 detik. Tampilkan bongkahan es besar → alat dipersiapkan → pukulan atau tekanan → retakan → pecah → serpihan es → repeat. SFX suara retakan dan serpihan diboost sangat tinggi. Vertikal 9:16."
+            boleh:
+              - "Gunakan bongkahan es dari berbagai ukuran untuk variasi skala"
+              - "Variasi alat: palu, ice pick, benda tumpul, press — setiap alat suara berbeda"
+              - "Slow-motion eksetrem di momen es mulai retak — visual sangat dramatis"
+              - "Tampilkan kilau kristal es di bawah cahaya sebelum dipecah"
+            hindari:
+              - "Jangan tampilkan serpihan es yang bisa melukai tanpa proteksi yang terlihat"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan rekam di tempat yang terlalu panas sehingga es cepat cair sebelum aksi"
+              - "Jangan gunakan SFX palsu yang tidak sinkron dengan visual"
+            pola_hook: "Detik 0: close-up bongkahan es besar yang kristal dan bening + teks ukurannya. Langsung ambil alat di detik 2."
+            contoh_judul:
+              - "Es sebesar kepala ini dipecah satu pukulan dan suaranya menggema"
+              - "Bongkahan es 5 kg ini dihancurkan perlahan-lahan sampai jadi butiran"
+              - "Suara es retak ini adalah ASMR paling natural yang pernah ada"
+              - "Crushing es kristal dengan berbagai alat — tiap suaranya beda"
+              - "Es ini terlalu bening untuk dipecah, tapi aku lakukan juga — hasilnya ini"
+            content_runway: "Setiap bentuk es (balok, bulat, bongkahan tak beraturan), teknik (pukul, press, iris, belah), dan alat yang digunakan menghasilkan variasi suara dan visual berbeda; es mudah didapat sepanjang tahun di Indonesia."
+
+    - slug: kinetic-sand
+      name: "Sand / Slime"
+      description: "Main pasir kinetik/slime satisfying."
+      faceless: true
+      difficulty: pemula
+      rpm: rendah
+      formats: close-up + ASMR + loop
+      example_hook: "Suara ini bikin otak kamu tenang..."
+      guide:
+        audience: "Penonton 13–28 yang mencari konten relaksasi impulsif dan sensori; penggemar slime dan kinetic sand dari seluruh dunia; penonton yang menikmati tekstur dan fisika bahan unik."
+        tone: "Tenang dan hipnotis. Gerakan lambat dan berulang dengan bahan yang selalu berperilaku unik. Tidak ada narasi — bahan berbicara sendiri."
+        format: "20–60 detik, dioptimalkan untuk loop. Satu bahan, satu jenis interaksi per video. Close-up sangat dekat. SFX suara pasir dan slime diboost. Loop seamless sangat diutamakan. Vertikal 9:16."
+        boleh:
+          - "Buat transisi akhir ke awal yang seamless untuk loop yang sempurna"
+          - "Pilih warna bahan yang kontras dengan latar untuk visual yang bersih"
+          - "SFX crunching, swooshing, dan squishing pasir/slime sangat penting"
+          - "Gerakan perlahan-lahan lebih hypnotic daripada gerakan cepat"
+        hindari:
+          - "Jangan tambahkan musik yang mengalahkan suara bahan"
+          - "Jangan tampilkan wajah — channel ini faceless"
+          - "Jangan gunakan pencahayaan yang membuat warna bahan tidak akurat"
+          - "Jangan rekam dengan tangan gemetar — gerakan harus smooth dan terkontrol"
+        pola_hook: "Detik 0: langsung tampilkan bahan dalam gerakan — sudah berinteraksi sejak frame pertama. Tidak ada setup atau intro."
+        contoh_judul:
+          - "Suara ini bikin otak kamu tenang dalam 30 detik"
+          - "Bahan ini tidak bisa berhenti ditonton, tonton sampai habis"
+          - "Pasir kinetik berperilaku seperti cair tapi padat — tonton keanehannya"
+
+      micro:
+        - slug: kinetic-sand-cetakan-detail
+          name: Pasir Kinetik Dicetak ke Cetakan Detail
+          description: Footage close-up menekan pasir kinetik ke dalam cetakan bermotif detail lalu melepaskannya dalam satu gerakan, menghasilkan bentuk presisi yang memuaskan secara visual dan audio.
+          example_hook: "Pasir ini ditekan ke cetakan ini dan hasilnya sempurna tanpa cacat apapun..."
+          guide:
+            audience: "Penonton 13–25 yang suka konten pasir kinetik dan DIY craft; penggemar kepuasan visual dari presisi dan bentuk sempurna; penonton yang menikmati antisipasi reveal bentuk cetakan."
+            tone: "Presisi dan antisipasi. Tekanan bertahap pada cetakan membangun antisipasi — reveal saat cetakan diangkat adalah payoff. Suara crunching saat ditekan sangat penting."
+            format: "20–40 detik. Pasir dalam bongkah → masuk ke cetakan → tekanan merata → angkat cetakan → reveal bentuk sempurna → hancurkan dan ulangi. Loop-friendly. Close-up eksetrem. Vertikal 9:16."
+            boleh:
+              - "Pilih cetakan dengan detail yang rumit — semakin detail hasilnya semakin memuaskan"
+              - "Gunakan pasir kinetik dengan warna yang kontras dengan cetakan"
+              - "Boost SFX suara crunch saat ditekan dan suara release saat cetakan diangkat"
+              - "Slow-motion saat cetakan diangkat untuk reveal dramatis"
+            hindari:
+              - "Jangan gunakan pasir kinetik yang terlalu kering atau terlalu lembab — tidak bisa cetak"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan tambahkan musik keras yang kalahkan suara crunch pasir"
+              - "Jangan rekam hasil cetakan yang cacat atau tidak sempurna tanpa konteks"
+            pola_hook: "Detik 0: bongkah pasir kinetik diletakkan di atas cetakan. Langsung mulai tekan di detik 1 — tidak ada intro."
+            contoh_judul:
+              - "Pasir ini ditekan ke cetakan dan hasilnya sempurna tanpa satu cacat"
+              - "Cetakan bunga ini menghasilkan pasir kinetik yang terlalu detail untuk nyata"
+              - "Tekanan satu kali dan cetakan ini melepaskan bentuk yang sempurna"
+              - "Pasir kinetik dicetak ke motif batik — hasilnya terlalu memuaskan"
+              - "Suara crunch pasir saat ditekan ke cetakan ini lebih satisfying dari yang diperkirakan"
+            content_runway: "Setiap motif cetakan (geometris, flora, fauna, karakter), warna pasir, dan teknik tekanan menghasilkan hasil yang berbeda; cetakan kue atau sabun Indonesia sangat beragam dan mudah didapat."
+
+        - slug: kinetic-sand-warna-dicampur
+          name: Mixing Pasir Kinetik Dua Warna
+          description: Proses mencampur dua blok pasir kinetik berwarna berbeda perlahan hingga membentuk pola marmer, konten loop yang sangat populer di segmen satisfying.
+          example_hook: "Dua warna ini belum pernah dicampur sebelumnya, tonton apa yang terbentuk..."
+          guide:
+            audience: "Penonton 13–28 yang hipnotis oleh perpaduan warna dan pola; penggemar marble effect dan color mixing; penonton yang bisa menonton proses berulang tanpa bosan."
+            tone: "Hipnotis dan meditatif. Gerakan tangan yang perlahan dan konsisten membuat penonton tidak bisa berhenti. Pola marmer yang berkembang adalah narasi visualnya."
+            format: "30–60 detik. Dua bongkah warna berbeda berdampingan → tangan mulai mixer perlahan → pola marmer mulai terbentuk → mixing lebih intens → pola penuh → bisa di-loop ke kondisi terpisah lagi. Vertikal 9:16."
+            boleh:
+              - "Pilih kombinasi warna yang kontras kuat (merah-putih, biru-kuning, hitam-oranye)"
+              - "Gerakan mixing bervariasi (gulung, lipat, tekan) untuk pola berbeda"
+              - "SFX crunching saat mixing diboost"
+              - "Tampilkan transisi dari terpisah ke marmer sempurna sebagai arc video"
+            hindari:
+              - "Jangan mix terlalu cepat — gerakan lambat lebih hipnotis"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan gunakan warna yang terlalu mirip — kontras rendah kurangi dampak visual"
+              - "Jangan tambahkan narasi atau penjelasan — proses bicara sendiri"
+            pola_hook: "Detik 0: dua bongkah pasir warna kontras saling berdampingan + teks 'belum pernah dicampur'. Tangan masuk frame dan langsung mulai mix di detik 2."
+            contoh_judul:
+              - "Dua warna ini belum pernah dicampur — tonton apa yang terbentuk"
+              - "Pasir merah dan putih ini dicampur perlahan dan hasilnya seperti marmer"
+              - "Mixing pasir kinetik hitam dan oranye ini terlalu satisfying untuk diskip"
+              - "Pola yang terbentuk dari dua warna pasir ini tidak bisa diprediksi"
+              - "Warna ini bercampur selama 40 detik dan hasilnya bikin ingin ulangi terus"
+            content_runway: "Setiap kombinasi warna menghasilkan pola marmer yang unik; teknik mixing berbeda (gulung, lipat, tekan) menghasilkan pola yang berbeda; kombinasi tiga atau lebih warna memperluas variasi secara eksponensial."
+
+        - slug: kinetic-sand-diiris-tipis
+          name: Iris Pasir Kinetik Setipis Mungkin
+          description: Footage memotong blok pasir kinetik dengan benang atau kawat tipis hingga menghasilkan irisan setipis kertas yang jatuh dengan cara yang sangat memuaskan.
+          example_hook: "Seberapa tipis irisan pasir ini bisa bertahan sebelum jatuh? Lihat sampai akhir..."
+          guide:
+            audience: "Penonton 14–28 yang tertarik pada batas fisika bahan; penggemar konten 'seberapa tipis/kecil yang bisa dicapai'; penonton yang menikmati antisipasi momen runtuhnya irisan tipis."
+            tone: "Penuh antisipasi. Setiap irisan yang berhasil adalah reward kecil. Momen irisan tipis yang akhirnya jatuh adalah climax yang selalu ditunggu. Gerakan harus sangat lambat dan terkontrol."
+            format: "25–50 detik. Blok pasir utuh → benang/kawat diposisikan → iris perlahan → irisan tipis terbentuk → jatuh perlahan → iris lagi lebih tipis. Loop jika blok baru diambil. Close-up eksetrem. Vertikal 9:16."
+            boleh:
+              - "Gunakan benang nilon transparan untuk visual yang lebih dramatis"
+              - "Tampilkan skala irisan dengan benda referensi kecil (koin, kertas)"
+              - "Slow-motion saat irisan tipis akhirnya jatuh"
+              - "Challenge format: 'berapa irisan bisa dihasilkan dari satu blok?'"
+            hindari:
+              - "Jangan iris terlalu cepat — lambatnya gerakan adalah intinya"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan gunakan pencahayaan dari belakang yang membuat irisan tidak terlihat"
+              - "Jangan rekam dengan suara ambient tinggi — suara swoosh irisan yang tipis harus terdengar"
+            pola_hook: "Detik 0: close-up blok pasir kinetik utuh + teks 'seberapa tipis yang bisa bertahan sebelum jatuh?'. Benang langsung ditempatkan di detik 2."
+            contoh_judul:
+              - "Seberapa tipis irisan pasir ini bisa bertahan sebelum jatuh sendiri?"
+              - "Iris pasir kinetik setipis kertas — apakah bisa bertahan?"
+              - "Irisan pasir ini tipis sampai bisa dilihat tembus cahaya"
+              - "Challenge: berapa irisan bisa dihasilkan dari satu blok pasir ini?"
+              - "Momen irisan pasir setipis ini akhirnya runtuh adalah yang paling satisfying"
+            content_runway: "Setiap warna, kepadatan pasir, ketebalan alat iris, dan teknik memegang menghasilkan hasil yang berbeda; format challenge 'seberapa tipis' menciptakan seri video yang bisa diikuti penonton."
+
+    - slug: before-after
+      name: "Before After"
+      description: "Transformasi visual dramatis sebelum dan sesudah, format reveal."
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: split-screen + reveal + musik
+      example_hook: "Tunggu sampai detik ke-10, gak nyangka..."
+      guide:
+        audience: "Penonton 20–40 yang menikmati transformasi visual; pemilik rumah yang terinspirasi dari renovasi orang lain; penonton yang termotivasi dari melihat improvement nyata."
+        tone: "Dramatis dan inspiratif. Kondisi awal harus tampak hopeless, kondisi akhir harus tampak miraculous. Kontras adalah emosinya."
+        format: "45–90 detik. Tunjukkan kondisi awal cukup lama untuk membangun konteks → proses singkat (time-lapse atau montage) → reveal akhir yang dramatis (wipe, split-screen, atau cut langsung). Musik boleh ada — pilih yang membangun emosi. Vertikal 9:16."
+        boleh:
+          - "Kondisi awal harus benar-benar terlihat buruk — jangan pilih yang 'setengah parah'"
+          - "Gunakan teknik reveal yang dramatis: wipe dari kiri, split-screen, atau fade"
+          - "Musik yang build up menuju reveal meningkatkan emotional impact"
+          - "Tambahkan teks singkat di kondisi awal untuk konteks ('tidak disentuh 1 tahun')"
+        hindari:
+          - "Jangan kondisi awal yang sudah setengah bersih — kontras kurang kuat"
+          - "Jangan tampilkan wajah — channel ini faceless"
+          - "Jangan pakai musik ber-hak-cipta"
+          - "Jangan cut ke reveal terlalu cepat — penonton butuh merasakan kondisi awal"
+        pola_hook: "Detik 0: tampilkan kondisi paling parah + teks 'tunggu sampai akhir'. Jangan tunjukkan hasil di awal — penonton harus penasaran."
+        contoh_judul:
+          - "Tunggu sampai detik terakhir — transformasi ini tidak akan kamu percaya"
+          - "Sebelum dan sesudah yang bikin pengen langsung beresin rumah sendiri"
+          - "Kondisi ini bikin kamu gak nyangka hasilnya bisa seperti ini"
+
+      micro:
+        - slug: before-after-taman-rumah-terlantar
+          name: Taman Rumah Terlantar Disulap dalam Satu Hari
+          description: Transformasi taman atau halaman rumah yang terlantar dan penuh rumput liar menjadi taman bersih dan rapi dalam satu hari kerja, dengan breakdown sederhana apa yang dilakukan.
+          example_hook: "Halaman ini sudah setahun tidak disentuh, ini setelah 8 jam kerja..."
+          guide:
+            audience: "Pemilik rumah 25–45 yang punya halaman terbengkalai; penonton yang terinspirasi dari konten gardening dan landscaping; penonton yang mencari motivasi untuk beresin area rumah yang diabaikan."
+            tone: "Transformatif dan memberikan harapan. Kondisi awal yang sangat berantakan kontras dengan hasil rapi yang dicapai dalam satu hari — membuktikan bahwa bahkan kondisi terburuk masih bisa dibenahi."
+            format: "60–90 detik. Kondisi taman liar → proses time-lapse (pangkas, cabut rumput, ratakan, tanam ulang) → reveal akhir taman rapi dari sudut yang sama. Vertikal 9:16, musik yang membangun semangat."
+            boleh:
+              - "Rekam dari sudut yang sama di awal dan akhir untuk perbandingan yang adil"
+              - "Tampilkan 'hasil hari ini' sebelum gelap sebagai penutup realistis"
+              - "Sertakan brief montage alat dan material yang digunakan"
+              - "Reveal akhir: kamera mundur perlahan dari taman yang sudah rapi"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan gunakan kondisi taman yang sebenarnya tidak terlalu parah"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan skip proses kerja keras — penonton butuh tahu ini tidak instan"
+            pola_hook: "Detik 0: drone shot atau wide shot taman paling berantakan + teks 'setahun tidak disentuh'. Potong langsung ke proses di detik 4."
+            contoh_judul:
+              - "Halaman ini setahun tidak disentuh, 8 jam kemudian berubah jadi ini"
+              - "Taman liar penuh semak ini aku bersihkan sendirian dalam satu hari"
+              - "Rumput setinggi lutut di halaman ini aku pangkas sampai bisa duduk santai"
+              - "Transformasi taman terlantar yang bikin tetangga terkejut keesokan harinya"
+              - "Dari hutan mini ke taman keluarga — satu hari kerja tanpa tukang"
+            content_runway: "Setiap kondisi taman berbeda (ukuran, jenis tanaman liar, kondisi tanah), setiap musim, dan setiap gaya landscaping akhir menghasilkan video yang unik; taman terbengkalai sangat umum di Indonesia."
+
+        - slug: before-after-lemari-berantakan
+          name: Lemari Pakaian Kacau Diorganisir Total
+          description: Transformasi lemari pakaian yang penuh sesak dan tidak teratur menjadi terorganisir rapi dengan sistem yang bisa dipertahankan, bukan sekadar disembunyikan untuk video.
+          example_hook: "Lemari ini butuh 5 menit untuk menemukan satu kaos, sekarang butuh 5 detik..."
+          guide:
+            audience: "Perempuan dan pria 20–35 yang punya lemari berantakan; penonton yang suka konten declutter dan Marie Kondo-style; mereka yang ingin sistem organisasi tapi tidak tahu mulai dari mana."
+            tone: "Inspiratif dan praktis. Bukan sekedar estetika — sistem yang dibuat harus terlihat logis dan bisa dipertahankan. Penonton harus merasa 'aku bisa lakukan ini'."
+            format: "60–90 detik. Kondisi lemari kacau → semua dikeluarkan → sortir → lipat/gantung sistematis → masuk kembali dengan sistem → reveal terorganisir. Time-lapse bagian sorting, real-time bagian reveal. Vertikal 9:16."
+            boleh:
+              - "Tampilkan sistem pelipatan yang jelas (vertical folding Marie Kondo) dalam close-up"
+              - "Gunakan organizer yang mudah didapat di IKEA atau toko Rp2000an Indonesia"
+              - "Sebelum-sesudah dari sudut yang sama untuk perbandingan adil"
+              - "Tambahkan teks singkat menjelaskan sistem yang dipakai di reveal"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan gunakan organizer mahal yang tidak terjangkau — turunkan relevansi"
+              - "Jangan sembunyikan barang di luar frame untuk terlihat lebih bersih"
+              - "Jangan pakai musik ber-hak-cipta"
+            pola_hook: "Detik 0: buka pintu lemari dan tunjukkan kondisi paling kacau + teks '5 menit untuk temukan satu baju'. Langsung mulai proses di detik 4."
+            contoh_judul:
+              - "Lemari ini butuh 5 menit untuk temukan satu kaos — sekarang 5 detik"
+              - "Declutter lemari pakaian yang tidak dibuka sepenuhnya sejak pindahan"
+              - "Sistem lipat ini mengubah lemari penuh sesak jadi terlihat setengah kosong"
+              - "Organisir lemari dari nol dengan budget di bawah Rp100rb"
+              - "Semua pakaian di lemari ini akhirnya terlihat dan gak ada yang terlupakan lagi"
+            content_runway: "Setiap jenis lemari (pakaian, dapur, buku, alat), sistem organisasi yang berbeda, dan ukuran rumah menghasilkan video yang berbeda; lemari berantakan adalah kondisi universal yang selalu relevan."
+
+        - slug: before-after-motor-cat-kusam
+          name: Cat Motor Kusam Dipoles Kembali Mengkilap
+          description: Proses memoles cat motor yang kusam dan baret halus kembali menjadi mengkilap menggunakan compound dan polish, tanpa harus cat ulang yang mahal.
+          example_hook: "Cat motor ini 7 tahun tidak dipoles, ini hasilnya setelah 90 menit polishing..."
+          guide:
+            audience: "Pria 20–40 pemilik motor yang ingin merawat kendaraan sendiri; penonton yang mencari alternatif cat ulang mahal; komunitas motor Indonesia yang aktif dan besar."
+            tone: "Teknis tapi accessible. Proses polish yang berulang membangun kepuasan secara bertahap. Kilap akhir yang muncul secara perlahan di setiap pass adalah reward visual terus-menerus."
+            format: "60–90 detik. Kondisi cat kusam baret → compound application + polish → buffing manual atau mesin → reveal per panel → reveal keseluruhan motor mengkilap di bawah cahaya. Vertikal 9:16."
+            boleh:
+              - "Tampilkan perbandingan satu panel yang sudah dipoles vs yang belum — sangat dramatis"
+              - "Gunakan cahaya dari samping untuk maksimalkan kilap yang terlihat"
+              - "Sebutkan produk yang digunakan (compound, polish) dengan teks singkat"
+              - "Reveal akhir: motor diputar di bawah cahaya agar semua sudut terlihat"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan gunakan produk yang tidak tersedia di toko aksesoris motor Indonesia"
+              - "Jangan rekam motor yang kondisi catnya sudah tidak bisa dipoles — misleading"
+              - "Jangan pakai musik ber-hak-cipta"
+            pola_hook: "Detik 0: close-up cat kusam dengan baret halus + teks '7 tahun tidak dipoles'. Langsung mulai aplikasi compound di detik 3."
+            contoh_judul:
+              - "Cat motor ini 7 tahun tidak pernah dipoles, 90 menit kemudian seperti baru"
+              - "Baret halus di motor ini hilang tanpa cat ulang — ini compound-nya"
+              - "Yamaha NMAX kusam ini aku poles sendiri di garasi dan hasilnya ini"
+              - "Cara poles motor sendiri yang hasilnya setara bengkel tapi gratis"
+              - "Cat motor pudar ini kembali kilap hanya dengan dua produk dari toko motor"
+            content_runway: "Setiap merek dan model motor, tingkat kekusaman, jenis compound/polish, dan teknik application (manual vs mesin) menghasilkan video yang berbeda; pasar motor Indonesia terbesar di dunia menjamin audiens yang selalu ada."

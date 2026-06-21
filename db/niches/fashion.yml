@@ -1,0 +1,354 @@
+version: 1
+vertical:
+  slug: v-fashion
+  name: Fashion
+  description: Konten gaya busana, makeup, dan tren thrift untuk penonton fashion-conscious Indonesia.
+  guide:
+    audience: "Perempuan dan pria 17–35 yang peduli penampilan dan ingin tampil stylish dengan budget realistis; campuran mahasiswa, pekerja muda, dan ibu rumah tangga; aktif di Instagram dan TikTok, sering scroll konten OOTD dan beauty."
+    tone: "Percaya diri, aspirasional, tapi tetap relate — bukan flexing artis, tapi 'kamu juga bisa'. Bahasa kasual, energetik, dan personal. Bukan tutorial kaku — lebih seperti teman yang kasih tips."
+    format: "Video 30–90 detik vertikal 9:16. Struktur khas: hook visual kuat (outfit reveal, transformasi, atau produk) → konten utama → CTA singkat. Musik trending atau upbeat wajib di fashion/OOTD. Lighting bersih dan warna pakaian harus akurat."
+    boleh:
+      - "Tampilkan harga total outfit/produk di awal untuk trigger curiosity"
+      - "Gunakan transisi cepat (flip, spin, jump cut) untuk energi tinggi di OOTD"
+      - "Before-after makeup dan styling selalu perform — pakai format ini sebanyak mungkin"
+      - "Sebutkan brand lokal Indonesia — relatable dan mendapat engagement lebih tinggi dari audiens lokal"
+      - "Teks overlay harga, nama brand, dan tips singkat meningkatkan watch time"
+    hindari:
+      - "Jangan pakai musik ber-hak-cipta tanpa lisensi — gunakan TikTok/IG trending audio atau royalty-free"
+      - "Jangan tampilkan hanya produk premium yang tidak terjangkau — audiens Indonesia butuh opsi realistis"
+      - "Jangan rekam dengan pencahayaan kuning atau redup — warna pakaian harus terlihat akurat"
+      - "Jangan skip breakdown harga jika video tentang budget — itu informasi utama yang dicari penonton"
+      - "Jangan buat konten terlalu 'perfect' dan tidak relate — imperfeksi yang autentik lebih engage"
+    pola_hook: "Detik 0–2: reveal langsung hasil akhir (outfit lengkap atau wajah setelah makeup) + teks harga atau klaim menarik. Baru detail breakdown setelahnya."
+    contoh_judul:
+      - "Outfit Rp150rb yang bikin dikira beli di brand luar"
+      - "Transformasi makeup ini gak ada filternya, lihat sendiri"
+      - "Thrift Rp10rb jadi outfit yang terlihat Rp500rb"
+
+  niches:
+    - slug: fashion
+      name: "Fashion / OOTD"
+      description: "Gaya busana, mix-match, haul."
+      faceless: false
+      difficulty: menengah
+      rpm: tinggi
+      formats: lookbook + transisi + musik
+      example_hook: "Outfit Rp100rb tapi keliatan mahal..."
+      guide:
+        audience: "Perempuan dan pria 18–30 yang aktif di Instagram dan TikTok; mahasiswa dan fresh graduate yang ingin tampil stylish dengan budget terbatas; penonton yang suka konten lookbook dan style inspiration."
+        tone: "Energetik, percaya diri, aspirasional. Seperti teman yang jago fashion kasih rekomendasi — tidak menggurui, tapi menginspirasi. Musik upbeat mendukung mood."
+        format: "30–60 detik. Struktur: hook outfit reveal cepat → breakdown item per item (nama + harga) → styling tip singkat → full look dari berbagai angle. Transisi dinamis (spin, flip, jump cut). Vertikal 9:16, pencahayaan natural atau studio bersih."
+        boleh:
+          - "Tampilkan total harga outfit di awal sebagai hook — selalu trigger klik"
+          - "Gunakan transisi outfit yang kreatif dan sync dengan beat musik"
+          - "Sertakan breakdown brand dan harga tiap item dalam teks overlay"
+          - "Mix antara brand lokal dan thrift untuk relevansi audiens Indonesia"
+        hindari:
+          - "Jangan rekam dengan pencahayaan redup atau latar berantakan — estetika adalah produknya"
+          - "Jangan hanya tampilkan produk mahal tanpa opsi budget — kurangi relevansi audiens luas"
+          - "Jangan pakai musik ber-hak-cipta; gunakan trending audio di platform"
+          - "Jangan buat transisi terlalu lambat — energi video OOTD harus tinggi"
+        pola_hook: "Detik 0: reveal full outfit dari kepala ke kaki + teks total harga. Langsung breakdown item di detik 3."
+        contoh_judul:
+          - "Outfit Rp150rb ini bikin dikira pakai brand luar"
+          - "Full OOTD kampus di bawah Rp200rb — semua dari brand lokal"
+          - "Cara mix-match 3 warna yang selalu aman tanpa perlu belajar teori warna"
+      micro:
+        - slug: fashion-ootd-budget
+          name: OOTD Budget Rp100–300rb
+          description: Inspirasi outfit harian dengan total budget terjangkau dari brand lokal dan thrift, menyasar mahasiswa dan pekerja muda yang ingin stylish tanpa mahal.
+          example_hook: "Outfit Rp150rb ini bikin dikira pakai brand luar, ini breakdown-nya..."
+          guide:
+            audience: "Mahasiswa dan pekerja muda 18–27 dengan budget fashion terbatas; penonton yang sering scroll OOTD tapi merasa konten yang ada terlalu mahal; mereka yang ingin tampil bagus tanpa harus mahal."
+            tone: "Relatable dan memotivasi — 'kamu juga bisa'. Tidak ada flexing, semua serba terjangkau dan nyata. Gaya bahasa teman yang berbagi tips, bukan influencer yang jauh dari jangkauan."
+            format: "45–60 detik. Mulai dari reveal outfit jadi + total harga → breakdown tiap item (nama brand, harga, beli di mana) → satu styling tip bonus → full look dari depan, samping, belakang. Musik upbeat trending. Vertikal 9:16."
+            boleh:
+              - "Tampilkan struk atau screenshot harga asli sebagai bukti otentik"
+              - "Sebutkan toko fisik atau marketplace Indonesia tempat item dibeli"
+              - "Tunjukkan alternatif warna yang tersedia untuk opsi lebih banyak"
+              - "Tambahkan teks overlay nama item + harga di setiap transisi item"
+            hindari:
+              - "Jangan masukkan item di atas Rp300rb tanpa alternatif yang lebih murah"
+              - "Jangan tampilkan outfit tanpa breakdown harga — itu adalah inti konten ini"
+              - "Jangan gunakan latar belakang yang mengalihkan dari outfit — tembok polos atau outdoor bersih lebih baik"
+              - "Jangan pakai musik ber-hak-cipta; gunakan trending audio platform"
+            pola_hook: "Detik 0: tampilkan full look + teks besar 'Total: Rp___'. Penonton harus langsung tahu ini konten budget sebelum detik 2."
+            contoh_judul:
+              - "Outfit Rp150rb ini bikin dikira pakai brand luar, ini breakdown-nya"
+              - "Full OOTD kampus Rp180rb — semua dari brand lokal yang mudah dicari"
+              - "Kerja kantoran tapi budget mepet? OOTD Rp250rb yang tetap rapi"
+              - "Outfit ini total Rp120rb dan sudah aku pakai ke 5 acara berbeda"
+              - "3 OOTD harian dari baju yang sama, total pengeluaran Rp200rb"
+            content_runway: "Setiap kombinasi kesempatan (kampus, kerja, hangout, casual, kondangan casual) dikali kisaran harga (100–150rb, 150–200rb, 200–300rb) dikali musim dan tren yang berputar menghasilkan ide konten hampir tidak terbatas sepanjang tahun."
+
+        - slug: fashion-ootd-kondangan
+          name: OOTD Kondangan & Formal Event
+          description: Panduan berpakaian untuk kondangan, wisuda, dan acara formal dengan pilihan yang elegan tapi tidak terlalu mahal, sangat relevan di budaya Indonesia.
+          example_hook: "Outfit kondangan Rp200rb yang gak malu-maluin, ini pilihannya..."
+          guide:
+            audience: "Perempuan dan pria 20–35 yang sering diundang kondangan atau acara formal; penonton yang bingung apa yang tepat dipakai di acara resmi tapi tidak mau habis banyak; segmen sangat relevan di Indonesia di mana acara kondangan sangat sering."
+            tone: "Helpful dan reassuring — 'ini pilihan yang aman dan elegan tanpa harus mahal'. Sedikit lebih serius dari OOTD casual tapi tetap kasual dan teman. Penonton harus merasa siap dan percaya diri setelah nonton."
+            format: "45–75 detik. Tampilkan 2–3 pilihan outfit per video (bukan hanya satu) untuk opsi penonton → breakdown harga tiap pilihan → tips aksesoris yang melengkapi → tips do's and don'ts dress code kondangan singkat. Vertikal 9:16."
+            boleh:
+              - "Tampilkan pilihan untuk berbagai jenis kondangan (kondangan mesjid, gedung, outdoor)"
+              - "Sertakan opsi aksesoris yang elevate tampilan tanpa biaya besar"
+              - "Bahas dress code yang sering bikin bingung (semi-formal, garden party, dll)"
+              - "Tampilkan pilihan untuk berbagai bentuk tubuh jika memungkinkan"
+            hindari:
+              - "Jangan tampilkan hanya pilihan mahal yang tidak realistis untuk mayoritas penonton"
+              - "Jangan gunakan warna atau motif yang terlalu mencolok untuk kondangan — edukasi dress code yang tepat"
+              - "Jangan rekam dengan pencahayaan yang membuat warna kain tidak akurat"
+              - "Jangan pakai musik ber-hak-cipta"
+            pola_hook: "Detik 0: tampilkan 3 outfit kondangan berbaris atau dalam grid + teks total budget. Langsung bahas pilihan pertama di detik 3."
+            contoh_judul:
+              - "3 pilihan outfit kondangan Rp200rb yang gak akan bikin malu"
+              - "Baju kondangan di bawah Rp300rb yang tetap keliatan elegan dan rapi"
+              - "Dress code semi-formal di kondangan artinya pakai apa? Ini jawabannya"
+              - "Outfit wisuda yang sopan dan fotogenik di bawah Rp250rb"
+              - "Kondangan 3 kali bulan ini, ini outfit berbeda yang bisa dirotasi dengan budget Rp400rb total"
+            content_runway: "Indonesia salah satu negara dengan frekuensi kondangan tertinggi di dunia — setiap bulan selalu ada musim kondangan, wisuda, dan acara formal; dikombinasikan dengan berbagai dress code, budget, dan gender, ide konten ini tidak habis."
+
+        - slug: fashion-mix-match-warna
+          name: Cara Mix-Match Warna yang Tidak Salah
+          description: Panduan kombinasi warna pakaian berbasis teori warna yang disederhanakan, untuk penonton yang sering bingung padukan baju di lemari.
+          example_hook: "Kamu punya baju bagus tapi gak bisa mix-match? Ini aturan simpelnya..."
+          guide:
+            audience: "Perempuan dan pria 18–32 yang punya lemari penuh baju tapi sering merasa 'gak ada yang cocok'; penonton yang ingin belajar styling tapi takut teori warna terlalu rumit; penonton yang sering salah padukan warna."
+            tone: "Edukatif tapi santai — seperti teman yang sabar menjelaskan aturan sederhana. Tidak ada jargon fashion yang intimidating. Pakai contoh langsung dengan baju nyata, bukan teori abstrak."
+            format: "45–75 detik. Mulai dari 'masalah' yang relatable (ini salah, ini kenapa) → aturan sederhana yang mudah diingat → contoh outfit berhasil menggunakan aturan tersebut → 1 tip bonus. Teks overlay untuk nama pola warna. Vertikal 9:16."
+            boleh:
+              - "Gunakan color wheel sederhana sebagai visual aid selama 2–3 detik"
+              - "Tampilkan contoh yang salah dulu sebelum yang benar untuk kontras edukasi"
+              - "Gunakan baju yang ada di lemari kebanyakan orang — basic, bukan statement piece eksotis"
+              - "Berikan nama mudah diingat untuk setiap aturan ('aturan 60-30-10', 'safe combo')"
+            hindari:
+              - "Jangan masuk terlalu dalam ke teori warna munsell atau teknis — penonton akan kabur"
+              - "Jangan hanya tampilkan high fashion atau baju mahal — tidak relatable"
+              - "Jangan gunakan pencahayaan yang mengubah persepsi warna baju"
+              - "Jangan rekam tanpa contoh visual nyata — teori tanpa demo tidak berguna"
+            pola_hook: "Detik 0: tampilkan dua outfit — satu yang gagal warnanya dan satu yang berhasil — teks 'mana yang salah?'. Jawab dan jelaskan di detik 3."
+            contoh_judul:
+              - "Kenapa outfitmu keliatan aneh? Ini kesalahan mix-match warna yang sering terjadi"
+              - "3 kombinasi warna yang selalu aman — hafal ini dan kamu gak akan salah lagi"
+              - "Baju hitam cocok dipadukan dengan warna apa? Ini semua jawabannya"
+              - "Cara pakai warna cerah tanpa keliatan norak, ini rahasianya"
+              - "Lemari penuh tapi gak ada yang cocok? Ini penyebabnya dan cara fiksinya"
+            content_runway: "Setiap pasangan warna (ada ratusan kombinasi), setiap aturan color theory (complementary, analogous, neutral, monochrome), dan setiap jenis pakaian (casual, formal, sporty) menghasilkan video tersendiri; tren warna berubah tiap musim memberi relevansi konten yang terus-menerus."
+
+    - slug: thrift
+      name: "Thrift / Flip Baju"
+      description: Berburu & flip baju bekas.
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: haul + before-after
+      example_hook: "Baju thrift Rp10rb jadi outfit mewah..."
+      guide:
+        audience: "Anak muda 17–30 yang tertarik fashion sustainable dan hemat; penonton yang penasaran cara dapat baju bagus murah; komunitas thrifting Indonesia yang terus berkembang; mereka yang ingin cuan dari flip baju."
+        tone: "Antusias dan discovery-driven — seperti treasure hunt yang menyenangkan. Ada nuansa kebanggaan menemukan item tersembunyi. Untuk konten flip, ada juga nuansa bisnis yang kasual tapi cerdas."
+        format: "45–90 detik. Haul: tampilkan item satu per satu + harga + kondisi → highlight best find → total pengeluaran vs estimasi nilai. Flip: kondisi awal → proses modifikasi/cuci/press → kondisi akhir → harga jual. Vertikal 9:16."
+        boleh:
+          - "Tampilkan proses berburu (pasar, tumpukan baju) untuk nuansa treasure hunt yang autentik"
+          - "Highlight brand yang tidak terduga — penonton suka surprise brand premium di thrift"
+          - "Breakdown harga beli vs harga jual untuk konten flip — angka konkret selalu engage"
+          - "Before-after styling item thrift jadi outfit yang premium-looking"
+        hindari:
+          - "Jangan klaim item bekas sebagai baru tanpa konteks yang jelas"
+          - "Jangan tampilkan kondisi item yang terlalu rusak tanpa disclaimer realistis"
+          - "Jangan pakai musik ber-hak-cipta"
+          - "Jangan skip kondisi awal baju saat flip — kontras adalah inti konten"
+        pola_hook: "Detik 0: tampilkan item thrift yang paling mengejutkan (brand premium, kondisi bagus, harga murah) + harga beli. Baru reveal keseluruhan haul atau proses flip."
+        contoh_judul:
+          - "Haul thrift Rp150rb total — ada brand ini yang gak nyangka nemu"
+          - "Baju bekas Rp15rb ini aku flip jadi Rp200rb, ini caranya"
+          - "Cara dapat brand premium di thrift tanpa berjam-jam ngubek"
+      micro:
+        - slug: thrift-pasar-loak-jakarta
+          name: Guide Berburu Thrift di Pasar Lokal
+          description: Panduan praktis berburu baju bekas di pasar loak dan toko thrift Indonesia dengan tips menemukan item tersembunyi dan menawar harga terbaik.
+          example_hook: "Tempat thrift ini di Jakarta yang selalu ada brand premium tapi gak ada yang tahu..."
+          guide:
+            audience: "Anak muda 18–28 yang tertarik thrifting tapi belum tahu cara dan tempat yang bagus; penonton yang sering frustrasi karena susah dapat item bagus; mereka yang mau mulai thrift tapi butuh panduan."
+            tone: "Seperti guide lokal yang insider — kamu dapat info yang gak semua orang tahu. Rasa eksklusivitas dan discovery adalah emosi utama. Kasual dan antusias, bukan kaku tutorial."
+            format: "60–90 detik. Tunjukkan lokasi pasar/toko secara singkat (establishing shot) → walkthrough cara berburu sistematis → highlight item terbaik yang ditemukan → tips negosiasi harga → total haul + harga. Vertikal 9:16."
+            boleh:
+              - "Sebutkan nama pasar atau area spesifik di kota besar Indonesia (Pasar Senen, Pasar Kodok, dll)"
+              - "Tunjukkan teknik memilih baju — cek jahitan, material, label — untuk edukasi praktis"
+              - "Tampilkan momen menemukan item bagus untuk nuansa treasure hunt yang genuine"
+              - "Sertakan tips waktu terbaik datang (pagi lebih fresh stock) sebagai bonus"
+            hindari:
+              - "Jangan rekam di toko yang sudah sangat populer tanpa value tambahan — penonton sudah tahu"
+              - "Jangan lupa tampilkan kondisi item sebenarnya — jangan sembunyikan cacat kecil"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan klaim semua item branded — cek label dengan teliti sebelum klaim"
+            pola_hook: "Detik 0: close-up tumpukan baju di pasar loak yang ramai + teks lokasi dan teks 'ada brand ini di sini'. Langsung masuk ke proses berburu di detik 3."
+            contoh_judul:
+              - "Pasar thrift di Jakarta yang selalu ada brand premium tapi gak banyak yang tahu"
+              - "Guide berburu thrift di Pasar Senen dari yang sudah 3 tahun rutin ke sana"
+              - "Strategi datang ke thrift store jam 7 pagi dan hasilnya beda jauh"
+              - "Cara cek apakah baju thrift ini layak dibeli dalam 10 detik"
+              - "Haul thrift Bandung Rp200rb — ini 7 item yang aku temukan hari ini"
+            content_runway: "Setiap kota besar Indonesia punya pasar loak dan thrift store tersendiri; setiap kunjungan menghasilkan temuan yang berbeda; tren item yang dicari berubah sesuai tren fashion; seasonal (lebaran, tahun ajaran baru) menghasilkan momen konten khusus."
+
+        - slug: thrift-flip-resell
+          name: Flip Baju Thrift untuk Dijual Lagi
+          description: Cara membeli baju bekas murah, memodifikasi atau membersihkannya, lalu menjual kembali dengan harga lebih tinggi sebagai bisnis sampingan.
+          example_hook: "Beli Rp15rb, jual Rp200rb, ini caranya dan gak butuh keahlian menjahit..."
+          guide:
+            audience: "Anak muda 18–30 yang ingin side hustle tapi modal terbatas; penonton yang tertarik bisnis fashion tapi tidak mau buka toko konvensional; mahasiswa yang ingin cuan dari passion fashion."
+            tone: "Bisnis yang kasual dan accessible — 'kamu juga bisa lakukan ini mulai sekarang'. Ada nuansa entrepreneurial yang excited tapi tidak over-promise. Angka konkret (beli berapa, jual berapa, profit berapa) adalah daya tarik utama."
+            format: "60–90 detik. Tampilkan item sebelum flip (kondisi, harga beli) → proses transformasi (cuci, setrika, modifikasi ringan) → kondisi sesudah → harga jual dan platform → kalkulasi profit singkat. Vertikal 9:16."
+            boleh:
+              - "Tampilkan angka nyata — harga beli, biaya treatment, harga jual, profit bersih"
+              - "Tunjukkan platform menjual yang digunakan (Depop, Carousell, Instagram, Shopee)"
+              - "Dokumentasikan modifikasi sederhana (crop, tie-dye, distress) yang bisa ditiru"
+              - "Sertakan estimasi waktu yang dibutuhkan untuk satu flip dari awal ke jual"
+            hindari:
+              - "Jangan over-claim profit tanpa memperhitungkan waktu dan tenaga yang dibutuhkan"
+              - "Jangan tampilkan teknik yang butuh keahlian jahit profesional tanpa disclaimer"
+              - "Jangan rekam kondisi sebelum flip yang sudah terlalu bagus — highlight kontras harga adalah kuncinya"
+              - "Jangan pakai musik ber-hak-cipta"
+            pola_hook: "Detik 0: tampilkan item kondisi jelek + harga beli (misal Rp15rb) → langsung cut ke kondisi setelah flip + harga jual (Rp200rb) → baru bahas cara prosesnya."
+            contoh_judul:
+              - "Beli Rp15rb di pasar loak, jual Rp200rb di Shopee — ini prosesnya"
+              - "Cara flip baju thrift tanpa mesin jahit dan tetap bisa profit besar"
+              - "5 jenis baju thrift yang paling mudah di-flip dan hasilnya paling tinggi"
+              - "Side hustle thrift flip: modal Rp100rb bisa jadi Rp800rb dalam sebulan"
+              - "Kemeja flannel Rp20rb ini aku modifikasi crop dan jual Rp150rb dalam 2 hari"
+            content_runway: "Setiap jenis pakaian (kemeja, jaket, denim, dress) dikali teknik flip yang berbeda (cuci, distress, crop, tie-dye, overdye) dikali platform jual yang berbeda menghasilkan variasi konten; tren fashion yang berputar selalu menciptakan item thrift baru yang sedang dicari."
+
+        - slug: thrift-styling-premium
+          name: Styling Baju Thrift Jadi Tampilan Premium
+          description: Demonstrasi visual mengubah baju second-hand menjadi outfit yang terlihat premium dengan teknik styling dan layering yang tepat.
+          example_hook: "Kemeja flannel Rp20rb ini dipakai begini, hasilnya keliatan branded..."
+          guide:
+            audience: "Penonton 18–30 yang sudah punya koleksi thrift tapi tidak tahu cara memakainya agar tidak terlihat murahan; penggemar sustainable fashion yang ingin tampil stylish; penonton yang ingin trick styling praktis."
+            tone: "Inspiratif dan empowering — menunjukkan bahwa harga bukan penentu tampilan. Gaya how-to yang langsung ke poin, dengan transformasi visual yang kuat sebagai bukti. Penonton harus 'aha' setelah nonton."
+            format: "45–75 detik. Tampilkan item thrift dalam kondisi 'biasa' (dipakai tanpa styling) → terapkan teknik styling satu per satu → full look hasil styling → breakdown teknik yang digunakan (layering, tuck, aksesoris). Vertikal 9:16."
+            boleh:
+              - "Tampilkan transformasi yang dramatis — item yang sama terlihat sangat berbeda setelah styling"
+              - "Berikan nama teknik yang mudah diingat ('tuck-in trick', 'half-tuck', 'layering formula')"
+              - "Gunakan aksesoris murah yang mudah didapat untuk elevate tampilan"
+              - "Tunjukkan 2–3 cara berbeda memakai item yang sama"
+            hindari:
+              - "Jangan gunakan item thrift yang kondisinya masih sangat jelek tanpa styling treatment dulu"
+              - "Jangan rekam dengan pencahayaan buruk — perbedaan visual sebelum-sesudah harus terlihat jelas"
+              - "Jangan pakai aksesori mahal yang mengalahkan premis 'thrift tapi premium'"
+              - "Jangan pakai musik ber-hak-cipta"
+            pola_hook: "Detik 0: tampilkan item thrift dalam kondisi 'polos' + harga beli → lalu cut langsung ke full outfit yang sudah distyling. Penonton harus terkejut dengan perbedaan sebelum penjelasan dimulai."
+            contoh_judul:
+              - "Kemeja flannel Rp20rb ini dipakai begini dan hasilnya keliatan branded"
+              - "Cara styling jaket denim thrift biar gak keliatan bekas — 3 cara berbeda"
+              - "Item thrift Rp15rb ini aku pakai ke kantor dan gak ada yang tahu harganya"
+              - "Teknik half-tuck ini ubah kaos polos Rp25rb jadi outfit yang intentional"
+              - "Oversized shirt thrift ini bisa jadi 4 outfit berbeda — ini caranya"
+            content_runway: "Setiap jenis item thrift (kaos, kemeja, jaket, dress, celana) dikali teknik styling yang berbeda dikali kesempatan berbeda (casual, kerja, kondangan casual) menghasilkan kombinasi konten yang hampir tidak terbatas; tren styling baru selalu muncul mengikuti tren fashion global."
+
+    - slug: makeup
+      name: "Makeup / MUA"
+      description: Tutorial & transformasi makeup.
+      faceless: false
+      difficulty: menengah
+      rpm: tinggi
+      formats: POV + before-after + time-lapse
+      example_hook: "Transformasi makeup ini gila..."
+      guide:
+        audience: "Perempuan 16–35 yang tertarik makeup dari pemula hingga menengah; penonton yang suka tutorial relatable dengan produk terjangkau; mereka yang cari inspirasi tampilan sehari-hari maupun acara khusus."
+        tone: "Warm, personal, dan encouraging — seperti teman MUA yang sabar mengajari. Tidak elitis atau snobbish soal produk. Perempuan biasa yang suka makeup, bukan selalu pro. Tutorial yang bisa langsung ditiru lebih valuable dari showcase keahlian semata."
+        format: "45–90 detik. Struktur: bare face atau before state → tutorial step by step (langsung, tidak terlalu banyak basa-basi) → reveal hasil akhir dengan pencahayaan bagus dari berbagai angle. POV angle untuk tutorial step adalah standar. Vertikal 9:16."
+        boleh:
+          - "Tampilkan before (bare face atau previous look) untuk kontras yang kuat"
+          - "Sebutkan nama dan harga produk yang dipakai — penonton selalu tanya ini"
+          - "POV angle close-up saat aplikasi produk untuk tutorial yang mudah diikuti"
+          - "Sertakan tips singkat yang tidak biasa atau 'hack' untuk engagement tambahan"
+        hindari:
+          - "Jangan pakai hanya produk luxury yang tidak terjangkau tanpa menyebut alternatif"
+          - "Jangan buat tutorial terlalu panjang atau bertele-tele — 90 detik adalah batas atas"
+          - "Jangan rekam dalam cahaya kuning atau redup — makeup harus terlihat dalam lighting akurat"
+          - "Jangan skip tahap penting (base, primer) — penonton pemula butuh step lengkap"
+        pola_hook: "Detik 0: tampilkan before (bare face atau kondisi sebelumnya) dan langsung cut ke hasil akhir makeup → lalu 'ini caranya'. Penonton harus tahu transformasi sebelum tutorial dimulai."
+        contoh_judul:
+          - "Transformasi makeup ini gak ada filternya, lihat dari dekat"
+          - "Tutorial makeup 10 menit yang bikin keliatan segar seharian"
+          - "Full glam dengan produk lokal semua — ini hasilnya"
+      micro:
+        - slug: makeup-natural-sehari
+          name: Makeup Natural untuk Sehari-hari
+          description: Tutorial makeup ringan yang cocok untuk kuliah, kerja, atau aktivitas harian dengan produk terjangkau yang tersedia di minimarket Indonesia.
+          example_hook: "Makeup 5 menit ini bikin kamu keliatan segar tanpa ketahuan pakai makeup..."
+          guide:
+            audience: "Perempuan 17–28 yang ingin tampil segar sehari-hari tanpa effort atau biaya besar; pemula makeup yang butuh panduan simple; perempuan yang kerja atau kuliah dan tidak punya banyak waktu pagi hari."
+            tone: "Ringan, praktis, dan accessible. Bukan tentang keahlian MUA — tentang efisiensi dan hasil natural. Seperti big sis kasih tips cepat sebelum berangkat. Produk yang disebutkan harus bisa dibeli di Indomaret atau Alfamart."
+            format: "30–60 detik. Step by step ringkas: skincare base (moisturizer) → sunscreen → cushion atau BB cream → alis → lip product → setting spray. Setiap step maksimal 3–5 detik. POV angle untuk aplikasi. Vertikal 9:16."
+            boleh:
+              - "Tampilkan produk yang tersedia di minimarket atau Guardian — relevansi tinggi"
+              - "Sertakan estimasi waktu total untuk setiap step ('ini cuma 30 detik')"
+              - "Tunjukkan hasil akhir dalam cahaya natural dan indoor untuk validasi real-world"
+              - "Tambahkan satu 'hack' natural look (misal: tint bibir dipakai di pipi juga)"
+            hindari:
+              - "Jangan masukkan step yang tidak perlu untuk 'everyday look' — kontur penuh bukan everyday"
+              - "Jangan gunakan hanya produk mahal — target produk Rp30–150rb range"
+              - "Jangan rekam hasil akhir dalam filter yang mengubah tone kulit — harus terlihat natural"
+              - "Jangan pakai musik ber-hak-cipta"
+            pola_hook: "Detik 0: tampilkan bare face → cut langsung ke hasil makeup natural yang terlihat 'no-makeup makeup' → teks 'ini cuma 5 menit'. Langsung mulai tutorial di detik 3."
+            contoh_judul:
+              - "Makeup 5 menit ini bikin keliatan segar tanpa ketahuan pakai makeup"
+              - "Everyday look yang bisa dilakukan sambil setengah ngantuk — semua dari Indomaret"
+              - "No-makeup makeup untuk kulit sawo matang yang bikin glowing natural"
+              - "Tutorial makeup kantoran 7 menit yang awet sampai jam 6 sore"
+              - "3 produk ini cukup untuk keliatan segar dan rapi seharian — total Rp120rb"
+            content_runway: "Setiap kondisi kulit (berminyak, kering, kombinasi), warna kulit (cerah, sawo matang, gelap), kesempatan (kuliah, kerja, weekend), dan produk baru yang dirilis menghasilkan variasi tutorial baru; kategori ini evergreen dan selalu relevan sepanjang tahun."
+
+        - slug: makeup-produk-lokal
+          name: Review & Tutorial Makeup Produk Lokal
+          description: Tutorial menggunakan produk makeup brand Indonesia yang kualitasnya bersaing dengan produk impor, menyasar konsumen yang ingin belanja lokal.
+          example_hook: "Brand ini lebih bagus dari Mac tapi harganya 5x lebih murah, ini buktinya..."
+          guide:
+            audience: "Perempuan 18–32 yang conscious soal pilihan brand lokal vs impor; penonton yang ingin tahu apakah produk lokal worth it; beauty enthusiast Indonesia yang bangga dengan brand dalam negeri tapi tetap kritis soal kualitas."
+            tone: "Jujur, analitis, tapi tetap positive. Bukan sekedar promosi — ini review nyata yang berikan perbandingan adil. Penonton harus merasa mendapat informasi untuk ambil keputusan pembelian yang lebih baik. Bangga lokal tapi tidak buta."
+            format: "60–90 detik. Perkenalkan brand dan produk singkat (apa klaim mereka) → aplikasi langsung di wajah dengan tutorial singkat → evaluasi real-time (coverage, blend, longevity) → perbandingan harga vs produk impor setara → verdict singkat. Vertikal 9:16."
+            boleh:
+              - "Tampilkan logo brand lokal dengan jelas — konten ini merayakan brand dalam negeri"
+              - "Berikan perbandingan harga konkret dengan brand impor setara"
+              - "Test longevity jika memungkinkan (foto sebelum aplikasi dan 6 jam kemudian)"
+              - "Sebutkan tempat beli yang mudah (Shopee, Tokopedia, Guardian, Sociolla)"
+            hindari:
+              - "Jangan berpura-pura puas jika produk tidak perform — review jujur lebih valuable jangka panjang"
+              - "Jangan hanya review satu produk dari satu brand — variasi menjaga konten fresh"
+              - "Jangan rekam dalam cahaya yang membuat produk terlihat lebih baik dari aslinya"
+              - "Jangan pakai musik ber-hak-cipta"
+            pola_hook: "Detik 0: tampilkan produk lokal vs produk impor berdampingan + harga masing-masing → teks 'apakah yang murah ini sama bagusnya?'. Mulai aplikasi di detik 3."
+            contoh_judul:
+              - "Brand makeup lokal ini lebih bagus dari Mac dan harganya 5x lebih murah"
+              - "Review jujur 5 lip product lokal Indonesia — mana yang paling worth it"
+              - "Seharian pakai cushion lokal Rp50rb ini — ini hasilnya jam 8 pagi vs jam 5 sore"
+              - "Foundation lokal ini aku test di kulit sawo matang dan hasilnya mengejutkan"
+              - "Brand ini dari Surabaya tapi kualitasnya bikin brand Korea ketar-ketir"
+            content_runway: "Industri kosmetik lokal Indonesia tumbuh cepat dengan brand baru bermunculan setiap bulan (Wardah, Emina, BLP, Make Over, Y.O.U, dan puluhan lainnya); setiap produk baru, reformulasi, dan koleksi seasonal menghasilkan konten baru; komunitas beauty Indonesia sangat aktif dan haus informasi."
+
+        - slug: makeup-transformasi-dramatis
+          name: Transformasi Makeup Dramatis
+          description: Konten before-after makeup dengan hasil dramatis untuk pesta atau acara khusus, menonjolkan skill MUA dan kekuatan produk tertentu.
+          example_hook: "Transformasi ini gak pakai filter, lihat dari dekat prosesnya..."
+          guide:
+            audience: "Perempuan 18–35 yang menyukai konten makeup skill-high dan transformasi dramatis; penonton yang kagum dengan kemampuan MUA; mereka yang mencari inspirasi untuk pesta, wisuda, atau acara spesial."
+            tone: "Dramatis dan wow-factor adalah segalanya. Percaya diri menampilkan skill. Penonton harus terkejut dan impressed. 'Tidak ada filter' adalah klaim yang meningkatkan kredibilitas. Showcase skill, bukan hanya produk."
+            format: "60–90 detik. Bare face yang terekspos jelas → time-lapse proses makeup step by step → close-up detail (eye look, lip, contour) → reveal akhir dari berbagai angle dengan lighting dramatis → sebelum-sesudah side by side. Vertikal 9:16."
+            boleh:
+              - "Tampilkan bare face tanpa filter apapun untuk membangun kredibilitas transformasi"
+              - "Close-up detail teknik yang sulit (blending, cut crease, lip liner) untuk showcase skill"
+              - "Gunakan lighting dramatis saat reveal untuk maksimalkan tampilan akhir"
+              - "Sertakan before-after side-by-side di akhir sebagai payoff visual"
+            hindari:
+              - "Jangan gunakan filter yang mengubah warna atau tekstur kulit — merusak kredibilitas 'no-filter'"
+              - "Jangan skip langkah persiapan (skincare, primer) — itu penting untuk hasil akhir yang bagus"
+              - "Jangan rekam dengan pencahayaan seadanya — dramatic look butuh dramatic lighting"
+              - "Jangan pakai musik ber-hak-cipta"
+            pola_hook: "Detik 0: tampilkan bare face close-up yang raw → langsung cut ke hasil makeup dramatis penuh → teks 'tidak ada filter, tidak ada edit warna'. Mulai tutorialnya dari detik 4."
+            contoh_judul:
+              - "Transformasi ini gak ada filternya, lihat dari dekat seluruh prosesnya"
+              - "Dari no-makeup ke full glam dalam 20 menit — ini yang aku pakai"
+              - "Eye makeup ini bikin mata sipit keliatan besar, teknik yang jarang diajarkan"
+              - "Full glam kondangan dengan produk lokal semua — hasilnya bikin teman kaget"
+              - "Transformasi makeup ini bikin orang tanya 'kamu operasi apa?' — ini jawabannya"
+            content_runway: "Setiap jenis look (natural, glam, editorial, themed, character), setiap kesempatan (kondangan, wisuda, pesta, lebaran, pentas seni), dan setiap tren makeup baru menghasilkan konten berbeda; komunitas beauty Indonesia sangat besar dan aktif serta selalu mencari inspirasi look baru."
