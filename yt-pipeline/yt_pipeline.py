@@ -414,6 +414,8 @@ def _run_yt_dlp_transcript_attempt(youtube_url: str, tmp_dir: str, extra_args: l
     args = [
         "yt-dlp",
         "--write-auto-sub",
+        "--write-sub",
+        "--sub-langs", "en.*,en",
         "--sub-format", "vtt",
         "--skip-download",
         "-o", f"{tmp_dir}/subs",
@@ -447,12 +449,17 @@ def get_timecoded_transcript(youtube_url: str) -> list:
 
     tmp_dir = tempfile.mkdtemp(prefix="vtt_")
     try:
-        # Check for cookies env var
+        # Check for cookies env var and copy to writable temp location if read-only
         cookies_args = []
         cookies_file = os.getenv("YTDLP_COOKIES_FILE", "")
         if cookies_file and Path(cookies_file).exists():
-            cookies_args = ["--cookies", cookies_file]
-            print(f"  [transcript] Using cookies from {cookies_file}")
+            # Copy cookies to a writable temp file (yt-dlp writes refreshed cookies)
+            # if the original is read-only, this avoids OSError: [Errno 30] Read-only file system
+            original_cookies = Path(cookies_file)
+            writable_cookies = Path(tmp_dir) / "cookies_writable.txt"
+            shutil.copy(str(original_cookies), str(writable_cookies))
+            cookies_args = ["--cookies", str(writable_cookies)]
+            print(f"  [transcript] Using cookies from {cookies_file} (copied to writable temp)")
 
         # Define attempt strategies: impersonate + player_client combos
         # Each tuple is (attempt_name, extra_args_list)

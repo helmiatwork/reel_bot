@@ -65,6 +65,28 @@ class TestTranscriptHardening:
                 assert "--cookies" in args
                 assert "/path/to/cookies.txt" in args
 
+    def test_run_yt_dlp_transcript_attempt_write_sub_flag(self):
+        """Test that --write-sub flag is included for manual subtitles."""
+        with tempfile.TemporaryDirectory(prefix="vtt_test_") as tmp_dir:
+            mock_result = mock.MagicMock()
+            mock_result.returncode = 0
+            mock_result.stderr = ""
+            mock_result.stdout = ""
+
+            with mock.patch("subprocess.run", return_value=mock_result) as mock_run:
+                returncode, stderr, stdout = _run_yt_dlp_transcript_attempt(
+                    "https://www.youtube.com/watch?v=test123",
+                    tmp_dir,
+                    ["--impersonate", "chrome"]
+                )
+
+                args = mock_run.call_args[0][0]
+                assert "--write-sub" in args
+                assert "--sub-langs" in args
+                # Verify sub-langs value is correct
+                sub_langs_idx = args.index("--sub-langs")
+                assert args[sub_langs_idx + 1] == "en.*,en"
+
     def test_run_yt_dlp_transcript_attempt_429_error(self):
         """Test that 429 error is captured in stderr."""
         with tempfile.TemporaryDirectory(prefix="vtt_test_") as tmp_dir:
@@ -217,6 +239,36 @@ Fallback success
             # Verify --cookies was passed
             args = mock_run.call_args[0][0]
             assert "--cookies" in args
+
+    def test_get_timecoded_transcript_cookies_copied_to_writable_temp(self):
+        """Test that cookies are copied to a writable temp file, not passed as read-only original."""
+        with tempfile.TemporaryDirectory(prefix="transcript_test_") as tmp_dir:
+            # Create a mock cookies file in a separate read-only-like location
+            cookies_file = Path(tmp_dir) / "original_cookies.txt"
+            cookies_file.write_text("test_cookie_data")
+
+            # Create a mock VTT file
+            vtt_file = Path(tmp_dir) / "subs.en.vtt"
+            vtt_file.write_text("WEBVTT\n\n00:00:01.000 --> 00:00:05.000\nTest")
+
+            mock_result = mock.MagicMock()
+            mock_result.returncode = 0
+            mock_result.stderr = ""
+            mock_result.stdout = ""
+
+            with mock.patch.dict(os.environ, {"YTDLP_COOKIES_FILE": str(cookies_file)}):
+                with mock.patch("subprocess.run", return_value=mock_result) as mock_run:
+                    with mock.patch("tempfile.mkdtemp", return_value=tmp_dir):
+                        segments = get_timecoded_transcript("https://www.youtube.com/watch?v=test123")
+
+            # Verify --cookies was passed with the WRITABLE temp copy, not the original
+            args = mock_run.call_args[0][0]
+            assert "--cookies" in args
+            cookies_idx = args.index("--cookies")
+            cookies_path = args[cookies_idx + 1]
+            # The path should be the writable copy inside tmp_dir, not the original file
+            assert "cookies_writable.txt" in cookies_path
+            assert cookies_path != str(cookies_file)
 
     def test_get_timecoded_transcript_impersonate_flag_present(self):
         """Test that --impersonate flag is included in first strategy."""
