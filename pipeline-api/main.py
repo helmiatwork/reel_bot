@@ -467,6 +467,50 @@ def dash_token_usage():
         conn.close()
 
 
+@app.get("/dash/analysis")
+def dash_analysis(limit: int = 50):
+    """Video analysis results (from video_analysis table).
+
+    Returns rows with columns: id, youtube_url, intent, hook, structure, retention,
+    tags (as array), model, cost_usd (float), created_at (ISO string).
+    Clamps limit to 1..200.
+    """
+    limit = max(1, min(int(limit), 200))
+    conn = _db_conn()
+    if not conn:
+        return _json({"rows": []})
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, youtube_url, intent, hook, structure, retention, tags, model, "
+                "cost_usd, created_at FROM video_analysis ORDER BY id DESC LIMIT %s",
+                (limit,)
+            )
+            cols = [c.name for c in cur.description]
+            rows = []
+            for r in cur.fetchall():
+                row_dict = dict(zip(cols, r))
+                # Ensure tags is parsed as JSON array (psycopg may return it pre-parsed)
+                tags = row_dict.get("tags")
+                if tags is None:
+                    row_dict["tags"] = []
+                elif isinstance(tags, str):
+                    try:
+                        row_dict["tags"] = json.loads(tags)
+                    except Exception:
+                        row_dict["tags"] = []
+                # Ensure cost_usd is float
+                if row_dict.get("cost_usd") is not None:
+                    row_dict["cost_usd"] = float(row_dict["cost_usd"])
+                # Ensure created_at is ISO string
+                if row_dict.get("created_at"):
+                    row_dict["created_at"] = row_dict["created_at"].isoformat()
+                rows.append(row_dict)
+        return _json({"rows": rows})
+    finally:
+        conn.close()
+
+
 # ---- chat proxy → openclaw agent (same path as Telegram) ----
 # The dashboard chat page POSTs here; we relay to OpenClaw's OpenAI-compatible
 # endpoint so the reelbot agent processes the message exactly as it would a
