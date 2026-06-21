@@ -40,12 +40,15 @@ CLAUDE_BIN = os.environ.get(
     "CLAUDE_BIN",
     "/Users/ichigo/.nodenv/versions/24.14.1/bin/claude",
 )
+# .resolve() makes the dir absolute so resolved frame paths stay absolute even
+# when ANALYZE_FRAME_DIR is passed as a relative path. claude runs in a clean
+# temp cwd and reads frames via absolute path — a relative path would not resolve.
 FRAME_DIR = Path(
     os.environ.get(
         "ANALYZE_FRAME_DIR",
         "/Users/ichigo/Documents/repo/helmi/reelbot/analyze-frames",
     )
-)
+).resolve()
 DEFAULT_MODEL = "claude-sonnet-4-6"
 DEFAULT_TIMEOUT = 180
 
