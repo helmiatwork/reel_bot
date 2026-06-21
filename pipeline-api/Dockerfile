@@ -2,14 +2,20 @@ FROM python:3.11-slim
 LABEL description="Pipeline API — voiceover + quality check + publisher + analytics"
 ENV DEBIAN_FRONTEND=noninteractive PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 RUN apt-get update && apt-get install -y \
-    ffmpeg libgl1 libglib2.0-0 curl jq unzip \
+    ffmpeg libgl1 libglib2.0-0 curl jq unzip dpkg \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
-RUN curl -fsSL https://github.com/denoland/deno/releases/latest/download/deno-x86_64-unknown-linux-gnu.zip -o /tmp/deno.zip \
+RUN ARCH=$(dpkg --print-architecture) \
+    && case "$ARCH" in \
+         arm64) DENO_TARGET=aarch64-unknown-linux-gnu ;; \
+         amd64) DENO_TARGET=x86_64-unknown-linux-gnu ;; \
+         *) echo "unsupported arch $ARCH" && exit 1 ;; \
+       esac \
+    && curl -fsSL https://github.com/denoland/deno/releases/latest/download/deno-${DENO_TARGET}.zip -o /tmp/deno.zip \
     && unzip /tmp/deno.zip -d /usr/local/bin && rm /tmp/deno.zip && chmod +x /usr/local/bin/deno
 WORKDIR /app
 RUN pip install --no-cache-dir \
     fastapi uvicorn \
-    elevenlabs gtts "yt-dlp[default]" \
+    elevenlabs gtts "yt-dlp[default]" curl_cffi \
     httpx \
     "psycopg[binary]" \
     google-api-python-client google-auth-oauthlib google-auth-httplib2 \
