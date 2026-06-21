@@ -1,0 +1,369 @@
+version: 1
+vertical:
+  slug: v-keluarga
+  name: Keluarga
+  description: Konten seputar pengasuhan anak, momen keluarga, dan tips parenting untuk orang tua muda Indonesia.
+  guide:
+    audience: "Orang tua muda Indonesia usia 24–40, terutama ibu dan ayah baru yang aktif di media sosial; penonton yang mencari validasi, inspirasi, dan tips praktis seputar parenting dan kehidupan keluarga."
+    tone: "Hangat, tulus, dan tidak menghakimi. Mengakui kesulitan menjadi orang tua sekaligus merayakan momen kecil yang berharga. Campuran edukatif-emosional — ada yang bikin nangis, ada yang bikin ketawa."
+    format: "Video pendek 30–90 detik, campuran footage keluarga, b-roll anak bermain, dan teks overlay. Bisa faceless (khususnya tips dan animasi anak) atau on-face (vlog keluarga). Musik hangat atau lo-fi. Struktur umum: masalah relatable atau momen emosional → solusi/insight/reveal → takeaway singkat."
+    boleh:
+      - "Tunjukkan momen yang tidak sempurna — orang tua yang kewalahan, anak yang ngambek — untuk membangun kepercayaan dan relevansi"
+      - "Gunakan footage nyata anak dan keluarga untuk emotional connection yang kuat"
+      - "Kutip sumber ilmiah (psikolog, dokter anak) untuk tips parenting agar konten lebih dipercaya"
+      - "Konten seri — misalnya 'minggu 1 MPASI', 'bulan ke-3 jadi ortu' — membangun penonton loyal"
+      - "Hormati privasi anak: hindari footage yang bisa membahayakan atau mempermalukan anak"
+    hindari:
+      - "Jangan tampilkan wajah atau nama lengkap anak tanpa pertimbangan privasi yang matang"
+      - "Jangan buat konten yang membandingkan perkembangan anak secara negatif — memicu insecurity orang tua"
+      - "Jangan berikan saran medis atau psikologis tanpa rujukan ke profesional"
+      - "Jangan tampilkan momen yang mempermalukan atau mendisiplinkan anak secara berlebihan"
+      - "Jangan gunakan musik ber-hak-cipta"
+    pola_hook: "Detik 0–3: tampilkan momen anak atau situasi parenting yang relatable/mengejutkan/mengharukan + teks singkat yang memancing penasaran ('orang tua mana yang belum pernah alami ini?'). Langsung masuk ke inti di detik 3–5."
+    contoh_judul:
+      - "Hal kecil yang orang tua lakukan tanpa sadar dan anak ingat seumur hidup"
+      - "Bukan tantrum-nya yang masalah, ini yang sebenarnya anak coba komunikasikan"
+      - "Reaksi anak ini bikin aku sadar kenapa jadi orang tua itu berat tapi worth it"
+
+  niches:
+    - slug: kids-edu
+      name: Edukasi Anak
+      description: Belajar warna/angka/lagu anak.
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: animasi + lagu + warna cerah
+      example_hook: "Belajar warna sambil nyanyi..."
+      guide:
+        audience: "Orang tua balita usia 1–5 tahun yang mencari konten edukatif menyenangkan; guru PAUD dan TK yang butuh materi bantu ajar; anak usia 3–6 yang menonton bersama orang tua."
+        tone: "Ceria, energetik, dan penuh warna. Repetisi adalah teman — anak belajar lewat pengulangan. Tidak ada informasi yang terlalu kompleks; setiap video satu konsep saja."
+        format: "60–120 detik. Animasi 2D atau footage anak bermain yang cerah. Lagu pendek sebagai anchor memori. Teks besar warna-warni. Satu konsep per video (satu warna, satu kelompok angka, satu huruf). Vertikal 9:16 atau landscape 16:9 untuk layar TV."
+        boleh:
+          - "Gunakan lagu pendek berulang (4–8 bar) sebagai pengait memori — semakin catchy semakin baik"
+          - "Warna primer dan kontras tinggi — otak anak paling responsif pada kontras visual yang kuat"
+          - "Karakter hewan atau objek familier Indonesia (ayam, bebek, mangga) lebih efektif dari karakter asing"
+          - "Animasi sederhana lebih baik dari animasi kompleks — tidak mengalihkan dari konten inti"
+        hindari:
+          - "Jangan tampilkan nama lengkap, wajah, atau lokasi anak yang bisa mengidentifikasi mereka (COPPA: lindungi data anak)"
+          - "Jangan buat konten yang memerlukan perhatian lebih dari 2 menit — rentang perhatian balita sangat pendek"
+          - "Jangan gunakan suara keras atau efek mengagetkan — menyebabkan distress bukan pembelajaran"
+          - "Jangan tampilkan tantangan fisik yang bisa ditiru anak tanpa pengawasan"
+          - "Jangan gunakan musik ber-hak-cipta — kompos lagu sendiri atau gunakan royalty-free anak"
+        pola_hook: "Detik 0: karakter atau warna muncul langsung disertai lagu pembuka 2–3 detik. Tidak ada intro panjang — langsung ke materi di detik 3."
+        contoh_judul:
+          - "Belajar warna sambil nyanyi, si kecil hafal dalam 3 hari"
+          - "Angka 1 sampai 10 lewat lagu yang langsung nyantol di kepala anak"
+          - "Semua huruf A sampai Z lewat binatang yang anak pasti suka"
+
+      micro:
+        - slug: kids-edu-angka-lagu
+          name: Belajar Angka 1-20 Lewat Lagu Anak
+          description: Konten edukatif mengajar angka kepada balita melalui lagu sederhana dan animasi warna-warni, cocok untuk orang tua yang ingin stimulasi kognitif awal anak.
+          example_hook: "Belajar angka 1 sampai 10 sambil nyanyi, anak pasti hafal dalam seminggu..."
+          guide:
+            audience: "Orang tua anak usia 2–5 tahun yang ingin stimulasi berhitung dini; anak balita yang menonton layar TV atau tablet bersama orang tua; guru PAUD yang butuh materi visual menarik."
+            tone: "Riang dan berulang. Melodi harus mudah dihafal bahkan oleh dewasa yang tidak sengaja ikut nyanyi. Setiap angka muncul dengan representasi visual konkret (3 bebek, 5 bintang)."
+            format: "90–120 detik. Satu lagu dengan struktur verse per angka. Angka muncul besar di layar disertai objek yang bisa dihitung. Animasi sederhana dan cerah. Vertikal 9:16 atau 16:9 untuk layar besar."
+            boleh:
+              - "Setiap angka muncul dua kali — sekali dengan objek, sekali standalone — memperkuat memori visual-angka"
+              - "Gunakan objek familier lokal Indonesia: 1 nasi, 2 ayam, 3 mangga — lebih dekat dengan keseharian anak"
+              - "Animasi objek menghitung dirinya sendiri (bebek baris satu per satu) memvisualisasikan konsep lebih kuat"
+              - "Orang tua bisa nyanyi bersama anak — desain lirik yang cukup sederhana untuk karaoke"
+            hindari:
+              - "Jangan tampilkan wajah atau nama anak yang bisa diidentifikasi (COPPA: privasi data anak di bawah 13 tahun)"
+              - "Jangan kenalkan terlalu banyak angka sekaligus — 1–5 per video lebih efektif dari 1–20 sekaligus"
+              - "Jangan gunakan efek suara keras atau transisi mengagetkan — merusak konsentrasi anak"
+              - "Jangan gunakan warna yang terlalu gelap atau kontras rendah — otak anak butuh stimulus warna kuat"
+              - "Jangan skip representasi visual objek nyata — abstraksi murni belum efektif untuk balita"
+            pola_hook: "Detik 0: angka '1' muncul besar di layar diiringi melodi pembuka ceria. Langsung masuk ke lirik di detik 2 — tidak ada intro logo atau animasi pembuka panjang."
+            contoh_judul:
+              - "Lagu angka 1 sampai 10 yang bikin anak hafal dalam 3 hari nonton"
+              - "Belajar berhitung sambil nyanyi — dijamin anak ikut dari angka pertama"
+              - "Angka 1 sampai 20 lewat lagu dan animasi bebek yang lucu banget"
+              - "Anak 3 tahun ini hafal angka 1-10 hanya dari nonton video ini 5 kali"
+              - "Lagu berhitung Indonesia paling catchy — orang tua pun ikut hafal tanpa sadar"
+            content_runway: "Setiap kelompok angka (1-5, 6-10, 11-20), setiap bahasa (Indonesia, Inggris, daerah), dan setiap tema objek (hewan, buah, kendaraan) menghasilkan video baru; bisa diperpanjang ke ordinal, penjumlahan, dan pengurangan dasar."
+
+        - slug: kids-edu-alfabet-cerita
+          name: Alfabet Lewat Cerita Binatang
+          description: Setiap huruf alfabet diperkenalkan lewat karakter binatang lucu dengan cerita pendek, membantu anak usia 3-5 tahun menghafal huruf dengan cara menyenangkan.
+          example_hook: "A untuk Ayam yang punya petualangan seru hari ini, yuk kenalan..."
+          guide:
+            audience: "Orang tua anak prasekolah usia 3–5 tahun; anak yang baru mulai belajar baca; guru TK dan PAUD yang mencari media ajar visual."
+            tone: "Hangat dan bercerita. Setiap huruf punya 'karakter' binatang dengan kepribadian singkat yang membuat huruf itu memorable. Tidak hanya visual — ada narasi mini."
+            format: "60–90 detik per huruf, atau 3–5 huruf per video dengan format kompilasi. Karakter binatang animasi simpel. Huruf ditampilkan besar dalam konteks kata. Suara binatang asli dimasukkan sebagai SFX lucu. Vertikal 9:16."
+            boleh:
+              - "Gunakan binatang endemik Indonesia untuk huruf tertentu — B untuk Badak, K untuk Komodo — memperkuat literasi lokal"
+              - "Mini-cerita 10–15 detik per huruf lebih efektif dari sekadar nama huruf + kata"
+              - "Tampilkan huruf kapital dan kecil berdampingan setiap kali huruf muncul"
+              - "SFX suara binatang asli setelah nama binatang disebut — memperkuat koneksi nama-suara-huruf"
+            hindari:
+              - "Jangan tampilkan wajah anak nyata atau data yang dapat mengidentifikasi anak (COPPA)"
+              - "Jangan perkenalkan lebih dari 5 huruf dalam satu video — overload kognitif balita"
+              - "Jangan pilih binatang yang terlalu asing atau menakutkan sebagai karakter utama"
+              - "Jangan gunakan font yang terlalu dekoratif — huruf harus mudah dibaca dan mirip bentuk standar"
+              - "Jangan skip pengucapan huruf dengan jelas — audio adalah panduan fonologis pertama anak"
+            pola_hook: "Detik 0: huruf muncul besar di layar dengan SFX binatang + teks 'siapa dia?'. Karakter binatang langsung masuk frame di detik 2 dan menyapa anak."
+            contoh_judul:
+              - "A untuk Ayam yang suka petualangan — belajar huruf jadi seru banget"
+              - "Alfabet Indonesia dari A sampai Z lewat cerita binatang lokal"
+              - "Kenalan dengan si B — Badak yang baik hati dan suka berbagi"
+              - "5 huruf hari ini lewat binatang favorit, anak langsung hafal semua"
+              - "Belajar alfabet dari video ini — anak 4 tahun sudah bisa eja namanya sendiri"
+            content_runway: "26 huruf alfabet masing-masing bisa jadi 1 video; ditambah kompilasi per kelompok (vokal, konsonan awal, dll); bisa diulang dengan tema berbeda (buah, kendaraan, profesi) untuk setiap huruf — ratusan kombinasi tersedia."
+
+        - slug: kids-edu-motorik-gerak
+          name: Latihan Motorik Kasar Sambil Bermain
+          description: Panduan aktivitas gerak tubuh sederhana untuk balita yang melatih motorik kasar dengan cara menyenangkan, bisa dilakukan di rumah tanpa alat khusus.
+          example_hook: "Gerakan ini lucu tapi melatih koordinasi anak lebih cepat dari yang kamu kira..."
+          guide:
+            audience: "Orang tua balita usia 1–4 tahun yang peduli tumbuh kembang; ibu rumah tangga yang ingin stimulasi aktif anak di rumah; terapis anak dan guru PAUD yang mencari referensi gerakan."
+            tone: "Aktif, penuh semangat, dan playful. Bukan senam serius — lebih ke permainan gerak yang kebetulan melatih koordinasi. Orang tua diajak ikut serta."
+            format: "60–90 detik. Demo gerakan dengan anak (boleh tampilkan kaki/tangan tanpa wajah, atau karakter animasi). Musik ceria dan up-tempo. Instruksi teks overlay singkat per gerakan. 3–5 gerakan berbeda per video. Vertikal 9:16."
+            boleh:
+              - "Tunjukkan gerakan yang bisa dilakukan di ruang tamu sempit — relevan untuk penghuni apartemen Indonesia"
+              - "Setiap gerakan diberi nama yang lucu dan mudah diingat anak ('lompat katak', 'terbang pesawat')"
+              - "Sertakan tips singkat manfaat motorik di teks overlay tanpa mengganggu alur video"
+              - "Variasi tingkat kesulitan: satu gerakan untuk 1–2 tahun, satu untuk 3–5 tahun dalam video sama"
+            hindari:
+              - "Jangan tampilkan wajah anak yang dapat diidentifikasi tanpa izin eksplisit — perhatikan privasi anak di konten publik (COPPA)"
+              - "Jangan tampilkan gerakan yang berpotensi cedera tanpa peringatan pengawasan orang tua"
+              - "Jangan gunakan alat atau perlengkapan yang tidak umum dimiliki keluarga Indonesia"
+              - "Jangan buat gerakan yang mengharuskan ruang sangat luas — tidak realistis untuk rumah rata-rata"
+              - "Jangan berikan klaim perkembangan spesifik tanpa dasar referensi ahli"
+            pola_hook: "Detik 0: anak atau karakter animasi melakukan gerakan lucu yang langsung menarik perhatian + teks 'ikuti gerakan ini'. Musik langsung masuk kencang di detik 1."
+            contoh_judul:
+              - "5 gerakan lucu ini ternyata latih koordinasi anak lebih cepat dari mainan mahal"
+              - "Aktivitas gerak 10 menit ini bikin anak tidur lebih nyenyak malam ini"
+              - "Lompat katak sampai terbang pesawat — motorik anak terlatih sambil ketawa"
+              - "Gerakan ini bisa dilakukan di ruang tamu kecil dan anak langsung mau ikut"
+              - "Cara stimulasi motorik anak 2 tahun yang seru dan gak butuh alat apapun"
+            content_runway: "Setiap kelompok usia (1-2, 3-4, 5-6 tahun), setiap area motorik (keseimbangan, koordinasi tangan-kaki, kekuatan inti), dan setiap tema permainan (binatang, kendaraan, olahraga) menghasilkan video baru — ditambah seri musiman dan tantangan orang tua-anak."
+
+    - slug: parenting
+      name: "Parenting / Tips Ortu"
+      description: "Tips mengasuh, hack orang tua."
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: b-roll + teks + voiceover
+      example_hook: "Trik bikin anak mau makan sayur..."
+      guide:
+        audience: "Orang tua anak usia 0–15 tahun, terutama generasi milenial 27–38 yang mengasuh dengan pendekatan gentle parenting; orang tua yang aktif mencari informasi di media sosial dan terbuka pada metode berbasis riset."
+        tone: "Empatik dan praktis. Bukan menghakimi pilihan orang tua, tapi menawarkan perspektif baru. Mengakui bahwa parenting itu berat, lalu memberikan satu trik konkret yang langsung bisa dicoba hari ini."
+        format: "45–90 detik. Biasanya faceless — b-roll tangan, kaki, dan interaksi orang tua-anak tanpa close-up wajah. Voiceover kasual, bukan formal. Teks overlay poin-poin kunci. Musik lo-fi ringan. Struktur: masalah relatable → insight singkat → solusi konkret."
+        boleh:
+          - "Mulai dengan masalah yang sangat spesifik — 'anak menangis setiap mau mandi' lebih kuat dari 'cara mengasuh anak'"
+          - "Kutip sumber — 'menurut penelitian dari University of X' atau 'kata psikolog anak' — meningkatkan kredibilitas tanpa panjang"
+          - "Sertakan satu kalimat yang bisa langsung dicoba orang tua malam ini"
+          - "Akhiri dengan pertanyaan yang memancing komentar — 'kalian biasanya gimana?'"
+        hindari:
+          - "Jangan tampilkan wajah anak tanpa blur atau persetujuan eksplisit — hormati privasi anak"
+          - "Jangan berikan diagnosis atau saran medis — selalu rujuk ke dokter atau psikolog anak untuk kasus serius"
+          - "Jangan buat konten yang secara implisit menyalahkan orang tua yang tidak tahu trik ini"
+          - "Jangan gunakan istilah parenting trendy tanpa penjelasan untuk penonton awam"
+          - "Jangan buat klaim 'cara terbaik' — parenting sangat kontekstual dan individual"
+        pola_hook: "Detik 0: tampilkan situasi parenting yang sangat relatable + teks pertanyaan langsung ('pernah kewalahan dengan anak yang nolak makan?'). Voiceover langsung masuk dengan insight di detik 3."
+        contoh_judul:
+          - "Trik bikin anak mau makan sayur yang psikolog anak rekomendasikan"
+          - "Satu kata yang ganti respons anak dari nolak jadi nurut — ini penjelasannya"
+          - "Cara orang tua Jepang redakan tantrum yang berbeda dari yang kita tahu"
+
+      micro:
+        - slug: parenting-tantrum-balita
+          name: Cara Redakan Tantrum Balita Tanpa Teriakan
+          description: Teknik de-eskalasi tantrum anak usia 2-4 tahun berbasis psikologi perkembangan anak, disajikan sebagai panduan praktis untuk orang tua yang sering kewalahan.
+          example_hook: "Kata satu ini hentikan tantrum anak aku dalam 30 detik, sekarang aku pakai terus..."
+          guide:
+            audience: "Orang tua balita usia 2–4 tahun yang sering kewalahan menghadapi tantrum di tempat umum maupun di rumah; orang tua yang ingin pendekatan gentle parenting tapi tidak tahu mulai dari mana."
+            tone: "Empatik dan tidak menghakimi. Mengakui bahwa tantrum itu sangat melelahkan dulu sebelum menawarkan solusi. Nada seperti teman yang baru dapat info berguna, bukan dokter yang mengajar."
+            format: "60–90 detik. Faceless b-roll interaksi orang tua-anak. Voiceover kasual. Teks overlay kata kunci teknik. Musik lo-fi lembut. Struktur: situasi tantrum yang relatable → penjelasan singkat kenapa terjadi (brain science 10 detik) → teknik konkret step-by-step."
+            boleh:
+              - "Tampilkan skenario spesifik ('tantrum di supermarket', 'nolak tidur siang') bukan tantrum generik"
+              - "Sisipkan penjelasan neurosains singkat — 'amigdala anak belum berkembang' — membuat trik terasa beralasan bukan magic"
+              - "Demo kalimat yang bisa langsung diucapkan orang tua — word-for-word script sangat berguna"
+              - "Sertakan satu hal yang jangan dilakukan karena kontra-produktif — memvalidasi tips yang diberikan"
+            hindari:
+              - "Jangan tampilkan rekaman anak sedang tantrum yang dapat diidentifikasi — melindungi dignitas anak"
+              - "Jangan berikan janji berlebihan ('100% berhasil') — tantrum sangat bervariasi per anak"
+              - "Jangan gunakan framing 'cara agar anak tidak tantrum lagi' — tantrum adalah proses perkembangan normal"
+              - "Jangan buat orang tua merasa bersalah atas teknik disiplin lama yang mereka pakai"
+              - "Jangan rekomendasikan teknik tanpa basis riset atau kutipan profesional"
+            pola_hook: "Detik 0: audio suara anak menangis atau situasi tantrum diikuti teks 'pernah kewalahan sampai mau ikut nangis?' Langsung masuk voiceover dengan kalimat empati di detik 2."
+            contoh_judul:
+              - "Satu kalimat ini hentikan tantrum balitaku dalam 30 detik — sekarang aku pakai terus"
+              - "Kenapa otak balita tidak bisa 'nurut' saat tantrum, dan apa yang seharusnya kamu katakan"
+              - "Teknik redakan tantrum di supermarket yang psikolog anak ajarkan ke aku"
+              - "Jangan bilang 'stop nangis' — kata ini justru perpanjang tantrum dan ini penggantinya"
+              - "Anak 3 tahun tantrum 45 menit setiap hari sampai aku coba cara ini"
+            content_runway: "Setiap situasi tantrum berbeda (tidur, makan, pergi, berhenti main), setiap usia memerlukan pendekatan berbeda, dan setiap teknik gentile parenting (co-regulation, time-in, sportscasting) bisa jadi video tersendiri — sumber hampir tidak terbatas."
+
+        - slug: parenting-screen-time-seimbang
+          name: Screen Time Anak yang Tidak Merusak Otak
+          description: Panduan berbasis riset tentang berapa lama dan konten seperti apa yang aman untuk screen time anak berbagai usia, membantu orang tua membuat aturan yang masuk akal.
+          example_hook: "Bukan lama screen time-nya yang merusak, ini yang lebih penting dan sering diabaikan..."
+          guide:
+            audience: "Orang tua anak usia 0–12 tahun yang khawatir soal layar; orang tua yang merasa bersalah memberikan tablet ke anak tapi tidak tahu alternatif realitasnya; generasi orang tua yang sendiri kecanduan layar."
+            tone: "Informatif dan menenangkan — bukan menakut-nakuti. Banyak orang tua sudah takut berlebihan; konten ini memberikan perspektif berbasis data yang memberdayakan, bukan memperburuk guilt."
+            format: "60–90 detik. Faceless. Voiceover dengan teks overlay angka dan fakta. B-roll anak menggunakan tablet atau TV. Bisa gunakan mini-grafik sederhana untuk tunjukkan panduan usia. Musik ringan di latar."
+            boleh:
+              - "Kutip panduan WHO atau AAP tentang screen time per kelompok usia — angka konkret lebih berguna dari saran abstrak"
+              - "Bedakan jenis screen time: pasif (menonton YouTube) vs interaktif (video call nenek, game edukatif)"
+              - "Sertakan tip praktis: aplikasi Indonesian parental control, cara atur jadwal screen time"
+              - "Validasi orang tua yang tidak bisa totally avoid screen — tidak semua keluarga punya pilihan ini"
+            hindari:
+              - "Jangan berikan informasi yang kontradiktif dengan konsensus ilmiah terbaru"
+              - "Jangan tampilkan wajah anak secara close-up atau data anak yang dapat mengidentifikasi mereka"
+              - "Jangan buat orang tua yang sudah overexpose anak ke layar semakin tenggelam dalam guilt"
+              - "Jangan rekomendasikan aplikasi berbayar tanpa menyebut alternatif gratis"
+              - "Jangan klaim konten edukasi layar adalah 'sama baiknya' dengan interaksi langsung — tidak didukung riset"
+            pola_hook: "Detik 0: tampilkan pertanyaan langsung dengan angka yang mengejutkan ('WHO bilang 0 menit untuk anak di bawah 2 tahun — tapi kenapa ini tidak serealistis itu?') + musik ringan. Langsung ke penjelasan di detik 3."
+            contoh_judul:
+              - "Bukan lamanya screen time yang merusak otak anak — ini yang ternyata lebih penting"
+              - "Panduan WHO untuk screen time per usia anak, dan kenapa kebanyakan orang tua belum tahu"
+              - "Aplikasi yang anak tonton itu beda dampaknya — ini cara bedain yang aman dan berbahaya"
+              - "Aku kasih tablet ke anak setiap hari dan ini yang aku pastikan sebelum melakukan itu"
+              - "Screen time sambil bareng orang tua dan sendirian itu beda banget efeknya, ini alasannya"
+            content_runway: "Setiap kelompok usia (0-2, 3-5, 6-12, remaja) memerlukan panduan berbeda; setiap jenis konten (YouTube, game, video call) bisa dibahas tersendiri; update panduan WHO/AAP secara berkala menghadirkan konten baru yang relevan."
+
+        - slug: parenting-komunikasi-remaja
+          name: Cara Bicara ke Remaja Tanpa Mereka Nutup Diri
+          description: Teknik komunikasi orang tua dengan anak remaja yang berbasis empati dan bukan otoritas, untuk orang tua yang merasa anaknya mulai jauh dan tertutup.
+          example_hook: "Satu kalimat ini yang bikin anak remaja mau cerita sendiri tanpa dipaksa..."
+          guide:
+            audience: "Orang tua anak remaja usia 12–17 tahun yang merasa kehilangan koneksi; orang tua yang dulu dekat dengan anak tapi merasa anaknya 'berubah' sejak masuk SMP/SMA; generasi orang tua yang dibesarkan dengan pola komunikasi otoriter dan ingin berbeda."
+            tone: "Reflektif dan terbuka. Mengakui bahwa komunikasi dengan remaja butuh perubahan paradigma — dari memberi instruksi ke mendengarkan aktif. Tidak ada menghakimi gaya parenting masa lalu."
+            format: "60–90 detik. Faceless atau tampilkan punggung/siluet untuk menjaga privasi. Voiceover reflektif. Teks overlay kalimat konkret yang bisa langsung dipakai. Musik mid-tempo lo-fi. Struktur: situasi orang tua yang familiar → insight psikologis remaja singkat → tiga teknik konkret."
+            boleh:
+              - "Berikan kalimat word-for-word yang bisa langsung dicoba — 'instead of 'kamu kenapa diem?', coba bilang...'"
+              - "Jelaskan kenapa remaja menutup diri dari sudut pandang neurosains (otak remaja sedang dalam mode independence) — membuat teknik lebih masuk akal"
+              - "Sertakan contoh negatif — kalimat yang bikin remaja makin menutup diri — untuk kontras"
+              - "Validasi bahwa perubahan pendekatan ini membutuhkan waktu dan tidak instan berhasil"
+            hindari:
+              - "Jangan tampilkan atau identifikasi anak remaja secara spesifik dalam konten"
+              - "Jangan berikan saran yang mengarah pada kontrol berlebih terhadap privasi remaja"
+              - "Jangan klaim teknik ini 100% berhasil — setiap remaja berbeda dan hubungan punya sejarah"
+              - "Jangan buat orang tua yang punya anak tertutup merasa mereka sudah gagal total"
+              - "Jangan berikan saran untuk kondisi yang memerlukan bantuan profesional (depresi remaja, trauma) tanpa rujukan ke ahli"
+            pola_hook: "Detik 0: teks situasi yang sangat relatable ('anak kamu jawab 'gak ada' tiap kali ditanya gimana sekolah?') + pause singkat. Langsung voiceover masuk dengan twist di detik 3."
+            contoh_judul:
+              - "Satu pertanyaan ini bikin anak remaja mau cerita sendiri tanpa dipaksa"
+              - "Kenapa remaja diem aja waktu ditanya — bukan karena tidak sayang, ini alasannya"
+              - "Jangan tanya 'ada masalah apa?' ke remaja kamu, tanya ini sebagai gantinya"
+              - "Cara orang tua yang anaknya selalu cerita — ternyata mereka tidak pernah melakukan ini"
+              - "Teknik komunikasi remaja ini beda dari yang diajarkan ke kita dulu, tapi ini yang berhasil"
+            content_runway: "Setiap fase remaja (12-13, 14-15, 16-17), setiap topik sensitif (pacaran, nilai, teman, masa depan), dan setiap skenario komunikasi (konflik, kabar buruk, diskusi batas) menghasilkan video tersendiri — remaja selalu berkembang dan tantangan komunikasi tidak habis."
+
+    - slug: family-vlog
+      name: "Family / Wholesome"
+      description: Momen keluarga heartwarming.
+      faceless: false
+      difficulty: menengah
+      rpm: rendah
+      formats: footage + musik + caption
+      example_hook: "Reaksi anak lihat ayah pulang..."
+      guide:
+        audience: "Penonton luas 18–45 yang menikmati konten keluarga dan momen emosional; orang tua dan calon orang tua yang mencari inspirasi dan kehangatan; penonton yang rindu momen keluarga atau jauh dari keluarga."
+        tone: "Hangat, tulus, dan penuh kasih. Tidak perlu dramatisasi — momen asli yang sederhana lebih kuat dari yang dipentaskan. Penonton harus merasakan kehangatan tanpa merasa manipulasi emosi."
+        format: "30–90 detik. Footage keluarga asli — bisa on-face karena ini bukan faceless. Musik emosional atau lo-fi hangat. Caption minimal dan only ketika menambah konteks. Struktur: setup singkat → momen inti → reaksi/aftermath. Paling kuat saat tidak diedit berlebihan."
+        boleh:
+          - "Momen paling sederhana seringkali paling powerful — anak tertawa, kakek bercanda, ibu lelah tapi tetap hadir"
+          - "Musik yang dipilih dengan benar bisa membuat momen biasa terasa sinematik"
+          - "Sertakan caption konteks yang minimal tapi bermakna ('setelah 2 bulan terpisah', 'ulang tahun ke-70 kakek')"
+          - "Reaksi unscripted jauh lebih kuat dari yang diatur — biarkan momen terjadi natural"
+        hindari:
+          - "Jangan rekam atau posting momen yang memalukan atau mendisiplinkan anak — mengorbankan dignitas anak demi views"
+          - "Jangan buat challenge atau aktivitas yang berpotensi berbahaya melibatkan anak hanya untuk konten"
+          - "Jangan eksploitasi emosi negatif anak (ketakutan, kesedihan) untuk engagement — tidak etis"
+          - "Jangan gunakan musik ber-hak-cipta"
+          - "Jangan over-edit atau tambah sound effect yang merusak keaslian momen"
+        pola_hook: "Detik 0: langsung tampilkan momen paling emosional atau lucu dari video — tidak perlu setup. Penonton harus merasakan sesuatu di 3 detik pertama. Caption konteks bisa muncul di detik 2."
+        contoh_judul:
+          - "Reaksi anak lihat ayah pulang setelah 2 bulan kerja di luar kota"
+          - "Momen ini yang bikin aku sadar kenapa jadi orang tua itu worth it"
+          - "Tradisi keluarga kecil yang ternyata akan selalu diingat anak sampai tua"
+
+      micro:
+        - slug: family-vlog-reaksi-anak-kejutan
+          name: Reaksi Anak Saat Dapat Kejutan dari Orang Tua
+          description: Dokumentasi momen tulus reaksi anak kecil saat mendapat kejutan dari orang tua — baik sederhana maupun besar — format yang selalu mengundang emosi positif.
+          example_hook: "Ayah pulang setelah 3 bulan kerja di luar kota, lihat reaksi anak ini..."
+          guide:
+            audience: "Penonton luas 18–45 yang menikmati konten emosional dan keluarga; orang tua yang ingin mendokumentasikan momen berharga; penonton yang rindu momen bersama keluarga jauh."
+            tone: "Tulus dan tidak berlebihan. Reaksi anak yang asli adalah kontennya — tidak perlu musik yang terlalu mendramatisir atau voiceover yang mendikte perasaan penonton."
+            format: "30–60 detik. Footage asli reaksi unscripted. Minimal editing. Musik lo-fi hangat yang tidak mengalahkan suara asli anak. Caption singkat memberikan konteks ('ayah pulang setelah 3 bulan') tanpa terlalu banyak mendikte emosi. Vertikal 9:16."
+            boleh:
+              - "Rekam dari sudut yang tidak ketara agar reaksi anak benar-benar natural dan tidak untuk kamera"
+              - "Konteks singkat sebelum momen membuat impact emosional lebih kuat"
+              - "Suara asli tawa atau tangis anak jauh lebih powerful dari musik dramatis — jaga audio aslinya"
+              - "Kejutan sederhana (buah kesukaan, mainan kecil) bisa sama kuatnya dengan kejutan besar"
+            hindari:
+              - "Jangan rekam atau post reaksi negatif ekstrem anak (ketakutan, menangis kesakitan) demi views — eksploitasi emosi anak tidak etis"
+              - "Jangan staging reaksi atau minta anak mengulang reaksi untuk kamera — autentisitas adalah nilainya"
+              - "Jangan gunakan musik ber-hak-cipta"
+              - "Jangan tampilkan informasi lokasi, sekolah, atau identitas detail anak di caption"
+              - "Jangan gunakan momen ketakutan anak sebagai hiburan — efek trauma jangka panjang nyata"
+            pola_hook: "Detik 0: langsung masuk ke momen reaksi anak atau setup satu detik sebelum reaksi terjadi. Tidak ada intro atau setup panjang — emosi harus terasa di detik pertama."
+            contoh_judul:
+              - "Ayah pulang setelah 3 bulan kerja di luar, lihat reaksi anak ini dari pintu depan"
+              - "Kita bilang mau ke rumah nenek, reaksi anak ini yang tidak terduga"
+              - "Kejutan ulang tahun sederhana tapi reaksinya bikin seluruh keluarga nangis"
+              - "Anak ini belum pernah lihat hujan salju — rekaman pertama kalinya bikin hati hangat"
+              - "Surprise sederhana dari kakek 70 tahun ke cucunya yang buat semua orang di ruangan itu berhenti bicara"
+            content_runway: "Setiap momen kehidupan keluarga (pulang dari perjalanan, ulang tahun, hewan peliharaan baru, saudara baru lahir, liburan pertama) menghasilkan konten baru yang selalu relevan; momen tumbuh kembang anak tidak pernah berhenti selama anak bertumbuh."
+
+        - slug: family-vlog-kakek-nenek-millennial
+          name: Kakek-Nenek Pertama Kali Coba Teknologi Baru
+          description: Dokumentasi momen lucu sekaligus mengharukan saat kakek-nenek belajar hal baru dari cucu — main game, video call, atau pesan ojek online — generasi bertemu generasi.
+          example_hook: "Nenek 70 tahun belajar kirim GIF dari cucunya, dan hasilnya diluar dugaan..."
+          guide:
+            audience: "Penonton 20–45 yang menikmati konten generasi bertemu generasi; cucu yang sering ajari kakek-nenek hal baru; penonton yang rindu kakek-nenek mereka sendiri."
+            tone: "Hangat dan humoris dengan penuh respect. Kelucuan bukan karena menertawakan kakek-nenek, tapi merayakan momen pembelajaran yang tidak terduga. Mengharukan sekaligus menghibur."
+            format: "45–90 detik. Footage observasi dari samping atau belakang saat kakek-nenek berinteraksi dengan teknologi. Cucu bisa ada di frame sebagai guide. Musik lo-fi atau tradisional. Minimal narasi — biarkan momen bicara."
+            boleh:
+              - "Reaksi kakek-nenek yang tidak terduga (tertawa bingung, menggunakannya dengan cara unik) adalah gold — rekam saja"
+              - "Konteks budaya Indonesia sangat kuat: nenek belajar GoPay, kakek pertama kali video call cucu di luar negeri"
+              - "Sesekali kata-kata polos kakek-nenek soal teknologi adalah kutipan yang viral ('ini kameranya di mana?')"
+              - "Tambahkan caption quotes kakek-nenek jika ada yang lucu atau mengharukan"
+            hindari:
+              - "Jangan post konten yang mempermalukan kakek-nenek atau membuat mereka terlihat bodoh tanpa respek"
+              - "Jangan buat momen pembelajaran terasa seperti lelucon atas mereka — rayakan, bukan ejek"
+              - "Jangan tampilkan informasi pribadi kakek-nenek (alamat, kondisi kesehatan)"
+              - "Jangan gunakan musik ber-hak-cipta"
+              - "Jangan dramatisir ekspresi frustrasi mereka menjadi hiburan negatif"
+            pola_hook: "Detik 0: tampilkan langsung momen paling lucu atau mengharukan dari video + caption konteks singkat ('nenek 72 tahun belajar ini untuk pertama kali'). Tidak ada setup panjang."
+            contoh_judul:
+              - "Nenek 70 tahun belajar kirim GIF ke cucunya dan ini yang terjadi"
+              - "Kakek baru pertama kali video call dan tidak bisa percaya bisa lihat wajah cucu dari jauh"
+              - "Reaksi nenek saat pertama kali pesan ojek online bersama cucunya"
+              - "Kakek coba main game HP cucunya dan komentar-komentarnya bikin semua orang tertawa"
+              - "Nenek belajar balas story Instagram dari cucunya — 45 menit penuh momen yang tidak terlupakan"
+            content_runway: "Setiap teknologi baru (GoFood, TikTok, WhatsApp, game mobile, smart TV) dikombinasikan dengan berbagai kakek-nenek yang berbeda menghasilkan konten yang tidak pernah kehabisan; teknologi terus berubah menjamin relevansi jangka panjang konten seri ini."
+
+        - slug: family-vlog-tradisi-unik-keluarga
+          name: Tradisi Unik yang Cuma Ada di Keluarga Ini
+          description: Dokumentasi kebiasaan atau ritual unik yang hanya ada dalam satu keluarga, yang mungkin terlihat aneh dari luar tapi penuh makna di dalam — memancing curiosity dan nostalgia penonton.
+          example_hook: "Keluarga ini tiap tahun lakukan hal yang menurut orang aneh, tapi alasannya buat aku nangis..."
+          guide:
+            audience: "Penonton 20–45 yang menikmati konten nostalgia dan keluarga; orang yang terpisah dari keluarga besar (rantau, diaspora) yang rindu tradisi; penonton yang suka melihat keunikan budaya keluarga lain."
+            tone: "Penasaran di awal, hangat dan emosional di akhir. Tradisi yang terlihat aneh di luar terungkap memiliki makna dalam yang mengharukan. Narasinya adalah perjalanan discovery."
+            format: "45–90 detik. Footage dokumenter ringan dari tradisi itu sendiri. Voiceover atau caption yang menjelaskan asal-usul tradisi. Musik nostalgik atau tradisional Indonsia. Struktur: tampilkan tradisi → buka rasa penasaran → jelaskan makna di baliknya → momen emosional."
+            boleh:
+              - "Hook 'hal aneh' yang ternyata bermakna dalam adalah formula yang selalu bekerja"
+              - "Wawancara singkat dengan anggota keluarga tertua yang tahu asal-usulnya sangat powerful"
+              - "Tradisi yang terhubung dengan sejarah Indonesia (kemerdekaan, budaya daerah) memiliki resonansi lebih luas"
+              - "Caption yang memberikan context historis memperkuat emotional payoff di akhir"
+            hindari:
+              - "Jangan expose informasi pribadi atau lokasi keluarga yang bisa mengidentifikasi mereka secara berlebihan"
+              - "Jangan tampilkan momen sakral keagamaan keluarga yang tidak untuk dikonsumsi publik tanpa izin penuh keluarga"
+              - "Jangan gunakan musik ber-hak-cipta"
+              - "Jangan buat konten yang menyinggung kepercayaan atau adat daerah tertentu secara tidak sensitif"
+              - "Jangan over-dramatisir tradisi sederhana — keaslian lebih kuat dari produksi berlebihan"
+            pola_hook: "Detik 0: tampilkan tradisi yang terlihat paling aneh atau tidak biasa + caption 'keluarga ini selalu lakukan ini setiap tahun'. Penonton harus penasaran 'kenapa?' sebelum detik 5."
+            contoh_judul:
+              - "Keluarga ini tiap lebaran melakukan ini yang orang lain anggap aneh, alasannya bikin nangis"
+              - "Tradisi unik yang cuma ada di keluarga kami dan sudah 40 tahun tidak pernah terlewat"
+              - "Ritual makan malam ini sudah dimulai kakek buyut dan sampai sekarang masih diteruskan"
+              - "Kebiasaan keluarga yang terlihat aneh ini ternyata adalah cara mereka ingat yang sudah pergi"
+              - "Generasi ketiga masih lakukan tradisi ini meski tidak semua tahu dari mana asalnya"
+            content_runway: "Setiap keluarga Indonesia memiliki tradisi unik yang berbeda-beda (lebaran, ulang tahun, arisan, makan malam, perjalanan tahunan); dilihat dari sudut pandang daerah yang berbeda (Jawa, Sunda, Batak, Bugis, Betawi) menghasilkan variasi budaya yang sangat kaya."

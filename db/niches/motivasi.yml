@@ -1,0 +1,464 @@
+version: 1
+vertical:
+  slug: v-motivasi
+  name: Motivasi
+  description: Konten pengembangan diri, motivasi, spiritualitas, dan filosofi untuk penonton yang ingin berkembang.
+  guide:
+    audience: "Penonton Indonesia 18–35 yang sedang dalam fase pertumbuhan — fresh graduate, profesional muda, atau siapa pun yang sedang mencari arah; campuran pria-wanita yang merasa ada yang kurang dari diri mereka sekarang dan aktif mencari perubahan."
+    tone: "Hangat dan langsung, seperti teman yang lebih dewasa bicara jujur. Bukan ceramah, bukan motivator panggung — tapi insight yang terasa ditemukan bersama. Tidak menggurui, tidak berteriak, tidak pakai jargon self-help yang sudah usang."
+    format: "Video 30–90 detik. Dominan teks kinetik atau voiceover di atas b-roll sinematik. Hook verbal atau visual di detik 0–3, isi satu ide utama yang disampaikan dengan contoh konkret, penutup dengan ajakan refleksi. Vertikal 9:16."
+    boleh:
+      - "Gunakan satu ide besar per video — jangan coba masukkan lima poin dalam 60 detik"
+      - "Pakai contoh nyata, nama tokoh, atau data yang bisa diverifikasi untuk menambah kredibilitas"
+      - "Hook berbasis pertanyaan atau pernyataan kontradiktif yang memancing rasa ingin tahu"
+      - "Biarkan ada momen hening atau slow-down di tengah video agar ide meresap"
+      - "Caption teks kunci disorot untuk penonton yang menonton tanpa suara"
+    hindari:
+      - "Jangan pakai quotes generik tanpa konteks — 'jangan menyerah' tanpa narasi tidak bernilai"
+      - "Jangan berteriak atau oversell energi — penonton muda Indonesia lebih merespons nada jujur"
+      - "Jangan pakai musik ber-hak-cipta; royalty-free cinematic atau instrumental Indonesia lebih aman"
+      - "Jangan buat konten yang terasa seperti iklan produk motivasi atau kursus berbayar"
+      - "Jangan klaim bisa mengubah hidup — frame sebagai perspektif baru yang ditawarkan, bukan janji"
+    pola_hook: "Detik 0–3: pernyataan kontradiktif atau fakta mengejutkan + pause singkat. Contoh: 'Semua targetmu gagal bukan karena kurang motivasi...' lalu berhenti sebentar sebelum lanjut."
+    contoh_judul:
+      - "Hal yang tidak ada yang beritahu kamu soal mulai dari nol"
+      - "Berhenti kejar motivasi — ini yang lebih penting"
+      - "Kenapa orang cerdas sering tidak bergerak maju"
+
+  niches:
+    - slug: motivation
+      name: "Motivasi / Quotes"
+      description: Kutipan motivasi + visual.
+      faceless: true
+      difficulty: pemula
+      rpm: rendah
+      formats: teks kinetik + sinematik + musik
+      example_hook: "Kalau kamu mau nyerah, dengar ini..."
+      guide:
+        audience: "Penonton 16–30 yang sedang di titik rendah — gagal ujian, putus cinta, atau melihat orang lain maju sementara mereka stagnan; sering scroll malam hari sambil mencari alasan untuk tetap bertahan."
+        tone: "Empatik dan menguatkan tanpa menjadi palsu. Terasa seperti seseorang yang pernah ada di posisi yang sama dan selamat. Bahasa kasual, sedikit puitis tapi tidak lebay."
+        format: "30–60 detik. Teks kinetik di atas footage sinematik (time-lapse langit, jalanan kota malam, tangan menulis). Musik instrumental yang membangun perasaan. Satu pesan utama, diulang dalam variasi teks. Vertikal 9:16."
+        boleh:
+          - "Gunakan footage b-roll lokal Indonesia untuk resonansi yang lebih kuat"
+          - "Teks muncul sinkron dengan beat musik untuk ritme yang enak ditonton"
+          - "Akhiri dengan satu kalimat yang terasa seperti 'permission' untuk melanjutkan"
+          - "Tambahkan suara ambient kota atau alam Indonesia di balik musik untuk lapisan kedalaman"
+        hindari:
+          - "Jangan pakai foto atau footage stock yang terlalu Western — kurangi relevansi"
+          - "Jangan pakai font kaku atau terlalu formal — gaya kasual lebih cocok niche ini"
+          - "Jangan musik keras yang mendominasi teks — teks adalah kontennya"
+          - "Jangan akhiri tanpa penutup yang terasa selesai — penonton butuh resolusi mini"
+        pola_hook: "Detik 0: teks besar 'Kalau kamu mau nyerah...' + footage sunset atau jalanan sepi. Langsung ke kalimat inti di detik 3 sebelum penonton skip."
+        contoh_judul:
+          - "Kalau kamu mau nyerah, tonton ini dulu"
+          - "Orang-orang yang berhasil punya satu kebiasaan yang tidak terasa heroik"
+          - "Ini yang terjadi setelah kamu berhenti membandingkan dirimu"
+      micro:
+        - slug: motivation-gagal-sebelum-sukses
+          name: Berapa Kali Mereka Gagal Sebelum Sukses
+          description: Konten motivasi berbasis fakta tentang jumlah kegagalan nyata yang dialami tokoh sukses Indonesia dan dunia sebelum akhirnya berhasil, melawan narasi sukses instan.
+          example_hook: "Orang ini ditolak 97 kali sebelum akhirnya berhasil, dan kamu menyerah di percobaan ketiga..."
+          guide:
+            audience: "Penonton 17–28 yang baru mengalami kegagalan pertama yang signifikan — ditolak kerja, gagal seleksi, atau bisnis pertama yang tidak jalan; butuh bukti nyata bahwa kegagalan bukan akhir."
+            tone: "Faktual dan menguatkan sekaligus. Data tentang kegagalan tokoh nyata disampaikan dengan nada yang tidak menggurui — bukan 'kamu bisa!' tapi 'lihat, ini juga terjadi pada mereka'."
+            format: "45–60 detik. Struktur: hook angka kegagalan yang mengejutkan → nama dan kisah singkat tokoh → jumlah penolakan spesifik → apa yang terjadi setelah itu → closing yang menghubungkan ke penonton. Teks kinetik + voiceover singkat. Vertikal 9:16."
+            boleh:
+              - "Gunakan angka spesifik ('ditolak 12 penerbit' bukan 'berkali-kali ditolak') untuk kredibilitas"
+              - "Gabungkan tokoh Indonesia dan internasional agar terasa relevan dan global"
+              - "Tampilkan timeline sederhana visual dari kegagalan ke keberhasilan"
+              - "Akhiri dengan pertanyaan reflektif bukan perintah — 'kalau mereka bisa melewati itu, kamu ada di mana sekarang?'"
+            hindari:
+              - "Jangan buat klaim yang tidak bisa diverifikasi — fakta yang salah merusak kepercayaan cepat"
+              - "Jangan jadikan format terlalu panjang — satu kisah per video lebih kuat dari tiga kisah dangkal"
+              - "Jangan pakai musik terlalu dramatis yang terasa manipulatif"
+              - "Jangan abaikan konteks — kegagalan tokoh beda dengan kegagalan orang biasa, akui itu"
+            pola_hook: "Detik 0: angka kegagalan dalam teks besar ('Ditolak 97 kali') + nama tokoh. Langsung masuk narasi di detik 3."
+            contoh_judul:
+              - "Orang ini ditolak 97 kali sebelum akhirnya dunia mengakuinya"
+              - "J.K. Rowling ditolak 12 penerbit, ini yang dia lakukan di penolakan ke-13"
+              - "Tokoh ini gagal 5 tahun berturut-turut sebelum satu keputusan mengubah segalanya"
+              - "Kamu baru gagal sekali, orang ini gagal 40 kali sebelum berhasil"
+              - "Angka kegagalan di balik nama sukses yang kamu kenal tapi tidak pernah dibahas"
+            content_runway: "Setiap tokoh sukses (lokal maupun internasional) memiliki kisah kegagalan yang berbeda dan belum habis digali; format ini bisa terus diproduksi selama ada orang sukses yang pernah gagal — hampir tidak ada habisnya."
+
+        - slug: motivation-perbandingan-racun
+          name: Berhenti Membandingkan Diri dengan Orang Lain
+          description: Konten yang menantang kebiasaan perbandingan sosial di era media sosial dengan argumen yang berbasis psikologi dan bukan klise, untuk penonton yang sadar tapi masih terjebak.
+          example_hook: "Orang yang kamu iri itu sendiri sedang merasa tidak cukup, dan ini buktinya..."
+          guide:
+            audience: "Penonton 18–30 yang aktif di media sosial dan sadar bahwa perbandingan sosial merusak mereka tapi tidak bisa berhenti; seringkali sudah tahu secara intelektual tapi secara emosional masih terjebak."
+            tone: "Empatik dan sedikit ironis. Tidak menghakimi kebiasaan membanding-bandingkan — semua orang melakukannya. Tapi mengungkap mekanisme psikologisnya dengan cara yang membuat penonton merasa 'oh, jadi itu yang terjadi'."
+            format: "45–75 detik. Hook paradoks tentang orang yang tampak sukses → penjelasan psikologi singkat (social comparison theory, highlight reel) → satu pergeseran perspektif konkret → penutup yang terasa membebaskan. Teks + voiceover. Vertikal 9:16."
+            boleh:
+              - "Referensi riset psikologi ringan ('penelitian di Stanford menemukan...') untuk menambah bobot"
+              - "Gunakan contoh spesifik yang relatable untuk penonton Indonesia (Instagram karir, medsos teman lama)"
+              - "Akhiri dengan pertanyaan yang mengarahkan fokus ke diri sendiri, bukan orang lain"
+              - "Sesekali gunakan humor ringan — topik ini berat, sedikit levity membantu"
+            hindari:
+              - "Jangan berikan saran 'unfollow semua akun toxic' — terlalu sederhana dan klise"
+              - "Jangan tampil menghakimi penonton karena membandingkan diri — itu membuat mereka defensif"
+              - "Jangan pakai footage orang lain (wajah atau akun spesifik) yang bisa memicu masalah privasi"
+              - "Jangan akhiri tanpa insight konkret — hanya deskripsi masalah tanpa perspektif baru tidak bernilai"
+            pola_hook: "Detik 0: 'Orang yang kamu iri itu...' + pause + '...sendiri sedang merasa tidak cukup'. Paradoks yang membuat penonton berhenti scroll."
+            contoh_judul:
+              - "Orang yang kamu iri itu sendiri sedang merasa tidak cukup — ini buktinya"
+              - "Kenapa kamu terus membandingkan diri meski tahu itu menyakitkan"
+              - "Instagram itu highlight reel, ini yang terjadi di belakang layarnya"
+              - "Perbandingan sosial ini bukan kelemahanmu — tapi kamu bisa menggunakannya"
+              - "Berhenti kejar standar orang lain yang bahkan mereka sendiri belum capai"
+            content_runway: "Topik perbandingan sosial memiliki dimensi yang hampir tidak terbatas — karir, penampilan, hubungan, finansial, pencapaian akademik — dan selalu relevan selama media sosial ada."
+
+        - slug: motivation-kecil-tapi-konsisten
+          name: Kekuatan Perubahan 1% Setiap Hari
+          description: Konten motivasi berbasis konsep compound improvement — bahwa konsistensi perubahan kecil mengalahkan usaha besar yang sporadis — dengan contoh kalkulasi yang visual.
+          example_hook: "1% lebih baik setiap hari selama setahun, ini berapa jadinya dan kenapa otak kita tidak percaya..."
+          guide:
+            audience: "Penonton 18–32 yang sering mulai besar lalu berhenti total; tipe yang semangat gym tiga hari lalu tidak kembali sebulan; atau yang menunggu 'kondisi sempurna' sebelum mulai bergerak."
+            tone: "Matematis tapi hangat. Angka compound improvement disajikan dengan cara visual yang mengejutkan, bukan sebagai ceramah disiplin. Penonton harus merasa 'kenapa tidak ada yang jelaskan ini lebih awal?'"
+            format: "50–70 detik. Hook kalkulasi mengejutkan (1.01^365) → visualisasi grafik sederhana atau animasi teks → contoh konkret satu kebiasaan kecil yang berubah besar dalam setahun → closing yang memberi 'izin' untuk mulai kecil. Vertikal 9:16."
+            boleh:
+              - "Tampilkan kalkulasi 1.01^365 = 37.78 secara visual — angka ini selalu mengejutkan"
+              - "Gunakan contoh kebiasaan yang sangat kecil dan spesifik (baca 10 halaman, jalan 10 menit)"
+              - "Kontraskan dengan 0.99^365 = 0.03 untuk efek yang lebih dramatis"
+              - "Buat visualisasi sederhana dua kurva yang menyimpang jauh setelah satu tahun"
+            hindari:
+              - "Jangan buat ini terasa seperti iklan produktivitas atau kursus self-improvement berbayar"
+              - "Jangan janji hasil yang tidak realistis dari perubahan kecil — tetap jujur soal prosesnya"
+              - "Jangan pakai jargon seperti 'atomic habits' tanpa penjelasan — nama buku bukan penjelasan"
+              - "Jangan skip contoh nyata — konsep abstrak tanpa contoh tidak mendarat"
+            pola_hook: "Detik 0: angka '1.01 pangkat 365' muncul di layar + pertanyaan 'kamu tahu ini berapa?' Jawaban muncul di detik 5 setelah ada pause."
+            contoh_judul:
+              - "1% lebih baik setiap hari selama setahun hasilnya tidak akan kamu percaya"
+              - "Kenapa usaha besar dan sporadis kalah dari langkah kecil yang konsisten"
+              - "Kalkulasi ini mengubah cara aku berpikir soal perubahan diri"
+              - "Mulai dari hal yang terasa terlalu kecil untuk dihitung — ini kenapa itu justru benar"
+              - "Otak kita buruk menilai compound growth dan ini mengapa kita selalu salah mulai"
+            content_runway: "Konsep compound improvement bisa diterapkan ke ratusan bidang kehidupan — kesehatan, karir, hubungan, keuangan, skill — setiap bidang menghasilkan video berbeda dengan contoh konkret yang berbeda pula."
+
+    - slug: self-improve
+      name: Self Improvement
+      description: "Tips pengembangan diri, kebiasaan."
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: teks + b-roll + voiceover
+      example_hook: "1 kebiasaan yang ubah hidupku..."
+      guide:
+        audience: "Penonton 20–32 yang sudah melewati fase motivasi kosong dan mencari perubahan konkret; profesional muda atau mahasiswa akhir yang merasa stuck dan ingin sistem bukan hanya semangat."
+        tone: "Praktis dan evidence-based. Tidak berteriak atau oversell. Seperti teman yang sudah baca buku-buku yang kamu belum sempat baca dan merangkumnya dengan jujur termasuk mana yang tidak berhasil untuknya."
+        format: "45–90 detik. Teks + b-roll aktivitas sehari-hari (tangan nulis, meja kerja, jalan di kota) + voiceover kasual. Satu konsep utama dengan satu hingga dua langkah actionable konkret. Tidak perlu intro panjang. Vertikal 9:16."
+        boleh:
+          - "Referensi buku atau penelitian secara singkat untuk credibility tanpa oversell"
+          - "Gunakan b-roll yang terasa seperti kehidupan nyata Indonesia, bukan lifestyle mewah"
+          - "Satu actionable step di akhir yang bisa dilakukan hari ini, bukan minggu depan"
+          - "Akui keterbatasan saran — 'ini tidak untuk semua orang' membangun kepercayaan"
+        hindari:
+          - "Jangan buat daftar '10 kebiasaan orang sukses' — terlalu generik dan sudah jenuh"
+          - "Jangan tampilkan gaya hidup yang terasa tidak terjangkau untuk penonton rata-rata Indonesia"
+          - "Jangan gunakan bahasa yang terasa seperti terjemahan mentah dari konten Inggris"
+          - "Jangan akhiri tanpa satu hal yang bisa langsung dilakukan"
+        pola_hook: "Detik 0: pernyataan yang terasa counterintuitive atau berlawanan dengan saran umum. Langsung ke penjelasan di detik 4 tanpa intro diri."
+        contoh_judul:
+          - "Kebiasaan ini mengubah caraku kerja lebih dari semua tips produktivitas lainnya"
+          - "Ini yang salah dari cara kebanyakan orang mengejar perubahan diri"
+          - "Bukan disiplin yang kamu butuhkan — ini yang sebenarnya lebih penting"
+      micro:
+        - slug: self-improve-identitas-vs-tujuan
+          name: Bangun Identitas Baru Bukan Kejar Target
+          description: Pendekatan pengembangan diri berbasis identitas — "aku adalah orang yang sehat" vs "aku mau turun 10kg" — menjelaskan kenapa tujuan saja tidak cukup untuk perubahan yang bertahan.
+          example_hook: "Semua targetmu gagal bukan karena kurang motivasi, tapi karena kamu mulai dari tempat yang salah..."
+          guide:
+            audience: "Penonton 20–30 yang sudah berkali-kali gagal mencapai target yang sama — olahraga rutin, baca lebih banyak, kurangi scrolling — dan ingin tahu kenapa siklus itu terus berulang meski motivasinya nyata."
+            tone: "Analitis tapi hangat. Menjelaskan mekanisme psikologis dari identity-based habits tanpa terasa seperti kuliah. Penonton harus merasa framework ini bisa langsung dicoba."
+            format: "60–75 detik. Hook kegagalan target yang umum → contrast 'goal-based' vs 'identity-based' → satu contoh konkret transformasi kalimat ('aku mau olahraga' → 'aku orang yang bergerak') → langkah pertama membangun identitas baru. Voiceover + teks overlay. Vertikal 9:16."
+            boleh:
+              - "Gunakan contoh yang sangat spesifik dan relatable untuk penonton Indonesia"
+              - "Tampilkan kontras kalimat identitas lama vs baru dalam teks besar di layar"
+              - "Jelaskan konsep 'vote for your identity' dengan analogi yang mudah dipahami"
+              - "Tutup dengan satu pertanyaan yang memancing penonton mendefinisikan identitas mereka sendiri"
+            hindari:
+              - "Jangan sebut buku 'Atomic Habits' tanpa penjelasan konsepnya sendiri — nama saja tidak cukup"
+              - "Jangan buat ini terasa seperti terjemahan langsung dari konten Barat tanpa konteks lokal"
+              - "Jangan berikan terlalu banyak langkah — satu pergeseran besar lebih baik dari lima tips dangkal"
+              - "Jangan klaim ini 'solusi semua masalah disiplin' — tetap realistis soal proses adaptasinya"
+            pola_hook: "Detik 0: 'Targetmu gagal bukan karena kurang motivasi...' + pause + '...tapi karena kamu mulai dari tempat yang salah'. Langsung masuk penjelasan di detik 5."
+            contoh_judul:
+              - "Semua targetmu gagal bukan karena lemah — kamu mulai dari arah yang salah"
+              - "Ubah satu kalimat ini dan kebiasaanmu akan bertahan lebih dari 3 bulan"
+              - "Bukan target yang mengubah orang — ini yang lebih mendasar dari itu"
+              - "Kenapa resolusi tahun baru selalu gagal di bulan kedua dan cara memutus polanya"
+              - "Orang yang konsisten tidak punya lebih banyak disiplin — mereka punya ini"
+            content_runway: "Konsep identity-based change bisa diterapkan ke setiap aspek kehidupan — pola makan, keuangan, hubungan, karir, spiritualitas — setiap domain menghasilkan video baru dengan contoh dan konteks berbeda."
+
+        - slug: self-improve-lingkungan-yang-membangun
+          name: Desain Lingkungan yang Membuatmu Otomatis Berkembang
+          description: Konsep behavior design — mengubah lingkungan fisik dan sosial agar perilaku baik menjadi default bukan pilihan — dengan contoh konkret yang bisa langsung diterapkan.
+          example_hook: "Kamu tidak butuh lebih banyak disiplin, kamu butuh lingkungan yang dirancang lebih baik..."
+          guide:
+            audience: "Penonton 22–35 yang lelah mengandalkan willpower dan disiplin untuk perubahan; orang yang sadar bahwa lingkungan mereka tidak mendukung tujuan mereka tapi belum tahu harus mengubah apa."
+            tone: "Pragmatis dan sedikit mengejutkan. Frame bahwa disiplin adalah solusi terakhir, bukan pertama. Penonton harus merasa 'aku tidak perlu jadi lebih keras ke diri sendiri, aku perlu desain ulang ruangku'."
+            format: "60–80 detik. Hook anti-disiplin yang mengejutkan → satu hingga dua contoh konkret friction reduction atau environment design → cara menerapkan dalam konteks Indonesia (kos, apartemen kecil, kantor shared) → satu langkah yang bisa dilakukan malam ini. Vertikal 9:16."
+            boleh:
+              - "Gunakan contoh fisik yang sangat spesifik (taruh buku di bantal, sembunyikan charger HP)"
+              - "Referensi konsep 'friction' dan 'default behavior' dengan analogi yang mudah dipahami"
+              - "Akui keterbatasan ruang dan budget penonton Indonesia — solusi harus realistis"
+              - "Tampilkan sebelum-sesudah desain meja atau ruang yang sederhana tapi efektif"
+            hindari:
+              - "Jangan tampilkan setup workspace yang mahal dan tidak terjangkau"
+              - "Jangan frame seperti 'ini semua yang salah dengan hidupmu' — nada itu menolak, bukan mengundang"
+              - "Jangan skip konteks — behavior design butuh sedikit penjelasan sebelum langsung ke tips"
+              - "Jangan rekomendasikan produk mahal tanpa alternatif murah"
+            pola_hook: "Detik 0: 'Kamu tidak butuh lebih banyak disiplin.' Pause panjang. 'Kamu butuh lingkungan yang dirancang berbeda.' Langsung ke contoh konkret di detik 6."
+            contoh_judul:
+              - "Kamu tidak butuh lebih banyak disiplin — lingkunganmu yang perlu didesain ulang"
+              - "Ubah satu hal di kamarmu malam ini dan kebiasaanmu berubah minggu depan"
+              - "Kenapa orang produktif tidak punya willpower lebih — mereka punya trik desain ini"
+              - "Friction adalah musuh kebiasaan baik dan ini cara menghilangkannya dari hidupmu"
+              - "Setup sederhana ini membuat kebiasaan yang kamu mau jadi otomatis bukan perjuangan"
+            content_runway: "Setiap kebiasaan (olahraga, membaca, makan sehat, tidur tepat waktu) dan setiap ruang hidup (kamar kos, dapur, meja kerja) memiliki potensi desain berbeda; format ini hampir tidak ada batasnya."
+
+        - slug: self-improve-batas-sehat
+          name: Belajar Bilang Tidak Tanpa Merasa Bersalah
+          description: Panduan praktis membangun batas personal yang sehat dalam konteks budaya Indonesia yang cenderung kolektif dan tidak nyaman menolak permintaan orang lain.
+          example_hook: "Kata 'tidak' ini membuat orang Indonesia merasa bersalah, tapi ini cara mengatakannya dengan benar..."
+          guide:
+            audience: "Penonton 20–35 yang sering kelelahan karena tidak bisa menolak permintaan — lembur terus, pinjaman ke teman yang tidak balik, menghadiri acara yang tidak ingin dihadiri; sering merasakan resentment tapi tidak tahu akarnya dari mana."
+            tone: "Empatik dan praktis. Mengakui bahwa budaya kolektivisme Indonesia membuat ini lebih sulit dari di tempat lain. Tidak menyalahkan budaya — membantu navigasinya dengan cara yang tidak merusak hubungan."
+            format: "60–80 detik. Hook situasi spesifik yang relatable (diminta lembur lagi, dipinjam uang) → kenapa orang Indonesia khususnya sulit bilang tidak → dua hingga tiga formula kalimat konkret yang bisa langsung dipakai → reminder bahwa batas yang sehat adalah bentuk menghormati diri sendiri dan orang lain. Vertikal 9:16."
+            boleh:
+              - "Berikan formula kalimat konkret yang bisa langsung dipakai tanpa latihan panjang"
+              - "Akui bahwa konteks budaya Indonesia membuat ini lebih kompleks dari sekedar 'berani bilang tidak'"
+              - "Gunakan contoh situasi yang sangat spesifik dan familiar — pinjam uang, acara keluarga, lembur"
+              - "Jelaskan perbedaan antara 'tidak' yang menolak orang vs 'tidak' yang menolak permintaan"
+            hindari:
+              - "Jangan frame sebagai 'jadilah individualis' — itu bertentangan dengan nilai sebagian besar penonton"
+              - "Jangan berikan saran yang terasa arogan atau anti-sosial dalam konteks Indonesia"
+              - "Jangan hanya deskripsi masalah — harus ada script konkret yang bisa dicoba"
+              - "Jangan abaikan konsekuensi nyata — kadang bilang tidak memang ada risikonya, akui itu"
+            pola_hook: "Detik 0: situasi spesifik di teks ('Diminta lembur padahal hari ini ada rencana') + 'kamu bilang iya lagi.' Langsung ke 'ini kenapa dan ini cara mengubahnya' di detik 5."
+            contoh_judul:
+              - "Kenapa orang Indonesia sangat sulit bilang tidak dan cara mengatasinya tanpa drama"
+              - "Kalimat ini membuatmu bisa menolak tanpa merusak hubungan apapun"
+              - "Terlalu sering bilang iya ini yang terjadi pada hidupmu tanpa kamu sadari"
+              - "Cara menolak atasan, teman, dan keluarga tanpa merasa bersalah seharian"
+              - "Batas yang sehat bukan tentang menjadi dingin — ini yang sebenarnya dimaksud"
+            content_runway: "Setiap konteks sosial Indonesia (kantor, keluarga besar, teman lama, hubungan romantis, komunitas) memiliki dinamika berbeda yang menghasilkan video dengan formula kalimat dan nuansa yang unik."
+
+    - slug: spiritual
+      name: "Spiritual / Religi"
+      description: "Renungan, kisah hikmah."
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: voiceover + visual tenang
+      example_hook: "Doa ini mengubah segalanya..."
+      guide:
+        audience: "Penonton Muslim Indonesia 18–40 yang ingin memperdalam makna ibadah dan keimanan mereka di tengah kehidupan modern yang sibuk; mencari konten spiritual yang menenangkan dan memberi perspektif tanpa terasa berat atau menghakimi."
+        tone: "Tenang, hangat, dan tidak menggurui. Nada seorang sahabat yang berbagi renungan, bukan ustaz yang berceramah. Mengundang refleksi, bukan mendikte. Tidak terlalu formal, tidak terlalu santai."
+        format: "45–90 detik. Voiceover di atas visual alam Indonesia atau footage tenang (air mengalir, daun tertiup, langit sore). Musik instrumen Arab atau nada tenang tanpa lirik. Teks key phrases muncul secara pelan. Vertikal 9:16."
+        boleh:
+          - "Gunakan visual alam Indonesia yang menenangkan sebagai latar — sawah, gunung, laut"
+          - "Kutip ayat atau hadis dengan terjemahan yang natural, bukan terlalu formal"
+          - "Akhiri dengan satu pertanyaan reflektif atau ajakan doa yang terasa personal"
+          - "Gunakan kisah nyata atau perumpamaan yang mudah divisualisasikan"
+        hindari:
+          - "Jangan membuat klaim teologis yang kontroversial atau berpihak pada mazhab tertentu"
+          - "Jangan gunakan bahasa yang menghakimi atau membuat penonton merasa berdosa"
+          - "Jangan buat konten yang bisa memecah belah karena perbedaan pandangan dalam Islam Indonesia"
+          - "Jangan pakai musik yang tidak sesuai — hindari musik keras atau vokal lagu barat"
+          - "Jangan klaim bisa menjawab pertanyaan teologis yang kompleks dalam 60 detik"
+        pola_hook: "Detik 0: pertanyaan yang terasa sangat manusiawi ('Pernah merasa doa kamu tidak didengar?') + visual tenang. Jawaban dimulai di detik 4 dengan nada yang menenangkan."
+        contoh_judul:
+          - "Ini yang sebenarnya terjadi ketika doamu terasa tidak dikabulkan"
+          - "Renungan malam yang bikin aku bersyukur atas hal yang kemarin aku keluhkan"
+          - "Kisah ini mengubah cara aku memandang cobaan yang selama ini terasa tidak adil"
+      micro:
+        - slug: spiritual-hikmah-ujian-hidup
+          name: Hikmah di Balik Ujian yang Terasa Tidak Adil
+          description: Renungan mendalam tentang makna di balik cobaan yang terasa tidak adil, disajikan dengan narasi yang menenangkan bukan menggurui, untuk penonton yang sedang di titik terendah.
+          example_hook: "Ketika kamu bertanya kenapa ini terjadi padamu, ini yang jarang ada yang beritahu..."
+          guide:
+            audience: "Penonton 18–40 yang sedang mengalami masa sulit — kehilangan pekerjaan, sakit, hubungan yang gagal, atau merasa usaha tidak sepadan dengan hasil; mencari makna dan ketenangan, bukan solusi instan."
+            tone: "Menenangkan dan penuh pengertian. Tidak buru-buru sampai ke hikmah — dulu akui bahwa ujian itu memang berat dan perasaan tidak adil itu valid. Baru kemudian tawarkan perspektif yang mengubah cara pandang."
+            format: "60–90 detik. Mulai dengan pengakuan kesulitan (bukan langsung ke hikmah) → kutip ayat atau hadis yang relevan dengan terjemahan natural → satu analogi atau kisah pendek yang memperjelas → penutup doa atau harapan yang terasa tulus. Voiceover + visual alam tenang. Vertikal 9:16."
+            boleh:
+              - "Akui rasa sakit dan ketidakadilan yang dirasakan sebelum menawarkan perspektif baru"
+              - "Gunakan analogi sederhana yang bisa divisualisasikan (biji yang harus pecah sebelum tumbuh)"
+              - "Kutip ulama atau pemikir Islam yang kata-katanya menenangkan, bukan mengintimidasi"
+              - "Akhiri dengan doa pendek yang terasa personal dan bisa langsung diucapkan penonton"
+            hindari:
+              - "Jangan langsung lompat ke 'pasti ada hikmahnya' tanpa mengakui rasa sakitnya terlebih dahulu"
+              - "Jangan gunakan bahasa yang terasa seperti menyalahkan korban atas ujian mereka"
+              - "Jangan buat klaim sektarian atau yang bisa memecah belah umat — tetap universal dalam Islam"
+              - "Jangan terlalu panjang berteori — penonton yang sedang dalam ujian butuh ketenangan, bukan kuliah"
+            pola_hook: "Detik 0: 'Ketika ujian terasa tidak adil...' + pause + visual alam tenang. Bukan langsung ke hikmah — tapi acknowledgment dulu di detik 5."
+            contoh_judul:
+              - "Ketika ujian ini terasa tidak adil, ini yang jarang ada yang berani katakan"
+              - "Kenapa orang yang paling baik seringkali mendapat cobaan paling berat"
+              - "Renungan ini mengubah cara aku melihat semua yang pernah aku anggap musibah"
+              - "Ada sesuatu di balik kesulitan ini yang hanya terlihat setelah kamu melewatinya"
+              - "Doa ini bukan meminta dijauhkan dari ujian — dan itu justru yang lebih kuat"
+            content_runway: "Setiap jenis ujian kehidupan (finansial, kesehatan, hubungan, kehilangan, penolakan) menghasilkan video renungan berbeda; dikombinasikan dengan berbagai sumber kutipan (Al-Quran, hadis, ulama) dan analogi, topik ini hampir tidak ada habisnya."
+
+        - slug: spiritual-kisah-teladan-lokal
+          name: Kisah Teladan dari Ulama dan Tokoh Lokal
+          description: Narasi singkat kisah nyata ulama atau tokoh spiritual Indonesia yang inspirasinya tidak banyak diketahui generasi muda, menghidupkan kembali kearifan lokal.
+          example_hook: "Kiai ini ditanya muridnya hal yang paling kamu takutkan, dan jawabannya tidak diduga siapapun..."
+          guide:
+            audience: "Penonton Muslim Indonesia 18–35 yang tertarik pada sejarah dan kearifan Islam Nusantara; generasi muda yang lebih kenal tokoh Islam internasional tapi tidak tahu ulama berpengaruh di kampung halamannya sendiri."
+            tone: "Penuh hormat dan autentik. Kisah disampaikan seperti cerita, bukan biografi kering. Tone seperti mengisahkan cerita tokoh yang sudah lama tidak diingat tapi sangat relevan hari ini."
+            format: "60–90 detik. Mulai dengan satu momen atau keputusan dramatis dari kisah tokoh → konteks singkat siapa tokoh ini dan mengapa relevan → pelajaran utama yang bisa diambil → penutup yang menghubungkan ke kehidupan penonton hari ini. Narasi + visual tenang. Vertikal 9:16."
+            boleh:
+              - "Fokus pada satu momen atau keputusan spesifik dari tokoh, bukan ringkasan biografi lengkap"
+              - "Pilih tokoh yang tidak terlalu populer agar terasa seperti discovery bagi penonton"
+              - "Gunakan bahasa yang terasa seperti mendongeng, bukan pelajaran sejarah"
+              - "Hubungkan pelajaran dari kisah tokoh ke situasi konkret di Indonesia hari ini"
+            hindari:
+              - "Jangan buat klaim tentang kesempurnaan atau kewalian yang bisa menimbulkan kontroversi"
+              - "Jangan gunakan kisah yang tidak bisa diverifikasi atau hadis palsu sebagai sumber"
+              - "Jangan tampilkan satu mazhab atau kelompok Islam sebagai satu-satunya yang benar"
+              - "Jangan abaikan konteks historis — kisah tanpa konteks bisa disalahartikan"
+            pola_hook: "Detik 0: satu momen dramatis dari kisah tokoh dalam bentuk dialog atau tindakan. Nama tokoh disebutkan di detik 5 setelah rasa ingin tahu sudah terpancing."
+            contoh_judul:
+              - "Kiai ini ditanya apa yang paling ditakutkan dan jawabannya tidak ada yang menduga"
+              - "Ulama ini menolak jabatan tertinggi dengan satu alasan yang masih relevan hari ini"
+              - "Kisah tokoh Islam Nusantara ini yang generasi muda perlu dengar tapi jarang diceritakan"
+              - "Cara ulama ini menyelesaikan perselisihan besar dalam satu kalimat sederhana"
+              - "Kisah ini terjadi 100 tahun lalu di Indonesia dan masih bisa mengubah cara kita berpikir"
+            content_runway: "Indonesia memiliki ratusan ulama dan tokoh spiritual berpengaruh dari berbagai daerah dan era yang kisahnya belum banyak didokumentasikan dalam format konten pendek; setiap tokoh bisa menghasilkan banyak video dari berbagai sudut kisahnya."
+
+        - slug: spiritual-ibadah-dan-produktivitas
+          name: Hubungan Antara Ibadah dan Produktivitas Harian
+          description: Konten yang menghubungkan praktik ibadah rutin dengan manfaat psikologis dan produktivitas yang nyata — bukan klaim supranatural — untuk penonton yang ingin keduanya seimbang.
+          example_hook: "Ini yang terjadi di otak dan tubuh 30 menit setelah sholat subuh yang tidak banyak dibahas..."
+          guide:
+            audience: "Muslim Indonesia 20–35 yang ingin konsisten ibadah tapi juga bergumul dengan tuntutan produktivitas modern; mereka yang mencari jembatan antara nilai spiritual dan kehidupan profesional, bukan memilih salah satu."
+            tone: "Berbasis fakta dan penuh rasa syukur. Bukan membuktikan agama dengan sains — tapi menunjukkan bahwa praktik ibadah memiliki efek psikologis dan fisik yang sudah diteliti. Nada kagum, bukan apologetik."
+            format: "60–80 detik. Hook fakta psikologis atau neurologi yang mengejutkan tentang praktik ibadah → penjelasan mekanisme konkret (mindfulness, ritme sirkadian, community effect) → cara mengintegrasikan ibadah sebagai anchor produktivitas hari → penutup yang menyeimbangkan aspek spiritual dan praktis. Vertikal 9:16."
+            boleh:
+              - "Referensi riset psikologi atau neurosains secara ringan tanpa mengklaim 'sains membuktikan agama'"
+              - "Frame ibadah sebagai sistem yang sudah ada jauh sebelum modern wellness menemukan hal yang sama"
+              - "Berikan contoh praktis cara menjadikan sholat sebagai anchor time-blocking"
+              - "Akui bahwa manfaat ibadah jauh lebih dalam dari sekadar produktivitas — tapi ini satu dimensinya"
+            hindari:
+              - "Jangan klaim supranatural atau mukjizat sebagai konten yang bisa diverifikasi"
+              - "Jangan buat perbandingan yang merendahkan praktik ibadah dari keyakinan lain"
+              - "Jangan frame ibadah semata-mata sebagai 'hack produktivitas' — itu mereduksi maknanya"
+              - "Jangan buat klaim teologis spesifik yang bisa menimbulkan perdebatan mazhab"
+            pola_hook: "Detik 0: fakta mengejutkan tentang efek biologis atau psikologis dari ibadah pagi + 'dan ini yang tidak banyak dibahas'. Penjelasan dimulai di detik 5."
+            contoh_judul:
+              - "Ini yang terjadi di otak 30 menit setelah sholat subuh yang hampir tidak pernah dibahas"
+              - "Kenapa orang yang rajin ibadah rata-rata lebih tenang menghadapi tekanan"
+              - "Sholat lima waktu sebagai sistem manajemen waktu yang lebih baik dari GTD"
+              - "Hubungan antara istikamah ibadah dan ketahanan mental yang ditemukan peneliti"
+              - "Cara menjadikan ibadah anchor hari yang mengubah seluruh struktur produktivitasmu"
+            content_runway: "Setiap praktik ibadah (sholat, puasa, dzikir, sedekah, membaca Quran) memiliki dimensi psikologis dan fisiologis yang berbeda untuk dieksplorasi; ditambah konteks kehidupan modern yang terus berubah, topik ini tidak akan kehabisan sudut baru."
+
+    - slug: stoicism
+      name: "Filosofi / Stoik"
+      description: "Filosofi hidup, stoikisme."
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: teks + sinematik + voiceover
+      example_hook: "Marcus Aurelius bilang hal ini..."
+      guide:
+        audience: "Penonton 20–35 yang sudah melampaui motivasi klise dan mencari kerangka berpikir yang lebih kokoh; tertarik pada filsafat praktis yang bisa langsung diterapkan di keseharian tanpa harus kuliah filsafat."
+        tone: "Tenang, reflektif, dan sedikit berat dalam artian yang baik. Seperti menemukan buku tua yang relevansinya mengejutkan. Tidak sedih, tidak dramatis — tapi terasa serius dan berbobot dibanding konten motivasi biasa."
+        format: "50–90 detik. Kutipan tokoh Stoik sebagai hook → penjelasan konsep dalam bahasa hari ini → satu atau dua contoh penerapan konkret di kehidupan Indonesia → penutup yang mengundang refleksi. Teks kinetik + sinematik tenang + voiceover pelan. Vertikal 9:16."
+        boleh:
+          - "Kutip langsung dari sumber asli (Meditations, Letters to Lucilius, Enchiridion) dengan terjemahan natural"
+          - "Terapkan konsep Stoik ke situasi spesifik Indonesia — bukan hanya konteks Barat"
+          - "Akui bahwa Stoikisme bukan kesempurnaan — penerapannya bertahap dan tidak sempurna"
+          - "Gunakan footage sinematik yang terasa abadi — arsitektur kuno, alam terbuka, waktu berlalu"
+        hindari:
+          - "Jangan jadikan Stoikisme sebagai alasan untuk menekan emosi alih-alih mengolahnya"
+          - "Jangan frame Stoikisme sebagai superior dari filosofi atau tradisi lokal lain"
+          - "Jangan oversimplifikasi konsep yang kompleks — lebih baik satu konsep dalam satu video"
+          - "Jangan pakai musik yang terlalu dramatis atau epic — ketenangan adalah tone khasnya"
+        pola_hook: "Detik 0: kutipan singkat tokoh Stoik (3–7 kata) dalam teks besar. Pause. Konteks siapa yang mengatakannya dan dalam kondisi apa di detik 4."
+        contoh_judul:
+          - "Marcus Aurelius menulis ini saat memimpin kerajaan yang hampir hancur"
+          - "Filosofi ini ditemukan 2000 tahun lalu dan masih lebih relevan dari self-help modern"
+          - "Satu prinsip Stoik yang mengubah cara aku merespons kritik dan kegagalan"
+      micro:
+        - slug: stoicism-kontrol-vs-tidak
+          name: "Dikotomi Kontrol — Apa yang Benar-benar dalam Kuasamu"
+          description: Penjelasan mendalam konsep dikotomi kontrol Stoik yang diterapkan pada situasi sehari-hari Indonesia — kemacetan, drama kantor, dan ketidakpastian karir.
+          example_hook: "Marcus Aurelius hadapi wabah dan perang dengan prinsip ini yang bisa kamu pakai hari ini..."
+          guide:
+            audience: "Penonton 20–33 yang sering menghabiskan energi untuk hal yang tidak bisa mereka kontrol — pendapat orang, keputusan atasan, kemacetan, ekonomi; mencari cara berpikir yang membantu mereka fokus ke tempat yang tepat."
+            tone: "Filosofis tapi sangat praktis. Konsep abstrak Stoik didaratkan ke situasi yang sangat konkret dan familiar. Penonton harus pergi dengan satu pertanyaan yang bisa langsung mereka terapkan hari ini."
+            format: "60–80 detik. Hook dengan situasi stres yang sangat familiar → perkenalan konsep dikotomi kontrol dengan bahasa sederhana → dua kolom konkret (dalam kontrol / di luar kontrol) untuk situasi tersebut → cara menggeser fokus secara praktis → penutup reflektif. Vertikal 9:16."
+            boleh:
+              - "Gunakan situasi yang sangat Indonesia dan relatable (macet Jakarta, drama kantor, seleksi CPNS)"
+              - "Tampilkan dua kolom visual 'yang bisa dikontrol' vs 'yang tidak bisa dikontrol' untuk kejelasan"
+              - "Referensi Marcus Aurelius atau Epictetus dengan konteks kehidupan mereka yang berat"
+              - "Akhiri dengan satu pertanyaan yang membantu penonton mengidentifikasi situasi mereka sendiri"
+            hindari:
+              - "Jangan frame dikotomi kontrol sebagai 'pasrah' atau 'tidak peduli' — itu salah kaprah berbahaya"
+              - "Jangan abaikan bahwa beberapa hal di luar kontrol tetap layak diperjuangkan secara kolektif"
+              - "Jangan oversimplifikasi situasi kompleks dengan 'itu di luar kontrolmu jadi lupakan'"
+              - "Jangan gunakan contoh yang terasa terlalu Barat tanpa menyesuaikan konteks Indonesia"
+            pola_hook: "Detik 0: kutipan Epictetus 'Beberapa hal dalam kontrol kita, beberapa tidak.' + pause + 'Ini prinsip yang dipakai Marcus Aurelius saat menghadapi wabah dan perang — dan bisa kamu pakai hari ini'."
+            contoh_judul:
+              - "Marcus Aurelius pegang prinsip ini saat wabah dan perang — kamu bisa pakai sekarang"
+              - "Kenapa kamu capek bukan karena banyak pekerjaan tapi karena ini"
+              - "Dua kolom yang mengubah cara aku merespons kemacetan dan drama kantor"
+              - "Stoik ajarkan ini 2000 tahun lalu dan otak modernmu masih butuh belajar ini"
+              - "Pertanyaan Epictetus ini bikin aku berhenti khawatir tentang hal yang tidak bisa aku ubah"
+            content_runway: "Setiap area kehidupan — karir, hubungan, kesehatan, finansial, sosial media — memiliki dimensi dikotomi kontrol yang berbeda untuk dieksplorasi; ditambah konteks spesifik Indonesia yang sangat kaya, topik ini tidak akan habis."
+
+        - slug: stoicism-memento-mori-produktif
+          name: Ingat Kematian sebagai Motivasi Hidup
+          description: Penjelasan konsep Memento Mori Stoik bukan sebagai pemikiran gelap tapi sebagai tools untuk menentukan prioritas dan menghentikan kekhawatiran atas hal yang tidak penting.
+          example_hook: "Seneca menulis ini dari penjara, dan kalimatnya ini membuat semua keluhanku terasa kecil..."
+          guide:
+            audience: "Penonton 22–35 yang sering merasa tenggelam dalam kekhawatiran kecil sehari-hari; yang mengeluh hal remeh tapi lupa perspektif besar; atau yang terlalu lama menunda sesuatu yang penting karena sibuk dengan yang urgent."
+            tone: "Serius tapi tidak depresif — justru sebaliknya, menyegarkan. Mengingat kematian dalam konteks Stoik bukan tentang kesedihan tapi tentang menemukan kembali apa yang benar-benar penting. Ada kesadaran dan kelegaan, bukan ketakutan."
+            format: "60–80 detik. Hook dengan kutipan Seneca atau Marcus Aurelius tentang kefanaan → penjelasan Memento Mori bukan sebagai morbid tapi sebagai filter prioritas → dua atau tiga pertanyaan konkret yang bisa langsung dipakai → penutup tentang kebebasan yang datang dari menerima kefanaan. Vertikal 9:16."
+            boleh:
+              - "Referensi kondisi nyata Seneca saat menulis — diasingkan, dipenjara, diperintah bunuh diri — untuk konteks"
+              - "Gunakan 'the last time' experiment sebagai tools konkret yang bisa langsung dicoba"
+              - "Hubungkan dengan perspektif lokal Indonesia tentang kematian yang lebih terbuka dari budaya Barat"
+              - "Frame sebagai pembebasan dari kecemasan trivial, bukan sebagai beban baru"
+            hindari:
+              - "Jangan frame Memento Mori dengan cara yang bisa memicu anxiety atau pikiran gelap berlebihan"
+              - "Jangan abaikan bahwa sebagian penonton mungkin baru kehilangan orang dekat — nada harus sensitif"
+              - "Jangan jadikan ini alasan untuk nihilisme atau 'tidak ada yang penting jadi kenapa berusaha'"
+              - "Jangan pakai visual yang terlalu gelap atau simbol kematian yang eksplisit"
+            pola_hook: "Detik 0: kutipan Seneca pendek + 'dia menulis ini dari penjara menunggu eksekusi.' Pause. 'Dan kalimat ini membuat semua keluhanku hari ini terasa sangat kecil'."
+            contoh_judul:
+              - "Seneca menulis ini dari penjara sambil menunggu kematian — baca kalimat ini"
+              - "Ingat kematian bukan tentang kesedihan — ini cara Stoik menemukannya membebaskan"
+              - "Satu pertanyaan ini setiap pagi mengubah apa yang aku anggap penting hari ini"
+              - "Kenapa orang yang paling produktif sering berpikir tentang kematian lebih dari kita"
+              - "Memento Mori bukan filosofi gelap — ini filter paling jujur untuk prioritas hidupmu"
+            content_runway: "Konsep Memento Mori bisa diterapkan ke berbagai konteks kehidupan modern Indonesia — kekhawatiran karir, perselisihan hubungan, ketakutan pendapat orang — setiap konteks menghasilkan video dengan sudut pandang baru."
+
+        - slug: stoicism-amor-fati-indonesia
+          name: "Amor Fati — Cintai Apa yang Terjadi"
+          description: Penerapan konsep Amor Fati Nietzsche dan Stoik dalam konteks kehidupan Indonesia — gagal CPNS, ditolak kerja, dan rencana yang berantakan — membalik perspektif tentang kegagalan.
+          example_hook: "Filosofi ini mengajarkan untuk tidak sekadar menerima hal buruk, tapi mencintainya, dan ini kenapa..."
+          guide:
+            audience: "Penonton 20–33 yang sedang menghadapi kegagalan atau hasil yang berlawanan dengan rencana; yang lelah dengan mental 'terima saja' tapi belum menemukan cara yang lebih aktif dan sehat untuk menghadapi kenyataan buruk."
+            tone: "Provocatif tapi hangat. Konsep 'mencintai kegagalan' terdengar aneh dan perlu dijelaskan dengan hati-hati. Bukan toxic positivity — tapi cara aktif untuk mengubah relasi dengan hal-hal yang tidak bisa diubah."
+            format: "65–85 detik. Hook paradoks ('mencintai kegagalan, bukan hanya menerimanya') → penjelasan perbedaan antara acceptance pasif dan amor fati aktif → satu atau dua contoh konkret di konteks Indonesia → cara mulai mempraktikkannya hari ini. Vertikal 9:16."
+            boleh:
+              - "Jelaskan perbedaan krusial antara 'pasrah' dan 'amor fati' — ini yang membuat konsep ini bukan kelemahan"
+              - "Gunakan contoh sangat spesifik Indonesia (gagal CPNS, kena PHK, ditolak investor) untuk relevansi"
+              - "Referensi cara atlet atau tokoh nyata menggunakan amor fati bukan sebagai teori tapi praktik"
+              - "Akui bahwa ini butuh latihan dan tidak instan — kejujuran membangun kepercayaan"
+            hindari:
+              - "Jangan frame sebagai 'semua yang terjadi pasti bagus' — itu toxic positivity, bukan Stoikisme"
+              - "Jangan abaikan bahwa beberapa kegagalan memang membutuhkan waktu berduka"
+              - "Jangan gunakan terminologi akademik tanpa penjelasan — 'amor fati' harus dijelaskan, tidak diasumsikan"
+              - "Jangan buat ini terasa seperti alasan untuk tidak berusaha mengubah keadaan"
+            pola_hook: "Detik 0: 'Bukan sekadar menerima hal yang buruk...' + pause + '...tapi mencintainya. Dan ini kenapa itu bukan kelemahan.' Langsung ke penjelasan di detik 8."
+            contoh_judul:
+              - "Bukan sekadar terima gagal — amor fati mengajarkan untuk mencintainya dan ini kenapa"
+              - "Gagal CPNS, ditolak kerja, rencana berantakan — cara Nietzsche memandang ini berbeda"
+              - "Filosofi yang membuat atlet terbaik dunia tidak takut kalah lagi"
+              - "Perbedaan antara pasrah dan amor fati yang mengubah segalanya"
+              - "Cara aktif mengubah relasi dengan hal buruk yang tidak bisa kamu ubah"
+            content_runway: "Amor Fati bisa diterapkan ke hampir semua jenis kegagalan atau situasi tidak terduga yang relevan di Indonesia — karir, pendidikan, hubungan, finansial, kesehatan — setiap konteks menghasilkan video baru dengan nuansa berbeda."

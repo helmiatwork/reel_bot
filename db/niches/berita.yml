@@ -1,0 +1,243 @@
+version: 1
+vertical:
+  slug: v-berita
+  name: Berita
+  description: Konten berita, analisis, dan komentar peristiwa terkini di Indonesia dan dunia.
+  guide:
+    audience: "Penonton 18–40 yang ingin tetap update tanpa harus baca artikel panjang; campuran pria-wanita yang aktif di media sosial; tertarik isu ekonomi, politik, dan sosial yang berdampak langsung pada hidup mereka."
+    tone: "Informatif tapi tidak kaku. Bahasa kasual orang pintar — seperti teman yang paham isu menjelaskan ke kamu. Tidak menggurui, tidak sensasional, tidak partisan."
+    format: "Video 45–90 detik. Struktur: hook pertanyaan atau fakta mengejutkan → konteks singkat → inti penjelasan → takeaway satu kalimat. Dominan voiceover + visual pendukung (footage, grafik, motion text). Vertikal 9:16."
+    boleh:
+      - "Mulai dengan pertanyaan yang sudah ada di kepala penonton ('kenapa ini terjadi?')"
+      - "Sertakan data dan angka konkret untuk kredibilitas"
+      - "Akhiri dengan implikasi langsung ke kehidupan penonton"
+      - "Gunakan b-roll footage berita atau stock visual yang relevan"
+    hindari:
+      - "Jangan berpihak pada satu partai atau figur politik secara eksplisit"
+      - "Jangan sebarkan informasi yang belum diverifikasi dari satu sumber saja"
+      - "Jangan pakai judul clickbait yang lebih dramatis dari isinya"
+      - "Jangan abaikan sisi lain isu yang membuat gambar lebih lengkap"
+    pola_hook: "Detik 0: sajikan fakta mengejutkan atau pertanyaan yang sudah ada di kepala penonton + teks pendek. Langsung masuk penjelasan di detik 3."
+    contoh_judul:
+      - "Kenapa harga barang naik terus padahal kamu kerja makin keras"
+      - "Aturan baru ini berlaku bulan depan dan kamu pasti kena dampaknya"
+      - "Yang tidak diberitakan media soal kejadian besar ini"
+
+  niches:
+    - slug: explainer
+      name: "Explainer / \"Kenapa\""
+      description: Jelasin kenapa X terjadi.
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: motion-graphic + voiceover
+      example_hook: "Kenapa harga telur tiba-tiba naik..."
+      guide:
+        audience: "Penonton 20–38 yang penasaran tentang 'kenapa' di balik berita, bukan sekadar 'apa'-nya; mereka yang mau paham konteks tapi tidak mau baca laporan panjang; kelas menengah yang terdampak kebijakan ekonomi."
+        tone: "Guru yang asyik — menjelaskan konsep rumit dengan analogi sehari-hari tanpa terasa menggurui. Sabar, logis, dan mengalir. Penonton harus merasa lebih cerdas setelah menonton."
+        format: "60–90 detik. Struktur: hook pertanyaan yang relatable → kronologi atau kausalitas singkat → visualisasi konsep kunci (grafik, peta, diagram sederhana) → kesimpulan implikasi nyata. Motion graphic mendukung narasi, bukan menggantikan. Vertikal 9:16."
+        boleh:
+          - "Gunakan analogi sehari-hari untuk konsep abstrak ('inflasi itu seperti...')"
+          - "Tampilkan grafik sederhana untuk data yang mendukung argumen"
+          - "Sertakan sumber di akhir video untuk kredibilitas"
+          - "Perkuat dengan contoh konkret yang langsung dirasakan penonton Indonesia"
+        hindari:
+          - "Jangan gunakan jargon ekonomi atau politik tanpa penjelasan"
+          - "Jangan klaim kesimpulan yang tidak didukung data"
+          - "Jangan buat video yang terlalu panjang — pilih satu sudut, bukan semua sudut"
+          - "Jangan tampilkan wajah jika channel faceless"
+        pola_hook: "Detik 0: pertanyaan yang sudah ada di kepala penonton + teks besar di layar. Mulai jawaban parsial di detik 3 untuk memancing rasa ingin tahu lanjutan."
+        contoh_judul:
+          - "Kenapa harga telur naik padahal musim panen?"
+          - "Ini penjelasan singkat kenapa rupiah terus melemah"
+          - "Kenapa PHK massal terjadi di perusahaan yang katanya untung?"
+      micro:
+        - slug: explainer-ekonomi-sehari-hari
+          name: Explainer Ekonomi Sehari-hari
+          description: Menjelaskan fenomena ekonomi yang dirasakan langsung masyarakat seperti inflasi, harga BBM, dan kurs rupiah dalam bahasa yang mudah dipahami.
+          example_hook: "Kenapa harga telur tiba-tiba naik padahal gaji kamu gak naik-naik..."
+          guide:
+            audience: "Pria dan wanita 22–38 kelas menengah yang merasakan efek ekonomi tapi tidak paham penyebabnya; pekerja muda yang mulai sadar pentingnya melek ekonomi; ibu rumah tangga yang penasaran kenapa belanja bulanan makin mahal."
+            tone: "Empatik dan memberdayakan. Akui dulu bahwa ini terasa berat ('kamu gak salah kalau merasa bingung'), lalu jelaskan mekanismenya. Penonton harus pergi dengan rasa paham, bukan makin frustrasi."
+            format: "60–90 detik. Hook relatable (harga naik, gaji stagnan) → penjelasan mekanisme sederhana → visualisasi data (grafik sederhana) → implikasi langsung + satu hal yang bisa dilakukan penonton. Motion graphic + voiceover, vertikal 9:16."
+            boleh:
+              - "Gunakan angka konkret Indonesia (UMR, harga BBM, CPI) bukan angka global abstrak"
+              - "Tampilkan perbandingan daya beli tahun ini vs 5 tahun lalu"
+              - "Akhiri dengan satu tindakan nyata yang bisa dilakukan penonton (bukan 'tunggu kebijakan pemerintah')"
+              - "Sertakan watermark sumber data (BPS, BI, Kemenkeu)"
+            hindari:
+              - "Jangan menyalahkan satu pihak (pemerintah, pengusaha, asing) tanpa data"
+              - "Jangan gunakan istilah 'quantitative easing' atau 'yield curve' tanpa penjelasan analogi"
+              - "Jangan buat konten yang terasa seperti propaganda ekonomi partisan"
+              - "Jangan tampilkan wajah — channel ini faceless"
+            pola_hook: "Detik 0: teks besar nominal harga yang naik + suara kaget atau voiceover pertanyaan langsung. Mulai penjelasan di detik 4."
+            contoh_judul:
+              - "Kenapa harga telur naik terus padahal gaji kamu diam di tempat"
+              - "Kurs rupiah tembus Rp16.000 — ini yang terjadi di dompet kamu"
+              - "BBM naik lagi — bukan karena kebetulan, ini penjelasan singkatnya"
+              - "Inflasi itu apa sih? Ini penjelasan yang akhirnya masuk akal"
+              - "Kenapa UMR naik tapi hidup terasa makin susah? Ini jawabannya"
+            content_runway: "Setiap komoditas (telur, beras, BBM, gas) dan setiap perubahan kebijakan ekonomi menghasilkan topik baru; ekonomi Indonesia bergerak setiap hari sehingga stok konten praktis tidak ada habisnya."
+
+        - slug: explainer-kebijakan-pemerintah
+          name: Bedah Kebijakan Pemerintah
+          description: Mengurai kebijakan publik baru dalam format visualisasi sederhana, untuk warga yang ingin paham tanpa baca dokumen panjang.
+          example_hook: "Aturan baru ini berlaku bulan depan, dan kamu pasti kena dampaknya..."
+          guide:
+            audience: "Warga 20–40 yang ingin tahu dampak kebijakan pada kehidupan mereka tanpa harus baca dokumen hukum; profesional muda yang kena dampak regulasi; pebisnis kecil yang wajib mematuhi aturan baru."
+            tone: "Netral dan informatif — bukan mendukung maupun mengkritik kebijakan, tapi membantu penonton memahami isinya. Kalau ada celah atau dampak negatif, sebut dengan data, bukan emosi."
+            format: "75–90 detik. Hook: aturan ini berlaku & kamu kena dampaknya → apa isinya (poin utama, bukan semua pasal) → siapa yang kena → timeline berlakunya → apa yang harus dilakukan penonton. Infografis teks + voiceover, vertikal 9:16."
+            boleh:
+              - "Sederhanakan isi kebijakan ke 3 poin paling berdampak pada penonton biasa"
+              - "Tampilkan timeline: kapan berlaku, kapan deadline, kapan evaluasi"
+              - "Sertakan sumber resmi (nomor PP, link Setneg) di akhir untuk kredibilitas"
+              - "Bandingkan dengan kebijakan sebelumnya untuk konteks perubahan"
+            hindari:
+              - "Jangan klaim kebijakan 'bagus' atau 'buruk' tanpa data — serahkan opini ke penonton"
+              - "Jangan bahas semua pasal — pilih yang paling relevan untuk penonton umum"
+              - "Jangan gunakan footage politisi atau logo partai — ini bukan konten kampanye"
+              - "Jangan tampilkan wajah — channel ini faceless"
+            pola_hook: "Detik 0: teks nama kebijakan + tanggal berlaku + kata 'ini dampaknya untuk kamu'. Voiceover langsung masuk inti di detik 3."
+            contoh_judul:
+              - "Aturan BPJS baru ini berlaku bulan depan dan kamu wajib tahu ini"
+              - "PP baru soal kendaraan listrik — siapa yang diuntungkan dan siapa yang tidak"
+              - "UU ini baru disahkan dan diam-diam ubah cara kamu jualan online"
+              - "Aturan baru pinjol yang akhirnya melindungi kamu lebih baik — ini isinya"
+              - "Peraturan ini sudah berlaku tapi 90% orang belum tahu dampaknya ke dompet"
+            content_runway: "Pemerintah Indonesia menerbitkan ratusan peraturan setiap tahun di berbagai sektor (pajak, tenaga kerja, keuangan, lingkungan); setiap peraturan baru adalah satu topik video yang relevan dan time-sensitive."
+
+        - slug: explainer-konflik-global
+          name: Konflik Global Dijelaskan Singkat
+          description: Memetakan konflik internasional yang ramai dibicarakan dalam narasi kronologis 60 detik, untuk penonton yang ingin konteks tanpa baca berita panjang.
+          example_hook: "Kenapa dua negara ini tiba-tiba perang setelah 50 tahun damai..."
+          guide:
+            audience: "Penonton 20–38 yang aware konflik global dari sosmed tapi tidak punya konteks historis; mahasiswa hubungan internasional atau politik; penonton yang tidak mau ketinggalan diskusi tapi malas baca artikel panjang."
+            tone: "Jurnalistik yang accessible — faktual, kronologis, tapi tanpa bias Barat atau sensasional. Beri konteks historis minimal yang cukup agar penonton memahami 'kenapa sekarang'."
+            format: "75–90 detik. Hook: situasi terkini yang mengejutkan → latar belakang singkat (2–3 kalimat) → kronologi kunci dalam poin visual → posisi masing-masing pihak → dampak ke Indonesia atau dunia. Peta + infografis + voiceover, vertikal 9:16."
+            boleh:
+              - "Gunakan peta sederhana untuk membantu penonton memvisualisasikan lokasi konflik"
+              - "Sertakan timeline visual dari akar konflik hingga situasi terkini"
+              - "Hubungkan dampak konflik ke Indonesia secara konkret (harga komoditas, WNI di sana)"
+              - "Kutip sumber internasional kredibel (Reuters, AP, BBC) untuk fakta"
+            hindari:
+              - "Jangan berpihak pada salah satu negara yang berkonflik"
+              - "Jangan sederhanakan konflik kompleks menjadi 'si jahat vs si baik'"
+              - "Jangan gunakan footage perang atau korban yang terlalu grafis"
+              - "Jangan tampilkan wajah — channel ini faceless"
+            pola_hook: "Detik 0: nama dua negara atau fakta mengejutkan tentang konflik terkini + teks 'ini yang terjadi sebenarnya'. Voiceover konteks langsung di detik 3."
+            contoh_judul:
+              - "Konflik ini sudah 50 tahun tapi baru meledak sekarang — kenapa?"
+              - "Dua negara ini hampir perang minggu lalu, ini kronologis singkatnya"
+              - "Krisis ini jauh tapi dampaknya langsung terasa di harga di supermarket kamu"
+              - "Kenapa konflik di sana bisa bikin harga minyak kita naik di sini"
+              - "Ini latar belakang yang media Indonesia tidak jelaskan soal konflik ini"
+            content_runway: "Konflik geopolitik global berjalan terus-menerus (Timur Tengah, Asia Timur, Afrika, Eropa Timur); setiap eskalasi baru atau perkembangan signifikan menghasilkan topik baru yang relevan untuk audiens Indonesia."
+
+    - slug: news-commentary
+      name: "Berita / Komentar"
+      description: Bahas berita terkini + opini.
+      faceless: false
+      difficulty: sulit
+      rpm: sedang
+      formats: footage + voiceover + caption
+      example_hook: "Yang gak diberitakan soal kejadian ini..."
+      guide:
+        audience: "Penonton 22–40 yang aktif di Twitter/X dan ingin perspektif yang lebih dalam dari sekadar headline; profesional yang melek media; generasi muda yang mau berpikir kritis soal isu sosial-politik."
+        tone: "Berani dan berimbang — punya sudut pandang yang jelas tapi tidak menghasut. Seperti teman yang sangat well-read yang berbagi analisis di WAG. Boleh skeptis tapi tidak sinis, boleh kritis tapi berbasis fakta."
+        format: "75–120 detik. Hook dengan angle yang tidak banyak dibahas → sajikan fakta yang sering luput → berikan perspektif atau analisis → undang penonton berpikir (bukan mendikte kesimpulan). Footage berita + caption teks + voiceover atau on-cam presenter. Vertikal 9:16."
+        boleh:
+          - "Sajikan informasi yang belum banyak diangkat media utama sebagai nilai tambah"
+          - "Berikan konteks sejarah atau komparasi internasional untuk memperkaya perspektif"
+          - "Undang diskusi di kolom komentar dengan pertanyaan terbuka di akhir"
+          - "Gunakan data sekunder (survei, laporan lembaga) sebagai landasan"
+        hindari:
+          - "Jangan buat klaim yang tidak bisa diverifikasi dari sumber yang bisa dikutip"
+          - "Jangan gunakan bahasa yang menghasut atau membakar emosi tanpa substansi"
+          - "Jangan tampilkan wajah kreator jika ini channel faceless"
+          - "Jangan monetize isu sensitif (bencana, kematian) tanpa konteks yang tepat"
+        pola_hook: "Detik 0: pernyataan mengejutkan tentang isu terkini yang berbeda dari narasi utama + teks. Langsung masuk konteks di detik 3."
+        contoh_judul:
+          - "Yang tidak diberitakan media soal kasus viral ini"
+          - "Semua orang salah paham soal isu ini — ini faktanya"
+          - "Kenapa kasus ini tiba-tiba menghilang dari pemberitaan?"
+      micro:
+        - slug: news-commentary-viral-sosmed
+          name: Komentar Isu Viral Sosmed
+          description: Membahas isu yang sedang trending di Twitter/X dan TikTok Indonesia dengan analisis singkat yang tidak memihak, untuk penonton yang ingin perspektif lebih dalam.
+          example_hook: "Semua orang ribut soal ini, tapi gak ada yang bahas sisi ini..."
+          guide:
+            audience: "Penonton 18–32 yang mengikuti drama dan diskusi sosmed aktif; mereka yang sudah tahu isu viral-nya tapi mau dengar analisis yang lebih substantif; penonton yang tidak mau terlihat gaptek soal isu terkini."
+            tone: "Cepat, tajam, dan jernih. Tone seperti 'aku udah baca semua thread-nya, ini simpulannya yang penting'. Tidak sensasional tapi tidak datar — ada personality."
+            format: "45–75 detik. Hook: isu viral dalam satu kalimat → apa yang kebanyakan orang lewatkan → perspektif atau fakta tambahan → kesimpulan singkat. Caption teks besar + footage sosmed atau b-roll + voiceover cepat. Vertikal 9:16."
+            boleh:
+              - "Tampilkan screenshot tweet atau TikTok yang relevan (dengan blur nama jika perlu)"
+              - "Berikan konteks yang tidak ada di thread aslinya"
+              - "Gunakan nada 'update teman' bukan 'laporan jurnalis'"
+              - "Respon dalam 24–48 jam setelah isu viral untuk relevansi maksimal"
+            hindari:
+              - "Jangan mempermalukan individu yang terlibat secara berlebihan"
+              - "Jangan buat konten ketika isu masih sangat sensitif dan belum ada klarifikasi"
+              - "Jangan klaim sisi yang kamu bahas adalah satu-satunya kebenaran"
+              - "Jangan pakai footage tanpa izin yang berpotensi DMCA"
+            pola_hook: "Detik 0: nama isu viral + teks 'semua salah paham ini' atau 'ini yang gak dibahas'. Langsung masuk analisis di detik 3."
+            contoh_judul:
+              - "Semua orang ribut soal ini tapi tidak ada yang bahas sisi paling penting"
+              - "Isu viral ini lebih rumit dari yang kamu lihat di FYP — ini faktanya"
+              - "Kenapa kasus ini tiba-tiba sepi padahal kemarin ribut? Ada yang disembunyikan?"
+              - "Thread Twitter soal ini viral tapi ada detail yang semua orang skip"
+              - "Baru 48 jam dan sudah banyak yang salah simpulkan — ini kronologis sebenarnya"
+            content_runway: "Indonesia adalah salah satu negara dengan pengguna Twitter/X dan TikTok terbesar di dunia; isu viral baru muncul hampir setiap hari sehingga stok topik tidak pernah kering sepanjang tahun."
+
+        - slug: news-commentary-politik-lokal
+          name: Politik Lokal & Pilkada
+          description: Komentar dan analisis singkat tentang dinamika politik daerah dan pemilihan kepala daerah, menyasar pemilih muda yang baru melek politik.
+          example_hook: "Calon ini viral karena janji ini, tapi rekam jejaknya bilang lain..."
+          guide:
+            audience: "Pemilih muda 17–30 yang baru akan atau baru saja menggunakan hak pilih; penonton yang sadar pentingnya pilkada tapi bingung cara memilih; warga daerah yang ingin tahu siapa calonnya dan apa rekam jejaknya."
+            tone: "Mendidik bukan mengarahkan — beri penonton alat untuk menilai sendiri, bukan kesimpulan yang harus diterima. Tidak boleh terang-terangan mendukung atau menjatuhkan satu calon."
+            format: "75–90 detik. Konteks pilkada → profil singkat calon (fakta, bukan opini) → rekam jejak terverifikasi → pertanyaan untuk penonton pertimbangkan. Infografis + footage kampanye publik + voiceover netral. Vertikal 9:16."
+            boleh:
+              - "Tampilkan rekam jejak calon dengan sumber yang bisa diverifikasi (berita, KPK, LHKPN)"
+              - "Bandingkan janji kampanye dengan rekam jejak kerja nyata"
+              - "Sertakan info cara cek DPT dan lokasi TPS untuk mendorong partisipasi"
+              - "Gunakan data elektabilitas dari lembaga survei kredibel"
+            hindari:
+              - "Jangan secara eksplisit menyuruh penonton memilih atau tidak memilih satu calon"
+              - "Jangan gunakan istilah 'rezim', 'boneka', atau bahasa partisan lainnya"
+              - "Jangan tampilkan iklan kampanye berbayar sebagai konten editorial"
+              - "Jangan publikasi polling internal tanpa metodologi yang jelas"
+            pola_hook: "Detik 0: nama daerah + tanggal pilkada + pertanyaan tentang calon yang sedang ramai. Langsung profil singkat di detik 4."
+            contoh_judul:
+              - "Calon ini viral karena janji besar tapi rekam jejaknya bilang cerita berbeda"
+              - "Pilkada daerahmu bulan depan — ini yang perlu kamu tahu sebelum coblos"
+              - "3 hal yang tidak dibahas media soal kandidat yang lagi naik daun ini"
+              - "Cek rekam jejak calon ini sebelum kamu percaya janjinya"
+              - "Pemilih muda, ini cara mudah cek siapa yang layak dapat suaramu"
+            content_runway: "Indonesia menyelenggarakan pilkada di ratusan daerah setiap siklus; ditambah dinamika koalisi, pencalonan baru, dan isu lokal yang berbeda di tiap daerah, konten ini bisa diproduksi terus-menerus setiap siklus pilkada."
+
+        - slug: news-commentary-isu-lingkungan
+          name: Isu Lingkungan Indonesia
+          description: Komentar atas kejadian lingkungan nyata — banjir, kebakaran hutan, sampah laut — dengan data dan konteks yang sering hilang dari berita utama.
+          example_hook: "Bencana ini sudah diprediksi 5 tahun lalu, tapi gak ada yang dengarkan..."
+          guide:
+            audience: "Generasi muda 18–35 yang peduli lingkungan; penonton yang terdampak langsung bencana lingkungan; mereka yang ingin fakta, bukan hanya emosi, soal isu iklim dan lingkungan Indonesia."
+            tone: "Serius tapi tidak doom and gloom. Sajikan fakta yang mengkhawatirkan dengan konteks yang memberdayakan — ada yang bisa dilakukan, tidak hanya pasrah. Hindari eskatologi lingkungan yang memparalisis."
+            format: "75–90 detik. Hook dengan kejadian nyata terkini → data yang jarang diangkat media → konteks akar masalah → apa yang sudah atau bisa dilakukan. Footage lingkungan + infografis data + voiceover. Vertikal 9:16."
+            boleh:
+              - "Gunakan data dari BMKG, KLHK, atau lembaga penelitian lokal untuk kredibilitas"
+              - "Tampilkan perbandingan kondisi lingkungan tahun ini vs 10 tahun lalu dengan data"
+              - "Sertakan aksi konkret yang bisa dilakukan penonton di level individual"
+              - "Hubungkan isu global (perubahan iklim) ke dampak lokal Indonesia yang nyata"
+            hindari:
+              - "Jangan menyalahkan warga biasa tanpa menyebut peran korporasi dan kebijakan"
+              - "Jangan gunakan data yang hanya dari satu lembaga tanpa cross-check"
+              - "Jangan buat konten yang terasa seperti propaganda green-washing korporasi"
+              - "Jangan gunakan footage bencana yang sensitif tanpa konteks dan izin"
+            pola_hook: "Detik 0: footage atau foto bencana terkini yang mengejutkan + teks 'ini sudah diprediksi tapi tidak ada yang dengar'. Voiceover data masuk di detik 3."
+            contoh_judul:
+              - "Banjir ini bukan bencana alam, ini bencana buatan yang data sudah prediksi"
+              - "Kebakaran hutan ini 5x lebih besar dari yang dilaporkan — ini sumbernya"
+              - "Sampah plastik di sungai ini berasal dari merek yang kamu beli tiap hari"
+              - "Data BMKG soal suhu Indonesia yang tidak masuk berita utama bulan ini"
+              - "Bencana ini sudah diprediksi sejak 2019 tapi tidak ada yang bertindak"
+            content_runway: "Indonesia menghadapi bencana lingkungan hampir setiap bulan (banjir, karhutla, longsor, pencemaran); ditambah data monitoring BMKG dan laporan lembaga internasional yang rutin, stok konten selalu tersedia sepanjang tahun."

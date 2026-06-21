@@ -1,0 +1,663 @@
+version: 1
+vertical:
+  slug: v-kesehatan
+  name: Kesehatan
+  description: Konten seputar kebugaran, nutrisi, kesehatan mental, dan perawatan diri untuk hidup lebih sehat.
+  guide:
+    audience: "Penonton 18–40 tahun yang sadar kesehatan atau sedang dalam perjalanan hidup lebih sehat; campuran pria-wanita yang mencari inspirasi gaya hidup, solusi masalah fisik ringan, dan dukungan mental; banyak yang melihat konten ini saat pagi atau malam hari sebagai pengingat dan motivasi."
+    tone: "Suportif dan memberdayakan — bukan menghakimi, tidak menggurui. Nada seperti teman yang lebih paham, bukan dokter yang ceramah. Hindari bahasa klinis kaku; pilih Bahasa Indonesia kasual yang hangat dan langsung ke solusi."
+    format: "Video 30–90 detik. Dominan demo gerakan atau infografik visual sederhana. Struktur: hook masalah relatable → inti solusi/informasi → takeaway konkret. Vertikal 9:16. Caption wajib — banyak ditonton tanpa suara."
+    boleh:
+      - "Mulai dengan masalah yang relatable dan spesifik (bukan 'hidup sehat itu penting')"
+      - "Gunakan data atau fakta singkat untuk memperkuat poin — satu fakta kuat lebih baik dari lima fakta lemah"
+      - "Tampilkan demo visual yang bisa langsung ditiru penonton hari ini"
+      - "Gunakan referensi lokal Indonesia — makanan, kebiasaan, kondisi iklim tropis"
+      - "Validasi perasaan penonton sebelum memberikan solusi, terutama untuk konten mental health"
+    hindari:
+      - "Jangan buat klaim medis atau diagnosis tanpa menyebut sumber yang kredibel (dokter, studi, ahli gizi)"
+      - "Jangan tampilkan angka berat badan, kalori ekstrem, atau standar tubuh ideal yang bisa memicu body image issue"
+      - "Jangan gunakan istilah medis klinisi tanpa penjelasan sederhana"
+      - "Selalu sertakan catatan 'konsultasikan ke profesional' untuk topik yang berdampak kesehatan signifikan (cedera, kondisi medis, suplemen dosis tinggi)"
+      - "Jangan tampilkan produk berbayar tanpa disclosure yang jelas"
+    pola_hook: "Detik 0–2: sebut masalah spesifik yang dirasakan penonton ('nyeri punggung setelah 8 jam duduk?', 'kamu makan ini setiap hari tanpa sadar efeknya'). Langsung ke inti di detik 3."
+    contoh_judul:
+      - "Kebiasaan pagi ini yang sabotase energi kamu sepanjang hari tanpa sadar"
+      - "Dokter bilang ini bukan soal diet, tapi soal ini yang kamu lakukan tiap malam"
+      - "Cara tubuh minta bantuan yang sering diabaikan sampai terlambat"
+
+  niches:
+    - slug: fitness
+      name: "Fitness / Workout"
+      description: "Latihan, form, tips gym."
+      faceless: false
+      difficulty: menengah
+      rpm: sedang
+      formats: demo gerakan + caption
+      example_hook: "Gerakan ini bakar lemak perut..."
+      guide:
+        audience: "Pria dan wanita 18–35 yang aktif atau ingin memulai hidup aktif; penonton yang sudah tahu harus olahraga tapi butuh arahan form yang benar dan motivasi konkret; komunitas gym dan workout yang besar di Indonesia."
+        tone: "Energik dan percaya diri tanpa sombong. Gaya 'kakak senior yang mau kasih tahu' — langsung ke intinya, tidak bertele-tele. Dorong penonton untuk mencoba hari ini, bukan besok."
+        format: "45–75 detik. Struktur: tunjukkan masalah umum (form salah atau mitos) → demo versi benar → penjelasan singkat kenapa ini penting. POV atau wide shot tergantung gerakan. Caption wajib ada."
+        boleh:
+          - "Tampilkan perbandingan form salah vs benar dalam satu frame atau potongan langsung"
+          - "Gunakan caption angka (reps, detik, set) yang jelas sebagai panduan"
+          - "Sertakan penanda visual — garis merah untuk form salah, hijau untuk benar"
+          - "Hubungkan gerakan ke manfaat spesifik yang bisa dirasakan dalam minggu pertama"
+        hindari:
+          - "Jangan klaim hasil ekstrem ('perut rata dalam 7 hari') tanpa konteks diet dan konsistensi"
+          - "Jangan demo gerakan dengan form yang tidak sempurna — penonton meniru apa yang mereka lihat"
+          - "Jangan gunakan istilah teknis fitness tanpa penjelasan ('supination', 'posterior chain') tanpa konteks"
+          - "Selalu sertakan catatan konsultasi dokter/fisioterapi untuk konten yang menyebut cedera atau kondisi medis"
+        pola_hook: "Detik 0: tampilkan gerakan umum yang banyak dilakukan salah + teks '80% orang ini salah'. Langsung mulai demo koreksi di detik 3."
+        contoh_judul:
+          - "80% orang squat salah dan ini yang akan terjadi pada lutut mereka"
+          - "Latihan perut ini populer tapi merusak punggung bawah — ini penggantinya"
+          - "Cara benar push-up yang jarang diajarkan tapi bikin hasilnya 2x lipat"
+      micro:
+        - slug: fitness-form-koreksi
+          name: Koreksi Form Latihan yang Sering Salah
+          description: Konten side-by-side sebelum-sesudah form latihan umum yang sering dilakukan salah di gym, membantu penonton hindari cedera tanpa perlu personal trainer.
+          guide:
+            audience: "Pria dan wanita 20–35 yang aktif gym tapi otodidak; penonton yang pernah cedera atau takut cedera karena form salah; pemula yang tidak punya akses atau budget personal trainer."
+            tone: "Langsung dan tidak menghakimi. Framing 'ini kesalahan umum bukan kesalahan kamu' — penonton harus merasa terbantu bukan dipermalukan."
+            format: "45–60 detik. Split-screen atau cut langsung form salah vs benar untuk satu gerakan per video. Caption singkat di setiap frame menandai perbedaan kunci. POV atau medium shot yang terlihat seluruh tubuh."
+            boleh:
+              - "Fokus satu gerakan per video — squat, deadlift, atau push-up saja, bukan mix"
+              - "Gunakan overlay garis atau tanda panah untuk highlight poin form yang salah"
+              - "Tampilkan perbedaan yang bisa langsung dirasakan penonton saat dicoba"
+              - "Tambahkan teks singkat apa risiko cedera jika form salah dipertahankan"
+            hindari:
+              - "Jangan demo gerakan yang memerlukan spotter tanpa menyebut kebutuhan itu"
+              - "Jangan gunakan istilah anatomi tanpa penjelasan visual langsung ('jaga netral lumbar')"
+              - "Jangan buat klaim form ini 'satu-satunya cara benar' — variasi tubuh berbeda-beda"
+              - "Selalu sarankan konsultasi fisioterapis atau dokter jika penonton sudah punya riwayat cedera"
+            pola_hook: "Detik 0: close-up gerakan yang tampak 'biasa' tapi ada kesalahan tersembunyi + teks 'kamu pernah melakukan ini?'. Langsung tampilkan koreksinya di detik 3."
+            contoh_judul:
+              - "Squat ini terlihat normal tapi setelah 1 tahun lutut kamu akan mulai berbicara"
+              - "Cara deadlift yang diajarkan di YouTube tapi sebenarnya salah — perbaikannya ada di sini"
+              - "Push-up kamu mungkin melatih bahu bukan dada, cek posisi ini"
+              - "Gerakan plank 90% orang ini tidak salah tapi juga tidak efektif — ini bedanya"
+              - "Pull-up dengan grip ini terlihat keren tapi bicep kamu yang menanggung semuanya"
+            content_runway: "Setiap gerakan gym memiliki minimal 3–5 variasi kesalahan umum; ditambah perbedaan per tipe tubuh, gender, dan level pemula vs intermediate — konten form correction hampir tidak ada habisnya."
+
+        - slug: fitness-gym-pemula-tidak-malu
+          name: Panduan Gym Pertama Kali Tanpa Malu
+          description: Konten panduan praktis untuk pemula yang ingin ke gym tapi takut terlihat bodoh — alat apa yang dipakai dulu, etika gym, dan latihan yang aman tanpa spotter.
+          guide:
+            audience: "Remaja dan dewasa muda 17–28 yang belum pernah ke gym tapi ingin mulai; penonton yang punya rasa takut dihakimi di lingkungan gym; mereka yang beli membership tapi belum pernah datang karena malu."
+            tone: "Hangat dan mengundang. Normalkan ketidaktahuan sebagai titik awal yang wajar. Gaya 'teman yang sudah lebih dulu ke gym dan mau temani kamu'."
+            format: "60–90 detik. Format 'ini yang perlu kamu tahu sebelum masuk gym' — bisa berupa walkthrough alat, etika, atau urutan latihan pertama. POV atau footage gym dengan narasi sederhana."
+            boleh:
+              - "Tampilkan suasana gym yang normal dan tidak intimidating"
+              - "Berikan urutan prioritas alat yang harus dicoba pertama — sederhana dan aman"
+              - "Jelaskan etika gym yang tidak tertulis (tapi bikin canggung kalau tidak tahu)"
+              - "Akhiri dengan reassurance bahwa semua orang pernah di posisi pemula"
+            hindari:
+              - "Jangan gunakan jargon gym tanpa penjelasan ('compound movement', 'superset')"
+              - "Jangan tampilkan gym yang terlalu elite atau mahal — tidak relevan untuk mayoritas penonton"
+              - "Jangan klaim program tertentu 'terbaik untuk pemula' tanpa konteks individual"
+              - "Jangan abaikan aspek keselamatan — selalu sebut pentingnya pemanasan dan pendinginan"
+            pola_hook: "Detik 0: tampilkan suasana gym dari luar atau pintu masuk + teks 'pertama kali ke gym dan gak tau harus ngapain?'. Langsung masuk ke panduan di detik 3."
+            contoh_judul:
+              - "Ini yang harus kamu lakukan 30 menit pertama di gym agar tidak bingung sendiri"
+              - "Alat gym mana yang harus dicoba dulu kalau baru pertama kali? Jawaban jujurnya ini"
+              - "Etika gym yang tidak ada yang mau ajarkan tapi semua orang harap kamu tahu"
+              - "Gym pertama kali terasa ini — dan begini cara melewatinya tanpa malu"
+              - "Panduan 15 menit untuk orang yang beli gym membership tapi belum pernah datang"
+            content_runway: "Setiap aspek pengalaman gym (alat spesifik, etika, nutrisi pre-workout, program pemula, interaksi dengan trainer) bisa jadi video tersendiri; audiens pemula gym terus bertambah setiap bulan."
+
+        - slug: fitness-latihan-usia-30an
+          name: Latihan Fisik yang Tepat Setelah Usia 30
+          description: Panduan menyesuaikan program latihan untuk orang dewasa 30-40 tahun yang metabolismenya mulai berubah, dengan fokus pada keberlanjutan bukan ekstremitas.
+          guide:
+            audience: "Pria dan wanita 30–42 yang merasa tubuh merespons olahraga berbeda dari sebelumnya; profesional sibuk yang kehilangan stamina dari masa muda; penonton yang ingin aktif jangka panjang bukan hasil instan."
+            tone: "Realistis dan empatis. Akui bahwa tubuh di 30-an memang berbeda — itu normal. Tidak ada nada 'kamu harus kerja lebih keras', melainkan 'kerja lebih cerdas'."
+            format: "60–90 detik. Mix antara penjelasan singkat perubahan fisiologis dan demo latihan atau rutinitas yang direkomendasikan. Tone lebih tenang dari fitness pemuda, tapi tetap energik."
+            boleh:
+              - "Jelaskan kenapa recovery butuh lebih lama setelah 30 — konteks ilmiah singkat"
+              - "Rekomendasikan latihan yang rendah risiko cedera tapi tinggi manfaat jangka panjang"
+              - "Tampilkan latihan yang bisa dilakukan di tengah kesibukan — 20–30 menit cukup"
+              - "Hubungkan latihan dengan manfaat jangka panjang (mobilitas, energi, pencegahan penyakit)"
+            hindari:
+              - "Jangan bandingkan kapasitas usia 30-an dengan 20-an secara merendahkan"
+              - "Jangan rekomendasikan program HIIT ekstrem tanpa catatan risiko untuk yang tidak aktif"
+              - "Jangan buat klaim medis tentang penuaan tanpa menyebut sumber"
+              - "Selalu sarankan konsultasi dokter sebelum memulai program baru bagi yang memiliki kondisi kesehatan tertentu"
+            pola_hook: "Detik 0: tampilkan kontras 'apa yang kamu lakukan di 20-an' vs 'apa yang terjadi di 30-an' + teks 'bukan kamu yang lemah, tubuhmu butuh program berbeda'. Langsung masuk solusi di detik 3."
+            contoh_judul:
+              - "Latihan yang kamu lakukan di 20-an ini justru merusak tubuh di 30-an"
+              - "Kenapa tubuh di usia 30 butuh recovery 2x lebih lama dan itu bukan kelemahan"
+              - "Program latihan 25 menit yang lebih efektif dari gym 1 jam yang kamu lakukan dulu"
+              - "Metabolisme turun di 30-an itu mitos sebagian — ini fakta sebenarnya dan solusinya"
+              - "Tiga perubahan latihan yang harus dibuat setelah ulang tahun ke-30"
+            content_runway: "Setiap aspek fisiologis yang berubah di usia 30-an (metabolisme, mobilitas, recovery, hormon, tulang) bisa jadi video tersendiri; dikombinasikan dengan gender dan kondisi spesifik, konten ini memiliki stok ide yang luas."
+
+    - slug: home-workout
+      name: Home Workout
+      description: Latihan rumah tanpa alat.
+      faceless: true
+      difficulty: pemula
+      rpm: sedang
+      formats: demo + timer + musik
+      example_hook: "Latihan 5 menit, perut rata..."
+      guide:
+        audience: "Pria dan wanita 18–35 yang tidak punya waktu atau budget untuk gym; anak kos, ibu rumah tangga, dan pekerja WFH yang ingin tetap aktif; penonton yang butuh konten olahraga yang bisa langsung diikuti sekarang."
+        tone: "Praktis dan tidak ribet. Nada 'ikuti aku sekarang' — bukan tutorial panjang, tapi sesi latihan yang bisa diikuti langsung. Energi positif tanpa terlalu hype."
+        format: "30–75 detik. Demo gerakan real-time atau time-lapse dengan timer on-screen. Musik upbeat sebagai pengiring. Tidak perlu alat apapun yang terlihat di video. Vertikal 9:16."
+        boleh:
+          - "Tampilkan timer on-screen untuk setiap gerakan — penonton butuh referensi waktu"
+          - "Gunakan setting rumah yang relatable (ruang tamu, kamar kos) bukan studio fitness mahal"
+          - "Tunjukkan modifikasi untuk pemula di setiap gerakan"
+          - "Musik upbeat yang royalty-free untuk menambah energi"
+        hindari:
+          - "Jangan klaim hasil spesifik tanpa disclaimer ('perut rata 7 hari' tanpa konteks diet)"
+          - "Jangan tampilkan wajah jika channel ini faceless"
+          - "Jangan gunakan gerakan yang memerlukan alat meski kecil tanpa alternatif tanpa-alat"
+          - "Jangan abaikan pemanasan singkat — cedera dari gerakan tanpa pemanasan adalah nyata"
+        pola_hook: "Detik 0: teks durasi latihan + nama target area ('5 menit, tidak ada alat, lemak perut'). Langsung mulai gerakan pertama di detik 3 tanpa intro panjang."
+        contoh_judul:
+          - "Latihan 5 menit ini yang aku lakukan setiap pagi sebelum mandi"
+          - "Home workout tanpa alat yang bisa dilakukan di kamar kos 3x2 meter"
+          - "Gerakan ini cocok untuk yang tidak punya waktu tapi mau tetap aktif"
+      micro:
+        - slug: home-workout-kasur-pagi
+          name: Latihan 5 Menit di Atas Kasur Sebelum Bangun
+          description: Rutinitas gerakan ringan yang bisa dilakukan sebelum benar-benar bangun dari kasur, cocok untuk orang yang kesulitan memulai hari dengan aktif.
+          guide:
+            audience: "Pria dan wanita 20–38 yang kesulitan bangun pagi dan langsung aktif; penonton yang ingin rutinitas pagi tapi merasa gym terlalu berat sebagai titik mulai; ibu rumah tangga dan pekerja yang ingin mulai hari dengan lebih bersemangat."
+            tone: "Pelan dan mengundang. Tidak ada energi meledak-ledak di awal — sesuai kondisi baru bangun. Gaya 'ini hal kecil yang bisa kamu lakukan sekarang, sebelum kaki menyentuh lantai'."
+            format: "30–45 detik. Demonstrasi gerakan di atas kasur secara real-time dengan pace lambat. Timer sederhana di layar. Tidak ada musik keras — ambient ringan atau musik akustik cukup."
+            boleh:
+              - "Gunakan kasur nyata di kamar yang terlihat natural — bukan set yang terlalu rapi"
+              - "Tunjukkan gerakan dari sudut atas (bird-eye) agar posisi di kasur terlihat jelas"
+              - "Gerakan yang aktivasi otot inti dan punggung — manfaat langsung yang dirasakan"
+              - "Akhiri dengan framing 'ini cukup untuk memulai hari lebih baik'"
+            hindari:
+              - "Jangan tampilkan gerakan yang membutuhkan ruang lebih dari ukuran kasur single"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan klaim manfaat medis spesifik tanpa sumber ('menurunkan kortisol 30%')"
+              - "Jangan gunakan musik kencang — tidak cocok dengan konteks baru bangun tidur"
+            pola_hook: "Detik 0: tampilkan kasur dari sudut atas + teks 'sebelum kaki menyentuh lantai, lakukan ini 5 menit'. Langsung mulai gerakan pertama dari posisi tidur."
+            contoh_judul:
+              - "Sebelum kaki menyentuh lantai, lakukan ini selama 5 menit untuk tubuh lebih siap"
+              - "Rutinitas kasur pagi yang aku lakukan setiap hari sebelum benar-benar bangun"
+              - "5 gerakan ini di atas kasur sebelum bangun dan punggungmu tidak akan kaku lagi"
+              - "Latihan pagi tanpa harus berdiri — cocok untuk yang tidak suka morning workout keras"
+              - "Kalau kamu susah bangun pagi, mulai dengan ini dulu sebelum hal lainnya"
+            content_runway: "Setiap kelompok otot (core, punggung, pinggul, bahu) bisa jadi sesi kasur pagi tersendiri; variasi tujuan (energi, peregangan, punggung) dan durasi (3, 5, 10 menit) membuat stok konten terus tersedia."
+
+        - slug: home-workout-tanpa-berisik
+          name: Workout Tanpa Bising untuk Penghuni Kos
+          description: Rangkaian latihan intensitas sedang yang tidak menghasilkan suara berisik atau getaran — cocok untuk anak kos, apartemen, atau yang punya tetangga sensitif.
+          guide:
+            audience: "Anak kos dan penghuni apartemen 18–30 yang ingin workout tapi takut bikin berisik; orang yang tinggal di lantai atas dengan tetangga di bawah; penonton yang shift kerjanya membuatnya harus olahraga di jam tidak biasa."
+            tone: "Praktis dan solutif. Framing sebagai 'hack' bagi yang selama ini merasa tidak bisa workout di rumah karena situasi. Energi tenang tapi efektif."
+            format: "45–60 detik. Demo slow-motion atau normal gerakan yang terbukti senyap — tidak ada jumping, tidak ada beban jatuh. Tampilkan setting kos atau apartemen yang relatable. Caption teknis singkat."
+            boleh:
+              - "Tampilkan gerakan isometrik dan berbasis lantai yang tidak ada suara impact sama sekali"
+              - "Gunakan matras tipis atau handuk sebagai alternatif — bukan peralatan gym"
+              - "Tunjukkan timer — penonton butuh tahu berapa lama per gerakan"
+              - "Tambahkan teks 'zero impact' atau 'tetangga aman' sebagai selling point"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan rekam dengan suara footstep atau impact yang membuktikan tidak zero-noise"
+              - "Jangan rekomendasikan gerakan yang membutuhkan ruang besar — kamar kos sempit"
+              - "Jangan klaim kalori burn spesifik tanpa menyebut variasi per individu"
+            pola_hook: "Detik 0: close-up dinding kos tipis atau plafon rendah + teks 'workout jam 11 malam di kos tanpa bikin tetangga marah'. Langsung mulai gerakan pertama di detik 3."
+            contoh_judul:
+              - "Workout jam 11 malam di kos tanpa satu pun suara yang terdengar ke luar"
+              - "Latihan ini zero impact — cocok untuk lantai atas apartemen"
+              - "Kalau kamu takut berisik saat olahraga di kamar, ini solusinya"
+              - "Home workout untuk kamar kos 3x3 meter tanpa alat dan tanpa kebisingan"
+              - "Tetangga kos tidak akan tahu kamu baru selesai workout — latihan silent ini caranya"
+            content_runway: "Setiap kelompok otot bisa mendapat versi 'silent workout'-nya sendiri; variasi durasi, level kesulitan, dan tujuan (kekuatan, fleksibilitas, kardio low-impact) menghasilkan variasi konten yang luas."
+
+        - slug: home-workout-sambil-nonton
+          name: Gerakan yang Bisa Dilakukan Sambil Nonton TV
+          description: Latihan ringan yang bisa dilakukan di depan TV tanpa harus pause tontonan — squat di iklan, plank di intro, dsb — untuk yang sulit meluangkan waktu khusus olahraga.
+          guide:
+            audience: "Pekerja 25–40 yang pulang lelah dan hanya ingin nonton TV; orang yang merasa tidak punya waktu olahraga tapi menonton 2–3 jam sehari; pasangan atau keluarga yang nonton bersama dan bisa coba bersamaan."
+            tone: "Ringan dan sedikit jenaka. Framing 'olahraga yang tidak terasa seperti olahraga' — tidak ada beban psikologis. Nada seperti tips sambil lewat dari teman."
+            format: "30–45 detik. Format listicle visual — tampilkan 3–5 gerakan yang bisa dilakukan di depan TV dengan konteks kapan melakukannya (saat iklan, saat loading, saat intro). Caption singkat tiap gerakan."
+            boleh:
+              - "Hubungkan gerakan ke momen TV yang spesifik — 'saat iklan: 20 squat', 'saat intro series: plank'"
+              - "Tampilkan suasana ruang nonton yang relatable — sofa, TV, remote"
+              - "Gerakan yang bisa dilakukan sambil berdiri atau duduk di sofa — tidak harus di lantai"
+              - "Gamification ringan — '2 jam nonton = ini total kalori yang terbakar'"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan rekomendasikan gerakan yang membutuhkan konsentrasi penuh dan tidak bisa dilakukan sambil nonton"
+              - "Jangan klaim kalori terbakar dengan angka spesifik tanpa menyebut variasi per berat badan"
+              - "Jangan gunakan musik yang terlalu keras yang tidak cocok dengan nuansa nonton santai"
+            pola_hook: "Detik 0: tampilkan remote TV dan sofa + teks 'kalau kamu nonton 2 jam sehari, ini cara bakar kalori tanpa sadar'. Langsung tampilkan gerakan pertama di detik 3."
+            contoh_judul:
+              - "Kalau kamu nonton 2 jam sehari ini cara bakar 200 kalori tanpa sadar"
+              - "Gerakan yang bisa dilakukan sambil nonton Netflix dan tidak akan kamu rasa berat"
+              - "Saat iklan muncul lakukan ini — kebiasaan kecil yang mengubah segalanya"
+              - "Cara menjadikan waktu nonton TV sebagai waktu olahraga tanpa mengganggunya"
+              - "5 gerakan yang aku lakukan di sofa setiap malam dan tetap terhitung aktif"
+            content_runway: "Setiap genre tontonan (series panjang, film, olahraga, berita) bisa dapat 'workout pair'-nya masing-masing; ditambah variasi level kesulitan dan kelompok otot target, stok ide sangat luas."
+
+    - slug: nutrition
+      name: "Nutrisi / Diet"
+      description: "Tips makan sehat, mitos diet."
+      faceless: true
+      difficulty: menengah
+      rpm: tinggi
+      formats: teks + b-roll food + voiceover
+      example_hook: "Makanan yang kamu kira sehat ternyata..."
+      guide:
+        audience: "Pria dan wanita 20–40 yang ingin makan lebih sehat tapi bingung dengan informasi yang bertentangan; orang yang pernah diet dan gagal; penonton yang peduli kandungan makanan tapi tidak mau ribet."
+        tone: "Informatif dan mengejutkan — bukan menghakimi makanan yang disukai penonton. Gaya 'ternyata tidak sesederhana yang dikira' yang membuat penonton ingin tahu lebih."
+        format: "45–75 detik. Struktur: fakta/mitos mengejutkan di awal → penjelasan singkat berbasis sains atau ahli → implikasi praktis. B-roll makanan lokal Indonesia yang relatable. Caption wajib."
+        boleh:
+          - "Gunakan makanan Indonesia sebagai contoh — tidak ada 'kale' atau 'quinoa' kecuali relevan"
+          - "Selalu sertakan sumber referensi di caption atau end card (penelitian, rekomendasi BPOM, dokter gizi)"
+          - "Buat konten yang actionable — penonton bisa langsung mengubah satu kebiasaan"
+          - "Debunk mitos dengan cara yang empati, bukan merendahkan yang percaya mitos"
+        hindari:
+          - "Jangan buat klaim kesehatan spesifik tanpa menyebut sumber yang kredibel"
+          - "Jangan promosikan diet ekstrem atau pola makan yang berisiko tanpa disclaimer"
+          - "Jangan gunakan testimonial tunggal sebagai bukti ('teman saya sembuh karena ini')"
+          - "Selalu sarankan konsultasi ahli gizi atau dokter untuk program diet personal, terutama bagi yang punya kondisi medis"
+        pola_hook: "Detik 0: tampilkan makanan yang dianggap sehat + teks kontra-intuitif ('makanan ini yang direkomendasikan ahli gizi ternyata...') atau pertanyaan ('kamu makan ini tiap hari tapi tahu kandungannya?'). Langsung masuk ke fakta di detik 3."
+        contoh_judul:
+          - "Makanan 'sehat' ini yang ternyata memiliki gula lebih banyak dari minuman soda"
+          - "Ahli gizi tidak melarang nasi — tapi ini yang mereka sebenarnya katakan"
+          - "Kenapa diet ini berhasil untuk teman kamu tapi gagal untuk kamu, penjelasan ilmiahnya"
+      micro:
+        - slug: nutrition-mitos-diet-indonesia
+          name: Mitos Diet yang Dipercaya Orang Indonesia
+          description: Membongkar kepercayaan umum tentang diet yang beredar di Indonesia — nasi bikin gemuk, minum air es berbahaya — dengan penjelasan sains yang sederhana.
+          guide:
+            audience: "Pria dan wanita 20–40 yang pernah mendengar atau mempercayai mitos diet populer Indonesia; penonton yang ingin dasar sains di balik kebiasaan makan; orang yang punya anggota keluarga yang percaya mitos ini."
+            tone: "Edukasi dengan sentuhan humor ringan. Gaya 'ternyata ini yang sebenarnya terjadi' — tidak menyalahkan yang percaya, tapi menjelaskan dengan konteks ilmiah yang mudah dicerna."
+            format: "45–60 detik. Struktur: sebut mitos dengan cara yang familiar (pakai cara orang Indonesia bilang) → tunjukkan apa sains sebenarnya bilang → kesimpulan praktis yang bisa langsung diterapkan."
+            boleh:
+              - "Mulai dengan kutipan mitos yang terdengar familier ('kata orang tua dulu...')"
+              - "Gunakan infografik sederhana atau b-roll makanan yang relevan"
+              - "Sertakan sumber di akhir video atau caption"
+              - "Akhiri dengan satu tips praktis yang menggantikan mitos tersebut"
+            hindari:
+              - "Jangan gunakan istilah nutrisi ilmiah tanpa penjelasan sederhana"
+              - "Jangan buat klaim medis tanpa menyebut sumber yang kredibel (jurnal, dokter, BPOM)"
+              - "Jangan mengolok-olok orang yang percaya mitos — framing harus empatis"
+              - "Selalu sertakan catatan untuk konsultasi ahli gizi bagi yang punya kondisi kesehatan spesifik"
+            pola_hook: "Detik 0: tampilkan makanan yang ada di balik mitos + teks yang menirukan cara orang bilang mitos tersebut. Langsung masuk ke debunk di detik 3."
+            contoh_judul:
+              - "Mitos nasi bikin gemuk ini sudah beredar puluhan tahun, ini yang sains bilang"
+              - "Orang tua bilang minum es bikin gemuk — dokter gizi punya pendapat berbeda"
+              - "Diet tidak makan setelah jam 6 sore — kenapa bisa berhasil dan kenapa bisa gagal"
+              - "3 mitos makanan Indonesia yang dipercaya jutaan orang dan tidak semuanya salah"
+              - "Ini bedanya pantangan diet yang berbasis bukti dan yang hanya mitos turun-temurun"
+            content_runway: "Indonesia kaya dengan mitos diet turun-temurun (pantangan makanan saat sakit, kombinasi makanan berbahaya, dll); setiap mitos bisa jadi video tersendiri dengan konteks medis yang berbeda."
+
+        - slug: nutrition-makanan-murah-bergizi
+          name: Makanan Murah di Warung yang Ternyata Super Bergizi
+          description: Membedah kandungan gizi makanan lokal Indonesia yang murah dan mudah didapat — tempe, ikan asin, sayur bayam — sebagai alternatif suplemen mahal.
+          guide:
+            audience: "Mahasiswa, anak kos, dan pekerja muda 18–32 dengan budget terbatas yang ingin makan bergizi; penonton yang merasa makan sehat itu mahal; orang yang ingin tahu nilai gizi makanan warung yang biasa dimakan."
+            tone: "Memberdayakan dan membanggakan makanan lokal. Framing 'ternyata kita sudah punya yang terbaik' — nada kebanggaan atas kekayaan pangan lokal Indonesia."
+            format: "45–60 detik. Tampilkan makanan sebenarnya di warung atau pasar + overlay infografik kandungan gizi yang mengejutkan. Perbandingan visual dengan suplemen mahal sangat efektif."
+            boleh:
+              - "Tampilkan harga nyata per porsi — penonton butuh angka konkret"
+              - "Bandingkan kandungan protein/vitamin dengan suplemen dalam overlay sederhana"
+              - "Gunakan footage warung atau pasar tradisional yang autentik"
+              - "Sertakan sumber data gizi dari TKPI (Tabel Komposisi Pangan Indonesia) atau sumber kredibel lain"
+            hindari:
+              - "Jangan klaim makanan ini bisa menggantikan suplemen medis yang diresepkan dokter"
+              - "Jangan gunakan data gizi tanpa menyebut sumber"
+              - "Jangan abaikan konteks persiapan — cara masak mempengaruhi kandungan gizi"
+              - "Selalu tambahkan catatan bahwa kebutuhan gizi tiap orang berbeda dan konsultasi ahli gizi dianjurkan untuk kebutuhan spesifik"
+            pola_hook: "Detik 0: tampilkan makanan murah warung yang familier + teks 'makanan Rp2rb ini lebih bergizi dari suplemen Rp200rb'. Langsung masuk ke data di detik 3."
+            contoh_judul:
+              - "Tempe Rp2rb ini kandungan proteinnya saingi whey protein Rp300rb"
+              - "Makanan warung ini lebih bergizi dari suplemen yang kamu beli di apotek"
+              - "5 makanan murah Indonesia yang diam-diam adalah superfood paling accessible di dunia"
+              - "Kenapa orang desa yang makan ini tiap hari sering lebih sehat dari yang diet mahal"
+              - "Ikan asin yang kamu remehkan ini ternyata punya kandungan yang bikin dokter gizi angkat topi"
+            content_runway: "Setiap bahan pangan lokal Indonesia (tempe, tahu, ikan asin, bayam, singkong, kacang hijau) bisa jadi video tersendiri; kombinasi dengan perbandingan harga dan nutrisi menciptakan stok konten yang sangat luas."
+
+        - slug: nutrition-label-produk
+          name: Cara Baca Label Nutrisi Produk Kemasan
+          description: Panduan praktis memahami label nutrisi pada produk makanan kemasan Indonesia — klaim "rendah lemak", "bebas gula", dan angka yang sebenarnya perlu diperhatikan.
+          guide:
+            audience: "Konsumen 20–40 yang membeli produk kemasan tapi tidak tahu cara membaca labelnya; penonton yang sudah pernah tertipu klaim 'sehat' di kemasan; orang tua yang ingin pilihkan makanan terbaik untuk keluarga."
+            tone: "Investigatif dan memberdayakan. Gaya 'aku akan tunjukkan apa yang tersembunyi di belakang klaim ini' — membuat penonton merasa lebih cerdas dan terlindungi setelah menonton."
+            format: "45–75 detik. Tampilkan label produk nyata dari toko lokal → zoom ke angka spesifik → penjelasan singkat apa artinya → implikasi untuk penonton. Caption penting untuk detail angka."
+            boleh:
+              - "Gunakan produk nyata yang dijual di Indomaret/Alfamart untuk relevansi maksimal"
+              - "Tampilkan label secara jelas — zoom ke kolom gizi spesifik"
+              - "Jelaskan klaim marketing ('rendah lemak', 'bebas gula', 'tinggi serat') dalam konteks angka nyata"
+              - "Referensikan regulasi BPOM jika relevan untuk menambah kredibilitas"
+            hindari:
+              - "Jangan serang brand spesifik secara personal — fokus pada edukasi cara baca label"
+              - "Jangan buat klaim bahwa produk tertentu 'berbahaya' tanpa bukti ilmiah"
+              - "Jangan sederhanakan berlebihan — beberapa produk memang memiliki trade-off yang valid"
+              - "Selalu sertakan catatan bahwa kebutuhan nutrisi berbeda per individu dan kondisi kesehatan"
+            pola_hook: "Detik 0: tampilkan produk dengan klaim 'sehat' di bagian depan + teks 'giliran balik ke belakang dan baca ini'. Langsung zoom ke label di detik 2."
+            contoh_judul:
+              - "Produk ini tulisannya rendah lemak tapi kalau baca ini kamu tidak akan beli lagi"
+              - "Cara baca label nutrisi yang tidak pernah diajarkan di sekolah tapi penting banget"
+              - "Klaim bebas gula di produk ini dan apa yang sebenarnya ada di dalamnya"
+              - "Tiga angka di label nutrisi yang harus kamu cek sebelum beli produk apapun"
+              - "Panduan 60 detik untuk tidak lagi tertipu klaim sehat di kemasan makanan"
+            content_runway: "Setiap kategori produk kemasan (minuman, snack, susu, sereal, saus) bisa jadi video tersendiri; klaim marketing yang terus berkembang menghasilkan konten yang selalu relevan."
+
+    - slug: mental-health
+      name: Mental Health
+      description: "Tips kesehatan mental, mindfulness."
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: teks + b-roll tenang + voiceover
+      example_hook: "Kalau kamu overthinking, coba ini..."
+      guide:
+        audience: "Pria dan wanita 20–35 yang mengalami stres, kecemasan, atau kelelahan emosional; penonton yang sadar butuh bantuan mental tapi belum siap atau tidak mampu ke terapis; generasi muda yang terbuka dengan isu kesehatan mental."
+        tone: "Hangat, validatif, dan tidak menghakimi. Tidak pernah meremehkan pengalaman emosional penonton. Gaya 'kamu tidak sendirian dengan ini' — bukan 'kamu harus lebih kuat'."
+        format: "45–90 detik. B-roll visual yang tenang (alam, ruang nyaman, tangan yang tenang). Voiceover pelan dan jelas. Caption penting — banyak yang menonton di momen rentan tanpa suara."
+        boleh:
+          - "Mulai dengan validasi perasaan sebelum memberikan solusi"
+          - "Berikan teknik konkret yang bisa dilakukan hari ini, bukan nasihat abstrak"
+          - "Referensikan pendekatan berbasis bukti (CBT, mindfulness) tanpa jargon"
+          - "Akhiri dengan pengingat bahwa mencari bantuan profesional adalah tanda kekuatan"
+        hindari:
+          - "Jangan buat klaim bahwa teknik tertentu bisa menggantikan terapi atau pengobatan profesional"
+          - "Jangan diagnosis kondisi mental penonton berdasarkan konten ('kamu mungkin punya anxiety disorder')"
+          - "Jangan gunakan framing yang menstigmatisasi kondisi mental ('lemah', 'lebay', 'kurang iman')"
+          - "Selalu sertakan sumber daya bantuan profesional (Into The Light Indonesia, nomor kesehatan jiwa) di caption atau akhir video"
+        pola_hook: "Detik 0: tampilkan situasi atau perasaan yang relatable + teks yang langsung berbicara ke kondisi penonton ('kalau kamu pernah merasa ini...'). Validasi dulu sebelum solusi."
+        contoh_judul:
+          - "Kalau kamu sering overthinking sebelum tidur, ini bukan karena kamu lemah"
+          - "Tanda burnout yang sering dianggap malas dan cara membedakannya"
+          - "Teknik 3 menit untuk menenangkan pikiran yang tidak bisa berhenti"
+      micro:
+        - slug: mental-health-burnout-kerja
+          name: Kenali Burnout Sebelum Terlambat
+          description: Konten edukasi tentang tanda-tanda burnout yang sering diabaikan pekerja Indonesia yang terbiasa normalisasi kelelahan, dengan langkah konkret pemulihan.
+          guide:
+            audience: "Pekerja 24–38 yang sedang atau pernah merasakan kelelahan ekstrem dari pekerjaan; orang yang sering merasa 'lelah tapi tidak tahu kenapa'; penonton yang normalisasi lembur dan gaya hidup hustle tanpa istirahat."
+            tone: "Validatif dan sedikit mendesak — bukan menakut-nakuti, tapi memberi konteks bahwa ini serius dan bisa diintervensi. Gaya 'ini bukan lebai, ini nyata dan ada solusinya'."
+            format: "60–75 detik. Struktur: gejala burnout yang spesifik dan relatable → perbedaan burnout vs capek biasa → satu atau dua langkah konkret pemulihan awal. Voiceover pelan dengan b-roll meja kerja, laptop, wajah lelah (dari belakang)."
+            boleh:
+              - "Gunakan gejala yang spesifik dan tidak obvious — bukan hanya 'merasa lelah'"
+              - "Bedakan burnout dari depresi secara singkat — tanpa diagnosis"
+              - "Tawarkan langkah kecil yang bisa dilakukan malam ini"
+              - "Normalkan bahwa butuh waktu untuk recover dari burnout"
+            hindari:
+              - "Jangan diagnosis burnout penonton — hanya bantu mereka mengenali tanda-tandanya"
+              - "Jangan sarankan 'ambil cuti' sebagai satu-satunya solusi tanpa konteks realitas kerja Indonesia"
+              - "Jangan gunakan framing bahwa burnout adalah kegagalan personal"
+              - "Selalu sertakan informasi kontak layanan kesehatan mental profesional di caption"
+            pola_hook: "Detik 0: tampilkan visual meja kerja berantakan atau notifikasi bertumpuk + teks 'lelah ini bukan karena kurang tidur'. Langsung masuk ke gejala di detik 3."
+            contoh_judul:
+              - "Lelah ini bukan karena kurang tidur — ini tanda burnout yang sering diabaikan"
+              - "3 gejala burnout yang sering salah dikira malas atau kurang semangat"
+              - "Bedanya capek biasa dengan burnout dan kenapa penting untuk tahu bedanya"
+              - "Orang yang paling produktif pun bisa burnout — ini yang terjadi di dalam"
+              - "Langkah pertama recover dari burnout yang bisa kamu lakukan malam ini"
+            content_runway: "Burnout memiliki banyak dimensi (fisik, emosional, kognitif) dan terjadi di berbagai konteks (kerja, sekolah, parenting, caregiving); setiap dimensi dan konteks bisa jadi video tersendiri dengan pendekatan berbeda."
+
+        - slug: mental-health-anxiety-sosial
+          name: Cara Hadapi Kecemasan Sosial Sehari-hari
+          description: Teknik praktis mengelola social anxiety dalam situasi nyata — presentasi kerja, kenalan baru, acara keluarga besar — tanpa harus masuk terapi dulu.
+          guide:
+            audience: "Pria dan wanita 18–32 yang mengalami rasa cemas dalam situasi sosial tapi belum yakin apakah ini 'cukup serius' untuk terapi; penonton yang menghindari situasi sosial karena takut dihakimi; mereka yang 'keliatan okay' dari luar tapi gelisah di dalam."
+            tone: "Memahami dan tidak menghakimi. Validasi bahwa kecemasan sosial adalah pengalaman yang sangat umum. Gaya 'kamu tidak sendirian, dan ini bisa dikelola'."
+            format: "60–75 detik. Teknik konkret dengan demo atau visual yang menjelaskan mekanismenya. B-roll situasi sosial yang relatable di konteks Indonesia. Voiceover pelan dan jelas."
+            boleh:
+              - "Gunakan situasi yang sangat spesifik dan relatable di konteks Indonesia (arisan, kondangan, rapat kantor)"
+              - "Berikan teknik yang bisa dilakukan sebelum atau saat situasi berlangsung"
+              - "Jelaskan mengapa teknik ini bekerja — konteks 'kenapa' membuat teknik lebih mudah diingat"
+              - "Sertakan pesan bahwa jika kecemasan mengganggu kehidupan sehari-hari, bantuan profesional adalah pilihan yang valid"
+            hindari:
+              - "Jangan diagnosis social anxiety disorder — hanya bahas kecemasan sosial yang umum"
+              - "Jangan framing kecemasan sebagai sesuatu yang 'harus diatasi sendiri'"
+              - "Jangan sederhanakan dengan 'cukup percaya diri' atau 'jangan terlalu pikir'"
+              - "Selalu sertakan referensi ke psikolog atau psikiater jika kecemasan terasa di luar kendali"
+            pola_hook: "Detik 0: tampilkan situasi sosial yang familier (rapat, perkenalan) + teks yang menceritakan pikiran cemas internal. Langsung masuk ke teknik di detik 3."
+            contoh_judul:
+              - "Kalau kamu cemas sebelum presentasi kerja, ini bukan karena kurang persiapan"
+              - "Teknik 5 menit sebelum acara yang bikin cemas agar bisa hadir dengan lebih tenang"
+              - "Kenapa otak ini bereaksi begini di situasi sosial dan cara menenangkannya"
+              - "Cara kenalan baru tanpa pikiran berputar setelahnya soal 'tadi aku aneh tidak'"
+              - "Social anxiety di acara keluarga besar — ini yang membantu aku bertahan"
+            content_runway: "Setiap situasi sosial spesifik (wawancara kerja, kencan pertama, berbicara di depan umum, acara keluarga) bisa jadi video tersendiri; teknik berbeda per situasi dan per tingkat kecemasan memperluas stok konten."
+
+        - slug: mental-health-healing-tanpa-toxic-positivity
+          name: Pemulihan Emosi Tanpa Toxic Positivity
+          description: Konten yang memvalidasi perasaan negatif dan membedakannya dari toxic positivity, membantu penonton memproses emosi dengan cara yang lebih sehat.
+          guide:
+            audience: "Pria dan wanita 20–35 yang lelah diberitahu untuk 'bersyukur' saat sedang tidak baik; penonton yang sedang dalam proses healing tapi merasa sendirian; mereka yang pernah merasa perasaannya dikecilkan oleh orang sekitar."
+            tone: "Jujur dan memvalidasi. Tidak ada optimisme paksa. Gaya 'perasaan ini valid dan kamu tidak harus merasa baik-baik saja sekarang'. Hangat tapi tidak sentimentil berlebihan."
+            format: "60–90 detik. Lebih banyak voiceover reflektif dibanding demo teknik. B-roll tenang — jendela hujan, tangan di meja, cahaya sore. Pace lambat dan terasa aman."
+            boleh:
+              - "Jelaskan perbedaan antara validasi emosi vs larut dalam emosi negatif"
+              - "Berikan framing alternatif yang realistis tapi tidak memaksakan positif"
+              - "Normalisasikan bahwa proses healing tidak linear"
+              - "Sertakan sumber daya kesehatan mental profesional di akhir"
+            hindari:
+              - "Jangan buat konten yang menstigmatisasi positive thinking secara keseluruhan — bedakan dengan toxic positivity"
+              - "Jangan berikan saran yang terdengar seperti diagnosis atau rekomendasi medis"
+              - "Jangan buat konten yang mendorong penonton untuk larut atau meratapi keadaan tanpa arah"
+              - "Selalu ingatkan bahwa jika emosi yang berat berlangsung lama, bantuan profesional adalah langkah terbaik"
+            pola_hook: "Detik 0: kutipan atau kalimat toxic positivity yang familiar ('yang penting bersyukur', 'masa gitu aja sedih') + teks 'dan kenapa kalimat ini justru tidak membantu'. Langsung masuk ke penjelasan di detik 3."
+            contoh_judul:
+              - "Berhenti dipaksa bersyukur saat kamu sedang tidak baik-baik saja — ini yang sebenarnya membantu"
+              - "Toxic positivity itu bukan positif — ini bedanya dan kenapa itu penting"
+              - "Perasaan sedih ini valid dan kamu tidak harus segera sembuh darinya"
+              - "Kenapa kata 'yang penting happy' justru memperburuk keadaan orang yang sedang susah"
+              - "Cara memvalidasi emosi diri sendiri tanpa harus pura-pura baik-baik saja"
+            content_runway: "Setiap bentuk toxic positivity yang umum di konteks Indonesia (budaya bersyukur yang disalahgunakan, tekanan keluarga untuk terlihat baik, dll) bisa jadi video tersendiri dengan nuansa berbeda."
+
+    - slug: skincare
+      name: "Skincare / Beauty Tips"
+      description: "Rutinitas kulit, review produk."
+      faceless: false
+      difficulty: menengah
+      rpm: tinggi
+      formats: POV + before-after + voiceover
+      example_hook: "Urutan skincare yang selama ini salah..."
+      guide:
+        audience: "Pria dan wanita 17–35 yang ingin merawat kulit tapi bingung dengan banyaknya produk dan informasi yang bertentangan; penonton yang ingin hasil nyata dengan budget terjangkau; kulit Indonesia yang berbeda dari kulit Asia Timur yang sering jadi referensi konten skincare."
+        tone: "Jujur dan praktis. Tidak ada hype berlebihan atas produk. Gaya 'ini yang berhasil di kulit Indonesia, dan ini yang tidak' — berbasis pengalaman nyata dan referensi dermatologi."
+        format: "45–90 detik. POV atau close-up wajah dengan pencahayaan merata. Before-after yang realistis — bukan filter. Caption produk dengan nama dan tanda 'bukan paid promote' jika tidak berbayar."
+        boleh:
+          - "Kontekstualisasi ke kulit Indonesia — berminyak, iklim tropis, tone kulit coklat"
+          - "Review produk lokal Indonesia dengan jujur — pro dan kontra"
+          - "Tunjukkan rutinitas realistis yang bisa dilakukan 5–10 menit"
+          - "Sertakan disclosure yang jelas jika konten mengandung endorsement berbayar"
+        hindari:
+          - "Jangan buat klaim medis tanpa sumber — 'menghilangkan jerawat selamanya' tanpa disclaimer"
+          - "Jangan rekomendasikan bahan aktif kuat (retinol, acid pekat) tanpa menyebut pentingnya konsultasi dermatologis"
+          - "Jangan tampilkan standar kecantikan yang tidak realistis atau mempromosikan skin lightening tanpa konteks"
+          - "Selalu sarankan konsultasi dermatologis untuk kondisi kulit yang parah (jerawat hormon, rosacea, eksim)"
+        pola_hook: "Detik 0: tunjukkan kondisi kulit yang relatable + teks kontra-intuitif ('urutan skincare yang kamu lakukan tiap malam justru ini yang salah'). Langsung ke inti di detik 3."
+        contoh_judul:
+          - "Urutan skincare yang selama ini salah dan kenapa kulit kamu tidak kunjung membaik"
+          - "Produk lokal ini yang aku pakai setelah berhenti pakai brand Korea seharga 10x lipat"
+          - "Rutinitas skincare 5 menit untuk kulit berminyak di iklim tropis"
+      micro:
+        - slug: skincare-kulit-berminyak-tropis
+          name: Skincare untuk Kulit Berminyak di Iklim Tropis
+          description: Rutinitas skincare yang diformulasikan untuk kulit berminyak di iklim panas dan lembab seperti Indonesia, dengan rekomendasi produk lokal yang terjangkau.
+          guide:
+            audience: "Remaja dan dewasa muda 17–30 di Indonesia yang frustrasi dengan kulit berminyak yang tidak membaik meski sudah pakai skincare; penonton yang sudah coba banyak produk Korea tapi hasilnya tidak cocok; orang yang ingin skincare efektif tanpa budget besar."
+            tone: "Memvalidasi frustrasi sekaligus solutif. Gaya 'kulit kamu bukan bermasalah, rutinitas yang tidak cocok dengan kondisi lokal'. Praktis dan referensial."
+            format: "60–75 detik. POV atau medium shot perawatan wajah. Caption nama produk yang jelas. Before-after realistis tanpa filter. Urutan langkah dengan timestamp singkat."
+            boleh:
+              - "Jelaskan mengapa produk untuk iklim empat musim tidak optimal untuk kulit tropis Indonesia"
+              - "Rekomendasikan produk lokal yang tersedia di Indomaret/Alfamart jika memungkinkan"
+              - "Tunjukkan tekstur produk — gel vs krim — dan kenapa tekstur penting untuk kulit berminyak tropis"
+              - "Sertakan disclosure paid promote jika ada"
+            hindari:
+              - "Jangan rekomendasikan bahan aktif tanpa menjelaskan cara menggunakannya dan risiko over-use"
+              - "Jangan buat klaim dapat 'mengontrol minyak selamanya' tanpa disclaimer"
+              - "Jangan gunakan before-after dengan filter berbeda di dua foto"
+              - "Selalu sarankan konsultasi dermatologis untuk kasus kulit berminyak yang parah atau disertai jerawat nodular"
+            pola_hook: "Detik 0: tampilkan kondisi kulit berminyak yang relatable (foto atau close-up) + teks 'pakai skincare Korea ini tapi kulit makin berminyak?'. Langsung masuk ke penjelasan di detik 3."
+            contoh_judul:
+              - "Skincare routine Korea ini justru bikin kulit Indonesia makin berminyak — ini alasannya"
+              - "Rutinitas 5 langkah untuk kulit berminyak di iklim Indonesia yang akhirnya berhasil"
+              - "Produk lokal ini yang aku rekomendasikan setelah coba puluhan produk untuk kulit berminyak"
+              - "Kenapa kulit berminyak di Indonesia tidak bisa dirawat sama seperti di Korea"
+              - "Moisturizer untuk kulit berminyak bukan mitos — ini cara memilih yang tepat untuk iklim tropis"
+            content_runway: "Setiap aspek rutinitas skincare (cleanser, toner, moisturizer, SPF, treatment) bisa dibahas khusus untuk kulit berminyak tropis; ditambah variasi usia, gender, dan kondisi kulit kombinasi, stok konten sangat luas."
+
+        - slug: skincare-hiperpigmentasi-bekas-jerawat
+          name: Atasi Bekas Jerawat dan Hiperpigmentasi
+          description: Panduan berbasis dermatologi tentang cara mengatasi bekas jerawat dan flek hitam di kulit coklat Asia, dengan timeline realistis dan bahan aktif yang tepat.
+          guide:
+            audience: "Pria dan wanita 18–35 yang bergumul dengan bekas jerawat yang tidak kunjung hilang; penonton yang sudah coba berbagai produk tapi tidak tahu bahan aktif apa yang benar-benar bekerja; orang yang membutuhkan timeline realistis agar tidak frustrasi."
+            tone: "Informatif berbasis sains dengan timeline realistis. Tidak menjual harapan palsu — gaya 'ini berhasil tapi butuh waktu, dan ini alasan ilmiahnya'."
+            format: "60–90 detik. Infografik atau caption penjelasan bahan aktif. Before-after realistis dengan timeline yang disebutkan jelas. Referensi dermatologi atau ahli kulit jika tersedia."
+            boleh:
+              - "Jelaskan perbedaan PIH (post-inflammatory hyperpigmentation) dan PIE yang sering dikira sama"
+              - "Rekomendasikan bahan aktif dengan sumber ilmiah (niacinamide, vitamin C, AHA)"
+              - "Berikan timeline realistis per bahan aktif"
+              - "Tampilkan produk dengan bahan aktif tersebut yang tersedia di Indonesia"
+            hindari:
+              - "Jangan klaim produk bisa menghilangkan bekas dalam 3 hari atau waktu sangat singkat"
+              - "Jangan rekomendasikan bahan aktif kuat tanpa menyebut risiko dan cara pemakaian yang benar"
+              - "Jangan promosikan produk pemutih kulit dengan cara yang mempermasalahkan warna kulit asli"
+              - "Selalu sarankan konsultasi dermatologis untuk kasus hiperpigmentasi yang parah atau tidak merespons perawatan OTC"
+            pola_hook: "Detik 0: tampilkan contoh bekas jerawat yang membandel + teks 'bekas ini butuh berapa lama hilang?'. Langsung masuk ke jawaban jujur di detik 3."
+            contoh_judul:
+              - "Bekas jerawat ini butuh berapa lama hilang? Jawaban jujur dari dermatologis"
+              - "Niacinamide vs vitamin C untuk bekas jerawat — ini pemenangnya setelah 3 bulan"
+              - "Bahan aktif ini yang benar-benar bekerja untuk hiperpigmentasi di kulit coklat Asia"
+              - "Kenapa bekas jerawat kamu tidak hilang meski sudah pakai banyak produk"
+              - "Timeline realistis untuk hilangkan PIH — karena 2 minggu itu tidak cukup"
+            content_runway: "Setiap jenis bekas jerawat (PIH, PIE, scar), bahan aktif yang berbeda, dan jenis kulit menghasilkan konten yang berbeda; masalah ini sangat umum di Indonesia dan relevan untuk semua usia."
+
+        - slug: skincare-pria-anti-ribet
+          name: Skincare untuk Pria yang Tidak Suka Ribet
+          description: Rutinitas skincare minimalis 3 langkah untuk pria Indonesia yang belum pernah pakai skincare, dengan produk yang mudah ditemukan di Alfamart.
+          guide:
+            audience: "Pria 20–38 yang tidak pernah pakai skincare atau baru mau mulai; pria yang merasa skincare ribet atau 'bukan untuk laki-laki'; pasangan yang ingin rekomendasikan skincare untuk pacar/suami yang belum mau mulai."
+            tone: "No-nonsense dan maskulin tanpa stereotip. Gaya 'ini bukan ribet, ini 3 menit sehari'. Tidak ada bahasa yang terasa feminin atau mengintimidasi. Langsung ke produk dan cara pakai."
+            format: "45–60 detik. Demo langsung penggunaan 3 produk dengan tangan pria. Setting kamar mandi atau wastafel biasa. Caption nama produk dan langkah. Tidak perlu penjelasan panjang — cukup demo."
+            boleh:
+              - "Batasi rekomendasi maksimal 3 produk — lebih dari itu penonton langsung kabur"
+              - "Gunakan produk yang ada di Alfamart atau toko biasa, bukan toko skincare khusus"
+              - "Tampilkan harga — pria cenderung lebih price-sensitive untuk kategori ini"
+              - "Demo cara pakai yang simpel — tidak perlu tapping atau teknik rumit"
+            hindari:
+              - "Jangan gunakan bahasa yang terasa seperti 'mengajari anak kecil'"
+              - "Jangan rekomendasikan lebih dari 3 produk untuk konten pemula"
+              - "Jangan buat klaim perubahan dramatis tanpa timeline yang realistis"
+              - "Selalu sertakan catatan untuk konsultasi dermatologis jika ada masalah kulit spesifik yang tidak membaik"
+            pola_hook: "Detik 0: tampilkan produk sabun mandi biasa yang dipakai pria + teks 'pria ini gak pernah pakai skincare selama 30 tahun, ini perubahannya setelah 90 hari'. Langsung ke rutinitas di detik 3."
+            contoh_judul:
+              - "Pria ini tidak pernah pakai skincare selama 30 tahun, ini perubahannya setelah 90 hari"
+              - "Rutinitas skincare pria 3 menit dengan produk dari Alfamart"
+              - "Tiga produk ini cukup untuk pria yang tidak mau ribet tapi mau kulit bersih"
+              - "Kenapa pria juga butuh skincare dan ini cara mulainya tanpa drama"
+              - "Panduan skincare pria pemula yang tidak akan bikin kamu bingung"
+            content_runway: "Setiap aspek skincare pria (sunscreen, treatment jerawat, anti-aging awal, after shave care) bisa jadi video tersendiri; market pria dalam skincare Indonesia sedang tumbuh cepat dengan audiens yang sangat besar dan relatif belum jenuh."
+
+    - slug: yoga
+      name: "Yoga / Stretching"
+      description: "Pose yoga, peregangan, relaksasi."
+      faceless: true
+      difficulty: pemula
+      rpm: sedang
+      formats: demo + ambience
+      example_hook: "Stretching 3 menit buat sakit punggung..."
+      guide:
+        audience: "Pria dan wanita 25–45 yang punya keluhan fisik ringan akibat gaya hidup sedentary — nyeri punggung, leher kaku, tidur tidak nyenyak; penonton yang ingin mulai yoga atau stretching tapi merasa tidak fleksibel atau tidak tahu mulai dari mana."
+        tone: "Tenang dan mengundang. Tidak ada tekanan untuk melakukan pose sempurna. Gaya 'tubuhmu sekarang cukup untuk memulai ini'. Pace pelan, instruksi jelas."
+        format: "45–90 detik. Demo gerakan real-time dengan pace pelan. Background tenang dan bersih. Musik ambient atau suara alam. Instruksi napas dicantumkan dalam caption atau diucapkan singkat."
+        boleh:
+          - "Tampilkan modifikasi pose untuk pemula yang tidak fleksibel"
+          - "Hubungkan setiap pose ke manfaat spesifik yang bisa dirasakan (punggung, tidur, kecemasan)"
+          - "Instruksikan napas — ini membedakan yoga dari stretching biasa"
+          - "Gunakan setting rumah yang bersih dan natural — tidak harus di studio yoga"
+        hindari:
+          - "Jangan tampilkan pose lanjutan tanpa memberikan alternatif yang lebih mudah"
+          - "Jangan tampilkan wajah — channel ini faceless"
+          - "Jangan buat klaim terapeutik tanpa menyebut sumber (yoga 'menyembuhkan' kondisi medis)"
+          - "Selalu sarankan konsultasi dokter atau fisioterapis untuk nyeri yang sudah berlangsung lama atau intens"
+        pola_hook: "Detik 0: sebut keluhan spesifik yang relatable + teks 'tiga gerakan ini yang fisioterapis rekomendasikan'. Langsung mulai pose pertama di detik 3."
+        contoh_judul:
+          - "Stretching 3 menit untuk punggung bawah yang sakit setelah duduk seharian"
+          - "Pose yoga sebelum tidur yang benar-benar membantu untuk tidur lebih nyenyak"
+          - "Gerakan ini untuk leher kaku setelah main HP terlalu lama"
+      micro:
+        - slug: yoga-punggung-pekerja-duduk
+          name: Peregangan 3 Menit untuk Pekerja yang Duduk Seharian
+          description: Urutan stretching singkat yang menargetkan nyeri punggung, leher, dan bahu akibat duduk di depan komputer, bisa dilakukan di meja kerja tanpa alas yoga.
+          guide:
+            audience: "Pekerja kantoran dan WFH 22–42 yang merasakan nyeri punggung atau leher akibat duduk lama; penonton yang tahu harus bergerak tapi tidak punya waktu atau tempat untuk olahraga di kantor."
+            tone: "Simpel dan actionable. Gaya 'lakukan sekarang di meja kamu, tidak butuh alas atau pakaian olahraga'. Tidak ada fleksibilitas tinggi yang dibutuhkan — ini untuk tubuh yang kaku sekalipun."
+            format: "30–45 detik. Demo dari kursi atau berdiri di dekat meja — setting kantor atau rumah. Real-time dengan instruksi singkat per gerakan. Timer per gerakan jika ada."
+            boleh:
+              - "Tampilkan gerakan yang bisa dilakukan dari kursi — sangat inklusif"
+              - "Sertakan instruksi napas singkat per gerakan"
+              - "Setting kantor yang relatable — meja, komputer, kursi biasa"
+              - "Sebutkan berapa kali dan berapa lama tiap gerakan"
+            hindari:
+              - "Jangan tampilkan gerakan yang membutuhkan ruang besar atau alas yoga"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan buat klaim bisa menghilangkan nyeri kronik secara permanen tanpa disclaimer"
+              - "Selalu sertakan catatan untuk konsultasi dokter atau fisioterapi jika nyeri sudah berlangsung lama atau intens"
+            pola_hook: "Detik 0: tampilkan setting meja kerja atau komputer + teks 'tiga gerakan ini yang bisa kamu lakukan sekarang untuk punggung yang kaku'. Langsung mulai gerakan pertama di detik 3."
+            contoh_judul:
+              - "Tiga gerakan ini aku lakukan setiap jam di meja kerja untuk punggung yang tidak kaku"
+              - "Peregangan 3 menit untuk yang duduk 8 jam sehari — tidak perlu alas, tidak perlu berdiri"
+              - "Fisioterapis rekomendasikan ini untuk nyeri leher akibat komputer"
+              - "Cara reset punggung bawah yang kaku setelah duduk lama tanpa harus keluar dari kursi"
+              - "5 gerakan dari kursi yang bikin bahu dan leher tidak sakit setelah kerja seharian"
+            content_runway: "Setiap area tubuh yang terpengaruh duduk lama (punggung atas, bawah, leher, bahu, pinggul, pergelangan tangan) bisa jadi video tersendiri; variasi gerakan dan durasi memperluas stok konten secara signifikan."
+
+        - slug: yoga-tidur-nyenyak
+          name: Yoga 10 Menit Sebelum Tidur untuk Tidur Lebih Nyenyak
+          description: Rutinitas yoga malam hari yang menenangkan sistem saraf dan menurunkan kortisol sebelum tidur, untuk penonton yang sering insomnia atau tidur tidak berkualitas.
+          guide:
+            audience: "Pria dan wanita 22–40 yang sering kesulitan tidur atau sering terbangun malam; penonton yang pikiran terus aktif saat sudah berbaring; orang yang menggunakan HP sampai mau tidur dan butuh ritual wind-down."
+            tone: "Sangat tenang dan mengantuk — intentionally. Pace paling lambat di antara semua konten yoga channel. Gaya 'biarkan tubuh dan pikiran turun perlahan bersama gerakan ini'."
+            format: "60–90 detik untuk preview; bisa ada versi 10 menit penuh. Gerakan dilakukan di kasur atau matras. Pencahayaan redup atau warm tone. Musik ambient sangat pelan atau silence. Instruksi napas panjang."
+            boleh:
+              - "Gunakan pencahayaan yang sangat warm dan redup — menciptakan mood tidur"
+              - "Semua gerakan bisa dilakukan di kasur — jangan ada yang butuh berdiri"
+              - "Instruksi napas panjang (4 hitungan masuk, 6 hitungan keluar) adalah inti konten"
+              - "Preview singkat diikuti tautan ke video penuh jika ada"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan gunakan musik yang upbeat atau energik — kontraproduktif"
+              - "Jangan buat klaim bisa 'menyembuhkan insomnia' tanpa disclaimer"
+              - "Selalu sarankan konsultasi dokter untuk insomnia kronis yang sudah berlangsung lebih dari beberapa minggu"
+            pola_hook: "Detik 0: tampilkan visual kasur atau ruang tidur dengan cahaya redup + teks 'rutinitas ini kurangi waktu tidur dari 45 menit jadi 10 menit'. Langsung mulai gerakan pertama yang sangat pelan."
+            contoh_judul:
+              - "Rutinitas ini kurangi waktu tidurku dari 45 menit jadi 10 menit setiap malam"
+              - "Yoga 10 menit sebelum tidur untuk yang pikiran tidak bisa berhenti"
+              - "Gerakan di kasur ini yang aku lakukan setelah taruh HP dan sebelum tutup mata"
+              - "Cara menenangkan sistem saraf sebelum tidur dengan 5 pose sederhana"
+              - "Tidur lebih nyenyak bukan soal kasur mahal — ini rutinitas malam yang berhasil untukku"
+            content_runway: "Variasi durasi (5, 10, 20, 30 menit), target (insomnia, stres, nyeri fisik sebelum tidur), dan musim atau situasi (setelah kerja keras, setelah berita buruk) menghasilkan puluhan variasi video yang berbeda."
+
+        - slug: yoga-anxiety-grounding
+          name: Gerakan Yoga untuk Atasi Kecemasan Akut
+          description: Pose dan teknik napas yoga yang terbukti menenangkan sistem saraf saat serangan kecemasan tiba-tiba, disajikan sebagai first-aid mental untuk momen panik.
+          guide:
+            audience: "Orang 18–35 yang mengalami kecemasan tiba-tiba dalam situasi sehari-hari; penonton yang pernah panik attack atau kecemasan intens dan tidak tahu harus melakukan apa; orang yang mencari teknik grounding praktis yang bisa dilakukan dimana saja."
+            tone: "Tenang dan sangat langsung. Tidak ada basa-basi. Gaya 'saat kamu butuh ini, lakukan langkah ini'. Menenangkan tapi konkret — bukan teoritis."
+            format: "45–60 detik. Instruksi teknis yang sangat jelas — angka pernapasan, posisi tangan, posisi tubuh. Setting netral yang tidak memperburuk kecemasan (ruang terbuka atau interior tenang). Caption besar untuk instruksi kunci."
+            boleh:
+              - "Berikan teknik 4-7-8 atau box breathing yang berbasis bukti"
+              - "Tampilkan grounding technique 5-4-3-2-1 sebagai pelengkap gerakan"
+              - "Instruksi yang bisa diikuti bahkan saat seseorang tidak bisa berpikir jernih"
+              - "Sertakan informasi hotline kesehatan jiwa Indonesia di caption"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan buat konten yang menstigmatisasi kecemasan sebagai 'lemah' atau 'berlebihan'"
+              - "Jangan klaim teknik ini bisa menggantikan penanganan medis untuk anxiety disorder"
+              - "Selalu sertakan catatan bahwa jika kecemasan sering dan berat, konsultasi psikolog atau psikiater adalah langkah yang tepat; cantumkan kontak Into The Light Indonesia atau Kemenkes"
+            pola_hook: "Detik 0: tampilkan situasi umum yang memicu kecemasan + teks 'saat panik tiba-tiba, lakukan ini sebelum hal lainnya'. Langsung mulai teknik pertama di detik 3."
+            contoh_judul:
+              - "Saat panik tiba-tiba, lakukan ini sebelum hal lainnya — ini yang aku gunakan"
+              - "Teknik pernapasan 4-7-8 untuk menenangkan sistem saraf dalam 2 menit"
+              - "Grounding technique ini yang berhasil saat kecemasan tiba-tiba di tempat publik"
+              - "Tiga gerakan untuk turunkan denyut jantung saat kecemasan menyerang"
+              - "First-aid mental untuk panik attack — ini yang bisa kamu lakukan dimana saja"
+            content_runway: "Setiap teknik grounding (pernapasan, indera 5-4-3-2-1, gerakan tubuh, visualisasi) bisa jadi video tersendiri; dikombinasikan dengan situasi pemicu berbeda, stok konten sangat luas dan relevan sepanjang waktu."

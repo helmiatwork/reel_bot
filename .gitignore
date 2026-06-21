@@ -26,3 +26,7 @@ youtube_token.json
 
 # Playwright MCP artifacts (snapshots/screenshots/downloads)
 .playwright-mcp/
+
+# Claude analysis frame images (written at runtime; gitkeep preserves the dir)
+analyze-frames/*
+!analyze-frames/.gitkeep

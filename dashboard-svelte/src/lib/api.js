@@ -32,6 +32,7 @@ export const api = {
   formulaPerformance: () => getJSON('/dash/formula-performance'),
   cost: () => getJSON('/dash/cost'),
   tokenUsage: () => getJSON('/dash/token-usage'),
+  analysis: (limit = 50) => getJSON('/dash/analysis?limit=' + limit),
   runs: (limit = 20) => getJSON(`/pipeline/runs?limit=${limit}`),
   run: (id) => getJSON(`/pipeline/run/${id}`),
   artifact: (id) => getJSON(`/pipeline/run/${id}/artifact`),

@@ -1,0 +1,461 @@
+version: 1
+vertical:
+  slug: v-gaming
+  name: Gaming
+  description: Konten game — highlight, tips, mobile gaming, dan fakta tersembunyi untuk gamer Indonesia.
+  guide:
+    audience: "Gamer Indonesia 14–35 tahun, dominan pria, aktif di Mobile Legends, Free Fire, dan game PC; campuran kasual dan kompetitif; sering nonton konten gaming setelah sekolah atau kerja."
+    tone: "Energik, cepat, dan penuh jargon gaming lokal. Boleh pakai kata seperti 'gila', 'savage', 'op banget', 'bocor'. Tidak perlu formal — ngobrol layaknya sesama gamer."
+    format: "Video 30–90 detik, dominan gameplay capture + caption + SFX. Untuk tips/fakta: voiceover ringan di atas footage game. Untuk highlight: langsung aksi, tanpa intro panjang. Vertikal 9:16 atau landscape 16:9 tergantung game."
+    boleh:
+      - "Pakai terminologi dan slang gaming yang familiar (clutch, push rank, meta, OP, toxic, AFK)"
+      - "Tunjukkan angka dan statistik langsung di gameplay untuk kredibilitas"
+      - "Pakai SFX game asli yang di-boost untuk momen klimaks"
+      - "Caption besar, cepat berganti, gaya esports broadcast"
+    hindari:
+      - "Jangan buka dengan intro logo atau salam panjang — langsung ke aksi"
+      - "Jangan klaim 'hack' atau 'cheat' yang bisa melanggar ToS game — reputasi channel taruhannya"
+      - "Jangan bahas build atau meta yang sudah 2+ patch lalu tanpa disclaimer 'sudah outdated'"
+      - "Jangan gunakan klip berkualitas rendah (480p ke bawah) — penonton gaming ekspektasinya tinggi"
+    pola_hook: "Detik 0: langsung tampilkan momen paling gila atau reveal fakta mengejutkan + teks singkat kalimat pemancing. Tidak ada intro — aksi dulu, konteks belakangan."
+    contoh_judul:
+      - "Clutch 1v5 paling gila yang pernah aku rekam di ranked"
+      - "Setting ini yang bikin aim kamu jelek selama ini, coba ganti sekarang"
+      - "Fakta game ini disembunyikan developer dan baru ketemu setelah 10 tahun"
+
+  niches:
+    - slug: gaming-clips
+      name: Gaming Clips
+      description: Highlight momen game.
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: capture + caption + SFX
+      example_hook: "Clutch 1v5 paling gila..."
+      guide:
+        audience: "Gamer 14–28 yang aktif main game kompetitif dan suka nonton highlight untuk hiburan cepat; komunitas ML, FF, dan Valorant Indonesia; penonton yang sering share klip ke grup."
+        tone: "Hype dan reaktif — seperti nonton highlight match esports. Energi komentator harus terasa meski tanpa voiceover. Timing edit menentukan rasa 'WOW'."
+        format: "15–60 detik. Struktur: setup cepat (situasi game) → build-up tension → klimaks momen gila → SFX reaction. Jump cut agresif untuk highlight, slow-mo di momen kunci. Caption besar di frame untuk konteks. Vertikal 9:16."
+        boleh:
+          - "Slow-mo + zoom di momen paling impresif — signature highlight reel"
+          - "SFX crowd cheer atau 'ohhh' di momen clutch untuk amplifikasi reaksi"
+          - "Caption konteks singkat ('1v5, HP 10%') agar penonton yang tidak main game tetap paham"
+          - "Loop akhir video kembali ke momen terbaik — dorong tonton ulang"
+        hindari:
+          - "Jangan tampilkan loading screen atau menu — langsung potong ke gameplay"
+          - "Jangan gunakan klip yang sudah viral di channel lain tanpa izin — klaim copyright"
+          - "Jangan tambahkan watermark besar di tengah frame — menghalangi aksi"
+          - "Jangan biarkan video mengandung momen 'biasa' di antara momen highlight — setiap detik harus worth it"
+        pola_hook: "Detik 0: langsung di tengah aksi klimaks atau tepat sebelum klimaks + teks konteks '1v5 ranked' atau 'HP tinggal 10%'. Tidak ada pre-roll."
+        contoh_judul:
+          - "Savage 1v5 ranked ini yang bikin lawan quit dari lobby"
+          - "Momen ini aku rekam tapi gak percaya sendiri sampai tonton ulang"
+          - "Clip gaming terbaik minggu ini dari server Indonesia"
+      micro:
+        - slug: gaming-clips-mobile-legends
+          name: Highlight Mobile Legends Terbaik
+          description: Kumpulan momen clutch, savage, dan play mengejutkan di Mobile Legends dari server Indonesia, menyasar komunitas ML yang besar di Indonesia.
+          example_hook: "Savage solo 1v5 ranked ini bikin lawan mute mic semua..."
+          guide:
+            audience: "Pemain ML aktif Indonesia usia 15–28, campuran rank Epic–Mythic; suka konten yang bisa mereka share ke sesama ML player; tertarik momen yang bikin ngiri sekaligus termotivasi."
+            tone: "Hype esports lokal — seperti komentator turnamen ML Indonesia. Terminologi spesifik: 'lord steal', 'backdoor', 'savage', 'macro play'. Boleh informal dan berteriak."
+            format: "30–60 detik. Satu momen utama per video atau 3–5 micro-clip. Slow-mo di momen Savage + zoom ke kill feed. Caption nama hero dan rank di corner. Vertikal 9:16 atau landscape untuk drama lebih besar."
+            boleh:
+              - "Tampilkan kill feed dan scoreboard setelah momen untuk konteks skala kehebatan"
+              - "Gunakan SFX notifikasi 'Savage' asli dari game dengan volume di-boost"
+              - "Zoom ke wajah hero saat ultimate dilepas — momen sinematik yang efektif"
+              - "Tambahkan teks nama hero + tier rank pemain sebagai konteks"
+            hindari:
+              - "Jangan rekam momen yang di bawah Epic rank tanpa disclaimer — kredibilitas konten"
+              - "Jangan skip context setup — penonton perlu tahu situasi sebelum momen terjadi"
+              - "Jangan gunakan musik yang kalahkan SFX game — suara game adalah inti"
+              - "Jangan upload klip tanpa crop UI yang tidak relevan — fullscreen gameplay lebih bersih"
+            pola_hook: "Detik 0: kill feed mulai bergerak atau hero sedang HP rendah + teks 'dia sendirian, 5 lawan'. Langsung ke aksi tanpa intro."
+            contoh_judul:
+              - "Savage 1v5 Mythic ini bikin seluruh lawan langsung AFK di base"
+              - "Lord steal detik terakhir yang selamatkan tim dari kalah — gila banget"
+              - "Gusion main ranked dan ini yang terjadi kalau dia udah masuk zone"
+              - "1 hero ini carry sendiri dari behind 10-2, ini definisi macro play"
+              - "HP 200 sisa, 4 musuh rush tower, dia malah balik dan ini hasilnya"
+            content_runway: "ML rutin rilis hero baru, patch baru, dan season baru tiap bulan — setiap update menghasilkan momen baru; komunitas ML Indonesia terbesar di Asia Tenggara menjamin suplai klip tak terbatas."
+
+        - slug: gaming-clips-fails-lucu
+          name: Gaming Fails & Momen Konyol
+          description: Kompilasi momen lucu dan fail yang tidak sengaja terjadi saat main game, disajikan dengan timing komedi untuk penonton gaming kasual.
+          example_hook: "Bug ini bikin pemain ranked tersebut gak bisa ngapa-ngapain selama 5 menit..."
+          guide:
+            audience: "Gamer kasual dan penonton gaming 14–30 yang tidak harus main game tersebut; penonton yang suka humor situasional; cocok untuk share ke non-gamer sekalipun."
+            tone: "Komedi dan santai. Timing edit adalah punch line — pause sebelum momen konyol, lalu cut langsung ke reaksi atau aftermath. Boleh tambahkan SFX komedi."
+            format: "30–60 detik. Kompilasi 3–5 fail atau satu fail yang sangat panjang dan epik. SFX komedi (sad trombone, vine boom) di momen kunci. Caption reaksi singkat ('dia gak nyangka', 'tidaaaak'). Vertikal 9:16."
+            boleh:
+              - "SFX komedi ikonik (vine boom, sad trombone, 'bruh') yang tepat timing-nya"
+              - "Slow-mo di momen fail paling absurd untuk efek dramatis yang lucu"
+              - "Caption reaksi pendek yang merangkum perasaan penonton ('dia baik-baik saja?')"
+              - "Akhiri dengan momen redemption kecil jika ada — struktur komedi klasik"
+            hindari:
+              - "Jangan tampilkan fail yang memalukan pribadi seseorang secara berlebihan — konten harus lucu bukan bully"
+              - "Jangan gunakan klip orang lain tanpa izin — terutama wajah yang terlihat"
+              - "Jangan tambahkan terlalu banyak SFX sampai suara game hilang sama sekali"
+              - "Jangan jelek-jelekkan pemain secara spesifik dengan nama atau akun — fokus pada situasi bukan orangnya"
+            pola_hook: "Detik 0: tampilkan situasi yang terlihat normal + teks 'tunggu dulu...' atau 'ini gak mungkin terjadi'. Lalu fail terjadi di detik 3–5."
+            contoh_judul:
+              - "Bug ML ini bikin hero stuck di tempat dan lawan bingung mau ngapain"
+              - "5 momen paling konyol yang pernah aku rekam selama main game"
+              - "Cara paling epik kalah ranked yang bahkan aku gak bisa marah"
+              - "Dia yakin banget bisa clutch ini, tonton sampai detik terakhir"
+              - "Game crash di momen paling penting — nasib gamer Indonesia minggu ini"
+            content_runway: "Setiap game memiliki bug, glitch, dan situasi tak terduga unik yang terus muncul; patch baru sering memperkenalkan bug baru; komunitas gaming Indonesia aktif berbagi klip konyol di grup."
+
+        - slug: gaming-clips-underdog-menang
+          name: Momen Underdog Menang Tidak Terduga
+          description: Highlight momen di mana pemain atau tim yang kalah jauh akhirnya menang dengan cara yang tidak diduga, format yang selalu mengundang engagement.
+          example_hook: "HP tinggal 10%, musuh masih 5 orang. Ini yang terjadi selanjutnya..."
+          guide:
+            audience: "Gamer dan non-gamer 16–30 yang suka narasi underdog universal; penonton yang butuh dosis motivasi ringan dari konten gaming; cocok untuk yang tidak main game sekalipun karena narasi emosionalnya."
+            tone: "Naratif dan dramatis — seperti film underdog. Build-up tension yang kuat sebelum comeback. Momen balik harus terasa earned, bukan keberuntungan semata."
+            format: "45–75 detik. Struktur: setup situasi tertinggal (scoreboard, HP rendah) → build-up putus asa → turning point satu aksi → snowball comeback → kemenangan final. Music crescendo opsional. Vertikal 9:16."
+            boleh:
+              - "Tampilkan scoreboard atau statistik di awal untuk menegaskan betapa jauhnya ketertinggalan"
+              - "Musik instrumental yang naik saat turning point — amplifikasi emosi underdog"
+              - "Slow-mo di momen turning point yang mengubah segalanya"
+              - "Caption emosional sederhana ('semua orang sudah menyerah kecuali dia')"
+            hindari:
+              - "Jangan skip setup ketertinggalan — tanpa itu, kemenangan tidak terasa impresif"
+              - "Jangan gunakan momen yang terlalu bergantung pada keberuntungan semata — skill comeback lebih menarik"
+              - "Jangan potong sebelum kemenangan final dikonfirmasi — penonton harus merasakan resolusi penuh"
+              - "Jangan tambahkan musik terlalu keras di momen aksi — SFX game harus masih terdengar"
+            pola_hook: "Detik 0: scoreboard menunjukkan ketertinggalan parah + teks 'semua orang sudah menyerah'. HP bar merah menyala di layar. Langsung ke aksi balik."
+            contoh_judul:
+              - "HP tinggal 10%, musuh masih 5 orang — tonton ini sampai habis"
+              - "Down 10-1 di ranked, ini comeback yang aku gak akan percaya kalau gak rekam sendiri"
+              - "Tim ini hampir surrender menit 12, yang terjadi setelahnya bikin semua berbalik"
+              - "Solo carry dari behind yang paling gila di server Indonesia bulan ini"
+              - "Mereka ketawain dia dari awal game, sampai momen ini terjadi"
+            content_runway: "Situasi underdog organik terjadi ribuan kali sehari di server game Indonesia; format universal ini bisa diterapkan ke game apapun (ML, FF, Valorant, PUBG) dengan suplai klip yang tidak ada habisnya."
+
+    - slug: game-tips
+      name: "Tips / Tutorial Game"
+      description: "Trik, build, walkthrough game."
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: capture + voiceover
+      example_hook: "Setting ini bikin aim kamu dewa..."
+      guide:
+        audience: "Gamer aktif 16–30 yang ingin naik rank atau meningkatkan skill; frustasi dengan performa saat ini; mencari keunggulan kompetitif dengan investasi waktu minimal."
+        tone: "Informatif tapi tidak kaku — seperti teman yang lebih jago kasih tips. Langsung ke inti, tidak bertele-tele. Boleh pakai analogi gaming ('ini seperti kalau kamu main hero support')."
+        format: "45–90 detik. Struktur: masalah yang dialami penonton (hook) → solusi konkret → demonstrasi langsung di gameplay → hasil yang bisa diharapkan. Voiceover di atas footage gameplay aktual. Vertikal 9:16."
+        boleh:
+          - "Demonstrasikan tips langsung di game — 'show don't tell' sangat efektif"
+          - "Tampilkan before/after performance untuk bukti konkret tip bekerja"
+          - "Pakai screen annotation (lingkaran, panah) untuk arahkan mata penonton ke elemen penting"
+          - "Berikan konteks kenapa tip ini bekerja secara game-mechanic, bukan cuma 'percaya aku'"
+        hindari:
+          - "Jangan berikan tips yang sudah outdated dari patch lalu tanpa disclaimer versi game"
+          - "Jangan klaim win rate atau performa berlebihan tanpa data — penonton gaming cepat skeptis"
+          - "Jangan gunakan gameplay dari akun smurf untuk demo — tidak representatif kondisi nyata penonton"
+          - "Jangan berikan 10 tips sekaligus — satu tip yang dalam lebih valuable dari daftar panjang"
+        pola_hook: "Detik 0: tampilkan masalah umum yang langsung relatable ('kenapa aim kamu jelek padahal udah latihan') atau reveal hasil tips ('dari 45% ke 68% winrate setelah ganti ini')."
+        contoh_judul:
+          - "Satu setting ini yang bikin aim kamu jelek selama ini, ganti sekarang"
+          - "Cara baca minimap yang 80% pemain ranked tidak lakukan dengan benar"
+          - "Tips naik rank yang gak perlu aim bagus — pure game sense"
+      micro:
+        - slug: game-tips-setting-optimal
+          name: Setting Optimal untuk Performa Maksimal
+          description: Panduan konfigurasi grafis, kontrol, dan setting tersembunyi di game populer yang bisa meningkatkan performa tanpa upgrade hardware.
+          example_hook: "Setting ini bikin aim kamu 2x lebih konsisten dan 90% player gak tahu..."
+          guide:
+            audience: "Gamer 16–28 yang bermain di HP atau PC mid-range; ingin performa kompetitif tanpa beli hardware baru; sering kalah karena lag atau aim yang tidak responsif."
+            tone: "Teknis tapi friendly — seperti IT support teman yang sabar. Gunakan angka dan perbandingan konkret ('dari 30fps ke 60fps terasa seperti ini')."
+            format: "45–75 detik. Struktur: masalah performa yang dialami → buka menu setting spesifik (rekam layar setting game) → ubah nilai konkret → demo perbedaan sebelum-sesudah. Tampilkan angka aktual. Vertikal 9:16."
+            boleh:
+              - "Rekam langsung menu setting dalam game — penonton bisa ikuti step by step"
+              - "Tampilkan frame rate counter atau ping sebelum dan sesudah perubahan"
+              - "Berikan nilai angka spesifik ('sensitivity 85, frame rate: max') bukan 'naikkan dikit'"
+              - "Jelaskan kenapa setting itu berpengaruh — membangun kepercayaan"
+            hindari:
+              - "Jangan berikan setting untuk versi game yang sudah lama diperbarui — cek dulu sebelum upload"
+              - "Jangan klaim setting akan 'fix semua masalah' — ekspektasi realistis jaga kepercayaan"
+              - "Jangan lupa cantumkan spesifikasi device yang digunakan saat testing"
+              - "Jangan skip langkah-langkah navigasi menu — penonton yang pertama kali perlu panduan lengkap"
+            pola_hook: "Detik 0: tampilkan gameplay dengan masalah nyata (aim meleset, frame drop) + teks 'belum tahu setting ini?'. Langsung buka menu setting di detik 3."
+            contoh_judul:
+              - "Setting ML ini bikin HP mid-range main seperti flagship, coba sekarang"
+              - "3 opsi ini yang harus kamu ubah pertama kali install Free Fire di HP baru"
+              - "Sensitivity aim yang benar untuk hero assassin vs marksman, ini bedanya"
+              - "Frame rate drop saat team fight? Setting ini yang paling sering diabaikan"
+              - "90% pemain tidak tahu ada setting tersembunyi ini yang bikin gerakan lebih responsif"
+            content_runway: "Setiap game populer memiliki puluhan setting berbeda; setiap update game sering mengubah nilai optimal; kombinasi perangkat (HP, PC, tablet) dan game menghasilkan variasi konten yang hampir tak terbatas."
+
+        - slug: game-tips-build-meta
+          name: Build Meta Terkini untuk Ranked
+          description: Penjelasan build dan strategi yang sedang dominan di meta ranked game populer Indonesia, diperbarui setiap patch dengan alasan di balik pilihan item.
+          example_hook: "Build ini naik winrate hero kamu dari 50% jadi 68%, ini penjelasannya..."
+          guide:
+            audience: "Pemain ranked aktif 17–30 yang ingin naik tier; sudah cukup familiar dengan game; frustrasi karena build yang mereka pakai kalah terus tapi tidak tahu harus ganti apa."
+            tone: "Analitis tapi conversational — seperti coach esports yang jelasin draft pick. Pakai data winrate jika tersedia, tapi tetap mudah diikuti pemain biasa."
+            format: "60–90 detik. Struktur: situasi meta sekarang (patch berapa) → hero/role yang dibahas → item sequence dengan alasan tiap item → gameplay demo pakai build ini → hasil winrate atau KDA. Vertikal 9:16."
+            boleh:
+              - "Cantumkan nomor patch dengan jelas — build meta sangat volatile per patch"
+              - "Jelaskan alasan di balik pilihan item, bukan cuma daftar — edukasi lebih sticky"
+              - "Tunjukkan situasi spesifik di mana build ini bekerja vs tidak (matchup tertentu)"
+              - "Perbarui konten setiap patch baru — channel yang cepat update dapat traffic burst tiap rilis patch"
+            hindari:
+              - "Jangan upload build meta tanpa mencantumkan patch version — bisa menyesatkan"
+              - "Jangan copy-paste build dari tierlist luar tanpa uji coba sendiri di server Indonesia"
+              - "Jangan klaim satu build works untuk semua situasi — context-dependent"
+              - "Jangan gunakan statistik dari server lain (NA, EUW) tanpa disclaimer — meta berbeda per region"
+            pola_hook: "Detik 0: tampilkan scoreboard impresif dengan build ini + teks 'patch [X.X] meta baru'. Langsung ke item build pertama di detik 3."
+            contoh_judul:
+              - "Build Gusion patch terbaru yang naikin winrate dari 48% ke 72%, ini alasannya"
+              - "Item baru ini broken banget untuk tank, semua Mythic udah pakai ini"
+              - "Meta offlane berubah total setelah patch ini — hero yang naik dan turun tier"
+              - "Jangan pakai build lama ini lagi, developer sudah nerf item utamanya bulan lalu"
+              - "Build support yang bikin carry tim kamu jadi lebih mudah, bukan cuma heal"
+            content_runway: "Game kompetitif merilis patch setiap 2–4 minggu; setiap patch mengubah meta hero dan item; dengan puluhan hero per game, kombinasi build yang perlu dibahas hampir tidak ada habisnya."
+
+        - slug: game-tips-rookie-mistakes
+          name: Kesalahan Pemula yang Bikin Stuck di Rank Rendah
+          description: Analisis kesalahan umum yang dilakukan pemain rank bawah dan cara konkret memperbaikinya, menyasar gamer yang merasa stuck dan ingin naik rank.
+          example_hook: "Kamu main 1.000 game tapi gak naik rank? Kamu pasti lakukan ini tanpa sadar..."
+          guide:
+            audience: "Pemain ranked 16–28 yang sudah ratusan game tapi stuck di tier yang sama; sering menyalahkan tim tapi diam-diam tahu ada yang salah dari diri sendiri; butuh validasi sekaligus koreksi."
+            tone: "Empati + tough love. Jangan menggurui, tapi jangan terlalu lunak. Framing 'aku juga pernah begini' jauh lebih efektif dari 'kamu salah karena ini'."
+            format: "60–90 detik. Bahas 1 kesalahan per video secara mendalam, atau 3 kesalahan cepat. Tunjukkan contoh nyata kesalahan di gameplay → jelaskan kenapa salah → tunjukkan cara benar → hasil yang bisa diharapkan. Vertikal 9:16."
+            boleh:
+              - "Gunakan replay atau rekaman diri sendiri melakukan kesalahan — otentisitas tinggi"
+              - "Framing 'aku dulu juga begini' untuk kurangi defensive reaction penonton"
+              - "Spesifik ke satu kebiasaan buruk per video — lebih actionable dari daftar 10 hal"
+              - "Akhiri dengan satu latihan konkret yang bisa dilakukan di game berikutnya"
+            hindari:
+              - "Jangan general ('main lebih sabar') — harus ada action konkret yang bisa langsung dicoba"
+              - "Jangan gunakan contoh yang terlalu ekstrem atau tidak realistis untuk pemain rank tersebut"
+              - "Jangan framing sebagai 'kamu bodoh kalau lakukan ini' — akan ditolak secara psikologis"
+              - "Jangan cover kesalahan yang sudah ratusan video lain bahas tanpa angle baru"
+            pola_hook: "Detik 0: tampilkan footage kesalahan yang sangat relatable + teks 'kalau kamu lakukan ini, ini yang bikin kamu stuck'. Langsung masuk ke analisis."
+            contoh_judul:
+              - "1.000 game tapi masih Epic? Kamu pasti lakukan kebiasaan ini tanpa sadar"
+              - "Satu kesalahan rotasi ini yang bikin semua usahamu di game sia-sia"
+              - "Bukan skill yang kurang, ini yang sebenarnya bikin kamu gak naik rank"
+              - "Cara baca minimap yang benar — hal paling basic yang paling sering dilupakan"
+              - "Kenapa kamu AFK farm di late game padahal tim butuh kamu push bareng"
+            content_runway: "Setiap rank tier memiliki kesalahan khas yang berbeda; kesalahan di tier rendah berbeda dari tier tinggi; setiap game dan role memiliki pola kesalahan sendiri — variasi konten sangat besar."
+
+    - slug: mobile-game
+      name: Mobile Gaming
+      description: "ML, FF, dll. Audiens lokal besar."
+      faceless: true
+      difficulty: pemula
+      rpm: sedang
+      formats: capture + caption
+      example_hook: "Hero ini auto-menang season ini..."
+      guide:
+        audience: "Mobile gamer Indonesia 13–28, mayoritas main ML dan Free Fire; campuran casual dan semi-competitive; sering main saat commute atau istirahat; sangat price-sensitive (banyak yang F2P)."
+        tone: "Hype dan langsung — seperti channel gaming Indonesia yang paling populer. Bahasa gaul gaming lokal: 'op banget', 'wajib push rank pakai ini', 'gak ada lawan'. Harus terasa insider knowledge."
+        format: "30–75 detik. Dominan gameplay capture dengan caption overlay besar dan SFX. Untuk list/guide: voiceover ringan di atas footage. Untuk tier list: visual ranking card yang jelas dan cepat berganti. Vertikal 9:16."
+        boleh:
+          - "Selalu cantumkan season atau patch yang sedang berlaku — mobile game berubah cepat"
+          - "Gunakan thumbnail mental (mention angka atau fakta mengejutkan di hook) untuk dorong klik"
+          - "Bahasa 'kita' dan 'kamu' — penonton harus merasa ini konten untuk mereka personally"
+          - "SFX notifikasi in-game yang familiar (suara MVP, level up) untuk resonansi emosional"
+        hindari:
+          - "Jangan rekomendasikan hero atau item yang sudah di-nerf tanpa update — penonton akan kecewa hasilnya"
+          - "Jangan promosi top-up diamond berlebihan tanpa konteks F2P — alienasi mayoritas penonton"
+          - "Jangan gunakan footage dari akun yang tidak representatif rank target penonton"
+          - "Jangan bikin konten terlalu lama — mobile gamer punya attention span lebih pendek dari console gamer"
+        pola_hook: "Detik 0: langsung tampilkan hero/strategi yang dibahas beraksi + teks klaim kuat ('hero ini OP banget patch ini' atau 'gratis tapi sekuat diamond skin'). Jangan intro dulu."
+        contoh_judul:
+          - "Hero ini paling OP season ini dan masih banyak yang belum sadar"
+          - "Cara dapat skin gratis di ML sebelum event ini berakhir"
+          - "Tier list hero update patch terbaru, ini yang naik dan yang turun"
+      micro:
+        - slug: mobile-game-ml-tier-list
+          name: Tier List Mobile Legends Update Terbaru
+          description: Ranking hero Mobile Legends per patch terbaru dengan penjelasan singkat kenapa hero naik atau turun tier, untuk pemain yang ingin pilih hero tepat.
+          example_hook: "Hero ini turun tier tapi masih bisa carry, ini kenapa dan cara mainnya..."
+          guide:
+            audience: "Pemain ML aktif rank Epic–Mythic 15–28; sering berganti hero untuk cari yang OP; tipe penonton yang akan scroll tier list sebelum session ranked."
+            tone: "Otoritatif tapi ringkas — seperti analis esports yang bicara langsung ke kamera tanpa banyak basa-basi. Cantumkan data winrate jika ada, opinion jika tidak ada data."
+            format: "45–75 detik. Format: intro patch + 3 hero yang naik tier (S tier) → 3 hero yang turun → 1 rekomendasi pick untuk push rank sekarang. Visual tier card S/A/B/C yang jelas. Vertikal 9:16."
+            boleh:
+              - "Sertakan patch number dan tanggal rilis di awal — ini konten time-sensitive"
+              - "Tampilkan visual tier list card yang terlihat bersih dan mudah di-screenshot"
+              - "Berikan satu kalimat alasan per hero naik/turun — bukan cuma daftar nama"
+              - "Selalu ada 'pick of the patch' sebagai konkrit recommendation"
+            hindari:
+              - "Jangan upload tier list tanpa patch number — langsung tidak relevan saat ada patch baru"
+              - "Jangan masukkan terlalu banyak hero — fokus pada perubahan signifikan saja"
+              - "Jangan copy tier list dari Reddit atau sumber luar tanpa verifikasi di server Indonesia"
+              - "Jangan skip penjelasan kenapa — daftar nama saja tidak memberikan nilai tambah"
+            pola_hook: "Detik 0: tampilkan hero OP terbaru beraksi + teks 'patch [nomor] — ini yang berubah'. Langsung masuk ke hero S tier pertama."
+            contoh_judul:
+              - "Tier list ML patch terbaru — hero ini OP banget dan masih sedikit yang pakai"
+              - "Hero ini turun dari S tier tapi masih carry kalau tau cara mainnya"
+              - "3 hero yang wajib di-ban atau dipick di ranked minggu ini"
+              - "Update tier list setelah buff besar patch ini — meta berubah total"
+              - "Hero baru ini langsung S tier sejak hari pertama rilis, ini breakdown-nya"
+            content_runway: "ML merilis patch setiap 2 minggu dan hero baru tiap 1–2 bulan; setiap patch mengubah meta secara signifikan; dengan 100+ hero aktif, variasi tier list konten hampir tidak terbatas."
+
+        - slug: mobile-game-ff-tips
+          name: Tips Free Fire untuk Pemain Kasual
+          description: Tips dan strategi Free Fire yang mudah diterapkan pemain kasual tanpa harus grinding berjam-jam, menyasar mayoritas pemain FF di Indonesia.
+          example_hook: "Cara menang Booyah tanpa aim yang bagus, strategi ini dipakai pro player..."
+          guide:
+            audience: "Pemain FF kasual 14–25 yang main beberapa kali seminggu; tidak punya banyak waktu untuk grinding; ingin menang tapi tidak obsesi rank; banyak yang F2P."
+            tone: "Friendly dan accessible — tidak intimidasi pemain kasual. Framing 'kamu tidak perlu aim sempurna' atau 'bahkan pemain baru bisa ini'. Bahasa Indonesia kasual, tidak perlu Inggris."
+            format: "45–75 detik. Satu tip per video atau tiga tip cepat. Demo langsung di gameplay — jangan hanya screenshot menu. Tunjukkan situasi nyata di mana tip ini berguna. Vertikal 9:16."
+            boleh:
+              - "Demo di map yang familiar penonton kasual (Bermuda, Purgatory)"
+              - "Tampilkan posisi aman dan rotasi yang tidak butuh aim bagus"
+              - "Tunjukkan inventory setup F2P yang optimal tanpa skin premium"
+              - "Gunakan bahasa yang bilang 'ini tidak sulit' — kurangi anxiety pemain baru"
+            hindari:
+              - "Jangan tips yang hanya relevan untuk pemain dengan senjata premium atau karakter berbayar"
+              - "Jangan tampilkan stat-heavy analysis yang tidak langsung actionable oleh pemain kasual"
+              - "Jangan gunakan footage di server yang lagnya sangat berbeda dari server Indonesia"
+              - "Jangan framing 'tips pro player' jika target adalah casual — bisa feel out of reach"
+            pola_hook: "Detik 0: tampilkan situasi yang sangat relatable bagi pemain kasual ('masuk zona akhir tapi langsung mati') + teks solusi singkat. Langsung ke demo."
+            contoh_judul:
+              - "Cara Booyah di FF tanpa aim yang bagus — strategi zone yang gak banyak orang tahu"
+              - "Rotasi Bermuda yang bikin kamu selamat lebih lama tanpa senjata mahal"
+              - "Tips ini bikin K/D ratio naik tanpa harus beli karakter premium"
+              - "Cara ambil posisi akhir game yang hampir selalu menghasilkan top 3"
+              - "F2P guide FF — loadout terbaik dari senjata yang bisa semua orang dapat"
+            content_runway: "FF memiliki banyak map, mode, karakter, dan event musiman; setiap update membawa perubahan gameplay; target casual player sangat besar di Indonesia dan terus berganti generasi pemain baru."
+
+        - slug: mobile-game-hemat-diamond
+          name: Cara Main Tanpa Boros Diamond atau UC
+          description: Strategi mendapatkan item dan skin premium di game mobile tanpa keluar banyak uang, relevan untuk pemain F2P yang ingin kompetitif.
+          example_hook: "Cara dapat skin limited ini gratis sebelum event berakhir, hampir gak ada yang tahu..."
+          guide:
+            audience: "Pemain mobile game F2P 14–24 yang ingin skin atau item premium tapi budget terbatas; sering iri lihat player lain dengan skin keren; ingin cara pintar tanpa harus top-up banyak."
+            tone: "Konspirasi positif — seperti insider yang berbagi rahasia yang 'tidak mau diketahui publisher'. Nada 'kamu harus tahu ini sebelum habiskan uang'."
+            format: "45–75 detik. Struktur: item/skin yang ingin didapat → metode gratis atau murah → langkah konkret step by step → timeline kapan bisa digunakan. Demo langsung di akun game. Vertikal 9:16."
+            boleh:
+              - "Spesifik ke event atau misi yang sedang berjalan — konten time-sensitive sangat dicari"
+              - "Tunjukkan akun dan aset yang didapat secara aktual — bukan teori"
+              - "Hitung perbandingan nilai: 'skin ini kalau beli Rp200rb, cara ini bisa gratis dalam 2 minggu'"
+              - "Update konten tiap ada event baru — jadikan channel sebagai sumber F2P guide terpercaya"
+            hindari:
+              - "Jangan klaim exploit atau bug yang melanggar ToS — akun bisa dibanned"
+              - "Jangan berikan info event yang sudah berakhir tanpa update — penonton kecewa"
+              - "Jangan lebih-lebihkan reward yang bisa didapat — ekspektasi realistis jaga kepercayaan"
+              - "Jangan merekomendasikan cara yang hanya bekerja jika sudah top-up besar sebelumnya"
+            pola_hook: "Detik 0: tampilkan skin atau item yang diinginkan + teks 'bisa gratis kalau tahu caranya'. Langsung ke langkah pertama di detik 3."
+            contoh_judul:
+              - "Skin limited ML ini bisa didapat gratis kalau kamu lakukan ini sebelum event habis"
+              - "Cara kumpul diamond ML gratis dari event — aku dapat 500 diamond minggu ini tanpa top-up"
+              - "UC FF gratis dari misi ini yang hampir semua pemain skip tanpa sadar"
+              - "Event ini kasih skin seharga Rp200rb gratis, ini syaratnya yang gampang banget"
+              - "Kalau mau top-up, waktu ini yang paling worth karena bonus yang biasanya disembunyikan"
+            content_runway: "Game mobile merilis event hampir setiap minggu; setiap event membuka peluang konten F2P guide baru; pemain baru terus bergabung dan butuh panduan ini dari awal — konten selalu relevan untuk audiens baru."
+
+    - slug: game-facts
+      name: "Fakta Game / Easter Egg"
+      description: Rahasia & easter egg game.
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: klip + voiceover
+      example_hook: "Rahasia GTA yang baru ketemu 10 tahun..."
+      guide:
+        audience: "Gamer 16–30 yang suka trivia dan lore di balik game favorit mereka; penonton yang bangga tahu hal yang tidak diketahui orang lain; campuran hardcore dan casual yang sama-sama suka 'rahasia'."
+        tone: "Investigatif dan penuh kejutan — seperti dokumenter mini gaming. Bangun antisipasi sebelum reveal. Setiap fakta harus terasa seperti sesuatu yang 'tidak seharusnya kamu ketahui'."
+        format: "45–90 detik. Struktur: setup misteri atau pertanyaan → investigasi visual (rekam area game yang relevan) → reveal fakta atau easter egg → konteks kenapa developer sembunyikan ini. Voiceover di atas gameplay footage. Vertikal 9:16 atau landscape."
+        boleh:
+          - "Demo langsung dalam game — jangan hanya ceritakan, tunjukkan lokasi easter egg"
+          - "Cantumkan sumber (video pertama yang temukan, forum resmi) untuk credibility"
+          - "Format satu fakta per video tapi pilih yang paling impactful — better than 10 fakta biasa"
+          - "Tunjukkan reaksi komunitas (screenshot tweet atau forum) jika fakta tersebut mengejutkan banyak orang"
+        hindari:
+          - "Jangan klaim fakta yang belum terverifikasi sebagai 'confirmed' — reputasi channel taruhannya"
+          - "Jangan bahas easter egg yang sudah sangat mainstream tanpa angle baru"
+          - "Jangan gunakan klip game yang tidak relevan sebagai b-roll — visual harus spesifik ke fakta"
+          - "Jangan berikan too much lore dump — fokus pada satu insight yang paling mengejutkan"
+        pola_hook: "Detik 0: tampilkan visual area atau objek game yang terlihat normal + teks 'ada yang tersembunyi di sini selama bertahun-tahun'. Langsung ke investigasi."
+        contoh_judul:
+          - "Easter egg GTA ini disembunyikan developer 10 tahun dan baru ketemu bulan lalu"
+          - "Fakta game ini yang developer tidak pernah announce tapi ada di dalam kode"
+          - "Lokasi tersembunyi di map ini yang hampir tidak ada pemain yang pernah temukan"
+      micro:
+        - slug: game-facts-easter-egg-tersembunyi
+          name: Easter Egg Tersembunyi yang Susah Ditemukan
+          description: Showcase easter egg dan rahasia yang sengaja disembunyikan developer game populer yang butuh waktu bertahun-tahun untuk ditemukan komunitas.
+          example_hook: "Easter egg GTA ini disembunyikan developer 10 tahun dan baru ketemu bulan lalu..."
+          guide:
+            audience: "Gamer 16–30 yang suka konten 'behind the scenes' game; penggemar game yang punya jam main tinggi tapi mungkin tidak tahu semua rahasia; tipe penonton yang akan replay game setelah nonton ini."
+            tone: "Detektif dan penuh takjub — seperti Nat Geo tapi untuk game. Nada 'kita akhirnya menemukan ini setelah sekian lama'. Bukan sekadar informasi, tapi pengalaman discovery."
+            format: "45–90 detik. Struktur: latar belakang game + rumor tentang easter egg → perjalanan menemukan (map navigation atau sequence steps) → reveal momen easter egg aktif → reaksi komunitas saat pertama ditemukan. Vertikal 9:16."
+            boleh:
+              - "Rekam langsung proses menemukan easter egg step-by-step — penonton bisa ikuti sendiri"
+              - "Tambahkan konteks: sudah berapa tahun game ini rilis vs kapan easter egg ditemukan"
+              - "Kutip reaksi komunitas pertama kali dari Twitter atau Reddit untuk amplifikasi kejutan"
+              - "Akhiri dengan teori: apakah masih ada easter egg lain yang belum ditemukan?"
+            hindari:
+              - "Jangan klaim easter egg yang belum diverifikasi — screenshot forum tidak cukup"
+              - "Jangan bahas easter egg yang sudah viral bertahun-tahun tanpa angle baru atau game baru"
+              - "Jangan skip langkah cara mencapainya — penonton ingin bisa replicate sendiri"
+              - "Jangan lebay dalam reaksi jika easter egg-nya relatif biasa — kredibilitas terjaga"
+            pola_hook: "Detik 0: rekam footage normal di game tapi ada sesuatu aneh yang subtle + teks 'kamu pasti pernah lewat sini, tapi tidak tahu yang tersembunyi di sini'. Langsung ke investigasi."
+            contoh_judul:
+              - "Easter egg GTA V ini butuh 8 tahun untuk ditemukan dan ini cara mencapainya"
+              - "Developer sembunyikan pesan ini di texture game dan hampir tidak ada yang sadar"
+              - "Lokasi rahasia di ML yang bahkan developer tidak pernah officially announce"
+              - "Easter egg Minecraft terbaru yang sudah ada sejak update 5 tahun lalu"
+              - "Area terkunci di game ini akhirnya terbuka setelah komunitas pecahkan puzzle 3 tahun"
+            content_runway: "Setiap game besar memiliki puluhan easter egg belum ditemukan; komunitas speedrunner dan dataminer terus mengungkap yang baru; game lama selalu menyimpan rahasia yang bisa jadi konten baru kapan saja."
+
+        - slug: game-facts-lore-tersembunyi
+          name: Lore Tersembunyi di Balik Game Populer
+          description: Penggalian cerita tersembunyi di balik game populer yang tidak disampaikan secara eksplisit, untuk penonton yang suka kedalaman narasi game.
+          example_hook: "Karakter ini sebenarnya villain dari awal, dan petunjuknya ada sejak scene pertama..."
+          guide:
+            audience: "Gamer 17–30 yang peduli cerita dan dunia game, bukan cuma gameplay; suka format lore-dive seperti yang populer di Dark Souls atau Valorant; tipe yang replay game untuk cari petunjuk cerita."
+            tone: "Analitis dan penuh reverence terhadap cerita yang baik. Bukan spoiler biasa — ini analisis mendalam yang membuat penonton kagum akan detail yang direncanakan developer. Serius tapi tidak membosankan."
+            format: "60–90 detik. Struktur: hook dengan reveal mengejutkan dari lore → flashback ke petunjuk yang tersembunyi → garis penghubung antara detail → implikasi terhadap pemahaman seluruh cerita. Voiceover di atas klip gameplay relevan. Vertikal 9:16."
+            boleh:
+              - "Tampilkan screenshot atau klip spesifik yang jadi bukti lore — 'bukti' visual sangat kuat"
+              - "Hubungkan detail di awal game dengan reveal di akhir untuk tunjukkan tingkat perencanaan developer"
+              - "Gunakan timeline visual untuk bantu penonton memahami kronologi lore yang kompleks"
+              - "Akhiri dengan pertanyaan yang belum terjawab — undang diskusi di komentar"
+            hindari:
+              - "Jangan spoil tanpa warning untuk game yang baru rilis — etika konten gaming"
+              - "Jangan presentasikan teori sebagai fakta konfirmasi — bedakan antara bukti kuat dan spekulasi"
+              - "Jangan bahas lore game yang terlalu niche tanpa konteks — penonton harus bisa ikuti tanpa pernah main"
+              - "Jangan terlalu panjang — lore dense butuh narasi yang padat dan efisien"
+            pola_hook: "Detik 0: tampilkan scene dari game yang terlihat normal + teks 'kamu lewatkan sesuatu di scene ini'. Lalu zoom ke detail yang selama ini terlewat."
+            contoh_judul:
+              - "Karakter ini villain dari awal game, dan developer taruh petunjuknya di intro"
+              - "Lore ML yang disembunyikan di item description — cerita yang lebih dalam dari yang kamu kira"
+              - "Teori ini soal dunia game populer ini yang akhirnya dikonfirmasi developer sendiri"
+              - "Detail kecil di background stage ini yang sebenarnya menceritakan masa lalu karakter"
+              - "Kenapa ending game ini berubah makna total kalau kamu tahu fakta lore ini"
+            content_runway: "Setiap game dengan cerita memiliki lore yang bisa digali berlapis-lapis; komunitas lore hunter terus menemukan interpretasi baru; game dengan universe besar (ML, FF universe, GTA, dll) menyediakan material hampir tidak terbatas."
+
+        - slug: game-facts-developer-blunder
+          name: Keputusan Developer yang Hampir Hancurkan Game
+          description: Kisah behind-the-scenes keputusan pengembangan game yang kontroversial atau hampir fatal, memberikan perspektif industri yang jarang dibahas konten gaming biasa.
+          example_hook: "Developer ini hampir hapus fitur yang jadi alasan utama game-nya laku 30 juta kopi..."
+          guide:
+            audience: "Gamer 18–30 yang tertarik industri game, bukan cuma pemain; penonton yang suka konten 'behind the scenes' dan 'hampir tidak terjadi'; mirip penonton business case study tapi untuk game."
+            tone: "Jurnalistik ringan — seperti podcast gaming yang investigatif. Nada 'kamu tidak akan percaya ini hampir terjadi'. Tetap entertaining, bukan makalah akademis."
+            format: "60–90 detik. Struktur: game yang dikenal penonton → keputusan kontroversial atau hampir fatal → konteks internal developer → dampak jika keputusan itu jadi diambil → apa yang sebenarnya terjadi. Voiceover di atas footage gameplay dan klip interview developer jika ada. Vertikal 9:16."
+            boleh:
+              - "Kutip sumber primer: wawancara developer, GDC talk, atau dokumenter resmi"
+              - "Tampilkan prototype atau versi lama game jika tersedia di arsip publik"
+              - "Tunjukkan dampak nyata: 'kalau ini jadi, game ini tidak akan pernah ada'"
+              - "Hubungkan dengan keputusan bisnis — banyak blunder terjadi karena tekanan publisher"
+            hindari:
+              - "Jangan klaim sebagai fakta jika hanya rumor atau sumber anonim — label dengan jelas"
+              - "Jangan terlalu teknis tentang aspek coding — fokus pada drama keputusan bisnisnya"
+              - "Jangan hanya bahas game Western — industri game mobile Asia dan developer Indonesia juga menarik"
+              - "Jangan framing sebagai 'developer bodoh' — lebih produktif sebagai 'keputusan sulit dengan informasi terbatas'"
+            pola_hook: "Detik 0: tampilkan gameplay game yang sudah sukses besar + teks 'game ini hampir tidak pernah ada'. Langsung ke cerita keputusan berbahayanya."
+            contoh_judul:
+              - "Developer ML hampir batalkan hero ini karena dikira terlalu OP, sekarang jadi favorit semua orang"
+              - "Keputusan ini hampir hancurkan studio game Indonesia sebelum sempat rilis"
+              - "Fitur yang hampir dihapus dari Free Fire yang sekarang jadi alasan orang masih main"
+              - "Game ini hampir diluncurkan dengan mekanik yang akan bikin semua orang uninstall"
+              - "Publisher minta ubah ini di game sukses ini, developer menolak dan ternyata benar"
+            content_runway: "Setiap game besar memiliki sejarah pengembangan yang penuh keputusan kritis; GDC talks, wawancara developer, dan dokumenter game terus mengungkap cerita baru; game lama terus relevantes melalui lensa sejarah industri."

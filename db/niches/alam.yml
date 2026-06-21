@@ -1,0 +1,467 @@
+version: 1
+vertical:
+  slug: v-alam
+  name: Alam
+  description: Konten alam, hewan, dan satwa liar dengan visual relaksasi atau fakta.
+  guide:
+    audience: "Penonton 16–40 dari semua gender yang menikmati konten alam sebagai pelarian dari kehidupan urban; campuran pecinta hewan, penonton relaksasi malam hari, dan penggemar sains kasual; banyak yang menonton dari kota besar tapi rindu alam dan kehidupan liar."
+    tone: "Tenang dan penuh rasa ingin tahu. Dunia alam berbicara sendiri — creator hanya jadi jembatan antara penonton dan keajaiban yang sudah ada. Tidak perlu dramatisasi berlebihan; realitas alam sudah cukup memukau."
+    format: "Video 30–120 detik tergantung sub-format. Visual utama adalah footage alam berkualitas tinggi — sinematik, close-up, atau b-roll yang breathtaking. Vertikal 9:16. Musik ambient atau suara alam asli lebih diutamakan daripada musik pop. Teks minimal dan tidak mengalihkan dari visual."
+    boleh:
+      - "Gunakan footage sinematik berkualitas tinggi — kualitas visual adalah reputasi channel"
+      - "Suara alam asli (kicau burung, gemericik air, deburan ombak) diboost sebagai aset audio utama"
+      - "Teks fakta singkat yang memperkaya tanpa mengalihkan dari visual"
+      - "Slow-motion untuk momen puncak — terbang burung, predator menyerang, air terjun"
+      - "Format before-reveal: tampilkan pertanyaan atau situasi, lalu ungkap jawabannya di akhir"
+    hindari:
+      - "Jangan gunakan footage stok generik yang bisa ditemukan di mana saja tanpa nilai unik"
+      - "Jangan pakai musik ber-hak-cipta; pilih royalty-free ambient atau suara alam asli"
+      - "Jangan tambahkan narasi berlebihan yang mengalihkan dari keindahan visual"
+      - "Jangan tampilkan konten penyiksaan hewan — platform akan hapus dan reputasi hancur"
+      - "Jangan klaim fakta tanpa sumber — konten edukasi alam harus akurat"
+    pola_hook: "Detik 0–2: visual paling memukau atau fakta paling mengejutkan langsung ditampilkan, tanpa intro. Teks singkat yang membangun rasa ingin tahu ('ternyata hewan ini...', 'lokasi ini ada di Indonesia'). Penonton harus merasa merugi jika tidak lanjut tonton."
+    contoh_judul:
+      - "Hutan ini ada di Indonesia dan hampir tidak ada yang tahu keberadaannya"
+      - "Berhenti scroll sebentar — alam mau tunjukkan sesuatu yang jarang terlihat"
+      - "Hewan ini cuma ada di satu pulau, dan populasinya tinggal ratusan"
+
+  niches:
+    - slug: pet-animals
+      name: "Hewan / Pet"
+      description: Footage hewan lucu + cerita.
+      faceless: true
+      difficulty: menengah
+      rpm: rendah
+      formats: footage + caption + musik
+      example_hook: "Kucing ini tiap hari nungguin..."
+      guide:
+        audience: "Pemilik hewan peliharaan dan pecinta binatang berusia 18–40; dominan perempuan tapi laki-laki signifikan; penonton yang mudah terpaut secara emosional dengan cerita hewan; banyak yang belum punya hewan peliharaan tapi ingin."
+        tone: "Hangat, menyentuh, dan kadang lucu. Setiap video harus membangun koneksi emosional — penonton harus merasa 'hewan ini seperti teman'. Tidak perlu dramatis berlebihan; tingkah hewan autentik selalu lebih kuat dari yang direkayasa."
+        format: "30–90 detik. Footage hewan dengan caption teks yang menceritakan momen atau konteks. Musik latar ceria atau sentimental sesuai mood. Close-up wajah hewan untuk koneksi emosional. Vertikal 9:16."
+        boleh:
+          - "Tampilkan ekspresi wajah hewan dalam close-up — itu sumber koneksi emosional terkuat"
+          - "Caption teks yang 'menyuarakan' pikiran hewan selalu performatif untuk engagement"
+          - "Cerita singkat dengan twist atau resolusi emosional di akhir meningkatkan watch time"
+          - "Gunakan musik yang cocok dengan mood — ceria untuk konten lucu, sentimental untuk cerita mengharukan"
+        hindari:
+          - "Jangan rekam hewan dalam kondisi stres atau ketakutan demi konten — platform dan penonton akan bereaksi negatif"
+          - "Jangan gunakan musik ber-hak-cipta; pilih royalty-free yang sesuai mood"
+          - "Jangan caption yang terlalu panjang atau font yang tidak mudah dibaca di mobile"
+          - "Jangan paksakan cerita yang tidak ada — biarkan tingkah hewan sendiri yang cerita"
+        pola_hook: "Detik 0: tampilkan hewan dalam momen paling ekspresif atau situasi paling unik + caption singkat yang membangun pertanyaan ('kenapa dia lakuin ini tiap hari?'). Penonton harus penasaran dengan kelanjutan cerita."
+        contoh_judul:
+          - "Kucing ini tiap hari nungguin pemiliknya pulang, sampai suatu hari tidak ada yang datang"
+          - "Dia pelihara hewan ini karena dianggap buang sial, ini yang terjadi setahun kemudian"
+          - "Anjing ini tidak mau makan selama 3 hari, baru sadar alasannya setelah ini"
+
+      micro:
+        - slug: pet-animals-kucing-viral
+          name: Kucing Viral Indonesia
+          description: Momen lucu dan menggemaskan kucing peliharaan lokal, dirangkum dari konten viral untuk penonton pecinta kucing.
+          example_hook: "Kucing ini tiap hari nungguin majikannya pulang kerja, sampai suatu hari..."
+          guide:
+            audience: "Pencinta kucing Indonesia berusia 16–35, mayoritas perempuan; penonton yang sudah punya kucing atau ingin adopsi; pengguna aktif TikTok dan Instagram yang sering share konten kucing ke sesama."
+            tone: "Gemas, menyentuh, dan sering absurd. Kucing Indonesia punya karakter khas — bisa liar, bisa manja, sering dramatis. Caption yang 'ngomongin' tingkah kucing dengan Bahasa Indonesia kasual sangat efektif."
+            format: "30–60 detik. Footage tunggal atau kompilasi 2–3 momen lucu atau mengharukan. Caption teks kasual yang menarasikan pikiran kucing. Musik ceria atau lo-fi. Close-up wajah dan reaksi kucing. Vertikal 9:16."
+            boleh:
+              - "Caption yang menyuarakan 'pikiran' kucing dengan bahasa kasual Indonesia — sangat viral"
+              - "Momen kucing yang tertangkap basah melakukan sesuatu aneh atau lucu tanpa sadar"
+              - "Format 'cerita' dengan setup dan punchline — penonton suka struktur naratif singkat"
+              - "Kucing kampung Indonesia seringkali lebih relatable daripada ras mahal"
+            hindari:
+              - "Jangan rekam kucing yang jelas tidak nyaman atau ketakutan demi 'reaksi lucu'"
+              - "Jangan gunakan musik ber-hak-cipta yang langsung kena copyright strike"
+              - "Jangan caption terlalu banyak teks sekaligus — maksimal 2 baris per frame"
+              - "Jangan edit terlalu agresif dengan jump cut yang menghilangkan ekspresi terbaik"
+            pola_hook: "Detik 0: tampilkan momen paling menggemaskan atau aneh dari kucing + caption singkat yang memicu pertanyaan. Jangan tunjukkan punchline di awal — bangun dulu konteks selama 5 detik."
+            contoh_judul:
+              - "Kucing ini tiap hari nungguin majikannya pulang kerja, sampai suatu hari dia tidak datang lagi"
+              - "Kucing liar ini masuk rumah sendiri dan memutuskan tinggal selamanya"
+              - "Dia anggap kucingnya tidak punya perasaan, sampai rekaman ini mengubah pikirannya"
+              - "Kucing kampung ini punya ritual harian yang baru ketahuan setelah dipasang kamera"
+              - "Tiga kucing ini nunggu makan bareng setiap hari — tapi ada satu yang selalu terlambat"
+            content_runway: "Setiap kucing punya kepribadian unik dan momen berbeda setiap hari; komunitas pecinta kucing Indonesia sangat besar dan aktif berbagi konten, menjamin pasokan momen baru tanpa henti."
+
+        - slug: pet-animals-anjing-golden
+          name: Anjing Golden & Labrador
+          description: Footage anjing ras populer yang setia dan lucu, menyasar penonton keluarga muda yang tertarik punya anjing peliharaan.
+          example_hook: "Anjing ini nangis setiap kali bayinya dibawa masuk, bukan karena cemburu..."
+          guide:
+            audience: "Keluarga muda dan pasangan 22–40 yang sedang mempertimbangkan punya anjing; pemilik Golden/Labrador yang mencari konten relatable; penonton yang tergerak oleh cerita kesetiaan dan ikatan manusia-hewan."
+            tone: "Hangat dan keluarga. Golden Retriever dan Labrador identik dengan kesetiaan dan kelucuan — konten yang menonjolkan sifat ini selalu perform. Cerita tentang ikatan anjing dengan bayi atau lansia sangat emosional."
+            format: "45–90 detik. Footage sehari-hari dengan momen yang mengungkap karakter anjing. Caption atau voiceover singkat yang memberikan konteks emosional. Musik sentimental atau ceria. Close-up ekspresi dan interaksi. Vertikal 9:16."
+            boleh:
+              - "Rekam momen spontan — reaksi pertama anjing terhadap sesuatu yang baru selalu terbaik"
+              - "Interaksi anjing dengan bayi atau anak kecil hampir selalu viral di Indonesia"
+              - "Format 'sebelum-sesudah': anjing kecil vs sudah dewasa, penonton suka timeline"
+              - "Caption yang menjelaskan 'kenapa anjing lakukan ini' memberikan nilai edukasi sekaligus emosi"
+            hindari:
+              - "Jangan rekam anjing yang terlihat tidak nyaman atau diposisikan paksa untuk lucu"
+              - "Jangan gunakan musik ber-hak-cipta — Golden Retriever videos kena strike banyak"
+              - "Jangan konten yang mempromosikan pembelian anjing tanpa mention adopsi sebagai opsi"
+              - "Jangan tampilkan wajah pemilik jika channel faceless — fokus pada anjingnya"
+            pola_hook: "Detik 0: tampilkan momen paling ekspresif anjing (ekspresi menunggu, reaksi kejutan, atau interaksi dengan manusia) + caption yang membangun misteri kecil. Emosi harus terasa di 3 detik pertama."
+            contoh_judul:
+              - "Anjing ini nangis setiap kali bayinya dibawa masuk, ternyata bukan karena cemburu"
+              - "Golden Retriever ini sudah 3 tahun tunggu pemiliknya yang pergi kuliah ke luar kota"
+              - "Anjing ini dibesarkan sama kucing, dan sekarang dia pikir dia juga kucing"
+              - "Labrador ini punya cara memberitahu pemilik saat ada bahaya — dan terbukti dua kali"
+              - "Pertama kali anjing ini lihat bayi baru lahir — reaksinya tidak ada yang duga"
+            content_runway: "Setiap tahap kehidupan anjing (puppy, dewasa, senior) menghasilkan konten berbeda; interaksi dengan anggota keluarga baru, musim yang berbeda, dan kebiasaan unik tiap anjing memastikan ide video tidak habis."
+
+        - slug: pet-animals-hewan-exotic
+          name: Hewan Peliharaan Eksotik
+          description: Konten hewan peliharaan tidak biasa seperti musang, landak, atau reptil, untuk penonton yang tertarik dunia pet di luar kucing-anjing.
+          example_hook: "Dia pelihara ular di apartemen, dan tetangganya gak pernah tahu..."
+          guide:
+            audience: "Penonton 18–35 yang penasaran dengan dunia hewan peliharaan non-mainstream; calon pemilik hewan eksotik yang sedang riset; penonton yang suka konten 'tidak biasa' dan mau berbagi ke lingkaran sosialnya sebagai conversation starter."
+            tone: "Penuh rasa ingin tahu dan sedikit edgy. Hewan eksotik selalu menghadirkan elemen kejutan — perilaku yang tidak terduga, penampilan yang unik, atau mitos yang dipatahkan. Tone edukatif ringan tapi menghibur."
+            format: "45–90 detik. Fokus pada satu hewan dengan momen yang mengungkap karakter atau perilaku uniknya. Teks informatif singkat yang menjawab pertanyaan yang penonton pasti punya ('apa ini bisa dipegang?', 'ini legal dipelihara?'). Vertikal 9:16."
+            boleh:
+              - "Tampilkan momen pertama interaksi hewan dengan lingkungan baru — selalu menarik"
+              - "Jawab pertanyaan umum yang penonton penasaran: 'apakah aman?', 'makan apa?' — nilai edukatif"
+              - "Momen hewan eksotik berinteraksi dengan hewan peliharaan lain sangat shareable"
+              - "Format 'mitos vs fakta' tentang hewan tersebut meningkatkan credibility dan engagement"
+            hindari:
+              - "Jangan tampilkan hewan yang statusnya dilindungi atau ilegal dipelihara tanpa disclaimer jelas"
+              - "Jangan rekam interaksi yang membahayakan hewan atau manusia demi konten sensasional"
+              - "Jangan klaim semua hewan eksotik aman dipelihara tanpa konteks perawatan yang dibutuhkan"
+              - "Jangan gunakan musik ber-hak-cipta"
+            pola_hook: "Detik 0: tampilkan hewan eksotik dalam situasi yang langsung bikin penonton terperangah atau penasaran + teks yang trigger rasa ingin tahu ('hewan ini boleh dipelihara di Indonesia?'). Buat penonton merasa akan belajar sesuatu yang jarang diketahui."
+            contoh_judul:
+              - "Dia pelihara ular di apartemen Jakarta, dan tetangganya tidak pernah tahu selama 2 tahun"
+              - "Musang peliharaan ini lebih setia dari anjing, pemiliknya baru sadar setelah ini"
+              - "Landak pygmy ini tampak menyeramkan tapi ini yang terjadi saat dipegang pertama kali"
+              - "Biawak peliharaan ini besar lebih cepat dari yang pemiliknya perkirakan — ini kondisinya sekarang"
+              - "Hewan ini ilegal dipelihara di banyak negara, tapi di Indonesia kamu bisa — ini faktanya"
+            content_runway: "Ratusan spesies hewan eksotik bisa jadi konten berbeda; setiap fase pertumbuhan, perilaku musiman, dan interaksi dengan lingkungan baru menghasilkan video unik; komunitas hewan eksotik Indonesia tumbuh dan aktif."
+
+    - slug: wildlife
+      name: "Satwa Liar / Fakta Hewan"
+      description: Fakta & footage satwa.
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: footage + voiceover
+      example_hook: "Hewan ini bisa hidup tanpa kepala..."
+      guide:
+        audience: "Penonton 16–40 yang suka konten sains dan alam; pria sedikit lebih dominan; penonton yang terpukau oleh fakta mengejutkan tentang hewan; tidak harus berlatar sains — cukup penasaran dan suka 'wow moment'."
+        tone: "Informatif tapi tidak membosankan. Seperti teman yang baru dapat fakta menarik dan antusias menceritakannya. Tidak perlu formal seperti dokumenter — bisa kasual tapi tetap akurat."
+        format: "45–90 detik. Footage satwa berkualitas tinggi sebagai visual utama. Voiceover atau teks yang menyampaikan fakta secara bertahap. Struktur: fakta mengejutkan di awal → konteks dan penjelasan → implikasi atau 'twist' di akhir. Vertikal 9:16."
+        boleh:
+          - "Fakta yang counter-intuitive selalu perform lebih baik — cari yang membalik asumsi umum"
+          - "Kombinasikan footage yang dramatis dengan fakta yang mengejutkan untuk sinergi maksimal"
+          - "Bandingkan dengan skala manusia untuk membuat fakta lebih mudah dicerna ('sekuat 100 manusia')"
+          - "Akhiri dengan pertanyaan retoris yang buat penonton berpikir — meningkatkan comment rate"
+        hindari:
+          - "Jangan sebar fakta yang tidak terverifikasi — satu fakta salah bisa hancurkan credibility channel"
+          - "Jangan gunakan footage yang menampilkan penyiksaan atau kondisi hewan yang tidak manusiawi"
+          - "Jangan voiceover yang terlalu panjang dan padat — penonton short-form tidak mau kuliah"
+          - "Jangan pakai musik ber-hak-cipta atau musik yang mengalahkan voiceover"
+        pola_hook: "Detik 0: fakta paling mengejutkan langsung diucapkan atau ditampilkan sebagai teks + footage yang mendukung. 'Hewan ini bisa [hal yang tidak masuk akal]' — penonton harus merasa tidak bisa skip karena ingin verifikasi."
+        contoh_judul:
+          - "Hewan ini secara teknis tidak bisa mati — dan itu bukan mitos"
+          - "Predator ini tidak berburu dengan kecepatan tapi dengan sesuatu yang lebih menakutkan"
+          - "Satwa ini ada di Indonesia dan hampir punah sebelum kita sempat mengenalnya"
+
+      micro:
+        - slug: wildlife-predator-ekstrem
+          name: Predator Paling Mematikan
+          description: Fakta mengejutkan tentang predator puncak di darat dan laut, untuk penonton yang suka konten sains alam yang menegangkan.
+          example_hook: "Buaya ini gak butuh makan selama 2 tahun, tapi tetap berbahaya..."
+          guide:
+            audience: "Pria 18–35 yang suka konten sains alam yang menegangkan; penonton yang tertarik dengan 'siapa yang bisa mengalahkan siapa' di alam liar; penggemar dokumenter alam tapi ingin format yang lebih singkat dan punchy."
+            tone: "Menegangkan dan impressed. Setiap fakta tentang predator harus membuat penonton sadar betapa berbahayanya hewan ini — tapi dengan kekaguman, bukan ketakutan berlebihan."
+            format: "45–75 detik. Fakta mematikan sebagai hook → penjelasan mekanisme biologis atau perilaku → satu fakta bonus yang lebih mengejutkan sebagai penutup. Footage close-up predator dengan slow-motion di momen kritis. Vertikal 9:16."
+            boleh:
+              - "Bandingkan kemampuan predator dengan skala manusia untuk dampak yang lebih nyata"
+              - "Struktur 'fakta 1 → lebih mengejutkan → paling mengejutkan' untuk retention hook"
+              - "Footage momen berburu yang dramatis sebagai visual pendukung fakta"
+              - "Akhiri dengan pertanyaan 'kalau begini, apa yang bisa lawan predator ini?' untuk trigger comment"
+            hindari:
+              - "Jangan tampilkan footage berburu yang terlalu grafis atau brutal tanpa blur/cut yang tepat"
+              - "Jangan sebar fakta yang tidak terverifikasi — komunitas wildlife sangat aktif meluruskan"
+              - "Jangan sensasionalisasi berlebihan yang membuat konten terlihat clickbait murahan"
+              - "Jangan pakai musik ber-hak-cipta; ambient tegang royalty-free sangat tersedia"
+            pola_hook: "Detik 0: fakta paling mengejutkan tentang predator ini langsung disampaikan (voiceover atau teks) + footage predator dalam posisi mengancam. Penonton harus langsung bertanya 'masa iya?' di 3 detik pertama."
+            contoh_judul:
+              - "Buaya tidak butuh makan 2 tahun dan tetap bisa membunuh dalam satu gerakan"
+              - "Predator ini tidak menggunakan kecepatan — dia pakai sesuatu yang lebih mematikan"
+              - "Ikan ini tidak punya gigi, tapi tidak ada yang selamat dari gigitannya"
+              - "Komodo tidak berbisa tapi cara dia membunuh jauh lebih mengerikan dari itu"
+              - "Hewan terkecil ini membunuh lebih banyak manusia per tahun dari singa dan harimau digabung"
+            content_runway: "Ratusan spesies predator di darat, laut, dan udara masing-masing punya mekanisme berburu yang unik; setiap perbandingan antar predator menghasilkan konten baru; penemuan ilmiah tentang predator terus bertambah."
+
+        - slug: wildlife-hewan-indonesia
+          name: Satwa Liar Endemik Indonesia
+          description: Fakta dan footage satwa yang hanya ada di Indonesia seperti komodo, anoa, dan babirusa, menyasar kebanggaan lokal.
+          example_hook: "Hewan ini cuma ada di satu pulau di Indonesia, dan hampir punah..."
+          guide:
+            audience: "Penonton Indonesia 17–40 yang peduli alam dan bangga akan kekayaan biodiversitas lokal; pelajar dan mahasiswa yang suka konten edukatif dengan nuansa nasionalisme positif; penonton internasional yang tertarik Indonesia."
+            tone: "Bangga dan prihatin sekaligus. Kekayaan satwa Indonesia luar biasa — tapi ancamannya nyata. Tone yang balance antara kekaguman pada keunikan satwa dan kesadaran bahwa konservasi penting."
+            format: "45–90 detik. Fokus satu spesies per video. Fakta keunikan mengejutkan → status konservasi → apa yang bisa penonton lakukan atau ketahui. Footage sinematik berkualitas tinggi atau animasi jika footage langka. Vertikal 9:16."
+            boleh:
+              - "Mulai dengan fakta yang bikin penonton bangga ('hanya ada di Indonesia')"
+              - "Tampilkan peta pulau lokasi satwa untuk konteks geografis yang kuat"
+              - "Ceritakan ancaman nyata spesifik yang dihadapi satwa tersebut — membuat isu jadi konkret"
+              - "Akhiri dengan call-to-action ringan: 'share kalau kamu bangga hewan ini dari Indonesia'"
+            hindari:
+              - "Jangan gunakan fakta yang sudah outdated — status populasi satwa berubah tiap tahun"
+              - "Jangan hanya tampilkan satwa yang sudah terkenal (orangutan, komodo) — satwa tidak terkenal lebih menarik"
+              - "Jangan tone yang terlalu doom — keseimbangan antara masalah dan harapan penting untuk engagement"
+              - "Jangan pakai musik ber-hak-cipta"
+            pola_hook: "Detik 0: tampilkan satwa dalam visual paling memukau + teks 'hewan ini cuma ada di Indonesia' atau 'kamu tidak akan temukan ini di negara lain'. Rasa bangga dan rasa ingin tahu harus hadir bersamaan."
+            contoh_judul:
+              - "Hewan ini cuma ada di satu pulau Indonesia dan populasinya tinggal ratusan ekor"
+              - "Anoa adalah kerbau mini yang cuma hidup di Sulawesi dan hampir tidak ada yang kenal"
+              - "Babirusa Indonesia punya taring yang menembus kepalanya sendiri — ini alasannya"
+              - "Maleo bertelur di tanah panas dan tidak pernah mengerami — mekanismenya luar biasa"
+              - "Tarsius Indonesia matanya lebih besar dari otaknya sendiri — ini fakta lainnya"
+            content_runway: "Indonesia memiliki lebih dari 700 spesies mamalia, 1600 spesies burung, dan ribuan reptil dan amfibi endemik; setiap spesies menghasilkan minimal satu video; penemuan spesies baru terus terjadi di Indonesia."
+
+        - slug: wildlife-adaptasi-ekstrem
+          name: Adaptasi Hewan di Habitat Ekstrem
+          description: Satwa yang berevolusi bertahan di kondisi ekstrem — gurun, kutub, laut dalam — untuk penonton sains kasual yang suka fakta mengejutkan.
+          example_hook: "Ikan ini hidup di 8.000 meter di bawah laut, tempat manusia gak bisa bertahan..."
+          guide:
+            audience: "Penonton 16–35 yang suka sains kasual dan konten 'fakta tidak masuk akal tapi nyata'; penonton yang menyukai perspektif baru tentang batas kemampuan kehidupan; cocok untuk penonton yang suka National Geographic tapi mau format lebih pendek."
+            tone: "Takjub dan sedikit filosofis. Adaptasi ekstrem selalu menginspirasi rasa kagum pada evolusi dan kehidupan. Sampaikan dengan antusias tapi tidak berlebihan — biarkan faktanya sendiri yang memukau."
+            format: "45–75 detik. Satu hewan, satu habitat ekstrem, satu atau dua adaptasi paling menakjubkan. Struktur: kondisi habitat yang mustahil → penjelasan bagaimana hewan ini survive → fakta yang paling mengejutkan tentang adaptasinya. Vertikal 9:16."
+            boleh:
+              - "Bandingkan kondisi habitat dengan kondisi yang manusia bisa pahami ('tekanan ini setara 1000 kali tekanan di permukaan')"
+              - "Fokus pada satu mekanisme adaptasi dan jelaskan secara visual — lebih efektif dari banyak fakta sekaligus"
+              - "Akhiri dengan fakta bahwa adaptasi ini menginspirasi teknologi manusia — engagement tinggi"
+              - "Gunakan analogi sederhana untuk membuat sains mudah dicerna"
+            hindari:
+              - "Jangan sebar fakta sains yang tidak terverifikasi atau sudah dipatahkan oleh penelitian terbaru"
+              - "Jangan terlalu teknis dengan terminologi ilmiah tanpa penjelasan — ini konten kasual"
+              - "Jangan gunakan footage yang jelas tidak sesuai dengan spesies atau habitat yang dimaksud"
+              - "Jangan pakai musik ber-hak-cipta"
+            pola_hook: "Detik 0: deskripsikan kondisi habitat yang mustahil ('8.000 meter di bawah laut, tekanannya akan hancurkan kapal selam') + tampilkan hewan yang hidup di sana. Kontras antara mustahil dan nyata adalah hook-nya."
+            contoh_judul:
+              - "Ikan ini hidup di kedalaman 8.000 meter tempat tidak ada sinar matahari sama sekali"
+              - "Hewan ini bisa bertahan di -70 derajat Celsius dan bangkit kembali saat mencair"
+              - "Ubur-ubur ini secara teknis bisa hidup selamanya — ini mekanismenya"
+              - "Unta menyimpan lemak bukan air di punuknya — dan ada alasan yang lebih menarik dari itu"
+              - "Kecoa bisa hidup 9 hari tanpa kepala dan ini yang membuat fakta itu bisa terjadi"
+            content_runway: "Setiap bioma ekstrem (laut dalam, gurun, kutub, ketinggian ekstrem, gua) menghasilkan ratusan spesies dengan adaptasi unik; ilmu pengetahuan terus menemukan mekanisme adaptasi baru yang mengejutkan."
+
+    - slug: nature-relax
+      name: "Alam / Relaxing"
+      description: Footage alam + lo-fi.
+      faceless: true
+      difficulty: pemula
+      rpm: rendah
+      formats: footage sinematik + musik
+      example_hook: "Berhenti scroll, tarik napas..."
+      guide:
+        audience: "Penonton 16–40 dari semua gender yang mencari jeda dari konten yang stressful; pekerja kantoran dan mahasiswa yang butuh 'reset' cepat di tengah hari; penonton yang menonton sebelum tidur atau saat meditasi."
+        tone: "Tenang, slow, dan meditatif. Tidak ada narasi, tidak ada informasi yang perlu diproses. Penonton datang untuk merasakan, bukan untuk belajar. Setiap frame harus terasa seperti napas dalam."
+        format: "30–120 detik. Footage alam sinematik berkualitas tinggi — landscape, detail alam, atau timelapse. Musik lo-fi atau ambient, atau suara alam asli. Tidak ada teks berlebihan. Slow-motion dan golden hour diutamakan. Vertikal 9:16."
+        boleh:
+          - "Golden hour dan blue hour footage selalu perform lebih tinggi dari siang hari"
+          - "Suara alam asli (hujan, sungai, angin) sebagai pengganti atau pelengkap musik"
+          - "Timelapse awan bergerak atau air terjun sangat meditatif dan loop-friendly"
+          - "Teks 'berhenti scroll sebentar' atau 'tarik napas' mengundang penonton untuk engage secara berbeda"
+        hindari:
+          - "Jangan gunakan footage yang direkam dengan kualitas rendah atau goyang — visual adalah produknya"
+          - "Jangan pakai musik ber-hak-cipta atau musik yang terlalu upbeat dan merusak mood tenang"
+          - "Jangan tambahkan teks informatif berlebihan — ini konten rasa, bukan konten pikir"
+          - "Jangan rekam lokasi yang sudah terlalu umum tanpa angle atau momen yang unik"
+        pola_hook: "Detik 0: visual paling memukau dari footage langsung ditampilkan — tidak ada intro, tidak ada teks sambutan. Musik atau suara alam langsung hadir. Penonton harus langsung merasakan efek relaksasi dalam 2 detik pertama."
+        contoh_judul:
+          - "Berhenti scroll sebentar, alam mau tunjukkan sesuatu yang tidak banyak lihat"
+          - "5 menit ini cukup untuk reset mood kamu yang berantakan seharian"
+          - "Kalau kamu butuh istirahat dari semua, tonton ini dulu sebelum lanjut"
+
+      micro:
+        - slug: nature-relax-hutan-indonesia
+          name: Hutan Tropis Indonesia ASMR
+          description: Footage sinematik hutan hujan Indonesia dengan suara alam asli dan musik lo-fi, untuk penonton yang butuh jeda dari hiruk-pikuk kota.
+          example_hook: "Berhenti scroll sebentar. Dengarkan ini..."
+          guide:
+            audience: "Penonton urban Indonesia 20–40 yang kangen atau belum pernah mengalami ketenangan hutan tropis; pekerja yang butuh micro-break di tengah hari; penonton yang menonton malam hari sebagai ritual sebelum tidur."
+            tone: "Sakral dan tenang. Hutan tropis Indonesia adalah salah satu biosfer paling kaya di dunia — konten harus memancarkan kedalaman dan keheningan itu. Tidak ada kata, tidak ada informasi. Hanya sensasi."
+            format: "45–120 detik. Footage sinematik hutan hujan — kanopi, sinar matahari yang menembus daun, akar besar, lumut, dan air. Suara alam asli diboost dengan sedikit reverb natural: kicau burung, serangga, tetesan air. Musik lo-fi instrumental sebagai latar jika ada. Vertikal 9:16."
+            boleh:
+              - "Rekam di pagi hari saat kabut masih ada — visual paling magis untuk hutan tropis"
+              - "Slow-motion tetesan air dari daun ke tanah — ASMR visual yang kuat"
+              - "Close-up detail: lumut, tekstur kulit pohon, jamur, serangga — mendalam dan unik"
+              - "Suara serangga hutan malam sebagai variasi konten — berbeda tapi sama meditativenya"
+            hindari:
+              - "Jangan gunakan footage hutan yang jelas bukan hutan Indonesia — tidak autentik"
+              - "Jangan pakai musik yang terlalu upbeat atau ada vokal yang mengganggu mood"
+              - "Jangan tambahkan teks informatif yang membuat penonton berpikir, bukan merasakan"
+              - "Jangan rekam dengan footage yang bising kendaraan atau manusia di latar belakang"
+            pola_hook: "Detik 0: visual hutan paling memukau langsung ditampilkan — kanopu dengan sinar, atau kabut pagi — diikuti suara alam yang langsung memeluk penonton. Tidak ada intro. Penonton harus langsung merasakan 'ah' dalam 2 detik."
+            contoh_judul:
+              - "Berhenti scroll sebentar, dengarkan suara hutan Kalimantan ini dulu"
+              - "Kabut pagi di hutan ini terasa seperti masuk ke dunia lain"
+              - "Hutan ini ada di Sumatera dan suaranya bisa buat kamu lupa semua masalah hari ini"
+              - "Sinar matahari menembus kanopi hutan ini dengan cara yang tidak bisa direkayasa"
+              - "60 detik di hutan tropis ini cukup untuk reset pikiran yang penuh"
+            content_runway: "Indonesia memiliki hutan tropis di Sumatera, Kalimantan, Sulawesi, Papua, dan pulau-pulau lain — masing-masing dengan karakter visual dan audio yang berbeda; setiap musim, waktu hari, dan cuaca menghasilkan footage yang unik."
+
+        - slug: nature-relax-pantai-sunset
+          name: Pantai & Sunset Nusantara
+          description: Timelapse dan footage pantai-pantai Indonesia saat golden hour, cocok untuk penonton yang merindukan suasana laut.
+          example_hook: "5 menit ini akan reset mood kamu yang rusak seharian..."
+          guide:
+            audience: "Penonton Indonesia semua usia yang merindukan laut dan pantai; pekerja urban yang jarang bisa ke pantai; penonton yang menggunakan video ini sebagai virtual escape atau therapy ringan."
+            tone: "Bebas dan damai. Pantai adalah ruang di mana semua orang merasakan kelegaan — konten harus memancarkan perasaan itu. Golden hour pantai di Indonesia salah satu yang paling indah di dunia — biarkan visual bicara."
+            format: "45–120 detik. Timelapse matahari terbenam atau footage slow-motion ombak. Suara ombak dan angin sebagai audio utama atau dikombinasikan dengan musik lo-fi santai. Vertikal 9:16. Loop-friendly sangat diutamakan."
+            boleh:
+              - "Golden hour selalu beat siang hari — rekam 30 menit sebelum dan sesudah matahari terbenam"
+              - "Slow-motion ombak besar yang pecah di pantai sangat meditatif dan loop-friendly"
+              - "Tampilkan pantai yang tidak terkenal tapi indah — 'hidden gem' selalu perform tinggi"
+              - "Suara ombak dan angin ditetapkan sebagai audio utama — boost sedikit untuk kualitas ASMR"
+            hindari:
+              - "Jangan rekam pantai yang penuh sampah atau infrastruktur yang merusak estetika"
+              - "Jangan pakai musik yang terlalu populer dan kena copyright strike"
+              - "Jangan tampilkan wajah orang lain tanpa izin di footage pantai"
+              - "Jangan gunakan drone footage yang tidak diizinkan di area tertentu — bisa kena masalah legal"
+            pola_hook: "Detik 0: frame terbaik dari golden hour atau ombak yang paling dramatis langsung tampil — tanpa fade-in panjang. Suara ombak masuk full dari detik pertama. Penonton harus langsung merasa ingin berdiri di pantai itu."
+            contoh_judul:
+              - "5 menit di pantai ini cukup untuk reset mood yang rusak seharian"
+              - "Sunset di pantai Indonesia ini warnanya tidak bisa dipercaya kecuali sudah lihat sendiri"
+              - "Pantai tersembunyi di Lombok ini tidak banyak orang Indonesia yang tahu ada"
+              - "Ombak ini di Raja Ampat dan suaranya bisa buat kamu tidur dalam 3 menit"
+              - "Golden hour pantai Flores ini direkam 1 jam tanpa henti — ini hasilnya"
+            content_runway: "Indonesia memiliki 17.000+ pulau dengan garis pantai terpanjang di dunia — setiap pantai menghasilkan konten berbeda; setiap musim dan cuaca mengubah karakter visual; hidden gems baru terus ditemukan."
+
+        - slug: nature-relax-gunung-kabut
+          name: Pegunungan & Kabut Pagi
+          description: Footage pegunungan Indonesia dengan kabut pagi dan suara alam, menyasar penonton urban yang kangen suasana dingin dan tenang.
+          example_hook: "Kalau kamu lelah, tonton ini dulu sebelum tidur..."
+          guide:
+            audience: "Penonton urban Indonesia 20–40 yang kangen udara dingin dan ketenangan pegunungan; pekerja dan mahasiswa yang jenuh dengan keramaian kota; penonton yang suka konten slow dan meditatif sebelum tidur."
+            tone: "Sunyi dan menenangkan. Kabut pagi di pegunungan Indonesia adalah visual yang sangat identik dengan ketenangan — footage harus memancarkan kedinginan dan keheningan itu. Minimal teks, maksimal atmosfer."
+            format: "45–120 detik. Timelapse kabut bergerak di lembah atau slow-motion embun di daun. Suara alam pegunungan — angin, kicau burung pagi, gemerisik daun. Musik lo-fi dengan instrumen akustik sangat cocok. Vertikal 9:16."
+            boleh:
+              - "Timelapse kabut yang bergerak melewati lembah selalu hipnotis dan loop-friendly"
+              - "Rekam di golden hour pagi — cahaya keemasan menembus kabut adalah visual favorit"
+              - "Close-up embun di daun atau spider web dengan embun — detail yang indah dan ASMR visual"
+              - "Suara kicau burung pagi pegunungan Indonesia — sangat unik dan rindu-inducing"
+            hindari:
+              - "Jangan rekam kondisi cuaca yang terlalu mendung dan gelap — mood jadi depresi bukan relaksasi"
+              - "Jangan pakai musik ber-hak-cipta; musik akustik lo-fi royalty-free sangat tersedia"
+              - "Jangan tampilkan banyak infrastruktur manusia yang merusak kesan 'jauh dari kota'"
+              - "Jangan rekam dengan footage yang bising kendaraan atau suara manusia ramai"
+            pola_hook: "Detik 0: visual kabut bergerak di pegunungan langsung tampil — atau close-up embun pagi yang menetes. Suara alam masuk bersamaan. Tidak ada intro. Penonton harus langsung merasakan udara dingin dalam 2 detik."
+            contoh_judul:
+              - "Kalau kamu lelah dengan semua, tonton kabut pagi di Dieng ini dulu sebelum tidur"
+              - "Pegunungan ini di Jawa Tengah dan kabutnya bergerak seperti lautan"
+              - "Suara kicau burung pagi di pegunungan ini cukup untuk reset 8 jam stres kamu"
+              - "Embun pagi di Bromo ini direkam sebelum matahari naik — ini hasilnya"
+              - "Lembah ini di Toraja dan kabutnya tiap pagi menciptakan pemandangan yang tidak nyata"
+            content_runway: "Indonesia memiliki puluhan rangkaian pegunungan di Sumatera, Jawa, Sulawesi, Papua, dan NTT — masing-masing dengan karakter kabut, vegetasi, dan suara yang unik; tiap musim menghasilkan kondisi visual yang berbeda."
+
+    - slug: aquarium
+      name: "Aquascape / Ikan"
+      description: Aquascape, ikan hias, setup.
+      faceless: true
+      difficulty: menengah
+      rpm: rendah
+      formats: close-up + ASMR + time-lapse
+      example_hook: "Tank kosong ini jadi surga bawah air..."
+      guide:
+        audience: "Penghobi aquarium dan ikan hias berusia 20–45; pemula yang tertarik mulai hobi tapi belum tahu caranya; penonton yang mencari konten relaksasi dengan elemen edukatif; dominan pria tapi wanita yang suka desain interior juga tertarik."
+        tone: "Tenang dan presisi. Aquascape adalah seni sekaligus sains — konten harus memancarkan kedua aspek itu. Proses yang metodis dan hasil yang indah sama pentingnya. Suara air adalah ASMR alami yang tidak boleh dihilangkan."
+        format: "45–120 detik. Close-up ikan dan tanaman air, timelapse proses build, dan footage underwater tank yang meditatif. Suara air diperkuat — sangat memuaskan. Musik lo-fi instrumental atau ambient air. Vertikal 9:16."
+        boleh:
+          - "Boost suara air dari filter dan gelembung — ini adalah ASMR natural aquarium yang sangat efektif"
+          - "Timelapse pertumbuhan tanaman air selalu menarik — dari kecil sampai penuh dalam 30 detik"
+          - "Close-up ikan dengan detail warna dan gerakan yang tidak bisa dilihat dengan mata biasa"
+          - "Format 'budget build' selalu perform tinggi — 'berapa biaya tank ini?' adalah pertanyaan universal"
+        hindari:
+          - "Jangan tampilkan tank yang kotor atau kondisi air buruk — merusak kredibilitas channel"
+          - "Jangan pakai musik yang mengalahkan suara air — suara air adalah aset utama"
+          - "Jangan tampilkan ikan yang sakit atau sekarat demi konten — komunitas aquarium sangat sensitif"
+          - "Jangan klaim teknik atau produk tertentu tanpa pengalaman nyata — komunitas akan koreksi"
+        pola_hook: "Detik 0: tampilkan tank kosong atau kondisi awal yang tidak menarik + teks 'akan jadi apa ini dalam X hari'. Langsung cut ke kondisi akhir yang indah selama 2 detik sebagai preview, lalu kembali ke proses. Penonton harus ingin lihat prosesnya."
+        contoh_judul:
+          - "Tank kosong ini aku ubah jadi surga bawah air dalam 7 hari"
+          - "Ikan ini asli Indonesia dan harganya bisa bikin kamu tidak percaya"
+          - "Air aquarium ini hijau terus? Ini penyebab yang 90% pemula tidak tahu"
+
+      micro:
+        - slug: aquarium-build-timelapse
+          name: Build Aquascape Timelapse
+          description: Proses membangun aquascape dari tank kosong hingga jadi dalam format timelapse, untuk komunitas hobi ikan hias Indonesia.
+          example_hook: "Tank kosong ini jadi surga bawah air dalam 7 hari..."
+          guide:
+            audience: "Penghobi aquarium pemula hingga menengah berusia 20–40; penonton yang ingin tahu proses build tapi tidak mau nonton video 1 jam penuh; mereka yang punya tank kosong di rumah dan mencari inspirasi untuk mulai."
+            tone: "Antusias dan detail. Setiap keputusan dalam build ada alasannya — penonton bukan hanya ingin melihat hasil, tapi ingin belajar prosesnya secara implisit melalui visual. Suara air yang mulai mengalir di akhir adalah momen klimaks."
+            format: "60–90 detik. Timelapse seluruh proses build: substrate → hardscape (batu/kayu) → plant → fill water → equipment on → livestock masuk → mature tank. Suara air mulai mengalir sebagai audio klimaks di akhir. Teks singkat yang menjelaskan tiap fase. Vertikal 9:16."
+            boleh:
+              - "Tampilkan budget total di akhir video — pertanyaan paling banyak dan meningkatkan rewatch"
+              - "Teks penjelasan singkat per fase (2–3 kata) tanpa mengganggu alur timelapse"
+              - "Reveal kondisi tank 2–4 minggu setelah build sebagai bonus footage di akhir"
+              - "Close-up detail hardscape dan tanaman untuk penonton yang ingin replikasi"
+            hindari:
+              - "Jangan skip fase penting (substrate, cycling) demi mempercepat video — penonton ingin proses lengkap"
+              - "Jangan pakai musik ber-hak-cipta; lo-fi instrumental sangat cocok untuk genre ini"
+              - "Jangan tampilkan hasil akhir yang tidak setara dengan klaim di judul — menurunkan kepercayaan"
+              - "Jangan cut audio suara air saat equipment pertama kali nyala — itu momen yang paling dinantikan"
+            pola_hook: "Detik 0: close-up tank kosong yang benar-benar kosongan + teks 'ini akan jadi aquascape dalam 7 hari'. Detik 2: flash 1 detik kondisi jadi sebagai preview, lalu kembali ke proses. Penonton harus ingin tonton sampai reveal."
+            contoh_judul:
+              - "Tank kosong ini aku ubah jadi aquascape penuh tanaman dalam 7 hari, ini prosesnya"
+              - "Build aquascape nature aquarium dari nol dengan budget Rp500rb"
+              - "Iwagumi aquascape yang aku build ini butuh 48 batu yang diposisikan ulang berkali-kali"
+              - "Dari substrate sampai ikan pertama masuk — timelapse build lengkap 14 hari"
+              - "Aquascape ini gagal di percobaan pertama, ini yang diperbaiki di build kedua"
+            content_runway: "Setiap style aquascape (Nature Aquarium, Dutch, Biotope, Iwagumi, Jungle) menghasilkan video berbeda; setiap ukuran tank, pemilihan tanaman, dan ikan menghasilkan build unik; tank bisa di-redo dengan layout berbeda untuk konten baru."
+
+        - slug: aquarium-ikan-lokal
+          name: Ikan Hias Lokal Indonesia
+          description: Showcase ikan hias endemik Indonesia seperti arwana, cupang, dan louhan, menyasar penggemar ikan yang bangga produk lokal.
+          example_hook: "Ikan ini asli Indonesia, harganya bisa capai puluhan juta..."
+          guide:
+            audience: "Penggemar ikan hias Indonesia berusia 20–45; kolektor yang ingin tahu spesies baru untuk dipelihara; penonton yang bangga dengan kekayaan ikan endemik Indonesia dan mau share ke komunitas."
+            tone: "Bangga dan informatif. Ikan hias endemik Indonesia adalah aset yang luar biasa — banyak yang tidak tahu betapa kayanya negara ini dalam hal spesies ikan hias. Tone campuran antara showcase dan edukasi ringan."
+            format: "45–90 detik. Showcase visual ikan dalam kondisi tank terbaik — cahaya optimal, background bersih, gerakan ikan jelas. Fakta singkat tentang asal, keunikan, dan kisaran harga sebagai teks overlay. Vertikal 9:16."
+            boleh:
+              - "Cahaya dari atas dengan reflektor samping untuk maksimalkan warna dan kilau ikan"
+              - "Slow-motion gerakan ikan untuk memperlihatkan detail sirip dan warna yang tidak terlihat normal"
+              - "Tampilkan kisaran harga — konten 'ternyata semahal ini' selalu trigger engagement"
+              - "Format 'ikan Indonesia vs harga di luar negeri' untuk membangkitkan rasa bangga nasional"
+            hindari:
+              - "Jangan rekam ikan dalam kondisi stres (warna pucat, gerakan abnormal)"
+              - "Jangan tampilkan harga yang tidak akurat — komunitas ikan sangat tahu harga pasar"
+              - "Jangan hanya showcase ikan yang sudah sangat terkenal (arwana, cupang) — ikan obscure lebih menarik"
+              - "Jangan rekam dengan tank kotor atau air keruh — merusak visual sepenuhnya"
+            pola_hook: "Detik 0: close-up ikan dengan warna paling mencolok atau bentuk paling unik + teks 'ikan ini asli Indonesia' atau 'harganya bisa capai X'. Penonton harus terkejut sekaligus bangga dalam 3 detik pertama."
+            contoh_judul:
+              - "Ikan ini asli Kalimantan dan harganya bisa capai puluhan juta rupiah"
+              - "Cupang Indonesia ini menang kontes internasional tapi jarang yang tahu namanya"
+              - "Arwana Super Red ini cuma ada di Kalimantan dan cara merawatnya tidak seperti yang dikira"
+              - "Ikan hias ini diekspor ke Jepang dengan harga 10x lipat dari harga di Indonesia"
+              - "Louhan ini bukan dari Indonesia tapi dikembangkan di sini sampai jadi varietas tersendiri"
+            content_runway: "Indonesia memiliki ratusan spesies ikan hias endemik yang belum semua dikenal publik; setiap varietas baru cupang atau ikan hias lainnya yang muncul di komunitas adalah konten baru; perkembangan harga dan kompetisi internasional memberikan angle baru terus-menerus."
+
+        - slug: aquarium-troubleshoot
+          name: Masalah Umum Aquarium & Solusinya
+          description: Konten edukatif membahas masalah nyata aquarium seperti air keruh, alga meledak, dan ikan sakit, untuk pemula yang baru mulai hobi.
+          example_hook: "Air aquarium kamu hijau terus? Ini penyebab yang sering diabaikan..."
+          guide:
+            audience: "Pemula aquarium berusia 18–40 yang sedang frustrasi dengan masalah di tank mereka; penonton yang baru mulai hobi dan mencari panduan praktis; mereka yang hampir menyerah karena masalah berulang yang tidak tahu cara selesaikannya."
+            tone: "Empatik dan problem-solving. Penonton datang dengan frustrasi — konten harus langsung validasi masalah mereka dan berikan solusi yang actionable. Tone guru yang sabar, bukan ahli yang menghakimi."
+            format: "60–90 detik. Identifikasi masalah visual (foto/video kondisi bermasalah) → penjelasan penyebab singkat → solusi step-by-step yang bisa langsung diterapkan → hasil setelah solusi diterapkan. Teks pendukung untuk setiap langkah. Vertikal 9:16."
+            boleh:
+              - "Tampilkan kondisi bermasalah yang 'relatable' — penonton harus langsung mengenali masalah mereka"
+              - "Solusi dengan produk yang tersedia di toko ikan lokal Indonesia — bukan produk impor yang susah dicari"
+              - "Format 'sebelum-sesudah' untuk kondisi air atau kesehatan ikan sangat efektif"
+              - "Jawab pertanyaan lanjutan yang pasti muncul di benak penonton sebelum mereka tanyakan di comment"
+            hindari:
+              - "Jangan berikan solusi yang tidak diverifikasi atau bisa membahayakan ikan — komunitas aquarium sangat kritis"
+              - "Jangan terlalu teknis dengan terminologi tanpa penjelasan — target audiens adalah pemula"
+              - "Jangan tampilkan kondisi ikan yang menderita terlalu lama tanpa context positif"
+              - "Jangan pakai musik ber-hak-cipta"
+            pola_hook: "Detik 0: tampilkan kondisi bermasalah yang paling umum dan relatable (air hijau, ikan mengapung, alga meledak) + teks 'ini penyebab yang kebanyakan pemula tidak tahu'. Penonton yang punya masalah sama harus langsung merasa 'ini untuk saya'."
+            contoh_judul:
+              - "Air aquarium hijau terus padahal sudah ganti air? Ini penyebab yang sering diabaikan"
+              - "Ikan cupang ini tiba-tiba tidak mau makan 3 hari — ternyata ini penyebabnya"
+              - "Alga meledak di tank dalam seminggu — ini yang salah dan cara benarkan dalam 24 jam"
+              - "Filter aquarium ini sudah nyala tapi air tetap keruh — cek bagian ini dulu"
+              - "Ikan baru masuk tank langsung mati? Hampir pasti karena satu kesalahan ini"
+            content_runway: "Masalah aquarium hampir tidak terbatas — setiap kombinasi spesies ikan, tanaman, ukuran tank, sistem filter, dan kualitas air menghasilkan masalah yang berbeda; komunitas terus menghadapi masalah baru seiring perkembangan hobi."

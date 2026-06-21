@@ -1,0 +1,797 @@
+version: 1
+vertical:
+  slug: v-finansial
+  name: Finansial
+  description: Konten edukasi keuangan, investasi, dan cara menghasilkan uang untuk generasi muda Indonesia.
+  guide:
+    audience: "Anak muda Indonesia 18–35 yang mulai sadar soal keuangan pribadi; fresh graduate, pekerja awal karir, dan mahasiswa tingkat akhir; mencari panduan praktis yang bisa langsung diterapkan dengan kondisi keuangan riil Indonesia."
+    tone: "Kasual, jelas, dan jujur — seperti teman yang lebih tahu soal uang menjelaskan tanpa menggurui. Tidak pakai jargon berlebihan. Mengakui bahwa kondisi keuangan banyak penonton terbatas, dan itu normal."
+    format: "Video 30–90 detik dominan screen-record, grafik sederhana, atau teks animasi. Voiceover kasual atau teks overlay. Struktur: hook angka/pertanyaan mengejutkan → inti info yang bisa langsung diterapkan → CTA ringan. Vertikal 9:16."
+    boleh:
+      - "Pakai angka konkret dan contoh kasus nyata Indonesia (UMR, harga barang, biaya hidup Jakarta/daerah)"
+      - "Sederhanakan konsep rumit menjadi analogi sehari-hari yang relatable"
+      - "Tunjukkan rumus atau framework yang bisa langsung dipakai penonton hari ini"
+      - "Gunakan data dan sumber terpercaya (OJK, BPS, laporan keuangan resmi)"
+      - "Akui keterbatasan dan risiko — kejujuran membangun kepercayaan jangka panjang"
+    hindari:
+      - "Jangan klaim imbal hasil pasti atau jaminan keuntungan investasi apapun — melanggar regulasi OJK dan menyesatkan"
+      - "Jangan berikan rekomendasi beli/jual aset spesifik secara langsung tanpa disclaimer yang jelas"
+      - "Jangan pakai testimoni palsu atau angka fantastis yang tidak realistis untuk audiens pemula"
+      - "Jangan abaikan risiko — setiap konten investasi wajib menyebutkan bahwa investasi mengandung risiko"
+      - "Jangan gunakan musik ber-hak-cipta di video"
+    pola_hook: "Detik 0–3: angka mengejutkan atau pertanyaan retoris yang langsung relevan ('Gaji UMR bisa investasi berapa?', 'Ternyata 80% gaji habis untuk ini'). Langsung masuk ke inti, tidak ada intro panjang."
+    contoh_judul:
+      - "Gaji UMR ternyata bisa investasi, ini caranya yang realistis"
+      - "Kesalahan keuangan yang dilakukan hampir semua fresh graduate Indonesia"
+      - "Formula 50-30-20 itu untuk siapa? Bukan untuk kamu yang gajinya segini"
+
+  niches:
+    - slug: finance-edu
+      name: Edukasi Keuangan
+      description: "Tips uang, nabung, budgeting."
+      faceless: true
+      difficulty: menengah
+      rpm: tinggi
+      formats: teks + grafik + voiceover
+      example_hook: "Cara nabung Rp10jt setahun..."
+      guide:
+        audience: "Pekerja muda 20–32 yang merasa gaji selalu habis sebelum akhir bulan; belum punya tabungan yang signifikan; ingin mulai tapi tidak tahu dari mana dan merasa kondisinya terlalu sempit."
+        tone: "Empatetis dan realistis — tidak menghakimi kondisi keuangan penonton. Memberikan harapan yang didukung langkah konkret, bukan motivasi kosong."
+        format: "45–75 detik. Struktur: masalah umum yang relatable → penyebab tersembunyi → solusi konkret dengan angka nyata → CTA sederhana. Screen-record kalkulator atau spreadsheet sangat efektif. Teks overlay besar dan mudah dibaca."
+        boleh:
+          - "Mulai dengan kondisi yang sangat relatable ('gaji 5jt tapi pengeluaran 5,5jt') sebelum solusi"
+          - "Tampilkan perhitungan sederhana secara visual — angka yang bergerak lebih meyakinkan dari kata-kata"
+          - "Gunakan referensi harga lokal yang akurat (kos Jakarta, makan sehari, transport)"
+          - "Sederhanakan framework keuangan global ke konteks Indonesia (mis. adaptasi 50/30/20 untuk UMR)"
+        hindari:
+          - "Jangan rekomendasikan produk keuangan spesifik tanpa disclaimer risiko yang jelas"
+          - "Jangan bandingkan kondisi keuangan penonton dengan standar yang tidak realistis"
+          - "Jangan pakai istilah teknis tanpa penjelasan — penonton tidak harus punya background ekonomi"
+          - "Jangan buat konten yang terkesan menjual produk keuangan tertentu secara terselubung"
+        pola_hook: "Detik 0: angka atau fakta mengejutkan seputar kebiasaan keuangan umum + identifikasi masalah dalam 1 kalimat. Langsung ke inti di detik 3."
+        contoh_judul:
+          - "Cara nabung Rp10jt setahun dari gaji yang selalu pas-pasan"
+          - "Kenapa gaji selalu habis sebelum tanggal 25, ini yang sebenarnya terjadi"
+          - "Budgeting paling sederhana yang bisa dilakukan siapapun mulai hari ini"
+
+      micro:
+        - slug: finance-edu-gaji-pertama
+          name: Cara Kelola Gaji Pertama dengan Benar
+          description: Panduan alokasi gaji untuk fresh graduate yang baru mulai bekerja, dengan formula sederhana yang bisa langsung diterapkan tanpa background finansial.
+          example_hook: "Gaji pertama kamu akan habis sia-sia tanpa aturan ini..."
+          guide:
+            audience: "Fresh graduate 21–25 yang baru terima gaji pertama; kebanyakan belum punya kebiasaan menabung; rentan terjebak lifestyle inflation karena pertama kali punya penghasilan sendiri."
+            tone: "Hangat dan memandu seperti kakak yang lebih berpengalaman — tidak menghakimi, tapi juga tidak menutup-nutupi konsekuensi kalau tidak diatur dari awal."
+            format: "60–75 detik. Tampilkan breakdown alokasi gaji secara visual (grafik pai atau daftar persentase) → simulasi angka konkret untuk gaji 3, 5, 7 juta → CTA untuk langsung atur di hari gajian. Screen-record atau animasi teks sederhana. Vertikal 9:16."
+            boleh:
+              - "Tampilkan perbandingan dua skenario: alokasi spontan vs alokasi terencana dalam 6 bulan"
+              - "Gunakan angka gaji UMR dan menengah bawah yang realistis untuk segmen ini"
+              - "Rekomendasikan langkah hari pertama: pisahkan rekening tabungan sebelum dipakai"
+              - "Sertakan pos 'hiburan' yang realistis — penonton perlu merasa ini bisa dijalani"
+            hindari:
+              - "Jangan rekomendasikan produk investasi spesifik tanpa menyebut risiko dan konsultasi penasihat keuangan"
+              - "Jangan pakai contoh gaji yang terlalu tinggi — tidak relevan untuk mayoritas penonton segmen ini"
+              - "Jangan buat formula yang terasa terlalu kaku sehingga tidak bisa diikuti"
+              - "Jangan abaikan pos kebutuhan darurat — dana darurat harus masuk di bulan pertama"
+            pola_hook: "Detik 0: teks besar 'Gaji pertama kamu akan habis sia-sia tanpa aturan ini' + ilustrasi uang menguap. Langsung tampilkan breakdown di detik 3."
+            contoh_judul:
+              - "Gaji pertama kamu akan habis sia-sia kalau tidak lakukan ini di hari gajian"
+              - "Cara bagi gaji fresh graduate supaya masih ada sisa di akhir bulan"
+              - "3 rekening yang wajib dimiliki sebelum gajian pertama masuk"
+              - "Formula alokasi gaji yang realistis untuk fresh graduate Indonesia"
+              - "Ini yang terjadi kalau gaji pertama tidak langsung diatur dari hari pertama"
+            content_runway: "Setiap range gaji (UMR, menengah, high-income starter), kota (Jakarta vs daerah), status (single vs sudah menikah), dan pos pengeluaran berbeda menghasilkan simulasi yang unik; topik ini selalu relevan karena ada fresh graduate baru setiap tahun."
+
+        - slug: finance-edu-hutang-produktif
+          name: Hutang yang Produktif vs Hutang yang Bunuh
+          description: Edukasi perbedaan hutang konsumtif dan produktif dengan contoh kasus nyata Indonesia, membantu penonton membuat keputusan pinjaman yang lebih cerdas.
+          example_hook: "Bukan semua hutang buruk, tapi jenis hutang ini yang hancurkan keuanganmu..."
+          guide:
+            audience: "Anak muda 22–35 yang pernah atau sedang punya pinjaman — cicilan HP, paylater, KPR, atau pinjaman online — dan bingung apakah keputusan mereka tepat; juga yang sedang mempertimbangkan ambil hutang baru."
+            tone: "Jelas dan sedikit menggugah — konten ini perlu membuat penonton berhenti sejenak dan merefleksikan keputusan mereka. Tidak menghakimi, tapi juga tidak membenarkan semua jenis hutang."
+            format: "60–90 detik. Mulai dari contoh kasus nyata orang yang hutangnya 'bunuh' mereka → definisi visual hutang konsumtif vs produktif → cek list sederhana cara membedakan → penutup dengan pertanyaan reflektif. Teks overlay + grafik perbandingan. Vertikal 9:16."
+            boleh:
+              - "Pakai contoh kasus yang sangat relatable: paylater beli HP baru, cicilan motor, KPR"
+              - "Tampilkan perbandingan visual total bunga yang dibayarkan vs nilai aset"
+              - "Berikan framework 3 pertanyaan untuk cek apakah hutang ini produktif atau tidak"
+              - "Sebut platform paylater dan pinjol yang populer di Indonesia sebagai konteks (bukan promosi)"
+            hindari:
+              - "Jangan berikan saran spesifik 'ambil hutang di sini' atau 'jangan ambil di sana' tanpa konteks menyeluruh"
+              - "Jangan dramatisasi berlebihan yang terkesan menakut-nakuti penonton"
+              - "Jangan klaim bahwa hutang produktif selalu aman — tetap ada risiko yang harus disebutkan"
+              - "Jangan abaikan konteks bahwa kemampuan membayar cicilan sangat individual"
+            pola_hook: "Detik 0: cerita singkat orang yang gaji besar tapi seluruhnya untuk bayar cicilan + teks 'ini hutang yang bunuh keuangan kamu'. Langsung definisi di detik 4."
+            contoh_judul:
+              - "Bukan semua hutang buruk, tapi hutang ini yang perlahan hancurkan keuanganmu"
+              - "Cicilan HP baru kamu itu hutang produktif atau konsumtif? Cek dulu"
+              - "Orang ini gaji 10jt tapi tidak punya tabungan karena ini jenis hutangnya"
+              - "3 pertanyaan sebelum ambil pinjaman apapun — wajib dijawab jujur"
+              - "Perbedaan KPR dan paylater baju baru: kenapa satu oke dan satu tidak"
+            content_runway: "Setiap produk pinjaman populer di Indonesia (KPR, KTA, paylater, pinjol, cicilan motor/HP, kartu kredit) bisa menjadi satu video tersendiri; topik ini selalu relevan karena penetrasi pinjaman digital terus tumbuh."
+
+        - slug: finance-edu-dana-darurat
+          name: Bangun Dana Darurat dari Nol
+          description: Panduan langkah-langkah konkret membangun dana darurat bagi yang belum punya tabungan sama sekali, dengan timeline realistis berdasarkan penghasilan UMR.
+          example_hook: "Tanpa dana darurat, satu musibah cukup untuk hancurkan 5 tahun kerja kerasmu..."
+          guide:
+            audience: "Pekerja muda 20–30 yang belum punya dana darurat sama sekali atau dananya kurang dari 1 bulan pengeluaran; sadar bahwa ini penting tapi tidak tahu bagaimana mulai dengan kondisi finansial yang terbatas."
+            tone: "Urgen tapi tidak panik — penonton perlu merasa ini mendesak, tapi juga yakin bahwa ini bisa dilakukan meskipun kondisi keuangan terbatas saat ini."
+            format: "60–80 detik. Scenario disaster tanpa dana darurat → definisi dana darurat ideal (3-6 bulan pengeluaran) → breakdown rencana menabung bulanan menuju target → rekomendasi tempat menyimpan dana darurat. Grafik progres visual sangat efektif. Vertikal 9:16."
+            boleh:
+              - "Tampilkan simulasi konkret: mulai dari Rp200rb/bulan menuju dana darurat Rp15jt dalam 18 bulan"
+              - "Rekomendasikan produk penyimpanan yang likuid (tabungan, reksa dana pasar uang) dengan disclaimer risiko"
+              - "Tampilkan 'milestone kecil' yang bisa dirayakan untuk jaga motivasi"
+              - "Berikan tips konkret untuk 'curi' uang dari budget yang sudah ketat"
+            hindari:
+              - "Jangan sebut produk tabungan atau investasi spesifik sebagai 'terbaik' tanpa disclaimer bahwa setiap produk memiliki risiko dan kondisi berbeda"
+              - "Jangan buat target yang tidak realistis yang malah bikin penonton menyerah"
+              - "Jangan abaikan bahwa beberapa penonton mungkin punya utang yang harus diselesaikan dulu"
+              - "Jangan klaim dana darurat di reksa dana pasar uang tanpa menyebutkan risiko likuiditas pencairan"
+            pola_hook: "Detik 0: skenario singkat — 'ban mobil bocor, HP rusak, masuk RS semuanya di bulan yang sama' + teks 'tanpa dana darurat ini artinya hutang'. Langsung ke solusi di detik 5."
+            contoh_judul:
+              - "Tanpa dana darurat, satu musibah bisa hancurkan 5 tahun kerja kerasmu"
+              - "Cara bangun dana darurat dari nol meskipun gaji tidak ada sisanya"
+              - "Berapa seharusnya dana darurat kamu? Cek simulasi ini berdasarkan pengeluaranmu"
+              - "Mulai dari Rp200rb per bulan sampai dana darurat 6 bulan — ini timeline-nya"
+              - "Ini yang terjadi kalau kamu kena PHK besok dan tidak punya tabungan sama sekali"
+            content_runway: "Setiap fase kehidupan (lajang, menikah, punya anak, sudah punya rumah), rentang pengeluaran, dan situasi darurat yang berbeda menghasilkan variasi konten; topik ini evergreen karena selalu ada penonton yang baru memulai perjalanan keuangan mereka."
+
+    - slug: investing
+      name: Investasi
+      description: "Saham, reksadana, investasi dasar."
+      faceless: true
+      difficulty: menengah
+      rpm: tinggi
+      formats: grafik + voiceover
+      example_hook: "Rp1jt/bulan jadi Rp1M dengan..."
+      guide:
+        audience: "Anak muda 22–35 yang ingin mulai investasi tapi bingung mulai dari mana; memiliki sedikit modal (Rp100rb–Rp1jt/bulan) tapi serius ingin membangun aset jangka panjang; belum punya pengalaman investasi sebelumnya."
+        tone: "Edukatif dan jelas — tidak sensasional, tidak over-promising. Penonton harus keluar dengan pemahaman yang lebih baik, bukan sekadar semangat sesaat. Transparansi soal risiko adalah kunci kepercayaan jangka panjang."
+        format: "45–90 detik. Grafik pertumbuhan, simulasi kalkulator, atau perbandingan produk investasi. Voiceover tenang. Struktur: konteks kenapa ini penting → cara kerja dasar → langkah konkret mulai → disclaimer risiko singkat. Vertikal 9:16."
+        boleh:
+          - "Tampilkan simulasi compounding jangka panjang dengan angka nyata yang realistis"
+          - "Bandingkan produk investasi secara objektif berdasarkan risiko, likuiditas, dan potensi return"
+          - "Gunakan bahasa yang tidak mengintimidasi — 'dana investasi' bukan 'equity portfolio'"
+          - "Selalu sertakan disclaimer risiko yang jelas dan mudah dipahami"
+        hindari:
+          - "Jangan klaim atau implisitkan imbal hasil pasti dari instrumen investasi apapun — ini melanggar regulasi OJK"
+          - "Jangan rekomendasikan saham atau instrumen spesifik secara langsung tanpa konteks risiko dan profil investor"
+          - "Jangan pakai angka return masa lalu sebagai jaminan return masa depan"
+          - "Jangan buat konten yang terkesan 'get rich quick' — merusak kepercayaan dan bisa menyesatkan"
+        pola_hook: "Detik 0: simulasi angka Rp1jt/bulan selama 20 tahun dengan compounding + teks 'ini yang terjadi kalau kamu mulai hari ini vs 5 tahun lagi'. Langsung masuk penjelasan di detik 4."
+        contoh_judul:
+          - "Rp1jt per bulan di reksadana ini jadi berapa dalam 15 tahun, ini hitungannya"
+          - "Perbedaan tabungan biasa vs investasi yang bikin beda puluhan juta dalam 10 tahun"
+          - "Mulai investasi dengan modal Rp100rb, ini yang realistis bisa dicapai"
+
+      micro:
+        - slug: investing-reksadana-pemula
+          name: Reksadana untuk Pemula Absolut
+          description: Panduan mulai investasi reksadana dari nol untuk yang belum pernah investasi, dengan rekomendasi platform dan jenis reksadana yang sesuai risiko pemula.
+          example_hook: "Rp100rb/bulan di reksadana ini jadi berapa dalam 10 tahun, ini hitungannya..."
+          guide:
+            audience: "Penonton 20–30 yang baru dengar soal reksadana dan ingin tahu apakah ini cocok untuk mereka; modal kecil (Rp100rb–500rb/bulan); butuh panduan step-by-step yang tidak membingungkan."
+            tone: "Sabar dan membimbing — anggap penonton benar-benar belum tahu apa-apa. Tidak ada asumsi pengetahuan sebelumnya. Semua istilah teknis harus dijelaskan dengan analogi sederhana."
+            format: "75–90 detik. Definisi reksadana dengan analogi → jenis reksadana (pasar uang, pendapatan tetap, campuran, saham) dan cocok untuk siapa → cara beli di platform digital → simulasi pertumbuhan. Screen-record saat daftar di aplikasi sangat membantu. Vertikal 9:16."
+            boleh:
+              - "Gunakan analogi sederhana: reksadana = titip uang ke manajer investasi profesional"
+              - "Tampilkan screen-record proses daftar dan beli reksadana pertama (tanpa menyebut platform sebagai 'terbaik')"
+              - "Simulasi kalkulator dengan angka investasi kecil yang realistis untuk pemula"
+              - "Jelaskan biaya dan fee yang mungkin ada secara transparan"
+            hindari:
+              - "Jangan klaim reksadana tertentu pasti menghasilkan return X persen — tidak ada jaminan dan melanggar regulasi"
+              - "Jangan rekomendasikan satu platform sebagai satu-satunya pilihan tanpa konteks"
+              - "Jangan skip penjelasan risiko — terutama bahwa nilai reksadana bisa turun"
+              - "Jangan gunakan angka return historis sebagai proyeksi masa depan tanpa disclaimer jelas"
+            pola_hook: "Detik 0: simulasi visual Rp100rb/bulan selama 10 tahun dengan asumsi return realistis + teks pertanyaan. Langsung ke penjelasan apa itu reksadana di detik 4."
+            contoh_judul:
+              - "Rp100rb per bulan di reksadana, ini berapa hasilnya dalam 10 tahun secara realistis"
+              - "Cara beli reksadana pertama kali dari HP tanpa ribet dan tanpa modal besar"
+              - "Beda reksadana pasar uang vs reksadana saham — mana yang cocok untuk pemula?"
+              - "Reksadana itu aman atau tidak? Ini yang perlu kamu tahu sebelum mulai"
+              - "Panduan lengkap mulai reksadana dari nol untuk yang belum pernah investasi sama sekali"
+            content_runway: "Setiap jenis reksadana, platform berbeda, perbandingan strategi DCA vs lump sum, dan pertanyaan umum pemula (berapa lama? apa bedanya dengan deposito? bagaimana kalau rugi?) masing-masing menjadi video tersendiri."
+
+        - slug: investing-saham-dividen
+          name: Saham Dividen sebagai Passive Income
+          description: Strategi investasi saham berorientasi dividen untuk pembangun passive income jangka panjang, dengan daftar saham dividen konsisten di BEI.
+          example_hook: "Saham ini bayar dividen setiap tahun selama 10 tahun berturut-turut..."
+          guide:
+            audience: "Investor pemula hingga menengah 24–40 yang ingin membangun passive income dari pasar modal; sudah mulai investasi reksadana dan ingin naik level; berpikir jangka panjang, bukan trader harian."
+            tone: "Sedikit lebih teknis dari konten pemula absolut, tapi tetap kasual. Fokus pada konsep yang bisa langsung diterapkan, bukan teori akademis. Jujur soal jangka waktu yang dibutuhkan."
+            format: "60–90 detik. Konsep dividend yield dan cara menghitungnya → kriteria saham dividen yang konsisten → ilustrasi portofolio dividen jangka panjang dengan angka realistis → disclaimer risiko pasar saham. Grafik bar dan tabel sederhana. Vertikal 9:16."
+            boleh:
+              - "Tampilkan ilustrasi bagaimana dividen bisa reinvest untuk compounding lebih cepat"
+              - "Bahas kriteria saham dividen konsisten secara umum (bukan rekomendasikan saham spesifik)"
+              - "Tunjukkan simulasi berapa passive income dari portofolio Rp100jt–500jt dalam dividen"
+              - "Bandingkan dividen saham dengan instrumen passive income lain secara objektif"
+            hindari:
+              - "Jangan rekomendasikan saham spesifik sebagai 'pasti' bayar dividen — saham bisa kapan saja stop dividen"
+              - "Jangan klaim passive income dari dividen tanpa menyebut risiko penurunan harga saham dan pembatalan dividen"
+              - "Jangan buat simulasi dengan asumsi return yang tidak realistis atau data yang tidak terverifikasi"
+              - "Jangan abaikan bahwa investasi saham memerlukan toleransi risiko yang lebih tinggi dari reksadana"
+            pola_hook: "Detik 0: ilustrasi uang masuk rekening setiap tahun tanpa kerja + teks 'ini yang dilakukan saham dividen selama 10 tahun berturut-turut'. Langsung ke penjelasan konsep dividen di detik 4."
+            contoh_judul:
+              - "Saham yang bayar dividen konsisten 10 tahun berturut-turut — ini cara kerjanya"
+              - "Cara bangun passive income dari dividen saham mulai dari modal kecil"
+              - "Berapa passive income dari portofolio saham Rp100jt di dividen saja?"
+              - "Strategi beli saham untuk dividen, bukan trading — cocok untuk yang tidak mau ribet"
+              - "Dividend yield itu apa dan kenapa ini penting sebelum beli saham apapun"
+            content_runway: "Setiap sektor saham (perbankan, BUMN, konsumer, infrastruktur), strategi reinvestment, perbandingan dengan instrumen lain, dan pertanyaan umum tentang perpajakan dividen menghasilkan konten yang berbeda; topik ini relevan sepanjang tahun."
+
+        - slug: investing-portofolio-milenial
+          name: Portofolio Investasi untuk Milenial Indonesia
+          description: Panduan alokasi portofolio yang realistis untuk milenial dengan penghasilan menengah, menggabungkan reksadana, saham, dan aset lain sesuai profil risiko.
+          example_hook: "Portofolio Rp500rb/bulan yang bisa bikin kamu pensiun dini di 45..."
+          guide:
+            audience: "Milenial 27–38 yang sudah punya penghasilan stabil dan mulai serius soal masa depan finansial; sudah pernah coba satu dua instrumen investasi tapi belum punya strategi yang menyeluruh; ingin tahu bagaimana mengalokasikan dengan lebih cerdas."
+            tone: "Strategis dan visioner — membantu penonton melihat gambaran besar sekaligus langkah konkret. Lebih serius dari konten pemula, tapi tetap accessible dan tidak berjarak."
+            format: "75–90 detik. Konsep alokasi portofolio berdasarkan profil risiko → contoh alokasi konservatif, moderat, agresif → simulasi pertumbuhan 10–20 tahun → langkah review portofolio berkala. Grafik alokasi pie chart dan proyeksi pertumbuhan. Vertikal 9:16."
+            boleh:
+              - "Tampilkan tiga skenario alokasi (konservatif/moderat/agresif) dengan proporsi dan alasannya"
+              - "Pakai simulasi jangka panjang yang realistis berdasarkan asumsi return historis rata-rata dengan disclaimer"
+              - "Bahas kapan dan bagaimana merebalance portofolio secara sederhana"
+              - "Sertakan aset alternatif yang populer di Indonesia (emas, properti) sebagai konteks"
+            hindari:
+              - "Jangan klaim portofolio tertentu 'pasti' bisa pensiun dini — bergantung banyak variabel personal"
+              - "Jangan berikan alokasi spesifik sebagai 'rekomendasi investasi' tanpa disclaimer bahwa ini bukan saran keuangan profesional"
+              - "Jangan abaikan bahwa setiap orang memiliki profil risiko, tujuan, dan kondisi berbeda"
+              - "Jangan pakai return asumsi yang terlalu optimis tanpa mempertimbangkan inflasi dan pajak"
+            pola_hook: "Detik 0: simulasi visual — dua orang dengan gaji sama, alokasi berbeda, hasilnya 20 tahun kemudian berbeda drastis. Langsung ke penjelasan alokasi di detik 5."
+            contoh_judul:
+              - "Portofolio investasi milenial Indonesia yang realistis dengan modal Rp500rb per bulan"
+              - "Cara alokasi 3 instrumen investasi yang bikin pertumbuhan kamu lebih stabil"
+              - "Profil risiko investor itu apa dan kenapa ini menentukan semua keputusan investasimu"
+              - "Dua orang, gaji sama, 20 tahun kemudian berbeda Rp1M — ini bedanya"
+              - "Kapan dan bagaimana rebalance portofolio investasi secara sederhana tanpa ribet"
+            content_runway: "Setiap fase kehidupan (lajang, menikah, punya anak, mendekati pensiun), range penghasilan, perubahan kondisi ekonomi makro, dan instrumen investasi baru terus menghasilkan konten relevan yang selalu dibutuhkan."
+
+    - slug: crypto
+      name: Crypto
+      description: "Edukasi crypto, hati-hati klaim."
+      faceless: true
+      difficulty: menengah
+      rpm: tinggi
+      formats: grafik + teks
+      example_hook: "Rp1jt di koin ini 2020 jadi..."
+      guide:
+        audience: "Anak muda 18–35 yang penasaran atau sudah sedikit terlibat di crypto; sebagian sudah rugi karena ikut hype tanpa pengetahuan cukup; mencari pemahaman yang lebih dalam dan tidak sensasional."
+        tone: "Kritis dan balance — tidak ikut hype, tidak juga menghakimi yang sudah terlibat. Mengakui bahwa crypto adalah aset berisiko tinggi dan mengedepankan edukasi berbasis risiko, bukan potensi cuan semata."
+        format: "45–90 detik. Dominan grafik harga, diagram teknologi, atau teks overlay. Voiceover tenang dan analitis. Struktur: konteks atau pertanyaan penting → penjelasan mekanisme → implikasi praktis → disclaimer risiko. Vertikal 9:16."
+        boleh:
+          - "Tampilkan data harga historis sebagai konteks edukasi, bukan proyeksi"
+          - "Jelaskan mekanisme teknis (blockchain, wallet, smart contract) dengan analogi yang mudah dipahami"
+          - "Bahas regulasi crypto di Indonesia (OJK, Bappebti) sebagai konteks penting"
+          - "Akui ketidakpastian dan volatilitas sebagai bagian inheren dari aset ini"
+        hindari:
+          - "Jangan pernah klaim atau implisitkan bahwa koin tertentu 'pasti naik' atau 'bagus untuk dibeli sekarang' — ini bisa dianggap saran investasi ilegal"
+          - "Jangan gunakan data return masa lalu sebagai proyeksi tanpa disclaimer risiko yang sangat jelas"
+          - "Jangan promosikan proyek crypto tertentu tanpa disclosure jika ada kepentingan"
+          - "Jangan buat konten yang terkesan mendorong FOMO beli crypto"
+        pola_hook: "Detik 0: kontras visual — orang yang untung besar vs orang yang rugi besar dari crypto dengan modal sama + pertanyaan 'apa bedanya mereka?'. Langsung masuk edukasi di detik 4."
+        contoh_judul:
+          - "Kenapa orang yang tahu ini bisa untung dari crypto, yang tidak tahu rugi besar"
+          - "Bitcoin itu apa sebenarnya dan kenapa harganya naik-turun ekstrem"
+          - "Risiko crypto yang jarang dibahas kreator yang hanya kasih kabar baik"
+
+      micro:
+        - slug: crypto-bitcoin-dasar
+          name: Bitcoin & Blockchain untuk Pemula
+          description: Penjelasan dasar Bitcoin dan teknologi blockchain tanpa jargon teknis, menjawab pertanyaan yang sering ditanyakan pemula Indonesia tentang crypto.
+          example_hook: "Bitcoin itu apa sebenarnya? Penjelasan yang akhirnya masuk akal..."
+          guide:
+            audience: "Pemula absolut 18–30 yang sering dengar soal Bitcoin tapi belum benar-benar mengerti cara kerjanya; bukan untuk trader atau investor crypto yang sudah berpengalaman."
+            tone: "Sabar dan sederhana — seolah menjelaskan kepada teman yang tidak punya background teknis. Tidak ada asumsi pengetahuan sebelumnya. Analogi dunia nyata sangat penting."
+            format: "60–90 detik. Analogi Bitcoin sebagai uang digital yang tidak dikontrol bank → cara kerja blockchain secara sederhana (buku besar bersama) → kenapa harganya berfluktuasi → disclaimer risiko. Animasi atau grafik sederhana sangat efektif. Vertikal 9:16."
+            boleh:
+              - "Gunakan analogi buku kas kondominasi digital yang semua orang bisa lihat tapi tidak bisa diubah"
+              - "Jelaskan konsep desentralisasi dengan membandingkan bank konvensional vs Bitcoin"
+              - "Tampilkan grafik harga historis sebagai ilustrasi volatilitas, bukan proyeksi"
+              - "Sambungkan ke konteks Indonesia: regulasi Bappebti, exchange yang legal di Indonesia"
+            hindari:
+              - "Jangan klaim Bitcoin 'pasti naik' atau 'aset masa depan yang aman' — ini menyesatkan"
+              - "Jangan skip penjelasan risiko kehilangan akses wallet atau risiko regulasi"
+              - "Jangan buat penonton merasa 'rugi' kalau tidak beli sekarang — ini FOMO manipulation"
+              - "Jangan promosikan exchange atau wallet tertentu sebagai 'terbaik' tanpa disclaimer"
+            pola_hook: "Detik 0: pertanyaan langsung 'Bitcoin itu sebenarnya apa? Jawaban yang akhirnya masuk akal' + visual uang digital mengalir. Langsung ke analogi di detik 3."
+            contoh_judul:
+              - "Bitcoin itu apa sebenarnya? Penjelasan yang akhirnya masuk akal tanpa jargon"
+              - "Cara kerja blockchain dalam 60 detik — analoginya sesederhana ini"
+              - "Kenapa Bitcoin harganya bisa naik dan turun 50% dalam sebulan, ini penjelasannya"
+              - "Perbedaan Bitcoin dengan uang digital bank biasa yang sering disalahpahami"
+              - "Sebelum beli Bitcoin pertama kali, pahami 3 hal dasar ini dulu"
+            content_runway: "Setiap konsep dasar crypto (wallet, private key, exchange, mining, halving, altcoin vs Bitcoin) masing-masing menjadi video tersendiri; pertanyaan pemula tidak pernah habis karena selalu ada penonton yang baru mengenal crypto."
+
+        - slug: crypto-risiko-nyata
+          name: Risiko Crypto yang Jarang Dibahas
+          description: Konten edukasi tentang risiko nyata berinvestasi crypto — volatilitas, scam, regulasi — yang sering disembunyikan oleh konten crypto yang terlalu bullish.
+          example_hook: "Orang ini taruh semua di crypto karena konten yang kamu tonton juga, ini akhirnya..."
+          guide:
+            audience: "Penonton 20–35 yang sudah atau sedang mempertimbangkan masuk crypto; mungkin sudah pernah lihat konten crypto yang terlalu optimis; perlu perspektif balance sebelum membuat keputusan besar."
+            tone: "Jujur dan sedikit menantang — konten ini harus cukup kuat untuk membuat penonton berhenti sejenak. Bukan menyerang pelaku crypto, tapi memberikan perspektif yang jarang ada di konten mainstream crypto Indonesia."
+            format: "60–90 detik. Kasus nyata (anonymized) orang yang rugi besar akibat salah satu risiko → breakdown risiko konkret (volatilitas ekstrem, rug pull, regulasi berubah, kehilangan akses) → cara mitigasi sederhana → penutup balanced. Teks overlay bold + suara yang menegaskan poin penting. Vertikal 9:16."
+            boleh:
+              - "Tampilkan kasus rug pull atau scam crypto yang pernah terjadi di Indonesia sebagai pelajaran"
+              - "Bahas risiko regulasi: apa yang terjadi jika pemerintah Indonesia memperketat aturan crypto"
+              - "Jelaskan risiko custodial vs non-custodial wallet dengan contoh konkret kehilangan akses"
+              - "Berikan framework sederhana: berapa persen portofolio yang 'aman' dialokasikan ke crypto"
+            hindari:
+              - "Jangan buat konten ini terkesan menghakimi atau meremehkan yang sudah terlibat di crypto"
+              - "Jangan sebut proyek crypto tertentu sebagai 'scam' tanpa bukti jelas — bisa jadi masalah hukum"
+              - "Jangan klaim bahwa tidak berinvestasi crypto adalah keputusan terbaik — ini subjektif"
+              - "Jangan abaikan bahwa ada juga yang berhasil dari crypto — balance adalah kuncinya"
+            pola_hook: "Detik 0: statistik mengejutkan berapa persen investor crypto ritel yang rugi dalam satu siklus pasar + teks 'ini risikonya yang kreator crypto jarang kasih tahu'. Langsung masuk ke kasus pertama di detik 4."
+            contoh_judul:
+              - "Risiko crypto yang hampir tidak pernah dibahas di konten yang kamu tonton"
+              - "Orang ini rugi semua dari crypto bukan karena harga turun, tapi karena ini"
+              - "Rug pull itu apa dan ini cara kenali proyek crypto yang akan scam sebelum terlambat"
+              - "Risiko regulasi crypto di Indonesia yang bisa ubah segalanya dalam semalam"
+              - "Berapa persen uang yang wajar dimasukkan ke crypto? Ini panduan risk-adjusted-nya"
+            content_runway: "Setiap jenis risiko crypto (volatilitas, scam, regulasi, teknis, psikologi) bisa menjadi video tersendiri; kasus baru terus bermunculan dan selalu relevan untuk diedukasikan ke audiens baru."
+
+        - slug: crypto-altcoin-research
+          name: Cara Research Altcoin Sebelum Beli
+          description: Framework sederhana untuk mengevaluasi proyek crypto altcoin agar tidak asal ikut hype, dirancang untuk investor pemula hingga menengah.
+          example_hook: "Sebelum beli altcoin ini, cek 3 hal ini dulu atau kamu akan rugi..."
+          guide:
+            audience: "Investor crypto pemula hingga menengah 22–35 yang sudah tahu Bitcoin tapi sering FOMO beli altcoin karena ikut hype; ingin belajar cara evaluasi proyek secara mandiri."
+            tone: "Analytical dan memberdayakan — memberikan penonton alat untuk membuat keputusan sendiri, bukan memberi rekomendasi langsung. Penonton harus merasa lebih capable setelah nonton."
+            format: "75–90 detik. Framework riset 3–5 langkah yang bisa diikuti siapapun → contoh aplikasi framework ke proyek crypto generik (bukan spesifik) → red flags yang harus diwaspadai → disclaimer bahwa riset tidak menghilangkan risiko. Checklist visual sangat efektif. Vertikal 9:16."
+            boleh:
+              - "Ajarkan cara baca whitepaper dasar: tim, tokenomics, use case, roadmap"
+              - "Tampilkan red flags umum: token supply terpusat, tim anonim tanpa rekam jejak, tidak ada use case nyata"
+              - "Bahas cara cek liquiditas dan volume trading sebagai indikator dasar"
+              - "Gunakan contoh proyek generik atau sudah defunct untuk ilustrasi tanpa promosi atau serangan"
+            hindari:
+              - "Jangan rekomendasikan altcoin spesifik sebagai 'layak dibeli' — selalu ada risiko tinggi"
+              - "Jangan buat framework terkesan bisa menghilangkan risiko sepenuhnya — ini menyesatkan"
+              - "Jangan sebut proyek crypto yang masih aktif sebagai 'scam' tanpa bukti konkret"
+              - "Jangan klaim bahwa riset yang baik menjamin keuntungan — pasar crypto sangat tidak bisa diprediksi"
+            pola_hook: "Detik 0: statistik berapa persen altcoin yang pernah ada sekarang sudah mati atau mendekati nol + teks 'ini cara bedakan yang layak dari yang tidak sebelum kamu beli'. Langsung ke framework di detik 4."
+            contoh_judul:
+              - "Sebelum beli altcoin apapun, cek 3 hal ini dulu atau risikonya jauh lebih besar"
+              - "Cara baca whitepaper crypto dalam 5 menit untuk tahu apakah proyek ini serius"
+              - "Red flag altcoin yang harus langsung bikin kamu lari, bukan FOMO beli"
+              - "Framework riset altcoin sederhana yang dipakai investor yang tidak asal ikut hype"
+              - "Kenapa 90% altcoin akhirnya mendekati nol dan cara hindari yang masuk kategori itu"
+            content_runway: "Setiap komponen riset altcoin (tokenomics, tim, komunitas, likuiditas, on-chain data) bisa menjadi video tersendiri; perkembangan ekosistem crypto yang terus berubah selalu menghasilkan topik riset baru."
+
+    - slug: side-hustle
+      name: "Side Hustle / Cuan"
+      description: "Ide bisnis sampingan, kerja online."
+      faceless: true
+      difficulty: menengah
+      rpm: tinggi
+      formats: teks + b-roll + voiceover
+      example_hook: "Cara dapat Rp100rb/hari dari HP..."
+      guide:
+        audience: "Pekerja muda 20–35 yang ingin menambah penghasilan di luar pekerjaan utama; mahasiswa yang butuh uang sambil kuliah; siapapun yang merasa gaji saja tidak cukup dan ingin tahu opsi konkret."
+        tone: "Realistis dan actionable — tidak menjanjikan kaya cepat, tapi juga tidak mengecilkan harapan. Fokus pada langkah konkret yang bisa dimulai hari ini dengan modal waktu dan uang yang terbatas."
+        format: "45–75 detik. Ide atau strategi spesifik → kondisi awal yang realistis (modal, waktu, skill yang dibutuhkan) → langkah pertama yang bisa langsung dilakukan → ekspektasi pendapatan yang realistis dengan timeline. Teks overlay + b-roll relevan. Vertikal 9:16."
+        boleh:
+          - "Pakai angka pendapatan yang realistis dengan konteks (misalnya 'bisa Rp1–3jt/bulan di 3 bulan pertama, bukan langsung besar')"
+          - "Akui trade-off: side hustle butuh waktu dan energi yang mungkin diambil dari tempat lain"
+          - "Tampilkan langkah konkret yang bisa dimulai hari ini tanpa modal besar"
+          - "Bahas platform dan tools yang relevan untuk konteks Indonesia"
+        hindari:
+          - "Jangan klaim pendapatan fantastis yang tidak realistis untuk mayoritas pemula"
+          - "Jangan buat konten yang terkesan promosi afiliasi terselubung tanpa disclosure"
+          - "Jangan abaikan bahwa tidak semua side hustle cocok untuk semua orang — konteks penting"
+          - "Jangan skip potensi risiko atau kegagalan — kejujuran membangun kepercayaan"
+        pola_hook: "Detik 0: angka pendapatan realistis dari side hustle spesifik + konteks waktu yang dibutuhkan. Langsung ke cara memulainya di detik 3."
+        contoh_judul:
+          - "Cara dapat Rp100rb per hari dari HP tanpa modal awal yang besar"
+          - "Side hustle yang cocok untuk yang kerjanya 9-5 dan tidak ada energi lebih"
+          - "5 ide penghasilan tambahan yang bisa dimulai minggu ini dari nol"
+
+      micro:
+        - slug: side-hustle-freelance-digital
+          name: Freelance Digital dari Nol
+          description: Panduan memulai freelance di bidang desain, penulisan, atau media sosial tanpa portofolio sebelumnya, menyasar fresh graduate dan mahasiswa.
+          example_hook: "Mulai freelance tanpa portofolio dan dapat klien pertama dalam 2 minggu, ini caranya..."
+          guide:
+            audience: "Mahasiswa dan fresh graduate 19–27 yang punya skill digital (desain, nulis, sosmed, video) tapi tidak tahu cara monetisasi; belum punya portofolio atau pengalaman kerja formal."
+            tone: "Mendorong dan praktis — penonton harus merasa hambatan masuk lebih rendah dari yang mereka bayangkan. Fokus pada tindakan konkret pertama, bukan rencana jangka panjang."
+            format: "60–90 detik. Hambatan umum yang membuat orang tidak mulai → cara build portofolio dari nol (proyek dummy, proyek gratis pertama) → platform untuk cari klien pertama di Indonesia → ekspektasi pendapatan bulan pertama yang jujur. Teks + b-roll pekerjaan digital. Vertikal 9:16."
+            boleh:
+              - "Tunjukkan cara buat portofolio dari proyek fiktif atau proyek untuk teman/komunitas"
+              - "Rekomendasikan platform freelance yang aktif di Indonesia (dengan konteks, bukan promosi)"
+              - "Bahas strategi harga untuk pemula: tidak terlalu murah, tidak terlalu mahal"
+              - "Tampilkan contoh pesan cold outreach yang berhasil untuk klien pertama"
+            hindari:
+              - "Jangan klaim 'gaji freelance melebihi karyawan' sebagai norma — ini outlier"
+              - "Jangan skip kenyataan bahwa klien pertama butuh waktu dan mungkin harus ditolak berkali-kali"
+              - "Jangan promosikan platform tertentu tanpa disclosure jika ada afiliasi"
+              - "Jangan abaikan aspek kontrak dan pembayaran yang sering jadi masalah freelancer pemula"
+            pola_hook: "Detik 0: 'mulai freelance tanpa portofolio dan dapat klien pertama dalam 2 minggu' + tampilkan tangkapan layar percakapan klien pertama (fiktif tapi realistis). Langsung ke langkah pertama di detik 4."
+            contoh_judul:
+              - "Cara dapat klien freelance pertama meskipun belum punya portofolio sama sekali"
+              - "Mulai freelance desain dari nol: dari dummy project sampai Rp2jt dari klien pertama"
+              - "Platform freelance mana yang paling aktif di Indonesia untuk pemula?"
+              - "Cara harga jasa freelance yang tidak terlalu murah tapi tetap menarik klien"
+              - "Cold outreach yang berhasil dapat klien — ini template pesan yang bisa langsung dipakai"
+            content_runway: "Setiap bidang freelance (desain, copywriting, social media management, video editing, web development, virtual assistant) menghasilkan konten tersendiri; masalah spesifik freelancer (negosiasi harga, kontrak, klien bermasalah) juga masing-masing satu video."
+
+        - slug: side-hustle-jualan-online
+          name: Jualan Online di Tokopedia & Shopee
+          description: Strategi praktis buka toko online dan mendapatkan penjualan pertama di marketplace Indonesia, fokus pada produk fisik yang mudah direseller.
+          example_hook: "Toko ini omzetnya Rp10jt/bulan hanya jual satu produk, ini rahasianya..."
+          guide:
+            audience: "Siapapun 20–40 yang ingin mulai jualan online tapi tidak tahu mulai dari mana atau takut tidak laku; baik yang ingin resell produk orang lain maupun yang punya produk sendiri."
+            tone: "Pragmatis dan konkret — tidak ada teori panjang. Langsung ke apa yang harus dilakukan hari pertama buka toko hingga penjualan pertama masuk."
+            format: "60–90 detik. Pemilihan produk (kriteria dan cara riset) → setup toko dasar yang mengundang kepercayaan → strategi foto produk sederhana dengan HP → taktik mendapat penjualan pertama → ekspektasi realistis untuk 30 hari pertama. Screen-record platform atau visual praktis. Vertikal 9:16."
+            boleh:
+              - "Tampilkan cara riset produk yang laku menggunakan fitur yang tersedia di Shopee/Tokopedia"
+              - "Berikan checklist toko yang 'siap jual' yang bisa langsung diikuti"
+              - "Tunjukkan tips foto produk menggunakan HP tanpa peralatan mahal"
+              - "Bahas strategi promosi awal yang gratis atau murah untuk dapat ulasan pertama"
+            hindari:
+              - "Jangan klaim omzet fantastis sebagai standar untuk pemula — bisa menyesatkan"
+              - "Jangan promosikan supplier atau layanan tertentu tanpa disclosure"
+              - "Jangan skip kenyataan bahwa kompetisi di marketplace sangat ketat dan butuh konsistensi"
+              - "Jangan abaikan aspek legal dan pajak meskipun singkat — ini penting untuk skala"
+            pola_hook: "Detik 0: tangkapan layar toko dengan omzet signifikan di bulan ke-3 + teks 'ini yang dilakukan di 7 hari pertama toko ini buka'. Langsung ke langkah pertama di detik 4."
+            contoh_judul:
+              - "Cara buka toko Shopee dari nol dan dapat penjualan pertama dalam 7 hari"
+              - "Produk apa yang paling mudah dijual sebagai pemula jualan online?"
+              - "Tips foto produk dengan HP yang bikin toko terlihat profesional tanpa modal besar"
+              - "Strategi dapat ulasan bintang 5 pertama di Tokopedia untuk toko baru"
+              - "Toko ini omzetnya 10 juta bulan ke-3 hanya dari satu jenis produk — ini caranya"
+            content_runway: "Setiap kategori produk (fashion, makanan, elektronik, peralatan rumah), setiap platform (Shopee, Tokopedia, TikTok Shop, Instagram), dan setiap masalah spesifik seller (packaging, komplain, persaingan harga) masing-masing satu video penuh."
+
+        - slug: side-hustle-konten-kreator
+          name: Monetisasi sebagai Kreator Konten
+          description: Cara menghasilkan uang dari konten digital — YouTube, TikTok, Instagram — termasuk afiliasi, endorse, dan AdSense, untuk kreator yang baru mulai.
+          example_hook: "1.000 subscriber di YouTube bisa hasilkan segini, ini cara cepatnya..."
+          guide:
+            audience: "Siapapun 19–35 yang mau mulai atau sudah mulai buat konten tapi belum tahu cara monetisasi; sudah punya akun tapi follower masih kecil; penasaran apakah konten bisa jadi sumber pendapatan nyata."
+            tone: "Realistis dan edukatif — tidak over-promise pendapatan besar cepat, tapi juga menunjukkan bahwa monetisasi nyata bisa dimulai lebih awal dari yang banyak orang kira."
+            format: "60–90 detik. Gambaran berbagai stream monetisasi kreator → threshold masing-masing platform → mana yang bisa dimulai paling cepat tanpa syarat follower tinggi (afiliasi) → strategi konsistensi realistis untuk pemula. Grafik atau tabel perbandingan platform sangat membantu. Vertikal 9:16."
+            boleh:
+              - "Tampilkan berbagai jalur monetisasi di setiap platform dan syarat masing-masing"
+              - "Bahas afiliasi sebagai opsi monetisasi yang bisa dimulai dari akun kecil"
+              - "Berikan ekspektasi pendapatan yang jujur berdasarkan skala channel yang realistis"
+              - "Tampilkan contoh kreator niche kecil yang menghasilkan lebih dari kreator viral berkat monetisasi tepat"
+            hindari:
+              - "Jangan klaim income spesifik yang bisa dicapai tanpa konteks niche, konsistensi, dan keberuntungan"
+              - "Jangan promosikan program afiliasi spesifik tanpa disclosure yang jelas"
+              - "Jangan buat konten terkesan bahwa 'siapapun bisa viral dan kaya' — ini tidak realistis"
+              - "Jangan abaikan bahwa monetisasi butuh konsistensi jangka panjang yang banyak orang tidak siap"
+            pola_hook: "Detik 0: perbandingan dua kreator — satu dengan 100rb subscribers tapi monetisasi buruk, satu dengan 10rb followers tapi pendapatan lebih baik — teks 'bukan soal jumlah followers'. Langsung ke penjelasan di detik 4."
+            contoh_judul:
+              - "Kreator dengan 10rb followers ini hasilkan lebih dari yang 100rb — ini bedanya"
+              - "Cara dapat uang dari konten sebelum mencapai 1.000 subscriber di YouTube"
+              - "Semua jalur monetisasi kreator konten dan berapa yang realistis bisa kamu harapkan"
+              - "Afiliasi konten: cara monetisasi paling cepat yang bisa dimulai dari akun nol"
+              - "Berapa yang bisa dihasilkan kreator Indonesia dari AdSense, endorse, dan afiliasi?"
+            content_runway: "Setiap platform (YouTube, TikTok, Instagram, Podcast), setiap jalur monetisasi (AdSense, afiliasi, endorse, membership, jualan produk sendiri), dan setiap tahap pertumbuhan channel menghasilkan konten yang berbeda dan selalu relevan."
+
+    - slug: business-case
+      name: Studi Kasus Bisnis
+      description: Bedah brand/perusahaan sukses-gagal.
+      faceless: true
+      difficulty: sulit
+      rpm: tinggi
+      formats: voiceover + grafik + logo
+      example_hook: "Kenapa Nokia hancur dalam 5 tahun..."
+      guide:
+        audience: "Penonton 22–40 yang tertarik dunia bisnis dan entrepreneurship; ingin belajar dari kasus nyata daripada teori; campuran pekerja kantoran, pengusaha muda, dan mahasiswa bisnis."
+        tone: "Analitis dan naratif — seperti dokumenter bisnis yang singkat. Harus terasa informatif dan mengundang rasa ingin tahu, bukan kuliah. Kronologi dan drama keputusan bisnis adalah kunci daya tariknya."
+        format: "60–90 detik. Konteks perusahaan/brand → keputusan atau titik kritis yang menentukan nasib → analisis mengapa ini terjadi → pelajaran konkret yang bisa diambil siapapun. Grafik timeline, logo perusahaan, dan data keuangan sangat membantu. Voiceover dengan tempo energetik. Vertikal 9:16."
+        boleh:
+          - "Gunakan data dan fakta yang bisa diverifikasi — kutip sumber jika memungkinkan"
+          - "Tampilkan timeline keputusan kritis secara visual untuk kejelasan narasi"
+          - "Sambungkan pelajaran bisnis ke konteks yang relevan untuk pengusaha muda Indonesia"
+          - "Dramatisasi berdasarkan fakta — bukan spekulasi atau fitnah"
+        hindari:
+          - "Jangan buat klaim yang tidak bisa diverifikasi atau bersifat spekulatif sebagai fakta"
+          - "Jangan gunakan logo atau brand aktif dengan cara yang bisa dianggap pencemaran nama baik"
+          - "Jangan simpulkan pelajaran yang terlalu simplifikasi dari situasi bisnis yang kompleks"
+          - "Jangan abaikan konteks makro ekonomi atau industri dalam analisis kegagalan bisnis"
+        pola_hook: "Detik 0: nama brand/perusahaan + angka kejatuhan atau kebangkitan yang mengejutkan + teks pertanyaan 'bagaimana ini bisa terjadi?'. Langsung ke kronologi di detik 4."
+        contoh_judul:
+          - "Kenapa Nokia hancur dalam 5 tahun padahal pernah kuasai 40% pasar HP dunia"
+          - "Brand ini dari garasi jadi triliunan, satu keputusan yang mengubah segalanya"
+          - "Startup ini dapat Rp100M, 2 tahun kemudian tutup — ini kronologi lengkapnya"
+
+      micro:
+        - slug: business-case-startup-indonesia
+          name: Autopsi Startup Indonesia yang Gagal
+          description: Analisis mendalam kenapa startup Indonesia yang sempat ramai akhirnya tutup, dengan pelajaran bisnis konkret yang bisa diambil oleh pengusaha pemula.
+          example_hook: "Startup ini dapat pendanaan Rp100M, 2 tahun kemudian tutup. Ini kronologisnya..."
+          guide:
+            audience: "Pengusaha muda dan calon founder 22–38 yang ingin belajar dari kegagalan orang lain sebelum membuat kesalahan yang sama; juga penonton yang suka drama dan insider story bisnis Indonesia."
+            tone: "Jurnalistik dan empatis — bukan menghakimi pendiri yang gagal, tapi menganalisis sistemik apa yang salah dan mengapa. Drama dan kejujuran adalah nilai konten ini."
+            format: "75–90 detik. Profil singkat startup dan ekspektasi awal → timeline masalah mulai muncul → keputusan kritis yang memperburuk keadaan → penutupan dan aftermath → pelajaran spesifik untuk founder. Infografis timeline + logo startup. Vertikal 9:16."
+            boleh:
+              - "Gunakan kasus startup yang sudah secara publik tutup dan ada dokumentasi media"
+              - "Analisis faktor sistemik: burn rate, product-market fit, persaingan, timing pasar"
+              - "Tampilkan data pendanaan dan pertumbuhan dari sumber publik (Crunchbase, berita)"
+              - "Akhiri dengan 2–3 pelajaran konkret yang relevan untuk startup Indonesia hari ini"
+            hindari:
+              - "Jangan buat klaim tentang keputusan internal atau konflik yang tidak terdokumentasi secara publik"
+              - "Jangan menyerang atau mempermalukan pendiri secara personal — fokus pada keputusan bisnis"
+              - "Jangan simplifikasi kegagalan kompleks menjadi 'satu kesalahan' jika tidak ada bukti kuat"
+              - "Jangan gunakan informasi sensitif yang tidak dipublish secara resmi"
+            pola_hook: "Detik 0: logo startup + angka pendanaan + teks 'tutup dalam X tahun'. Langsung ke momen paling dramatis dalam timeline di detik 4."
+            contoh_judul:
+              - "Startup ini dapat pendanaan Rp50M dari investor besar, 18 bulan kemudian tutup"
+              - "Kenapa e-commerce lokal ini tidak bisa bersaing meski sudah dapat suntikan modal"
+              - "Autopsi startup Indonesia: 3 kesalahan fatal yang berulang terjadi di fase awal"
+              - "Dari hype ke tutup dalam satu tahun — ini yang tidak diceritakan media soal startup ini"
+              - "Pelajaran dari 5 startup Indonesia yang gagal yang relevan untuk siapapun mau mulai bisnis"
+            content_runway: "Ekosistem startup Indonesia menghasilkan puluhan kasus setiap tahun; setiap industri (fintech, edtech, agritech, logistik) memiliki kasus gagalnya sendiri; analisis mendalam bisa dilakukan per sektor, per fase, atau per jenis kesalahan."
+
+        - slug: business-case-brand-lokal-sukses
+          name: Rahasia di Balik Brand Lokal yang Meledak
+          description: Bedah strategi bisnis dan branding brand Indonesia yang berhasil tumbuh dari UKM menjadi brand nasional, dengan data dan timeline konkret.
+          example_hook: "Brand ini mulai dari garasi, sekarang omzetnya triliunan. Ini yang beda..."
+          guide:
+            audience: "Pengusaha muda, pelaku UMKM, dan siapapun 23–45 yang ingin belajar dari brand lokal yang berhasil; terinspirasi dari cerita sukses yang terasa lebih relevan dari brand global."
+            tone: "Inspiratif tapi analitis — bukan sekadar cerita sukses motivasional, tapi breakdown faktual apa yang benar-benar dilakukan berbeda. Penonton harus mendapat insight yang bisa diterapkan."
+            format: "75–90 detik. Kondisi awal brand (sangat kecil atau di pasar yang jenuh) → momen pivot atau keputusan kritis yang mengubah trajektori → strategi yang membedakan → angka pertumbuhan dari sumber publik → pelajaran konkret. Timeline visual + logo + data. Vertikal 9:16."
+            boleh:
+              - "Gunakan data pertumbuhan dari berita atau laporan publik yang bisa diverifikasi"
+              - "Analisis strategi diferensiasi: apa yang brand ini lakukan yang orang lain tidak lakukan"
+              - "Sambungkan ke tren konsumen atau makro ekonomi yang membantu brand ini berkembang"
+              - "Bahas strategi pemasaran spesifik yang bisa diadaptasi UMKM skala kecil"
+            hindari:
+              - "Jangan klaim data internal yang tidak dipublish secara publik"
+              - "Jangan buat konten yang terkesan promosi berbayar untuk brand yang dibahas"
+              - "Jangan simplifikasi kesuksesan menjadi 'kerja keras saja' — faktor eksternal juga penting"
+              - "Jangan gunakan foto atau konten brand tanpa hak yang jelas"
+            pola_hook: "Detik 0: logo brand + angka pertumbuhan mengejutkan (omzet atau skala) + teks 'dari garasi, ini yang membuat mereka berbeda'. Langsung ke titik awal cerita di detik 4."
+            contoh_judul:
+              - "Brand ini mulai dari modal Rp5jt di garasi, sekarang ada di seluruh Indonesia"
+              - "Strategi pemasaran brand lokal ini yang tidak ada anggaran besar tapi viral terus"
+              - "Kenapa brand lokal ini menang melawan brand internasional di pasarnya sendiri"
+              - "Dari berjualan di bazaar ke toko di mal seluruh Indonesia — timeline lengkapnya"
+              - "3 keputusan branding yang membuat brand lokal ini terlihat setara brand impor"
+            content_runway: "Indonesia memiliki ratusan brand lokal sukses di berbagai kategori (F&B, fashion, beauty, teknologi, agrikultur); setiap brand bisa dianalisis dari sudut strategi berbeda; brand baru terus muncul menghasilkan konten segar."
+
+        - slug: business-case-korporat-global
+          name: Korporat Global yang Hampir Bangkrut
+          description: Studi kasus perusahaan-perusahaan global yang hampir kolaps lalu berhasil bangkit, atau yang benar-benar jatuh, dengan analisis keputusan kritis di baliknya.
+          example_hook: "CEO ini satu keputusan dari kebangkrutan, lalu buat satu langkah yang selamatkan segalanya..."
+          guide:
+            audience: "Penonton 23–45 yang tertarik bisnis dan sejarah korporat; suka konten 'di balik layar' perusahaan besar; mencari inspirasi atau pelajaran dari skala yang lebih besar dari konteks lokal."
+            tone: "Dramatis dan berbasis fakta — seperti thriller bisnis pendek. Ketegangan naratif antara 'hampir hancur' dan 'berhasil bangkit' atau 'benar-benar jatuh' adalah daya tarik utama."
+            format: "75–90 detik. Status perusahaan di puncak → titik krisis dramatik → keputusan CEO atau manajemen di persimpangan jalan → aftermath (bangkit atau jatuh) → pelajaran universal. Timeline visual + logo + data finansial dari sumber publik. Vertikal 9:16."
+            boleh:
+              - "Gunakan fakta dari laporan publik, berita, atau buku bisnis yang kredibel"
+              - "Tampilkan perbandingan harga saham atau metrik bisnis sebelum dan sesudah krisis"
+              - "Analisis keputusan spesifik: apa yang dilakukan berbeda, mengapa ini penting"
+              - "Sambungkan pelajaran ke konteks yang relevan untuk pengusaha Indonesia"
+            hindari:
+              - "Jangan buat klaim internal perusahaan yang tidak ada dokumentasi publiknya"
+              - "Jangan gunakan perusahaan yang masih dalam proses hukum aktif tanpa kehati-hatian"
+              - "Jangan simplifikasi kebangkitan atau kejatuhan korporat menjadi satu faktor"
+              - "Jangan abaikan konteks industri dan ekonomi makro dalam analisis"
+            pola_hook: "Detik 0: nama perusahaan global + kondisi krisis + angka kerugian atau krisis yang mengejutkan + teks 'bagaimana mereka selamat (atau tidak)'. Langsung ke konteks di detik 4."
+            contoh_judul:
+              - "Nokia punya 40% pasar HP dunia, 5 tahun kemudian hampir tidak ada — kenapa?"
+              - "CEO ini buat satu keputusan yang selamatkan perusahaan dari bangkrut total"
+              - "Perusahaan retail ini hampir tutup, lalu satu langkah mengubah segalanya"
+              - "Blockbuster bisa beli Netflix seharga Rp75M, ini alasan mereka tolak dan hasilnya"
+              - "Studi kasus kebangkrutan yang bisa dihindari jika satu keputusan diambil berbeda"
+            content_runway: "Sejarah korporat global penuh dengan kasus dramatis yang belum semua diketahui audiens Indonesia; setiap dekade, industri, dan jenis krisis (teknologi, manajemen, pasar, regulasi) menghasilkan konten baru; kasus baru muncul setiap tahun."
+
+    - slug: real-estate
+      name: Property
+      description: "Tur properti, harga, investasi properti."
+      faceless: true
+      difficulty: menengah
+      rpm: tinggi
+      formats: tur + voiceover + reveal-harga
+      example_hook: "Tebak harga rumah ini..."
+      guide:
+        audience: "Anak muda dan dewasa muda 25–45 yang mulai memikirkan properti — baik untuk tinggal maupun investasi; generasi yang merasa rumah semakin tidak terjangkau dan butuh informasi benchmark harga yang jujur."
+        tone: "Informatif dan sedikit mengejutkan — harga properti selalu mengejutkan baik ke atas maupun ke bawah. Format reveal menciptakan engagement alami. Jujur soal kondisi pasar yang tidak selalu berpihak ke pembeli muda."
+        format: "45–90 detik. Tur singkat properti atau visual eksterior/interior → reveal harga + konteks lokasi → analisis apakah ini worth it atau tidak berdasarkan data → CTA reflektif. Voiceover informatif. Vertikal 9:16."
+        boleh:
+          - "Gunakan harga dari listing publik yang bisa diverifikasi (Rumah123, Lamudi, OLX Properti)"
+          - "Berikan konteks lokasi, aksesibilitas, dan fasilitas sekitar untuk analisis komprehensif"
+          - "Bandingkan harga per meter persegi antar lokasi untuk benchmark yang useful"
+          - "Tampilkan kalkulator cicilan KPR sederhana berdasarkan harga properti yang dibahas"
+        hindari:
+          - "Jangan beri rekomendasi 'beli properti ini' secara langsung — kondisi personal sangat menentukan"
+          - "Jangan klaim bahwa properti selalu naik sebagai investasi — pasar properti bisa stagnan atau turun"
+          - "Jangan promosikan developer atau agen properti tertentu tanpa disclosure"
+          - "Jangan abaikan biaya tersembunyi properti (pajak, biaya notaris, biaya developer) dalam analisis"
+        pola_hook: "Detik 0: visual properti dengan teks 'tebak harga ini' — tidak ada jawaban dulu. Penonton harus scroll atau tonton sampai reveal harga yang selalu mengejutkan."
+        contoh_judul:
+          - "Tebak harga apartemen studio di Jakarta Selatan ini, jawabannya mengejutkan"
+          - "Rumah Rp500jt di Jakarta vs Bekasi — apa bedanya secara konkret?"
+          - "Harga properti di kota ini naik berapa persen dalam 5 tahun terakhir"
+
+      micro:
+        - slug: real-estate-apartemen-jakarta
+          name: Tebak Harga Apartemen Jakarta
+          description: Format reveal harga apartemen di Jakarta dari yang termurah hingga termahal, memberikan penonton benchmark harga properti yang sulit didapat dari sumber lain.
+          example_hook: "Apartemen di pusat Jakarta ini harganya berapa? Jawabannya mengejutkan..."
+          guide:
+            audience: "Anak muda 23–38 yang penasaran dengan pasar properti Jakarta; calon pembeli atau penyewa pertama kali yang butuh benchmark harga; investor yang ingin tahu harga pasar tanpa harus kunjungi satu per satu."
+            tone: "Informatif dan mengejutkan — format reveal harga yang tidak terduga (baik lebih mahal maupun lebih murah dari ekspektasi) adalah daya tarik utama. Netral, tidak mendorong beli atau tidak."
+            format: "45–75 detik. Visual atau foto apartemen → clue lokasi dan fasilitas → 'tebak berapa?' → reveal harga → breakdown kenapa harga segini (lokasi, fasilitas, developer) → perbandingan singkat dengan lokasi lain. Vertikal 9:16."
+            boleh:
+              - "Gunakan harga listing aktual dari platform properti publik yang bisa diverifikasi"
+              - "Tampilkan perbandingan harga per meter persegi untuk konteks yang lebih useful"
+              - "Sertakan konteks transportasi publik terdekat yang relevan untuk pembeli muda"
+              - "Bahas biaya tambahan selain harga listing: IPL, biaya parkir, service charge"
+            hindari:
+              - "Jangan rekomendasikan atau tidak merekomendasikan properti spesifik secara langsung"
+              - "Jangan promosikan developer atau agen tanpa disclosure"
+              - "Jangan gunakan harga yang sudah sangat outdated tanpa menyebut periode data"
+              - "Jangan klaim bahwa harga apartemen di lokasi tertentu 'pasti naik' sebagai investasi"
+            pola_hook: "Detik 0: tampilkan foto atau video eksterior apartemen + lokasi umum tanpa nama + teks besar 'Tebak harganya'. Tidak ada jawaban sampai detik 25–30."
+            contoh_judul:
+              - "Apartemen studio di CBD Jakarta ini harganya segini, kamu akan terkejut"
+              - "Harga apartemen Jakarta Selatan vs Jakarta Utara untuk tipe yang sama — selisihnya ini"
+              - "Apartemen termurah di Jakarta Pusat yang masih layak huni, tebak berapa?"
+              - "Apartemen mewah SCBD vs apartemen pinggiran — kamu pilih mana dengan budget sama?"
+              - "Harga per meter persegi apartemen Jakarta dari yang termurah ke termahal di 2024"
+            content_runway: "Setiap kecamatan Jakarta, tipe unit (studio, 1BR, 2BR, penthouse), range harga, dan karakteristik lokasi (transit oriented, lifestyle, legacy) menghasilkan video yang berbeda; harga properti berubah sehingga konten update periodik selalu relevan."
+
+        - slug: real-estate-kos-investasi
+          name: Investasi Kos-kosan dari Modal Kecil
+          description: Panduan memulai bisnis kos-kosan sebagai investasi properti dengan modal terbatas, termasuk perhitungan ROI dan tips lokasi strategis.
+          example_hook: "Modal Rp200jt bisa buka kos yang hasilkan Rp5jt/bulan, ini hitungannya..."
+          guide:
+            audience: "Investor pemula properti 27–45 yang ingin memulai bisnis kos-kosan; memiliki sedikit modal atau akses ke KPR; mencari alternatif investasi properti yang lebih terjangkau dari beli rumah atau apartemen penuh."
+            tone: "Kalkulatif dan realistis — penonton harus keluar dengan pemahaman angka yang jelas. Bukan sekadar inspiratif, tapi seperti berdiskusi dengan teman yang sudah lebih pengalaman di properti."
+            format: "75–90 detik. Konsep investasi kos-kosan → perhitungan modal awal (beli/bangun) → estimasi pendapatan sewa dan ROI → faktor lokasi strategis → risiko dan tantangan yang sering diabaikan. Kalkulator visual dan infografis ROI sangat membantu. Vertikal 9:16."
+            boleh:
+              - "Tampilkan perhitungan ROI yang nyata berdasarkan harga tanah dan biaya bangun di berbagai kota"
+              - "Bahas strategi modal kecil: renovasi rumah lama, konversi lantai atas, hingga beli ruko"
+              - "Sertakan faktor lokasi yang menentukan okupansi: dekat kampus, pabrik, atau pusat bisnis"
+              - "Diskusikan risiko nyata: kamar kosong, kerusakan, masalah penyewa"
+            hindari:
+              - "Jangan klaim ROI atau pendapatan kos pasti tanpa konteks lokasi dan kondisi pasar lokal"
+              - "Jangan promosikan lokasi atau proyek properti tertentu tanpa disclosure"
+              - "Jangan abaikan biaya tersembunyi dan risiko overhead kos-kosan (maintenance, listrik, air, keamanan)"
+              - "Jangan buat bisnis kos terkesan pasif penuh — ada manajemen yang harus dilakukan"
+            pola_hook: "Detik 0: simulasi visual pendapatan pasif bulanan dari kos-kosan + teks 'ini berapa modal awalnya dan kapan balik modal'. Langsung ke perhitungan di detik 4."
+            contoh_judul:
+              - "Modal Rp200jt, buka kos 5 kamar, hasilkan Rp5jt per bulan — ini hitungan lengkapnya"
+              - "Cara mulai bisnis kos dari modal kecil dengan strategi konversi rumah yang sudah ada"
+              - "Lokasi kos yang hampir selalu penuh sepanjang tahun dan kenapa ini penting"
+              - "ROI bisnis kos vs apartemen sebagai investasi — mana yang lebih masuk akal?"
+              - "Kesalahan investor kos pemula yang bikin payback period jadi dua kali lebih lama"
+            content_runway: "Setiap kota besar Indonesia (Jakarta, Bandung, Yogyakarta, Surabaya, Semarang) memiliki dinamika harga dan ROI berbeda; setiap strategi (bangun baru, renovasi, beli jadi) menghasilkan kalkulasi yang berbeda; topik ini relevan sepanjang tahun."
+
+        - slug: real-estate-kpr-pemula
+          name: KPR untuk Pertama Kali Tanpa Bingung
+          description: Panduan proses KPR dari awal hingga akad untuk pembeli rumah pertama, menjawab pertanyaan yang sering bikin orang ragu untuk mulai.
+          example_hook: "Ini yang bank gak kasih tahu kamu soal KPR sebelum kamu tanda tangan..."
+          guide:
+            audience: "Anak muda 27–40 yang ingin beli rumah pertama tapi bingung dan takut dengan proses KPR; merasa proses KPR rumit dan penuh jebakan; butuh panduan jujur yang membantu mereka navigasi proses ini."
+            tone: "Jujur dan membantu — seperti teman yang sudah pernah lewati proses KPR dan mau berbagi semua yang tidak diajarkan bank. Tidak panik, tapi tidak menutup-nutupi kompleksitasnya."
+            format: "75–90 detik. Step-by-step proses KPR dari simulasi awal → pengajuan → BI checking → survei → akad → serah terima → biaya-biaya yang sering mengejutkan pembeli pertama → tips negosiasi sederhana. Flowchart visual atau checklist. Vertikal 9:16."
+            boleh:
+              - "Tampilkan biaya-biaya tersembunyi KPR yang sering mengejutkan: BPHTB, biaya notaris, biaya asuransi"
+              - "Jelaskan BI checking dan cara memperbaiki rekam jejak kredit sebelum apply"
+              - "Berikan tips negosiasi sederhana: minta tenor lebih panjang, tanya cicilan awal lebih ringan"
+              - "Bahas perbedaan KPR konvensional dan syariah secara objektif"
+            hindari:
+              - "Jangan rekomendasikan bank KPR tertentu sebagai 'terbaik' tanpa konteks dan disclaimer"
+              - "Jangan klaim bahwa properti tertentu adalah 'pilihan terbaik' untuk KPR"
+              - "Jangan abaikan risiko: apa yang terjadi jika tidak bisa bayar cicilan"
+              - "Jangan berikan angka bunga KPR spesifik tanpa disclaimer bahwa kondisi berubah dan harus dicek langsung"
+            pola_hook: "Detik 0: teks 'ini yang bank tidak kasih tahu kamu sebelum tanda tangan KPR' + daftar singkat hal yang mengejutkan banyak pembeli pertama. Langsung ke langkah pertama di detik 4."
+            contoh_judul:
+              - "Ini yang bank tidak kasih tahu sebelum kamu tanda tangan KPR pertama"
+              - "Proses KPR dari awal sampai akad dalam 90 detik — panduan step by step"
+              - "Biaya KPR yang sering bikin pembeli pertama kaget setelah deal sudah jalan"
+              - "Cara cek dan perbaiki BI checking sebelum apply KPR agar tidak langsung ditolak"
+              - "Beda KPR konvensional dan syariah: mana yang lebih cocok untuk kondisimu?"
+            content_runway: "Setiap tahapan proses KPR bisa menjadi video tersendiri; setiap bank memiliki kebijakan berbeda; kondisi suku bunga dan regulasi berubah menghasilkan konten update; pertanyaan pembeli pertama tidak pernah habis."
+
+    - slug: crypto-trading
+      name: Crypto Trading
+      description: Strategi dan analisis trading aset kripto untuk pemula hingga menengah.
+      faceless: true
+      difficulty: menengah
+      rpm: tinggi
+      formats: grafik + screen-record + voiceover
+      example_hook: "Chart ini kasih sinyal beli sebelum naik 3x..."
+      guide:
+        audience: "Penonton 20–38 yang sudah atau ingin mulai trading crypto; paham dasar crypto tapi belum mengerti cara analisis teknikal atau manajemen risiko; sering impulsif dan rugi karena tidak ada strategi."
+        tone: "Teknis tapi accessible — tidak mengasumsikan penonton sudah ahli, tapi tidak terlalu basic. Jujur soal kesulitan trading dan tingginya risiko rugi. Tidak mempromosikan trading sebagai cara cepat kaya."
+        format: "60–90 detik. Chart atau grafik trading nyata → penjelasan konsep teknikal satu per satu → implikasi praktis dalam keputusan trading → disclaimer risiko yang kuat. Screen-record platform trading atau grafik yang dianotasi. Vertikal 9:16."
+        boleh:
+          - "Tampilkan analisis chart dengan contoh nyata yang sudah lewat (bukan prediksi masa depan)"
+          - "Jelaskan konsep teknikal dengan contoh visual yang langsung terlihat di chart"
+          - "Bahas manajemen risiko sebagai topik yang sama pentingnya dengan strategi entry"
+          - "Gunakan data historis untuk ilustrasi, dengan disclaimer bahwa masa lalu tidak menjamin masa depan"
+        hindari:
+          - "Jangan pernah memberikan sinyal beli/jual crypto spesifik — ini bisa dianggap saran investasi ilegal"
+          - "Jangan klaim indikator teknikal 'selalu akurat' atau 'bisa prediksi pergerakan pasti'"
+          - "Jangan buat konten yang mendorong over-leverage atau posisi berisiko sangat tinggi"
+          - "Jangan abaikan disclaimer risiko tinggi dari trading crypto di setiap konten"
+        pola_hook: "Detik 0: chart yang menunjukkan sinyal teknikal sebelum pergerakan signifikan (historis) + teks 'ini yang terjadi setelah sinyal ini muncul'. Langsung ke penjelasan sinyal di detik 4."
+        contoh_judul:
+          - "Indikator ini muncul sebelum setiap pump besar di chart, ini cara bacanya"
+          - "Kenapa trader crypto rugi bukan karena analisis salah, tapi karena ini"
+          - "Cara baca chart crypto dasar yang bisa langsung diterapkan pemula"
+
+      micro:
+        - slug: crypto-trading-teknikal-dasar
+          name: Analisis Teknikal Crypto untuk Pemula
+          description: Pengenalan indikator teknikal dasar seperti RSI, MACD, dan support-resistance yang dipakai trader crypto, disajikan dengan contoh chart nyata.
+          example_hook: "Indikator ini muncul sebelum setiap pump besar, ini cara bacanya..."
+          guide:
+            audience: "Trader pemula crypto 20–35 yang sering trading berdasarkan feeling atau berita; ingin mulai belajar analisis teknikal tapi intimidated dengan kompleksitasnya; butuh pengantar yang langsung applicable."
+            tone: "Teknis tapi tidak menakutkan — satu konsep per video, dijelaskan dengan sangat visual. Jujur bahwa analisis teknikal bukan crystal ball, hanya alat bantu probabilistik."
+            format: "75–90 detik. Satu indikator teknikal per video → cara membacanya pada chart nyata (historis) → sinyal apa yang dihasilkan dan artinya → keterbatasan indikator ini → cara kombinasikan dengan risk management. Screen-record chart yang dianotasi langsung. Vertikal 9:16."
+            boleh:
+              - "Gunakan contoh chart historis yang sudah terjadi (bukan prediksi) untuk ilustrasi"
+              - "Tampilkan indikator secara visual langsung di atas chart yang relevan"
+              - "Jelaskan false signal dan kapan indikator ini tidak bisa diandalkan"
+              - "Sambungkan ke money management: sinyal bagus + sizing buruk tetap rugi"
+            hindari:
+              - "Jangan klaim indikator tertentu 'selalu akurat' atau bisa prediksi pergerakan dengan pasti"
+              - "Jangan berikan sinyal trading spesifik berdasarkan kondisi pasar saat ini"
+              - "Jangan buat penonton merasa analisis teknikal bisa menghilangkan risiko trading"
+              - "Jangan abaikan disclaimer bahwa trading crypto mengandung risiko kehilangan modal"
+            pola_hook: "Detik 0: close-up chart historis dengan indikator menyala tepat sebelum pergerakan besar + teks 'ini yang muncul sebelum pump ini terjadi'. Langsung ke penjelasan indikator di detik 4."
+            contoh_judul:
+              - "RSI itu apa dan cara bacanya di chart crypto untuk pemula yang belum pernah coba"
+              - "Support dan resistance: konsep paling dasar analisis teknikal yang wajib dipahami dulu"
+              - "MACD sinyal golden cross dan death cross — ini yang terjadi setelahnya di chart historis"
+              - "Indikator teknikal tidak pernah 100% akurat, ini kenapa dan cara pakai yang benar"
+              - "Cara annotate chart crypto sendiri untuk bantu keputusan trading yang lebih terstruktur"
+            content_runway: "Setiap indikator teknikal (RSI, MACD, Bollinger Bands, EMA, volume, Fibonacci, dll) menjadi video tersendiri; setiap kombinasi indikator dan strategi menghasilkan konten baru; pasar crypto yang terus bergerak selalu menghadirkan contoh chart baru."
+
+        - slug: crypto-trading-manajemen-risiko
+          name: Manajemen Risiko dalam Trading Crypto
+          description: Framework konkret mengatur posisi dan stop-loss agar tidak habis modal karena satu trade buruk, untuk trader pemula yang sering over-leverage.
+          example_hook: "Trader ini rugi 80% bukan karena analisis salah, tapi karena ini..."
+          guide:
+            audience: "Trader crypto 20–38 yang sudah pernah rugi besar dari satu atau beberapa trade buruk; tahu cara analisis teknikal dasar tapi belum punya framework manajemen risiko yang disiplin."
+            tone: "Serius dan berbasis data — ini topik yang bisa benar-benar mengubah hasil trading penonton. Bukan motivasi, tapi framework konkret yang harus dipraktikkan setiap trade."
+            format: "75–90 detik. Kasus konkret kerugian besar dari risiko tidak dimanage → konsep position sizing sederhana → cara hitung stop-loss yang logis → aturan risk/reward ratio → mental framework untuk tetap disiplin. Kalkulator visual dan contoh angka nyata. Vertikal 9:16."
+            boleh:
+              - "Tampilkan simulasi konkret: modal Rp10jt dengan berbagai skenario position sizing"
+              - "Jelaskan rule 1-2% per trade secara visual dan kenapa ini melindungi akun dalam jangka panjang"
+              - "Bahas psikologi kenapa trader over-leverage meskipun tahu risikonya"
+              - "Tunjukkan perbedaan drawdown antara yang pakai manajemen risiko vs tidak"
+            hindari:
+              - "Jangan buat framework yang terkesan bisa menghilangkan kerugian sepenuhnya"
+              - "Jangan rekomendasikan leverage spesifik sebagai 'aman' — semua leverage mengandung risiko"
+              - "Jangan abaikan bahwa bahkan dengan risk management terbaik, trading crypto masih sangat berisiko"
+              - "Jangan berikan sinyal atau rekomendasi trade spesifik di konten ini"
+            pola_hook: "Detik 0: statistik berapa persen trader ritel crypto kehilangan uang dalam jangka panjang + teks 'bukan karena analisis salah, tapi karena ini yang tidak dilakukan'. Langsung ke konsep di detik 4."
+            contoh_judul:
+              - "Kenapa trader ini rugi 80% modal dalam satu minggu meski analisisnya benar"
+              - "Rule 1% per trade: aturan sederhana yang melindungi akun trading dari kehancuran"
+              - "Cara hitung stop-loss yang logis bukan berdasarkan berapa yang sanggup rugi"
+              - "Risk/reward ratio dan kenapa trader yang winrate-nya 40% masih bisa profit"
+              - "Framework manajemen risiko trading crypto yang bisa mulai diterapkan hari ini"
+            content_runway: "Setiap aspek manajemen risiko (position sizing, stop-loss, take-profit, diversifikasi, korrelasi aset, drawdown management) menghasilkan video tersendiri; kasus kerugian nyata yang terdokumentasi terus menghasilkan konten edukatif baru."
+
+        - slug: crypto-trading-psikologi
+          name: Psikologi Trading yang Sering Bikin Rugi
+          description: Analisis bias kognitif umum yang dialami trader crypto — FOMO, revenge trading, overconfidence — dengan cara konkret melawannya.
+          example_hook: "Bukan strategi yang bikin kamu rugi, ini yang sebenarnya terjadi di otakmu saat trading..."
+          guide:
+            audience: "Trader crypto 21–38 yang merasa sudah punya strategi dan pengetahuan tapi masih sering rugi karena keputusan emosional; menyadari ada masalah mental tapi tidak tahu cara mengatasinya secara konkret."
+            tone: "Psikologis dan insightful — membantu penonton melihat pola perilaku mereka sendiri dalam trading. Sedikit introspektif tapi tidak terkesan judgemental. Jujur bahwa bias ini dialami hampir semua trader."
+            format: "75–90 detik. Satu atau dua bias psikologi per video → ilustrasi bagaimana bias ini muncul dalam keputusan trading nyata → dampak finansialnya → teknik konkret untuk melawan bias ini → reminder bahwa ini butuh latihan. Animasi atau screen-record dengan narasi. Vertikal 9:16."
+            boleh:
+              - "Gunakan contoh trade scenario yang sangat relatable untuk mengilustrasikan bias"
+              - "Bahas teknik konkret: trading journal, pre-trade checklist, aturan 24 jam sebelum entry"
+              - "Akui bahwa bias psikologi tidak bisa dihilangkan, hanya dimanage"
+              - "Sambungkan ke penelitian behavioral finance yang mendukung poin yang dibahas"
+            hindari:
+              - "Jangan buat konten terkesan bisa 'menyembuhkan' masalah psikologi trading — ini proses jangka panjang"
+              - "Jangan abaikan konteks bahwa bahkan trader terbaik dengan psikologi terbaik masih bisa rugi"
+              - "Jangan berikan rekomendasi trade atau sinyal di konten bertema psikologi"
+              - "Jangan simplifikasi psikologi trading menjadi 'jangan emosi' — ini tidak actionable"
+            pola_hook: "Detik 0: cerita singkat skenario FOMO atau revenge trade yang sangat relatable + teks 'ini yang sebenarnya terjadi di otakmu saat trading, bukan masalah strategi'. Langsung ke penjelasan bias di detik 5."
+            contoh_judul:
+              - "Bukan strategi yang bikin kamu rugi, ini yang sebenarnya terjadi di otak saat trading"
+              - "FOMO trading: kenapa kamu selalu beli di puncak dan jual di bawah"
+              - "Revenge trading adalah pembunuh akun paling umum dan cara mengenalinya sebelum terlambat"
+              - "Trading journal: satu kebiasaan yang memisahkan trader yang berkembang dari yang stagnan"
+              - "Overconfidence bias di trading crypto dan kenapa setelah menang besar kamu lebih rentan rugi"
+            content_runway: "Setiap bias kognitif dalam trading (FOMO, loss aversion, confirmation bias, sunk cost, overconfidence, herding) menjadi video tersendiri; trading journal tips, pre-trade routine, dan psikologi pasar bear/bull juga menghasilkan konten baru sepanjang tahun."

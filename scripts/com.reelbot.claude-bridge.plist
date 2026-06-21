@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  launchd agent for the host claude bridge.
+
+  ⚠️  macOS TCC caveat: the repo lives under ~/Documents, a privacy-protected
+  folder. launchd-spawned processes get "Operation not permitted" reading it
+  unless you grant Full Disk Access to /bin/sh (or /usr/bin/python3) in
+  System Settings → Privacy & Security → Full Disk Access. Without that, run the
+  bridge as a normal background process instead:
+      nohup sh scripts/start-bridge.sh > /tmp/claude_bridge.log 2>&1 &
+  (this matches how cli-proxy-api is run on this machine).
+
+  Install (per-user, only after granting Full Disk Access):
+    cp scripts/com.reelbot.claude-bridge.plist ~/Library/LaunchAgents/
+    launchctl load -w ~/Library/LaunchAgents/com.reelbot.claude-bridge.plist
+
+  Reload after edits:
+    launchctl unload ~/Library/LaunchAgents/com.reelbot.claude-bridge.plist
+    launchctl load   ~/Library/LaunchAgents/com.reelbot.claude-bridge.plist
+
+  Status / logs:
+    launchctl list | grep claude-bridge
+    tail -f /tmp/claude_bridge.out /tmp/claude_bridge.err
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.reelbot.claude-bridge</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/ichigo/Documents/repo/helmi/reelbot/scripts/start-bridge.sh</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/claude_bridge.out</string>
+
+    <key>StandardErrorPath</key>
+    <string>/tmp/claude_bridge.err</string>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/ichigo/Documents/repo/helmi/reelbot</string>
+</dict>
+</plist>

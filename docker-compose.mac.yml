@@ -1,0 +1,25 @@
+# Mac-local override — run with:
+#   docker compose -f docker-compose.yml -f docker-compose.mac.yml up -d openclaw
+#
+# On this Mac, cli-proxy-api runs natively on the host (port 8317) instead of
+# the linux cliproxy container (whose binary is darwin-only here). openclaw and
+# pipeline-api reach it — and the claude bridge — via host.docker.internal.
+# NOT used on the VPS deploy (that uses plain docker-compose.yml).
+services:
+  openclaw:
+    depends_on: []
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - CLIPROXY_URL=http://host.docker.internal:8317/v1
+
+  # Backend storage follows ~/Downloads/ReelBot (protected source/output store).
+  # Override the named volumes with host binds so sources, per-run output, and
+  # claude analyze frames all land in the ReelBot folder. The host claude bridge
+  # reads frames from the same ReelBot/frames dir (ANALYZE_FRAME_DIR in
+  # scripts/start-bridge.sh). ~ is not expanded in compose — absolute path.
+  pipeline-api:
+    volumes:
+      - /Users/ichigo/Downloads/ReelBot/sources:/videos
+      - /Users/ichigo/Downloads/ReelBot/projects:/output
+      - /Users/ichigo/Downloads/ReelBot/frames:/app/analyze-frames

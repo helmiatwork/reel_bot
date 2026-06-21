@@ -1,0 +1,461 @@
+version: 1
+vertical:
+  slug: v-travel
+  name: Travel
+  description: Konten perjalanan dan destinasi — eksplorasi, hidden gems, dan tips budget traveling Indonesia.
+  guide:
+    audience: "Penonton 18–35 tahun yang suka jalan-jalan atau bermimpi menjelajahi Indonesia; campuran pekerja muda, mahasiswa, dan backpacker yang mencari inspirasi destinasi dan tips perjalanan hemat; penonton yang tertarik pada keindahan alam dan budaya lokal."
+    tone: "Petualangan dan aspiratif — memancing rasa ingin tahu dan keinginan untuk segera pergi. Narasi terasa seperti cerita teman yang baru pulang, bukan brosur wisata. Bahasa kasual, jujur soal biaya dan kondisi nyata."
+    format: "Video 45–90 detik, didominasi footage sinematik destinasi dengan voiceover ringkas dan teks overlay penting (nama tempat, harga, tips). Struktur: hook visual kuat (tempat paling kece) → narasi singkat → tips praktis → CTA. Vertikal 9:16 untuk Reels/Shorts, bisa landscape untuk YouTube."
+    boleh:
+      - "Mulai dengan footage terbaik yang bikin penonton bilang 'ini di mana?' sebelum dijelaskan"
+      - "Sertakan informasi praktis: biaya, akses, waktu terbaik — jadikan konten berguna bukan cuma indah"
+      - "Tampilkan kondisi nyata — antrian, jalan rusak, harga naik — agar audiens tidak kecewa saat datang"
+      - "Manfaatkan keunikan lokal: bahasa daerah, makanan khas, ritual adat yang jarang diekspos"
+    hindari:
+      - "Jangan tampilkan informasi harga atau jadwal yang sudah kadaluarsa tanpa verifikasi"
+      - "Jangan hanya ambil footage 'indah' tanpa konteks — penonton butuh tahu cara sampai ke sana"
+      - "Jangan klaim 'tersembunyi' atau 'belum banyak yang tahu' jika tempat itu sudah ramai"
+      - "Jangan gunakan musik ber-hak-cipta; pilih royalty-free yang punya energi petualangan"
+    pola_hook: "Detik 0–2: footage paling memukau dari destinasi (bukan wajah orang) + teks singkat yang bikin penasaran ('ini masih di Indonesia?' atau 'gratis dan belum ramai'). Langsung masuk narasi di detik 3."
+    contoh_judul:
+      - "Tempat di Indonesia yang bikin kamu pikir sudah di luar negeri"
+      - "Budget Rp500rb tapi liburannya terasa Rp5jt — ini triknya"
+      - "Hidden gem ini belum ada di itinerary influencer manapun"
+
+  niches:
+    - slug: travel
+      name: "Travel / Tempat"
+      description: "Destinasi + tips + voiceover."
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: footage + teks + voiceover
+      example_hook: "Tempat di Indonesia kayak luar negeri..."
+      guide:
+        audience: "Penonton 20–35 yang aktif mencari destinasi baru untuk dikunjungi; traveler lokal yang ingin eksplorasi Indonesia lebih dalam selain Bali dan Jakarta; penonton yang ingin referensi destinasi dengan informasi praktis, bukan sekadar foto cantik."
+        tone: "Petualangan informatif — bukan sekadar pamer, tapi berbagi dengan genuinely helpful. Nada seperti teman yang baru pulang dari tempat keren dan ingin cerita semua detailnya."
+        format: "60–90 detik. Struktur: hook visual kuat destinasi → nama dan lokasi singkat → apa yang spesial (1–2 poin) → tips praktis (cara akses, biaya, waktu terbaik) → CTA. Voiceover kasual, teks overlay untuk info kunci. Vertikal 9:16."
+        boleh:
+          - "Tampilkan perbandingan harga nyata: 'total aku habis Rp X untuk Y hari' — memberi benchmark"
+          - "Sertakan satu 'rahasia' atau tips lokal yang tidak bisa didapat dari Google"
+          - "Footage golden hour atau kondisi cuaca terbaik untuk hook yang kuat"
+          - "Sebutkan nama transportasi lokal dan tarifnya — detail ini yang membedakan konten bagus"
+        hindari:
+          - "Jangan rekam tempat sudah sangat ramai dan menjualnya sebagai 'hidden gem'"
+          - "Jangan lupakan informasi akses — konten indah tapi tidak actionable tidak berguna"
+          - "Jangan gunakan drone footage di tempat yang memerlukan izin resmi tanpa izin"
+          - "Jangan pakai musik ber-hak-cipta; pilih royalty-free bertema alam/adventure"
+        pola_hook: "Detik 0: footage paling sinematik dari destinasi + teks 'ini masih di Indonesia?' atau nama tempat yang belum familiar. Langsung masuk narasi di detik 3."
+        contoh_judul:
+          - "Tempat di Indonesia kayak luar negeri, tapi tiketnya cuma Rp50rb"
+          - "Destinasi ini lebih indah dari Bali tapi belum masuk itinerary siapapun"
+          - "Kota ini jarang dibahas padahal punya pantai, gunung, dan kuliner dalam satu tempat"
+      micro:
+        - slug: travel-desa-wisata-tersembunyi
+          name: Desa Wisata Indonesia yang Belum di Google Maps
+          description: Dokumentasi desa wisata otentik di Indonesia yang belum terjamah turis massal dan belum terdaftar di Google Maps, memberikan penonton koordinat dan cara aksesnya.
+          example_hook: "Desa ini tidak ada di Google Maps, aku dapat koordinatnya dari warga lokal, ini yang ditemukan..."
+          guide:
+            audience: "Traveler 22–35 yang bosan dengan destinasi mainstream dan ingin pengalaman autentik; backpacker yang suka eksplorasi off-the-beaten-path; penonton yang mau berbagi konten langka ke lingkaran pertemanannya."
+            tone: "Discovery dan genuine surprise — kreator berperan sebagai penjelajah yang menemukan sesuatu langka. Nada jujur: akui kesulitan akses, kondisi jalan, atau kekurangan fasilitas agar penonton tidak kecewa."
+            format: "75–90 detik. Struktur: hook 'tidak ada di maps' + visual desa paling menarik → konteks singkat desa (penduduk, tradisi unik) → cara sampai ke sana (koordinat, moda transport) → tips 1–2 hal yang harus dicoba di sana → CTA simpan video. Vertikal 9:16."
+            boleh:
+              - "Tampilkan koordinat GPS nyata atau nama jalan terdekat sebagai bukti kredibilitas"
+              - "Wawancara singkat (voiceover) warga lokal tanpa tampilkan wajah jika memungkinkan"
+              - "Footage aktivitas budaya atau tradisi unik desa yang tidak bisa ditemukan di tempat lain"
+              - "Sertakan estimasi biaya perjalanan dan akomodasi lokal yang tersedia"
+            hindari:
+              - "Jangan sebarkan lokasi persis tempat yang sangat sensitif secara ekologi — bisa merusak"
+              - "Jangan tampilkan wajah warga tanpa izin, terutama anak-anak"
+              - "Jangan klaim 'belum pernah ada yang ke sini' tanpa riset — bisa diverifikasi dan merusak kredibilitas"
+              - "Jangan rekam ritual adat yang sakral tanpa izin kepala adat"
+            pola_hook: "Detik 0: footage desa paling unik (sawah berundak, rumah adat, pantai kosong) + teks 'desa ini tidak ada di Google Maps'. Langsung masuk narasi tentang cara kreator menemukannya di detik 3."
+            contoh_judul:
+              - "Desa ini tidak ada di Google Maps, aku dapat koordinatnya dari warga lokal"
+              - "Desa wisata ini lebih indah dari yang viral, tapi lokasinya masih disimpan warganya"
+              - "Aku nyasar ke desa ini dan ternyata ada tradisi yang belum pernah difilmkan"
+              - "Koordinat desa rahasia ini aku dapat setelah ngobrol 2 jam sama bapak-bapak di warung"
+              - "Desa ini cuma bisa diakses 6 bulan dalam setahun dan ini yang ada di dalamnya"
+            content_runway: "Indonesia memiliki ribuan desa dengan tradisi dan lanskap unik yang belum terdokumentasi; setiap pulau besar memiliki puluhan kandidat desa wisata tersembunyi yang bisa menjadi seri konten sepanjang tahun."
+
+        - slug: travel-kota-kedua-indonesia
+          name: Kota Kedua Indonesia yang Lebih Menarik dari Ibu Kota
+          description: Dokumentasi kota-kota tier dua Indonesia — Pontianak, Ternate, Kupang — yang sering dilewatkan traveler tapi menawarkan pengalaman budaya dan kuliner yang sulit ditemukan di kota besar.
+          example_hook: "Kota ini jarang masuk itinerary Indonesia padahal punya sesuatu yang tidak ada di Bali..."
+          guide:
+            audience: "Penonton 23–40 yang sudah bosan dengan Bali, Lombok, dan Yogyakarta dan ingin pengalaman baru; traveler yang tertarik pada keragaman budaya Indonesia di luar Jawa-Bali; penonton yang bangga dengan Indonesia dan ingin eksplorasi lebih jauh."
+            tone: "Advocating dengan antusias — kreator berperan sebagai penjelas kenapa kota ini underrated dan tidak seharusnya dilewatkan. Jujur soal kekurangan (infrastruktur, akses) tapi genuine soal keunikannya."
+            format: "75–90 detik. Struktur: hook keunikan kota yang bikin orang terkejut → 3 alasan kota ini menarik (kuliner, sejarah, alam, atau budaya) → tips logistik (penerbangan, biaya hidup) → CTA. Voiceover dengan teks overlay. Vertikal 9:16."
+            boleh:
+              - "Bandingkan secara fair dengan kota populer: 'di sini ada X yang tidak bisa ditemukan di Bali'"
+              - "Tampilkan makanan khas yang benar-benar lokal dan tidak ada di kota besar"
+              - "Sertakan harga tiket pesawat rata-rata dan biaya hidup harian sebagai konteks"
+              - "Footage interaksi dengan warga lokal yang autentik (tanpa tampilkan wajah jika faceless)"
+            hindari:
+              - "Jangan merendahkan kota populer — framing 'lebih baik dari' bisa alienasi audiens"
+              - "Jangan rekam dari perspektif turis tanpa mengenal konteks lokalnya"
+              - "Jangan sertakan informasi koneksi penerbangan atau harga yang sudah berubah tanpa verifikasi"
+              - "Jangan gunakan musik ber-hak-cipta; pilih royalty-free bertema eksotis/petualangan"
+            pola_hook: "Detik 0: footage landmark atau makanan khas yang paling mengejutkan dari kota tersebut + teks 'kota ini jarang masuk itinerary Indonesia'. Langsung sebutkan nama kotanya di detik 3."
+            contoh_judul:
+              - "Kota ini jarang masuk itinerary tapi punya sesuatu yang tidak ada di Bali"
+              - "Pontianak itu lebih dari sekedar garis khatulistiwa — ini yang orang lewatkan"
+              - "Saya habiskan 4 hari di Ternate dan ini kenapa kamu harus ke sana sebelum ramai"
+              - "Kota ini punya sunset terbaik di Indonesia dan hampir tidak ada yang tahu"
+              - "Kupang: kota paling underrated Indonesia yang bakal viral dalam 3 tahun ke depan"
+            content_runway: "Indonesia memiliki ratusan kota tier dua dan tiga dengan karakter unik; setiap kota dapat menjadi minimal 3–5 video berbeda (kuliner, sejarah, alam, budaya, logistik), menghasilkan seri tak terbatas."
+
+        - slug: travel-momen-sebelum-hilang
+          name: Tempat di Indonesia yang Akan Berubah dalam 5 Tahun
+          description: Dokumentasi destinasi Indonesia yang sedang dalam proses pembangunan atau perubahan besar, memberikan penonton rasa urgensi untuk mengunjungi sebelum karakter aslinya hilang.
+          example_hook: "Tempat ini masih seperti 20 tahun lalu, tapi proyek ini akan mengubahnya selamanya..."
+          guide:
+            audience: "Traveler 25–40 yang peduli pelestarian budaya dan alam; penonton yang tidak ingin menyesal melewatkan sesuatu yang autentik sebelum berubah; kreator konten yang ingin mendokumentasikan sejarah."
+            tone: "Urgensi tanpa sensasi berlebihan. Nada mendalam dan sedikit melankolis — mengingatkan penonton bahwa sesuatu yang berharga sedang berubah, bukan menakut-nakuti. Faktual soal proyek pembangunan yang ada."
+            format: "75–90 detik. Struktur: hook kondisi asli yang indah/unik → penjelasan singkat apa yang akan berubah (proyek, regulasi, tren) → apa yang harus dilihat dan dialami sekarang → tips cara ke sana → CTA 'simpan sebelum terlambat'. Vertikal 9:16."
+            boleh:
+              - "Sertakan fakta konkret soal proyek atau perubahan yang akan terjadi (nama proyek, tahun)"
+              - "Footage kondisi saat ini yang kontras dengan rencana pembangunan jika tersedia"
+              - "Tampilkan detail budaya atau arsitektur yang tidak akan bisa dilihat lagi setelah berubah"
+              - "Rekomendasikan cara terbaik mengalami tempat ini sebelum berubah"
+            hindari:
+              - "Jangan sebar info yang belum terverifikasi soal proyek pembangunan — bisa salah dan merusak reputasi"
+              - "Jangan framing terlalu negatif terhadap pembangunan — tujuannya urgensi, bukan agitasi"
+              - "Jangan gunakan drone di kawasan yang akan dibangun tanpa izin"
+              - "Jangan klaim 'ini terakhir bisa dikunjungi' jika tidak ada konfirmasi resminya"
+            pola_hook: "Detik 0: footage paling indah kondisi asli sekarang + teks 'masih seperti 20 tahun lalu, tapi tidak lama lagi'. Langsung jelaskan perubahannya di detik 4."
+            contoh_judul:
+              - "Tempat ini masih persis seperti 20 tahun lalu, tapi proyek ini akan mengubahnya"
+              - "Kunjungi ini sebelum 2027 — setelah itu karakternya akan berubah selamanya"
+              - "Desa nelayan ini masih autentik tapi jalan tol ini akan belah kampungnya tahun depan"
+              - "Pasar tradisional ini sudah 80 tahun, dan ini kemungkinan terakhir kamu bisa ke sana"
+              - "Hutan ini masih utuh tapi izin tambang sudah keluar — ini kondisinya sekarang"
+            content_runway: "Pembangunan infrastruktur Indonesia yang masif (IKN, jalan tol, kawasan industri) terus menciptakan tempat baru yang sedang dalam transisi; konten ini relevan sepanjang dekade dan semakin relevan seiring percepatan pembangunan."
+
+    - slug: hidden-gems
+      name: "Hidden Gems"
+      description: "Tempat tersembunyi/underrated."
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: footage + teks
+      example_hook: "Pantai ini belum ramai turis..."
+      guide:
+        audience: "Penonton 18–32 yang suka menemukan tempat sebelum viral; penikmat alam dan kuliner yang frustrasi dengan destinasi mainstream yang terlalu ramai; penonton yang suka menjadi yang pertama di antara teman-temannya tahu soal sesuatu."
+        tone: "Eksklusif dan discovery — nada 'kamu beruntung menemukan ini'. Tidak sombong, tapi ada rasa keistimewaan berbagi sesuatu yang belum banyak orang tahu. Jujur soal cara aksesnya yang mungkin tidak mudah."
+        format: "45–75 detik. Struktur: visual paling memukau dulu + teks bikin penasaran → reveal nama dan lokasi → apa yang spesial → cara ke sana (dengan detail konkret) → CTA. Minimal teks, dominan footage. Vertikal 9:16."
+        boleh:
+          - "Tampilkan footage saat tempat masih sepi — ini bukti klaim 'hidden gem' yang paling kuat"
+          - "Berikan koordinat atau nama jalan terdekat agar konten berguna, bukan cuma pamer"
+          - "Gunakan footage drone jika legal untuk memberikan konteks skala dan keindahan"
+          - "Sertakan info parkir, tiket (atau gratis), dan waktu terbaik berkunjung"
+        hindari:
+          - "Jangan sebut tempat sudah ramai sebagai 'hidden gem' — audiens akan verifikasi dan kecewa"
+          - "Jangan rekam di kawasan konservasi tanpa izin atau yang merusak ekosistem"
+          - "Jangan sebar lokasi persis tempat yang sangat fragil secara ekologi"
+          - "Jangan gunakan musik ber-hak-cipta; pilih royalty-free ambient alam"
+        pola_hook: "Detik 0: footage tempat dari angle terbaik + teks yang bikin penasaran ('pantai ini belum ramai turis' atau 'gratis, tidak perlu tiket'). Reveal nama dan lokasi di detik 4–5."
+        contoh_judul:
+          - "Pantai ini belum ramai turis dan aksesnya gratis tanpa tiket"
+          - "Hidden gem ini bisa ditemukan hanya 30 menit dari pusat kota"
+          - "Tempat ini belum ada di TikTok, dan aku gak yakin itu akan lama"
+      micro:
+        - slug: hidden-gems-pantai-tanpa-tiket
+          name: Pantai Gratis Tanpa Tiket Masuk yang Seindah Resort
+          description: Dokumentasi pantai-pantai Indonesia yang tidak memungut biaya tiket tapi kualitas pasir dan airnya bersaing dengan pantai berbayar, lengkap dengan petunjuk akses yang jelas.
+          example_hook: "Pantai ini tidak ada tiket masuk dan airnya sejernih resort Rp2jt per malam, ini lokasinya..."
+          guide:
+            audience: "Penonton 18–30 yang ingin liburan pantai tapi budget terbatas; mahasiswa dan pekerja muda yang ingin pengalaman premium tanpa biaya premium; penonton yang frustrasi dengan pantai berbayar yang tidak sesuai ekspektasi."
+            tone: "Relatable dan empowering — nada 'ternyata yang gratis bisa lebih bagus'. Jujur soal kondisi nyata termasuk kekurangan fasilitas jika ada, tapi penuh semangat soal nilai yang didapat."
+            format: "60–75 detik. Struktur: footage pantai paling kece (air jernih, pasir putih) → reveal tidak ada tiket masuk → cara akses lengkap (rute, parkir, jarak dari kota) → tips terbaik (waktu, apa yang dibawa) → CTA simpan. Vertikal 9:16."
+            boleh:
+              - "Tampilkan air laut dalam footage underwater atau dari tepi — kejernihan air adalah selling point utama"
+              - "Sertakan perbandingan eksplisit: 'air sejernih resort Rp2jt tapi gratis'"
+              - "Tunjukkan kondisi parkir dan akses jalan agar penonton bisa datang sendiri"
+              - "Info waktu terbaik (saat sepi) adalah value tambah yang penonton sangat hargai"
+            hindari:
+              - "Jangan rekam saat pantai sudah ramai dan klaim masih sepi — misleading"
+              - "Jangan sebar pantai yang kondisinya bisa rusak jika viral dan tidak siap kapasitas"
+              - "Jangan lupakan info praktis seperti kondisi jalan akses — ini sering jadi masalah"
+              - "Jangan gunakan filter berlebihan pada footage air — warna asli sudah cukup menjual"
+            pola_hook: "Detik 0: close-up air laut jernih atau pasir putih halus + teks 'tidak ada tiket masuk'. Langsung reveal nama pantai dan kota di detik 3."
+            contoh_judul:
+              - "Pantai ini tidak ada tiket masuk dan airnya sejernih resort Rp2jt per malam"
+              - "Pantai gratis di Jawa ini pasirnya putih halus dan belum ada di TikTok"
+              - "Ini pantai paling jernih di Sulawesi dan tidak ada yang minta biaya masuk"
+              - "30 menit dari kota ini ada pantai gratis yang bikin wisatawan bule balik lagi"
+              - "Pantai ini belum viral karena aksesnya susah, tapi itu yang bikin masih sepi"
+            content_runway: "Indonesia memiliki lebih dari 54.000 km garis pantai dengan ribuan pantai yang belum terdokumentasi; setiap pulau besar menyimpan pantai gratis berkualitas tinggi yang bisa menjadi seri konten per provinsi."
+
+        - slug: hidden-gems-warung-satu-menu
+          name: Warung yang Hanya Jual Satu Menu tapi Antri Sejam
+          description: Dokumentasi warung makan legendaris di berbagai kota Indonesia yang hanya menjual satu atau dua menu saja tapi kualitasnya membuat orang rela antre panjang setiap hari.
+          example_hook: "Warung ini hanya jual satu makanan, hanya buka 4 jam, dan selalu habis sebelum tutup..."
+          guide:
+            audience: "Pecinta kuliner 20–40 yang lebih tertarik pengalaman makan autentik daripada restoran instagrammable; penonton foodie yang suka menemukan tempat makan legendaris sebelum mainstream; wisatawan lokal yang ingin merasakan kuliner paling ikonik tiap kota."
+            tone: "Antusias kuliner yang genuine — bukan review kritis, tapi cerita discovery. Nada seperti teman yang baru menemukan tempat makan terbaik dan tidak bisa berhenti cerita. Jujur soal antrian dan repotnya, tapi jelas soal kenapa worth it."
+            format: "60–75 detik. Struktur: footage antrian atau warung bersejarah → menu yang dijual (satu atau dua jenis saja) → asal-usul singkat jika menarik → harga dan jam buka → cara ke sana → CTA. Close-up makanan sebagai hero shot. Vertikal 9:16."
+            boleh:
+              - "Close-up makanan yang memikat — tekstur, uap, atau proses memasak yang khas"
+              - "Ceritakan konteks sejarah atau pemilik jika ada — menambah dimensi emosional"
+              - "Tampilkan panjang antrian sebagai bukti sosial dan membangun antisipasi"
+              - "Sertakan harga yang konkret — info ini selalu bermanfaat dan sering tidak ada di ulasan online"
+            hindari:
+              - "Jangan tampilkan wajah pemilik atau pelanggan tanpa izin"
+              - "Jangan lebay soal rasa tanpa justifikasi — audiens akan kecewa jika tidak sesuai ekspektasi"
+              - "Jangan rekam proses memasak tanpa izin dari pemilik warung"
+              - "Jangan lupakan info jam buka dan hari libur — ini info kritis yang sering bikin kecewa"
+            pola_hook: "Detik 0: footage antrian panjang atau warung yang penuh + teks 'warung ini hanya jual satu menu dan selalu habis sebelum tutup'. Langsung tampilkan makanannya di detik 3."
+            contoh_judul:
+              - "Warung ini hanya jual satu makanan dan sudah buka sejak 1952, antriannya 1 jam"
+              - "Tempat makan ini cuma buka 3 jam sehari dan kamu harus datang sebelum jam 10"
+              - "Soto ini hanya satu resep, satu ukuran, satu harga — dan sudah tiga generasi"
+              - "Warung ini tidak ada daftar menu, tidak perlu pesan — semua orang tahu datang untuk apa"
+              - "Nasi goreng ini hanya ada satu menu dan waiting list dari jam 6 pagi"
+            content_runway: "Setiap kota besar Indonesia menyimpan puluhan warung legendaris dengan menu tunggal; dikombinasikan dengan cerita pemilik, perubahan harga dari masa ke masa, dan perbandingan generasi pelanggan, seri ini bisa berjalan bertahun-tahun."
+
+        - slug: hidden-gems-museum-tak-ramai
+          name: Museum Indonesia yang Sepi tapi Koleksinya Luar Biasa
+          description: Dokumentasi museum di Indonesia yang hampir tidak pernah ramai pengunjung padahal koleksi dan kisahnya luar biasa — alternatif edukasi yang tidak bikin kantong jebol.
+          example_hook: "Museum ini lokasinya di tengah kota, tiketnya Rp5rb, dan koleksinya tidak ada di museum mana pun..."
+          guide:
+            audience: "Penonton 20–40 yang suka sejarah dan edukasi tapi bosan museum mainstream; keluarga muda yang mencari destinasi edukatif terjangkau; penonton yang ingin konten berbobot lebih dari sekadar destinasi alam."
+            tone: "Excited discovery dengan nada edukasi ringan — kreator berperan sebagai pemandu museum yang antusias, bukan guru. Fakta disampaikan dengan rasa kagum, bukan ceramah."
+            format: "75–90 detik. Struktur: exterior museum yang mungkin biasa saja → masuk dan langsung tampilkan koleksi paling mengejutkan → 2–3 highlight koleksi dengan konteks singkat → info praktis (tiket, jam buka, lokasi) → CTA. Vertikal 9:16."
+            boleh:
+              - "Mulai dari koleksi paling mengejutkan, bukan eksterior gedung — bangun antisipasi dari dalam"
+              - "Sertakan fakta mengejutkan tentang koleksi yang tidak ada di papan informasi"
+              - "Bandingkan tiket masuk dengan pengalaman yang didapat untuk memperkuat value proposition"
+              - "Tampilkan koleksi langka yang tidak bisa ditemukan di museum nasional"
+            hindari:
+              - "Jangan rekam koleksi yang dilarang difoto tanpa izin resmi"
+              - "Jangan tampilkan info sejarah yang belum diverifikasi — kesalahan fakta bisa viral dengan cara buruk"
+              - "Jangan rekam dengan pencahayaan redup yang membuat koleksi tidak terlihat — minta izin lampu tambahan"
+              - "Jangan klaim 'tidak ada yang tahu' jika museum sebenarnya cukup dikenal di komunitas tertentu"
+            pola_hook: "Detik 0: close-up koleksi paling mengejutkan + teks 'museum ini tiketnya Rp5rb dan hampir tidak ada yang ke sini'. Langsung masuk ke narasi koleksi di detik 3."
+            contoh_judul:
+              - "Museum ini tiketnya Rp5rb dan koleksinya tidak ada di tempat lain di dunia"
+              - "Museum paling sepi di kota ini menyimpan artefak yang bikin arkeolog kagum"
+              - "Masuk museum ini cuma Rp10rb tapi isinya bisa bikin kamu lupa waktu 3 jam"
+              - "Museum ini lokasinya di tengah kota tapi hampir tidak ada yang tahu ada di sini"
+              - "Koleksi di museum kecil ini lebih langka dari Museum Nasional, dan hampir tidak pernah ramai"
+            content_runway: "Indonesia memiliki lebih dari 400 museum resmi dan ratusan museum tidak resmi di berbagai daerah; dikombinasikan dengan koleksi tematik (maritim, batik, wayang, senjata, astronomi), seri museum bisa berjalan tanpa batas."
+
+    - slug: luxury-bait
+      name: "Luxury / Lifestyle"
+      description: "Visual mewah aspiratif."
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: footage mewah + teks + musik
+      example_hook: "Rumah Rp100M ini punya lift mobil..."
+      guide:
+        audience: "Penonton 20–40 yang menikmati konten aspiratif dan mewah tanpa harus membelinya; pekerja muda yang terinspirasi dan bermimpi; penonton yang suka konten 'tebak harga' dan reveal yang mengejutkan."
+        tone: "Aspiratif tapi accessible — bukan pamer, tapi 'tunjukkan dunia yang ada di luar sana'. Nada seperti teman yang kebetulan punya akses ke tempat mewah dan mau berbagi. Sering disertai twist harga yang mengejutkan."
+        format: "60–90 detik. Struktur: visual paling mewah/memukau → build-up detail keistimewaan → reveal harga atau fakta mengejutkan → context (siapa yang tinggal/bisa ke sini, bagaimana caranya) → CTA. Musik instrumental elegan. Vertikal 9:16."
+        boleh:
+          - "Gunakan twist harga: tampilkan sesuatu yang terlihat mahal tapi harganya mengejutkan rendah, atau sebaliknya"
+          - "Drone footage untuk establish scale dan kemewahan properti atau destinasi"
+          - "Detail arsitektur atau desain yang tidak biasa — inilah yang membuat konten luxury lebih dari sekadar flexing"
+          - "Konteks 'bagaimana caranya bisa ke sini' agar penonton merasa ada harapan"
+        hindari:
+          - "Jangan sebar info privasi pemilik properti tanpa izin"
+          - "Jangan tampilkan tamu atau penghuni tanpa izin mereka"
+          - "Jangan gunakan harga atau spesifikasi yang tidak diverifikasi — bisa salah dan merusak kredibilitas"
+          - "Jangan gunakan musik ber-hak-cipta; pilih royalty-free instrumental elegan"
+        pola_hook: "Detik 0: footage paling mewah dan memukau + teks yang bikin penasaran ('ada yang tahu ini di mana?' atau 'harganya berapa?'). Bangun misteri sebelum reveal di tengah video."
+        contoh_judul:
+          - "Villa ini 3x lebih indah dari yang viral dan harganya ternyata mengejutkan"
+          - "Rumah ini Rp100M tapi interior dalamnya bukan yang kamu bayangkan"
+          - "Menginap Rp400rb semalam dan ini yang didapat — lebih baik dari hotel bintang 4"
+      micro:
+        - slug: luxury-bait-villa-bali-tersembunyi
+          name: Villa Bali Tersembunyi yang Lebih Indah dari yang Viral
+          description: Dokumentasi villa Bali yang tidak banyak diekspos Instagram tapi kualitas arsitektur dan pemandangannya melampaui villa viral, lengkap dengan harga sewa yang mengejutkan.
+          example_hook: "Villa ini 3x lebih indah dari yang viral di Instagram dan harganya ternyata lebih murah..."
+          guide:
+            audience: "Penonton 22–38 yang merencanakan liburan Bali tapi frustrasi dengan villa viral yang overrated dan overprice; pasangan atau keluarga muda yang ingin pengalaman premium tapi smart spending; penonton yang suka konten 'bongkar rahasia' destinasi populer."
+            tone: "Revelatory dan helpful — kreator berperan sebagai orang dalam yang tahu 'yang mana yang worth it'. Jujur soal trade-off (mungkin lebih jauh, akses susah) tapi clear soal nilai yang didapat."
+            format: "75–90 detik. Struktur: aerial/cinematic shot villa → detail arsitektur dan pemandangan terbaik → reveal harga sewa per malam → konteks (kapasitas, fasilitas) → cara booking → CTA. Musik ambient elegan. Vertikal 9:16."
+            boleh:
+              - "Tampilkan perbandingan eksplisit dengan villa viral yang sudah dikenal penonton"
+              - "Footage golden hour dari villa untuk visual paling powerful"
+              - "Sertakan nama platform booking dan kode promo jika ada"
+              - "Tampilkan area yang paling mengejutkan — kolam infinity, pemandangan sawah, atau arsitektur unik"
+            hindari:
+              - "Jangan rekam tamu lain yang menginap tanpa izin mereka"
+              - "Jangan tampilkan harga lama jika harga sudah berubah — selalu cek real-time"
+              - "Jangan klaim 'tersembunyi' jika villa sudah banyak review online — tambahkan konteks lebih baik"
+              - "Jangan gunakan drone di area yang dilarang oleh pengelola villa"
+            pola_hook: "Detik 0: aerial shot atau footage paling dramatis villa + teks '3x lebih indah dari yang viral, harganya ternyata...'. Bangun antisipasi sebelum reveal harga di detik 30–40."
+            contoh_judul:
+              - "Villa ini 3x lebih indah dari yang viral di Instagram dan harganya ternyata lebih murah"
+              - "Villa Bali ini tidak ada di rekomendasi influencer manapun dan itu yang membuatnya istimewa"
+              - "Menginap di villa ini Rp800rb per malam dan pemandangannya melebihi yang Rp3jt"
+              - "Villa tersembunyi di Ubud ini punya kolam infinity yang tidak ada di foto manapun"
+              - "Aku temukan villa ini dari orang lokal dan ini kenapa belum ada di TripAdvisor"
+            content_runway: "Bali memiliki ribuan villa dari yang sangat murah hingga super-mewah di berbagai zona (Ubud, Seminyak, Canggu, Nusa Dua); update harga yang selalu berubah dan villa baru yang terus bermunculan menjamin konten selalu fresh dan relevan."
+
+        - slug: luxury-bait-rumah-artis-tradisional
+          name: Rumah Selebritis Indonesia dengan Desain Tradisional Mewah
+          description: Tur virtual rumah artis atau tokoh Indonesia yang memilih desain tradisional nusantara yang mewah — Joglo, Limasan, atau rumah adat modern — sebagai pernyataan identitas.
+          example_hook: "Rumah ini bukan modern minimalis, ini Rp15M tapi terlihat seperti warisan leluhur yang dijaga..."
+          guide:
+            audience: "Penonton 25–45 yang tertarik desain interior dan arsitektur Indonesia; fans artis atau public figure yang ingin mengintip gaya hidup mereka; penonton yang menghargai warisan budaya dan ingin melihatnya dalam konteks modern."
+            tone: "Apresiasi arsitektur dan budaya — bukan gosip selebriti, tapi eksplorasi pilihan desain yang meaningful. Nada seperti majalah arsitektur yang kasual, bukan tabloid. Hormat pada pemilik dan keputusan desainnya."
+            format: "75–90 detik. Struktur: exterior rumah yang paling mencolok → tour interior highlight → detail arsitektur tradisional yang mewah (ukiran, joglo, limasan) → konteks pemilik dan filosofi di balik desainnya → CTA. Musik tradisional modern. Vertikal 9:16."
+            boleh:
+              - "Fokus pada detail arsitektur unik, bukan privasi pemilik"
+              - "Sertakan konteks budaya di balik pilihan desain (joglo, rumah gadang, limasan)"
+              - "Tampilkan perpaduan elemen tradisional dan modern yang berhasil dilakukan"
+              - "Gunakan footage dari sumber publik (wawancara di rumah, vlog pemilik) jika tidak bisa kunjungan langsung"
+            hindari:
+              - "Jangan tampilkan area privat rumah yang tidak diekspos oleh pemiliknya sendiri"
+              - "Jangan buat konten spekulatif soal nilai properti tanpa sumber yang jelas"
+              - "Jangan rekam atau screenshot dari akun media sosial pribadi tanpa izin"
+              - "Jangan fokus pada selebriti dengan reputasi kontroversial yang bisa tarik kontroversi tidak perlu"
+            pola_hook: "Detik 0: footage eksterior atau interior paling dramatis + teks nama artis dan 'rumahnya bukan minimalis biasa'. Langsung masuk tour di detik 3."
+            contoh_judul:
+              - "Rumah artis ini Rp15M tapi desainnya seperti warisan leluhur yang dijaga dengan mahal"
+              - "Joglo modern ini milik artis yang menolak tren rumah kotak minimalis"
+              - "Interior rumah ini pakai ukiran Jepara dan batu alam — ini pemiliknya dan filosofinya"
+              - "Artis ini pilih desain rumah adat padahal bisa beli villa modern — ini alasannya"
+              - "Rumah ini terlihat seperti museum, tapi ini adalah hunian aktif senilai puluhan miliar"
+            content_runway: "Indonesia memiliki ratusan artis, atlet, dan public figure dengan rumah yang menarik secara visual; dikombinasikan dengan konten 'sebelum setelah renovasi', 'biaya membangun rumah adat modern', dan 'di mana beli material tradisional', seri ini bisa berjalan sangat panjang."
+
+        - slug: luxury-bait-pengalaman-lokal-bintang-lima
+          name: Pengalaman Bintang Lima di Destinasi Lokal Tak Terduga
+          description: Dokumentasi hotel butik atau pengalaman menginap premium yang tersembunyi di kota-kota kecil Indonesia yang memberikan kesan mewah tapi dengan harga yang tidak masuk akal murahnya.
+          example_hook: "Rp400rb semalam di kota ini dan ini yang didapat, lebih baik dari hotel bintang empat di Jakarta..."
+          guide:
+            audience: "Penonton 22–38 yang ingin pengalaman menginap premium tapi smart soal budget; pasangan muda yang merencanakan staycation atau honeymoon; pekerja remote yang mencari tempat tinggal sementara dengan fasilitas baik di luar kota besar."
+            tone: "Discovery yang menyenangkan dengan twist harga — reaksi genuine 'tidak menyangka' adalah inti konten ini. Jujur soal trade-off (lokasi tidak sentral, breakfast terbatas) tapi clear soal nilai luar biasa yang didapat."
+            format: "75–90 detik. Struktur: footage kamar atau fasilitas paling wow → reveal harga yang mengejutkan murahnya → detail fasilitas (sarapan, kolam, desain) → nama kota dan hotel → cara booking → CTA. Vertikal 9:16."
+            boleh:
+              - "Twist harga adalah senjata utama — bangun antisipasi dulu sebelum reveal angkanya"
+              - "Tampilkan sarapan, kamar mandi, dan view — tiga hal yang paling menentukan persepsi hotel"
+              - "Sertakan perbandingan: 'di Jakarta dengan fasilitas sama harganya Rp2jt'"
+              - "Footage check-in dan lobby untuk konteks skala properti"
+            hindari:
+              - "Jangan tampilkan tamu lain yang ada di hotel tanpa izin mereka"
+              - "Jangan rekam kamar yang tidak bersih atau ada kekurangan tanpa konteks — bisa merusak hotel kecil yang tidak bersalah"
+              - "Jangan gunakan harga lama jika sudah berubah — selalu verifikasi sebelum publish"
+              - "Jangan klaim bintang lima jika tidak ada sertifikasinya — gunakan framing 'pengalaman bintang lima'"
+            pola_hook: "Detik 0: footage kamar atau fasilitas paling memukau + teks 'tebak harganya per malam'. Reveal harga di detik 20–30 setelah penonton sudah berasumsi lebih mahal."
+            contoh_judul:
+              - "Rp400rb semalam di kota ini dapat ini — lebih baik dari hotel bintang 4 Jakarta"
+              - "Hotel ini desainnya seperti resort tapi lokasinya di kota kecil yang jarang dikunjungi"
+              - "Menginap Rp350rb di sini dan sarapannya lebih enak dari hotel Rp1,5jt di Bali"
+              - "Penginapan ini tampak seperti villa mewah, tapi ini harga nyatanya per malam"
+              - "Kota ini punya hotel butik paling indah di Indonesia dan belum ada yang bahas"
+            content_runway: "Indonesia memiliki ribuan hotel butik dan penginapan unik di kota-kota kecil yang hampir tidak pernah mendapat exposure media; setiap provinsi memiliki setidaknya 5–10 properti yang bisa menjadi konten, dengan update harga dan kondisi yang berubah menjamin relevansi."
+
+    - slug: budget-travel
+      name: "Travel Hemat"
+      description: "Tips jalan-jalan murah."
+      faceless: true
+      difficulty: pemula
+      rpm: sedang
+      formats: footage + teks tips
+      example_hook: "Liburan Bali Rp500rb 3 hari..."
+      guide:
+        audience: "Penonton 18–28 yang ingin jalan-jalan tapi terkendala budget; mahasiswa dan fresh graduate dengan penghasilan terbatas; pekerja muda yang sudah dapat gaji pertama dan ingin liburan tanpa menguras tabungan."
+        tone: "Empowering dan relatable — 'kalau aku bisa, kamu juga bisa'. Berbagi tips konkret dan jujur, termasuk kekurangan atau hal-hal yang harus dikompromikan saat travel hemat. Tidak menghakimi yang pilih travel mahal."
+        format: "60–90 detik. Struktur: hook angka konkret ('total habis Rp X untuk Y hari') → breakdown biaya per kategori → tips paling kritis (biasanya transport dan akomodasi) → what to skip vs what to spend on → CTA. Teks overlay untuk angka penting. Vertikal 9:16."
+        boleh:
+          - "Mulai dengan angka total yang mengejutkan murah — ini hook paling kuat untuk niche ini"
+          - "Breakdown biaya yang detail dan spesifik: transport berapa, makan berapa, akomodasi berapa"
+          - "Tampilkan pengalaman yang tetap menyenangkan meski hemat — penonton perlu tahu tidak rugi"
+          - "Sertakan tips konkret yang bisa langsung diimplementasi, bukan saran umum"
+        hindari:
+          - "Jangan tampilkan cara hemat yang tidak etis (bohong ke penginapan, scam transportasi)"
+          - "Jangan rekam kondisi menginap yang terlalu parah hanya demi konten ekstrem — sett ekspektasi realistis"
+          - "Jangan sebar promo atau harga tiket yang sudah expired tanpa verifikasi"
+          - "Jangan klaim 'bisa dilakukan siapa saja' tanpa acknowledge privilege tertentu (punya KTP, rekening bank, dll)"
+        pola_hook: "Detik 0: footage destinasi yang dikenal (Bali, Lombok, Yogya) + teks angka total yang mengejutkan ('liburan Bali 3 hari Rp500rb, ini breakdown-nya'). Langsung masuk detail di detik 3."
+        contoh_judul:
+          - "Liburan Bali 3 hari total Rp500rb, ini breakdown biayanya yang jujur"
+          - "Cara backpacker Lombok dengan Rp300rb per hari tanpa skip pengalaman terbaik"
+          - "Tips hemat yang aku pakai untuk liburan Rp1,5jt ke 3 kota berbeda"
+      micro:
+        - slug: budget-travel-backpacker-sumatera
+          name: Backpacker Sumatera dengan Budget Rp1jt Per Minggu
+          description: Panduan perjalanan hemat melintasi Sumatera dengan transportasi umum dan penginapan lokal, membuktikan pulau terbesar kedua di Indonesia bisa dijelajahi tanpa kantong tebal.
+          example_hook: "7 hari di Sumatera, 5 kota, total habis Rp900rb. Ini rute dan breakdown biayanya..."
+          guide:
+            audience: "Backpacker 19–30 yang ingin menjelajahi Sumatera tapi takut soal biaya; penonton yang tahu Sumatera besar tapi tidak punya referensi rute hemat; mahasiswa yang punya waktu libur panjang tapi budget terbatas."
+            tone: "Adventure yang grounded — perjalanan nyata dengan kendala nyata, bukan trip sempurna. Jujur soal bus sempit, warung pinggir jalan, dan hostel sederhana, tapi genuine soal pengalaman luar biasa yang didapat dengan biaya minimal."
+            format: "75–90 detik. Struktur: angka total mengejutkan → rute yang ditempuh (peta atau teks kota-ke-kota) → breakdown biaya per kategori → highlight 1–2 pengalaman terbaik dengan biaya nol → tips kritis backpacker → CTA. Vertikal 9:16."
+            boleh:
+              - "Tampilkan rute lengkap dengan moda transport dan harga tiket yang konkret"
+              - "Footage naik bus atau kereta lokal — ini yang paling relatable untuk target audiens"
+              - "Sertakan satu pengalaman 'surprise' yang tidak direncanakan dan gratis — ini yang paling diingat"
+              - "Rekomendasi warung makan lokal dengan harga nyata, bukan restoran untuk turis"
+            hindari:
+              - "Jangan tampilkan cara dapat makan atau menginap gratis dengan tipu daya"
+              - "Jangan rekam kondisi penginapan yang berbahaya atau tidak higienis sebagai pilihan normal"
+              - "Jangan sebar rute yang melalui daerah dengan kondisi keamanan yang berubah tanpa peringatan"
+              - "Jangan lupakan biaya tak terduga — kesalahan ini yang sering buat penonton gagal replikasi"
+            pola_hook: "Detik 0: footage landscape Sumatera yang dramatis + teks '7 hari, 5 kota, total Rp900rb'. Langsung masuk rute di detik 3 dengan peta atau nama kota yang dikunjungi."
+            contoh_judul:
+              - "7 hari di Sumatera, 5 kota, total habis Rp900rb — ini rute dan breakdown-nya"
+              - "Backpacker Sumatera Utara dengan Rp1jt: dari Medan ke Danau Toba ke Bukit Lawang"
+              - "Cara keliling Sumatera dengan bus dan angkot dan total biayanya yang mengejutkan"
+              - "Seminggu di Sumatera tanpa terbang dan ini semua yang didapat dengan budget minimal"
+              - "Rute backpacker Sumatera yang aku coba sendiri dengan Rp150rb per hari"
+            content_runway: "Sumatera terdiri dari 10 provinsi dengan ratusan destinasi yang sebagian besar belum terdokumentasi dari perspektif budget traveler; setiap rute, musim, dan moda transportasi menghasilkan konten yang berbeda dan relevan sepanjang tahun."
+
+        - slug: budget-travel-tiket-pesawat-murah
+          name: Cara Dapat Tiket Pesawat Domestik Rp100rb
+          description: Strategi dan timing membeli tiket pesawat domestik Indonesia dengan harga terendah — flash sale, tanggal optimal, dan aplikasi yang sering luput dari perhatian.
+          example_hook: "Tiket ini aku beli Rp99rb ke Lombok, dan ini caranya yang bisa kamu ulangi..."
+          guide:
+            audience: "Penonton 20–35 yang sering beli tiket pesawat domestik tapi tidak tahu cara optimasi harga; pekerja dengan cuti terbatas yang harus naik pesawat dan tidak punya waktu pantau harga terus; penonton yang sudah pernah dapat tiket murah secara kebetulan dan ingin bisa mengulanginya."
+            tone: "Insider knowledge yang generous — kreator berperan sebagai orang yang sudah riset dan mau berbagi temuannya. Konkret, spesifik, dan actionable. Tidak ada basa-basi soal 'gimana cara hemat' yang generik."
+            format: "60–75 detik. Struktur: screenshot atau footage tiket murah nyata → strategi konkret per poin (timing, aplikasi, hari terbang) → contoh booking nyata sebagai bukti → CTA simpan dan bookmark. Teks overlay untuk angka dan tips kunci. Vertikal 9:16."
+            boleh:
+              - "Tampilkan screenshot tiket murah nyata sebagai bukti kredibilitas — ini yang paling kuat"
+              - "Berikan waktu spesifik: 'beli H-47 hari pada hari Selasa pagi lebih murah dari Jumat'"
+              - "Sebutkan nama aplikasi atau fitur notifikasi harga yang sering diabaikan"
+              - "Berikan contoh rute + harga + tanggal yang konkret agar bisa langsung dicoba"
+            hindari:
+              - "Jangan tampilkan promo atau sale yang sudah kadaluarsa — ini yang paling cepat merusak kredibilitas"
+              - "Jangan berikan tips yang hanya berlaku sekali atau situasi sangat spesifik sebagai tips umum"
+              - "Jangan klaim bisa dapat tiket gratis melalui cara yang tidak etis atau melanggar aturan"
+              - "Jangan lupakan biaya tambahan (bagasi, pilih kursi, airport tax) yang bisa naikkan total harga"
+            pola_hook: "Detik 0: screenshot tiket dengan harga mengejutkan murah (Rp99rb atau di bawah) + teks 'ini bukan promo, ini cara sistematis yang bisa diulang'. Langsung masuk strategi pertama di detik 3."
+            contoh_judul:
+              - "Tiket ini aku beli Rp99rb ke Lombok dan ini cara sistematis yang bisa kamu ulangi"
+              - "Aplikasi ini kasih notifikasi tiket murah sebelum siapapun dan belum banyak yang tahu"
+              - "Hari dan jam ini adalah waktu terbaik beli tiket domestik Indonesia berdasarkan data"
+              - "Cara dapat tiket flash sale sebelum habis dalam 10 menit dengan satu setting ini"
+              - "H minus berapa yang paling murah beli tiket ke Bali — ini datanya dari 50 kali beli"
+            content_runway: "Strategi tiket murah selalu relevan karena harga dan promo maskapai terus berubah; setiap rute domestik (Jakarta-Bali, Surabaya-Makassar, Medan-Jakarta) bisa menjadi konten terpisah dengan data harga terendah historisnya."
+
+        - slug: budget-travel-akomodasi-gratis-lokal
+          name: Menginap Gratis di Seluruh Indonesia dengan Jaringan Lokal
+          description: Panduan couchsurfing dan jaringan komunitas traveler Indonesia yang memungkinkan menginap gratis di berbagai kota, termasuk cara membangun reputasi dan menjaga kepercayaan tuan rumah.
+          example_hook: "Aku keliling 8 kota Indonesia tanpa bayar penginapan satu malam pun, ini caranya..."
+          guide:
+            audience: "Backpacker 19–28 yang ingin traveling maksimal dengan budget minimal; penonton yang sudah dengar soal couchsurfing tapi tidak tahu mulai dari mana; solo traveler yang juga ingin pengalaman bertemu orang lokal, bukan sekadar hemat biaya."
+            tone: "Community-driven dan personal — kreator berbagi pengalaman nyata termasuk bagaimana membangun kepercayaan, momen awkward, dan tips menjaga hubungan baik. Jujur soal syarat yang dibutuhkan (profil bagus, komunikasi aktif, memberikan nilai balik)."
+            format: "75–90 detik. Struktur: angka kota dan malam gratis yang berhasil → cara kerja platform/komunitas yang digunakan → tips konkret bangun profil terpercaya → etika yang harus dijaga → kota-kota yang paling ramah host lokal → CTA. Vertikal 9:16."
+            boleh:
+              - "Ceritakan satu pengalaman menginap yang berkesan untuk membangun kepercayaan audiens"
+              - "Tampilkan profil platform yang dipercaya beserta rating sebagai bukti kredibilitas sistem"
+              - "Berikan tips membangun profil yang legitimate dan menarik — ini barrier paling banyak orang stuck"
+              - "Sebutkan kota-kota dengan komunitas host yang paling aktif di Indonesia"
+            hindari:
+              - "Jangan tampilkan cara manipulasi sistem atau fake profile untuk dapat gratis"
+              - "Jangan tampilkan informasi pribadi host tanpa izin mereka"
+              - "Jangan presentasikan couchsurfing sebagai solusi tanpa acknowledge risiko dan tanggung jawab"
+              - "Jangan rekam di dalam rumah host tanpa izin eksplisit mereka"
+            pola_hook: "Detik 0: footage kota-kota Indonesia yang dikunjungi + teks '8 kota, 0 rupiah untuk penginapan'. Langsung masuk penjelasan cara kerjanya di detik 3."
+            contoh_judul:
+              - "Aku keliling 8 kota Indonesia tanpa bayar penginapan satu malam pun, ini caranya"
+              - "Komunitas ini bikin aku bisa menginap gratis di rumah warga lokal di 5 kota"
+              - "Profil ini yang bikin host mau terima kamu — ini yang perlu ada di akun couchsurfing"
+              - "Cara menginap gratis yang legitimate dan aman di seluruh Indonesia"
+              - "Tips host pertama aku di Jakarta yang kemudian bawa ke 7 kota lainnya tanpa biaya"
+            content_runway: "Jaringan couchsurfing dan komunitas traveler Indonesia terus berkembang; setiap kota memiliki komunitas dan karakter host berbeda; konten juga bisa berkembang ke tips menjadi host, etika pertukaran, dan pengalaman berkesan yang tidak mungkin didapat dari hotel."

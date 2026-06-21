@@ -1,0 +1,687 @@
+version: 1
+vertical:
+  slug: v-kuliner
+  name: Kuliner
+  description: Konten masakan, resep, review makanan, dan jajanan untuk pecinta kuliner Indonesia.
+  guide:
+    audience: "Penonton Indonesia 18–40 yang suka masak, makan, dan eksplorasi kuliner lokal; campuran ibu rumah tangga, anak kos, foodie muda, dan pencinta jajanan tradisional; aktif di TikTok dan Shorts untuk inspirasi resep dan rekomendasi tempat makan."
+    tone: "Hangat, autentik, dan menggugah selera. Konten tidak perlu sempurna — dapur rumahan, tangan yang sedikit kotor bumbu, dan plating sederhana justru membuat penonton merasa relevan. Bahasa kasual, kadang pakai kata-kata nostalgia."
+    format: "Video 30–90 detik. Kombinasi close-up bahan dan proses masak, POV tangan, dan reveal makanan jadi. Suara proses (tumis, goreng, aduk) diutamakan. Teks overlay singkat untuk langkah-langkah atau fakta menarik. Vertikal 9:16."
+    boleh:
+      - "Tampilkan bumbu dan bahan asli Indonesia — bawang merah, cabai rawit, kemiri — sebagai elemen visual"
+      - "Gunakan suara proses memasak asli (tumis, goreng, ulek) sebagai asmr ringan"
+      - "Sertakan konteks emosional: resep nenek, makanan waktu kecil, jajanan yang hampir punah"
+      - "Close-up texture makanan jadi untuk reveal yang menggugah selera"
+      - "Teks overlay singkat nama bahan atau langkah kunci tanpa penjelasan panjang"
+    hindari:
+      - "Jangan pakai musik ber-hak-cipta — gunakan royalty-free atau instrumental"
+      - "Jangan tampilkan proses yang terlihat tidak higienis tanpa konteks"
+      - "Jangan skip langkah kritis yang membuat penonton tidak bisa mereplikasi"
+      - "Jangan klaim 'paling enak' atau 'resep rahasia' tanpa bukti — terasa clickbait murahan"
+      - "Jangan gunakan bahan yang tidak tersedia di pasar lokal Indonesia tanpa alternatif"
+    pola_hook: "Detik 0–2: tampilkan hasil akhir makanan yang menggugah selera ATAU close-up proses paling dramatis (sambal diulek, kue didekorasi, ayam digoreng) + teks singkat konteks. Langsung masuk proses di detik 3."
+    contoh_judul:
+      - "Resep ini cuma 3 bahan tapi selalu habis dalam 10 menit"
+      - "Makanan ini hampir punah dan hanya satu penjual yang masih bisa bikinnya"
+      - "POV masak makan malam untuk diri sendiri waktu lapar banget"
+
+  niches:
+    - slug: kuliner-pov
+      name: Kuliner POV
+      description: "Masak/makan POV tangan, ASMR."
+      faceless: true
+      difficulty: pemula
+      rpm: sedang
+      formats: POV + ASMR + hard-sub
+      example_hook: "Resep viral Korea 3 bahan..."
+      guide:
+        audience: "Penonton 16–35 yang suka konten masak santai dan ASMR; anak kos dan pekerja muda yang sering lapar tapi malas keluar; penonton yang ingin nonton proses masak dari sudut pandang si pemasak."
+        tone: "Intim dan personal. Kamera ada di posisi mata pembuat konten — penonton merasa seolah memasak sendiri. Suara proses mendominasi, teks overlay minimal, dan tidak ada narasi panjang."
+        format: "45–75 detik. Full POV tangan dari awal sampai makanan jadi. Suara bumbu masuk wajan, adukan, dan plating diboost ringan. Teks overlay nama bahan atau waktu masak jika relevan. Vertikal 9:16, stabil dan terang."
+        boleh:
+          - "Gunakan angle overhead atau chest-mount agar tangan selalu terlihat natural"
+          - "Boost suara tumis bawang dan reaksi panas minyak untuk ASMR effect"
+          - "Tampilkan hasil akhir didekatkan ke kamera — warna dan steam makanan sangat menarik"
+          - "Teks overlay singkat nama bahan kunci saat pertama kali dimasukkan"
+        hindari:
+          - "Jangan ada wajah di frame — channel ini faceless"
+          - "Jangan narasi panjang atau voiceover penjelasan — biarkan visual dan suara bicara"
+          - "Jangan pakai music terlalu dominan yang kalahkan suara masak"
+          - "Jangan rekam dengan pencahayaan buruk — warna makanan harus terlihat segar dan menggugah"
+        pola_hook: "Detik 0: POV tangan langsung mengambil bahan pertama atau memanas wajan + teks singkat nama masakan dan waktu masak ('Tumis kangkung — 5 menit'). Tidak ada intro."
+        contoh_judul:
+          - "POV kamu masak ini sambil lapar dan ternyata jadi dalam 5 menit"
+          - "POV bangun jam 5 pagi ke pasar sebelum jajanan ini habis"
+          - "Resep warisan nenek yang belum pernah ditulis — tangan yang ingat caranya"
+
+      micro:
+        - slug: kuliner-pov-tumisan-5-menit
+          name: POV Tumisan Lezat dalam 5 Menit
+          description: POV hands-on memasak tumisan nusantara yang lezat dalam waktu singkat, difilmkan dari sudut mata burung dengan suara ASMR bumbu yang memuaskan.
+          example_hook: "POV kamu masak ini sambil lapar banget dan ternyata jadi dalam 5 menit..."
+          guide:
+            audience: "Anak kos dan pekerja 18–30 yang lapar setelah pulang kerja atau kuliah dan butuh solusi masak cepat; penonton yang tertarik masak tapi terintimidasi proses panjang."
+            tone: "Cepat, efisien, dan memuaskan. Setiap gerakan tangan terlihat purposeful. Suara bawang masuk minyak dan tumisan sizzle menjadi ritme video."
+            format: "45–60 detik. Urutan: bahan sudah disiapkan → tumis bumbu (suara masuk ke minyak panas) → masukkan bahan utama → aduk → plating → close-up final. POV overhead stabil. Vertikal 9:16."
+            boleh:
+              - "Pilih masakan yang punya suara tumisan paling kuat — kangkung, bayam, atau tauge sangat ASMR"
+              - "Boost suara minyak panas dan bawang tumis"
+              - "Teks waktu nyata di sudut video ('2:34') untuk membuktikan memang cepat"
+              - "Close-up akhir makanan dalam piring dengan uap tipis yang terlihat"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan pakai bahan yang susah dicari atau mahal tanpa alternatif"
+              - "Jangan edit terlalu cepat sampai proses tidak terlihat realistis"
+              - "Jangan musik keras yang dominan — suara masak adalah bintangnya"
+            pola_hook: "Detik 0: tangan langsung mengambil bawang dan memasukkan ke minyak panas + suara sizzle langsung terdengar + teks 'Tumis [nama] — 5 menit'. Tidak ada intro."
+            contoh_judul:
+              - "POV masak tumis kangkung waktu lapar banget dan hasilnya dalam 5 menit"
+              - "Tumisan ini cuma butuh 4 bahan dan satu wajan, anak kos wajib tahu"
+              - "Suara bawang masuk minyak panas ini bikin lapar setiap kali dengar"
+              - "POV masak makan malam sendiri setelah pulang kerja pukul 9 malam"
+              - "Resep tumis yang nasi putih 2 piring habis karena ini terlalu enak"
+            content_runway: "Setiap jenis sayuran, protein (tempe, tahu, ayam, udang), dan variasi bumbu (saus tiram, terasi, bawang putih) menghasilkan video berbeda; ada ratusan tumisan nusantara yang belum terdokumentasi."
+
+        - slug: kuliner-pov-jajan-pasar-pagi
+          name: POV Jajan Pasar Pagi Tradisional
+          description: POV berkeliling pasar tradisional Indonesia pagi hari, membeli dan mencicipi jajanan pasar yang makin langka, memadukan nostalgia dan dokumentasi kuliner lokal.
+          example_hook: "POV kamu bangun jam 5 pagi ke pasar dan cari jajanan ini sebelum habis..."
+          guide:
+            audience: "Penonton 20–45 yang rindu suasana pasar tradisional dan jajanan masa kecil; diaspora Indonesia yang kangen suasana pasar pagi; generasi muda yang ingin mengenal kuliner lokal yang menghilang."
+            tone: "Nostalgik dan hangat. Suasana pasar pagi — suara pedagang, aroma jajanan kukus, dan warna-warni kue basah — menjadi karakter utama. Tidak perlu banyak kata; visual pasar bicara sendiri."
+            format: "60–90 detik. POV berjalan di pasar → fokus satu-dua jajanan menarik → transaksi singkat (tangan mengambil, membayar) → close-up detail jajanan → cicip (tangan saja, bukan wajah). Vertikal 9:16, handheld stabil."
+            boleh:
+              - "Tampilkan suasana pasar pagi — asap kukusan, lampu pagi, dan pedagang veteran"
+              - "Close-up detail jajanan: warna, tekstur, dan packaging daun pisang atau anyaman bambu"
+              - "Suara pasar asli: tawar-menawar samar, sendok di wajan, dan suara jajanan dibungkus"
+              - "Teks overlay nama jajanan dan harga untuk konteks yang informatif"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan pakai musik keras yang bunuh suasana pasar autentik"
+              - "Jangan rekam di pasar modern yang sudah kehilangan karakter tradisionalnya"
+              - "Jangan klaim satu jajanan sebagai 'terenak' tanpa konteks — terlalu subjektif"
+            pola_hook: "Detik 0: close-up warna-warni kue basah atau kukusan pagi di lapak pasar + teks 'POV ke pasar jam 05:30 sebelum habis'. Tangan langsung menunjuk atau mengambil jajanan pertama di detik 2."
+            contoh_judul:
+              - "POV ke pasar jam 5 pagi dan ini yang ditemukan sebelum habis semua"
+              - "Jajanan pasar ini sudah langka — aku dokumentasikan sebelum benar-benar hilang"
+              - "Warna-warni kue basah ini sudah jarang terlihat, pasar ini masih punya semuanya"
+              - "POV beli 10 jajanan pasar pagi dengan Rp50rb — ini isinya"
+              - "Nenek ini jual jajanan yang sama sejak 1978, aku beli semuanya"
+            content_runway: "Setiap daerah Indonesia punya jajanan pasar berbeda (lebih dari 300 jenis kue basah nusantara); setiap pasar tradisional menawarkan suasana dan produk yang unik, dan konten dokumentasi ini semakin langka seiring pasar modern berkembang."
+
+        - slug: kuliner-pov-masak-warisan-nenek
+          name: POV Masak Resep Warisan Nenek
+          description: POV memasak resep tradisional keluarga yang diturunkan turun-temurun dengan teknik dan bumbu asli, memadukan nostalgia dengan pelestarian kuliner lokal.
+          example_hook: "Resep ini tidak pernah aku tulis, aku cuma ingat tangan nenek yang lakukannya..."
+          guide:
+            audience: "Penonton 22–45 yang rindu masakan rumah dan tradisi keluarga; generasi muda yang ingin belajar masak dari warisan leluhur; penonton diaspora Indonesia yang kangen rasa kampung halaman."
+            tone: "Nostalgik dan penuh rasa hormat. Setiap langkah terasa seperti menjaga sesuatu yang berharga. Suara cobek, ulek, dan wajan tradisional menjadi melodi yang menghubungkan generasi."
+            format: "75–90 detik. Mulai dari bahan-bahan asli (rempah, daun, bumbu yang unik) → proses tradisional (ulek bukan blender, masak di wajan besi) → proses memasak bertahap → hasil akhir yang autentik. Teks overlay nama masakan dan asal daerah. Vertikal 9:16."
+            boleh:
+              - "Gunakan alat masak tradisional — cobek, wajan besi, kukusan bambu — untuk visual dan suara autentik"
+              - "Tampilkan bahan-bahan unik yang mungkin tidak dikenal penonton muda dengan teks nama"
+              - "Boost suara ulek cobek dan tetesan di wajan besi"
+              - "Teks singkat asal daerah masakan dan konteks kapan biasanya dimakan"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan ganti teknik tradisional dengan alat modern tanpa mencatat perbedaannya"
+              - "Jangan pakai musik modern yang tidak cocok dengan vibe nostalgia"
+              - "Jangan skip langkah yang tidak familiar — itu justru bagian paling berharga dari video"
+            pola_hook: "Detik 0: close-up bahan rempah yang unik atau alat masak tradisional + teks 'Resep [nama masakan] — warisan dari [nama daerah]'. Tangan langsung mulai ulek atau siapkan bahan di detik 2."
+            contoh_judul:
+              - "Resep ini tidak pernah ditulis, aku rekonstruksi dari ingatan tangan nenek"
+              - "Gulai ini cuma bisa dibuat kalau punya 7 rempah ini — ini cara membuatnya"
+              - "POV masak opor ayam kampung dengan cara yang sudah 60 tahun tidak berubah"
+              - "Bumbu dapur ini tidak dijual di supermarket tapi nenek selalu punya stoknya"
+              - "Masakan ini cuma muncul saat lebaran di keluarga aku — ini resep aslinya"
+            content_runway: "Indonesia punya ribuan resep tradisional per daerah yang belum terdokumentasi; setiap suku, setiap keluarga, dan setiap musim menghasilkan variasi yang hampir tak terbatas untuk seri konten masak warisan."
+
+    - slug: recipe
+      name: Resep Cepat
+      description: Resep step-by-step time-lapse.
+      faceless: true
+      difficulty: pemula
+      rpm: sedang
+      formats: time-lapse + hard-sub
+      example_hook: "Sarapan 5 menit anti ribet..."
+      guide:
+        audience: "Pekerja dan mahasiswa 18–35 yang ingin masak sendiri tapi tidak punya banyak waktu; ibu rumah tangga yang mencari variasi menu harian yang simpel; anak kos yang bosan mie instan dan mau hemat dari beli makanan."
+        tone: "Praktis dan efisien. Setiap langkah terlihat mudah dan mungkin dilakukan siapa saja. Tidak ada istilah teknis memasak — semua dijelaskan dalam bahasa sehari-hari."
+        format: "45–75 detik. Struktur: bahan ditampilkan (1–2 detik) → proses step-by-step dengan teks hard-sub di setiap langkah kunci → reveal hasil akhir. Time-lapse untuk proses yang panjang. Close-up hasil akhir. Vertikal 9:16."
+        boleh:
+          - "Tampilkan bahan dengan teks nama dan estimasi harga untuk relevansi budget"
+          - "Time-lapse bagian yang repetitif (aduk, tunggu mendidih) untuk mempersingkat durasi"
+          - "Teks hard-sub dengan waktu estimasi per langkah ('tumis 2 menit')"
+          - "Reveal akhir close-up makanan yang sudah diplating dengan rapi"
+        hindari:
+          - "Jangan tampilkan wajah — channel ini faceless"
+          - "Jangan gunakan bahan impor yang susah dicari tanpa alternatif lokal"
+          - "Jangan skip langkah — penonton harus bisa mereplikasi persis"
+          - "Jangan pakai musik keras; ambient ringan atau suara memasak cukup"
+        pola_hook: "Detik 0: reveal hasil akhir makanan yang sudah jadi + teks nama masakan dan durasi masak. Langsung potong ke bahan-bahan di detik 2."
+        contoh_judul:
+          - "Sarapan 5 menit ini lebih enak dari yang dijual di kafe"
+          - "Masakan satu wajan 15 menit untuk makan malam yang tidak instan"
+          - "Resep ini murah, cepat, dan tidak ada yang percaya kamu masak sendiri"
+
+      micro:
+        - slug: recipe-satu-wajan
+          name: Resep Lengkap Satu Wajan Satu Malam
+          description: Resep makan malam penuh yang dimasak dalam satu wajan saja — minim cuci piring, waktu masak di bawah 20 menit — menyasar pekerja yang pulang malam dan tetap ingin masak sendiri.
+          example_hook: "Masakan ini butuh satu wajan dan 15 menit, lebih murah dari delivery dan lebih enak..."
+          guide:
+            audience: "Pekerja 22–35 yang pulang malam dan malas cuci banyak peralatan; pasangan muda yang ingin masak bersama tanpa drama membersihkan dapur; siapapun yang menghindari pesan makanan tapi tidak mau ribet."
+            tone: "Santai dan reassuring. Nada 'ini gampang banget, percaya deh.' Setiap langkah terlihat tidak menakutkan. Masak satu wajan adalah solusi, bukan kompromi."
+            format: "50–70 detik. Urutan: semua bahan terlihat dalam satu frame → satu wajan dipanaskan → proses bertahap dalam satu wajan → makanan jadi disajikan dari wajan langsung. Teks langkah kunci. Vertikal 9:16."
+            boleh:
+              - "Tampilkan bahan dalam satu tray atau meja untuk visual 'ini saja bahan yang dibutuhkan'"
+              - "Tunjukkan bahwa tidak ada panci atau wajan kedua yang dipakai"
+              - "Reveal akhir: makan langsung dari wajan atau plating sederhana — tidak perlu mewah"
+              - "Tambahkan teks total biaya bahan jika di bawah Rp30rb untuk relevansi"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan pakai lebih dari satu wajan meskipun tergoda untuk hasil lebih baik"
+              - "Jangan gunakan alat dapur yang jarang ada di rumah orang (immersion blender, dsb)"
+              - "Jangan skip tahap menumis bumbu — itu inti rasa masakan Indonesia"
+            pola_hook: "Detik 0: close-up satu wajan di atas kompor dengan teks 'Makan malam — 1 wajan — 15 menit'. Bahan pertama masuk langsung di detik 2."
+            contoh_judul:
+              - "Makan malam satu wajan 15 menit yang lebih enak dari delivery manapun"
+              - "Aku pulang jam 10 malam dan masih masak ini, dan hasilnya ini"
+              - "Satu wajan, 4 bahan, 12 menit — resep yang selalu aku ulang setiap minggu"
+              - "Nasi goreng ayam telur satu wajan yang tidak pernah gagal walau ngantuk"
+              - "Cuci piring setelah masak ini cuma 2 menit karena cuma satu wajan yang kotor"
+            content_runway: "Setiap jenis protein (ayam, telur, tempe, tahu, ikan), setiap variasi bumbu nusantara, dan setiap jenis karbohidrat (nasi, mie, pasta) menghasilkan kombinasi satu wajan yang berbeda; ada ratusan variasi yang bisa dibuat tanpa pengulangan."
+
+        - slug: recipe-sisa-bahan-kulkas
+          name: Masak dari Sisa Bahan Kulkas yang Mau Kadaluarsa
+          description: Serial resep kreatif menggunakan kombinasi sisa bahan yang ada di kulkas sebelum kadaluarsa, mengurangi food waste sekaligus mengajarkan improvisasi memasak.
+          example_hook: "Ada telur, tempe, dan wortel sisa, ini yang aku masak dan hasilnya..."
+          guide:
+            audience: "Penonton 20–40 yang sering buang bahan makanan karena tidak tahu mau dimasak apa; ibu rumah tangga yang berhemat; penonton yang tertarik zero-waste living dan pengurangan food waste."
+            tone: "Kreatif dan problem-solving. Nada 'lihat, bahan yang hampir kamu buang ini bisa jadi makan siang yang layak.' Improvisasi dirayakan, bukan dimaafkan."
+            format: "50–75 detik. Urutan: tampilkan bahan sisa di kulkas (dengan kondisi realnya) → proses memasak cepat → hasil yang mengejutkan mengingat bahan yang terbatas → reveal. Teks kunci bahan di awal. Vertikal 9:16."
+            boleh:
+              - "Tunjukkan kondisi bahan yang hampir habis atau mendekati kadaluarsa — autentisitas kuncinya"
+              - "Tampilkan proses improvisiasi yang terlihat natural, bukan terencana"
+              - "Tambahkan teks 'estimasi waktu kadaluarsa bahan' untuk konteks urgensi"
+              - "Reveal akhir yang mengesankan mengingat bahan yang tidak ideal"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan gunakan bahan yang terlihat sudah benar-benar busuk atau tidak layak makan"
+              - "Jangan hasilkan masakan yang tidak realistis bisa dibuat dari bahan tersebut"
+              - "Jangan pakai bahan tambahan banyak yang mengalahkan konsep 'sisa kulkas'"
+            pola_hook: "Detik 0: buka kulkas tampilkan bahan sisa + teks bahan yang ada dan batas waktu. Langsung ambil wajan di detik 2."
+            contoh_judul:
+              - "Sisa wortel, telur, dan tempe di kulkas — ini yang bisa jadi makan siang"
+              - "Bahan hampir kadaluarsa ini aku masak sebelum dibuang dan hasilnya diluar dugaan"
+              - "Tiga bahan sisa ini jadi sarapan yang lebih enak dari yang dibeli"
+              - "Zero waste kitchen — kulkas hampir kosong tapi makan malam tetap ada"
+              - "Isi kulkas yang memalukan ini ternyata bisa jadi ini kalau tahu caranya"
+            content_runway: "Kombinasi bahan sisa di kulkas hampir tidak terbatas — protein, sayur, dan karbohidrat apapun bisa dikombinasikan; ditambah variasi teknik memasak dan bumbu, seri ini bisa berjalan ratusan episode tanpa pengulangan."
+
+        - slug: recipe-anak-kos-gas-terbatas
+          name: Resep Anak Kos dengan Kompor Satu Tungku
+          description: Resep lengkap dan bergizi yang dirancang khusus untuk keterbatasan anak kos — satu kompor, satu wajan, bahan dari warung terdekat, budget di bawah Rp20rb per porsi.
+          example_hook: "Makan bergizi Rp15rb sekali masak, bukan mie instan, dan ini caranya..."
+          guide:
+            audience: "Mahasiswa dan fresh graduate 18–25 yang tinggal di kos; siapapun yang baru pertama kali hidup mandiri dan belajar masak; penonton yang ingin hemat tapi juga makan layak."
+            tone: "Memberdayakan dan realistis. Nada 'kamu bisa masak makanan sehat dengan kondisi kos yang terbatas.' Tidak ada judgment soal peralatan seadanya — justru keterbatasan itu yang membuat konten ini relevan."
+            format: "45–65 detik. Urutan: tampilkan setup kos (kompor satu tungku, wajan kecil) → bahan dari warung (tunjukkan harganya) → proses cepat → makan bergizi siap. Teks total biaya di akhir. Vertikal 9:16."
+            boleh:
+              - "Tampilkan setup kos yang realistis — kompor portable, meja sempit, peralatan minimal"
+              - "Tunjukkan bahan dari warung atau minimarket terdekat dengan harga nyata"
+              - "Teks total biaya bahan per porsi di akhir video"
+              - "Pilih masakan yang bergizi dan mengenyangkan, bukan hanya 'bisa dimakan'"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan pakai bahan yang hanya ada di supermarket besar atau harganya tidak kos-friendly"
+              - "Jangan gunakan lebih dari dua peralatan masak — kompor satu tungku, satu wajan/panci"
+              - "Jangan rekomendasikan resep yang tidak realistis diselesaikan di dapur kos sempit"
+            pola_hook: "Detik 0: tampilkan kompor satu tungku kos yang familiar + teks 'Makan bergizi Rp[harga] — bukan mie instan'. Bahan masuk langsung di detik 2."
+            contoh_judul:
+              - "Makan bergizi Rp15rb di kos satu kompor — bukan mie instan, ini resepnya"
+              - "Menu kos seminggu dengan Rp100rb yang tidak membosankan — ini plannya"
+              - "Telur, tahu, dan bawang dari warung — jadi ini dan kenyang sampai malam"
+              - "Anak kos ini masak nasi ayam dari nol dalam 20 menit dengan satu wajan"
+              - "Resep ini bisa dibuat di kamar kos tanpa membuat asap yang ketahuan ibu kos"
+            content_runway: "Ada ratusan kombinasi masakan bergizi dengan budget di bawah Rp25rb per porsi menggunakan bahan dari warung Indonesia; ditambah variasi masakan dari berbagai daerah yang bisa diadaptasi untuk setup kos, seri ini bisa berjalan sangat panjang."
+
+    - slug: food-review
+      name: Review Makanan
+      description: "Cobain/review tempat & jajanan."
+      faceless: false
+      difficulty: menengah
+      rpm: sedang
+      formats: POV makan + reaksi + caption
+      example_hook: "Mie terpedas di kota ini..."
+      guide:
+        audience: "Penonton 18–35 yang suka cari rekomendasi tempat makan sebelum pergi; foodie lokal yang ingin tahu hidden gem di kota mereka; penonton yang menikmati reaksi jujur terhadap makanan, bukan review endorsement."
+        tone: "Jujur dan spontan. Reaksi pertama saat mencicipi lebih berharga dari review terstruktur. Penonton harus merasakan 'ini review yang tidak dibayar.' Humor ringan diperbolehkan."
+        format: "45–90 detik. Struktur: tampilkan lokasi atau makanan sekilas → first bite dengan reaksi jujur → komentar singkat rasa, tekstur, dan value for money → verdict. Caption di setiap momen kunci. Vertikal 9:16."
+        boleh:
+          - "Reaksi first bite yang autentik — tidak perlu terlihat sempurna atau terlatih"
+          - "Tampilkan harga dengan jelas untuk konteks value"
+          - "Bandingkan dengan ekspektasi ('viral di sini, kenyataannya...')"
+          - "Caption pendek yang jujur: 'rasa: 7/10, harga: worth it / gak worth'"
+        hindari:
+          - "Jangan berikan review positif semua — kehilangan kepercayaan penonton"
+          - "Jangan tampilkan lokasi tanpa harga — penonton ingin tahu budget yang dibutuhkan"
+          - "Jangan review tempat yang sudah terlalu mainstream tanpa angle baru"
+          - "Jangan pakai musik ber-hak-cipta sebagai latar"
+        pola_hook: "Detik 0: close-up makanan yang paling menarik atau kontroversial + teks klaim yang mau diverifikasi ('katanya terpedas di kota ini...'). Langsung gigit di detik 3."
+        contoh_judul:
+          - "Mie ini katanya terpedas di kota ini — ini reaksi jujurku"
+          - "Warteg tersembunyi ini tidak ada di Google Maps tapi selalu antre"
+          - "Review jujur tempat yang 10.000 foto di Instagram vs kenyataannya"
+
+      micro:
+        - slug: food-review-warteg-tersembunyi
+          name: Warteg Tersembunyi dengan Masakan Luar Biasa
+          description: Review dan dokumentasi warteg atau warung sederhana di kota yang menyajikan masakan rumahan berkualitas luar biasa tapi tidak dikenal luas, menyasar pencari hidden gem kuliner.
+          example_hook: "Warteg ini gak ada nama, gak ada Google Maps, tapi antriannya sampai keluar setiap hari..."
+          guide:
+            audience: "Penonton 20–40 yang mencari makan siang enak dengan harga bersahabat; pekerja kantoran yang bosan tempat makan yang itu-itu saja; pencinta kuliner yang lebih menikmati menemukan tempat tersembunyi daripada restoran trendy."
+            tone: "Petualangan kuliner yang humble. Nada 'aku tidak menyangka tempat sekecil ini bisa seenak ini.' Autentisitas adalah nilai utama — bukan kemewahan tempat."
+            format: "60–90 detik. Struktur: tampilkan eksterior sederhana warteg → lauk-pauk di etalase dengan harga → ambil piring dan pilih lauk → first bite reaksi → komentar jujur rasa dan harga → verdict apakah worth didatangi. Vertikal 9:16."
+            boleh:
+              - "Tampilkan tampilan luar yang tidak meyakinkan sebagai contrast dengan kualitasnya"
+              - "Close-up etalase lauk-pauk dengan harga untuk konteks budget"
+              - "Reaksi first bite yang natural — tidak perlu acting"
+              - "Teks lokasi samar atau clue ('di jalan sebelah pasar X') untuk nuansa hidden gem"
+            hindari:
+              - "Jangan review tempat yang sudah viral — value-nya berkurang"
+              - "Jangan tampilkan alamat lengkap jika tidak ada izin dari pemilik"
+              - "Jangan berlebihan dalam pujian — penonton tahu jika tidak tulus"
+              - "Jangan pakai musik keras yang bunuh suasana warung autentik"
+            pola_hook: "Detik 0: close-up eksterior warteg yang sederhana/tidak mencolok + teks 'Di sini antriannya selalu panjang padahal tidak ada papan nama'. Langsung masuk ke dalam di detik 2."
+            contoh_judul:
+              - "Warteg ini tidak ada nama, tidak ada papan, tapi antriannya tidak pernah habis"
+              - "Warung di gang kecil ini jual masakan yang lebih enak dari restoran mana saja"
+              - "Aku temukan tempat makan ini karena ikut orang yang antre — dan ini hasilnya"
+              - "Pecel lele di pinggir jalan ini lebih enak dari yang di resto Rp100rb, buktinya"
+              - "Hidden gem yang sudah 30 tahun buka tapi belum ada yang review online"
+            content_runway: "Setiap kota besar Indonesia punya ratusan warteg tersembunyi yang belum pernah diulas secara digital; setiap jenis masakan rumahan (padang, jawa, sunda, betawi) menghasilkan konten berbeda; seri ini bisa bertahan bertahun-tahun karena supply hidden gem tidak ada habisnya."
+
+        - slug: food-review-ekspektasi-vs-hype
+          name: Review Jujur Tempat Makan yang Overhyped
+          description: Review kritis terhadap restoran dan kafe yang viral di media sosial tapi kenyataannya tidak sesuai ekspektasi harga, memberikan perspektif jujur yang bermanfaat.
+          example_hook: "Tempat ini 10.000 posting Instagram, aku datang dan ini yang sebenarnya terjadi..."
+          guide:
+            audience: "Penonton 18–35 yang capek kecewa karena ikut hype tempat makan; orang yang ingin tahu sebelum datang dan mengeluarkan uang; penonton yang menghargai review jujur daripada konten berbayar."
+            tone: "Kritis tapi fair. Bukan cynical atau terlalu negatif — tapi tidak membungkus kekecewaan dengan basa-basi endorsement. Penonton harus merasa 'ini review yang bisa dipercaya.'"
+            format: "60–90 detik. Struktur: tampilkan hype tempat (caption viral, foto Instagram) → kedatangan dan kesan pertama → order → first bite dan reaksi jujur → breakdown: apa yang sesuai ekspektasi vs tidak → verdict worth it atau skip. Vertikal 9:16."
+            boleh:
+              - "Tampilkan harga menu secara jelas — konteks value for money sangat penting"
+              - "Bandingkan foto menu di Instagram vs kenyataannya jika ada perbedaan signifikan"
+              - "Akui hal positif jika ada — review yang sepenuhnya negatif terlihat unfair"
+              - "Verdict di akhir harus spesifik: 'worth it jika...' atau 'skip jika kamu...'"
+            hindari:
+              - "Jangan terlalu personal menyerang pemilik atau staf tempat makan"
+              - "Jangan review tempat tanpa datang dan mencoba sendiri"
+              - "Jangan berikan verdict berdasarkan satu kunjungan buruk tanpa memberikan konteks"
+              - "Jangan pakai musik ber-hak-cipta"
+            pola_hook: "Detik 0: tampilkan screenshot foto viral tempat tersebut + teks 'Katanya tempat ini wajib didatangi. Aku datang dan ini kenyataannya'. Langsung potong ke kedatangan nyata di detik 3."
+            contoh_judul:
+              - "Tempat ini 10.000 foto di Instagram, aku datang dan ini kenyataannya"
+              - "Review jujur kafe yang paling ramai di kota ini — apakah worth it?"
+              - "Ramen ini viral karena foto, tapi rasanya sesuai harga Rp150rb-nya gak?"
+              - "Ekspektasi vs realita: tempat makan yang selalu muncul di FYP ini"
+              - "Aku sudah coba 5 tempat makan paling viral bulan ini, ini ranking jujurnya"
+            content_runway: "Selalu ada tempat makan baru yang viral setiap minggu di kota-kota Indonesia; siklus viral kuliner di media sosial terus berputar, memastikan supply konten 'ekspektasi vs realita' tidak pernah habis."
+
+        - slug: food-review-perbandingan-harga
+          name: "Harga Mahal vs Murah — Mana yang Lebih Enak?"
+          description: Blind test atau perbandingan langsung versi premium dan versi murah dari makanan yang sama, mengungkap apakah harga selalu berbanding lurus dengan rasa.
+          example_hook: "Ayam geprek Rp15rb vs Rp80rb — matanya tertutup, pilih yang mana..."
+          guide:
+            audience: "Penonton 18–35 yang sering bertanya-tanya apakah makanan mahal benar-benar lebih enak; orang yang ingin makan enak tanpa harus mahal; penonton yang suka konten 'myth busting' seputar food."
+            tone: "Eksperimental dan fun. Nada 'mari kita buktikan bersama.' Hasilnya tidak boleh diprediksi — jika murah menang, katakan; jika mahal menang, katakan juga dengan alasan spesifik."
+            format: "60–90 detik. Struktur: tampilkan dua versi berdampingan dengan harga → blind test atau perbandingan terbuka → reaksi per versi → reveal pemenang dengan alasan spesifik (rasa, tekstur, value). Teks harga di setiap frame. Vertikal 9:16."
+            boleh:
+              - "Format blind test (tanpa tahu mana yang mana) menambah kredibilitas"
+              - "Tampilkan harga keduanya dengan jelas di setiap shot"
+              - "Berikan penilaian per dimensi: rasa, porsi, value for money — bukan sekedar 'lebih enak'"
+              - "Hasil yang mengejutkan (murah menang) membuat konten lebih viral"
+            hindari:
+              - "Jangan dibayar oleh salah satu brand tanpa disclosure — hancurkan kepercayaan"
+              - "Jangan verdict yang terlalu fence-sitting ('dua-duanya sama enaknya') tanpa alasan"
+              - "Jangan bandingkan produk yang kategorinya berbeda jauh"
+              - "Jangan pakai musik ber-hak-cipta"
+            pola_hook: "Detik 0: tampilkan dua porsi makanan sama berdampingan dengan harga kontras + teks 'Rp[harga murah] vs Rp[harga mahal] — mana yang lebih enak?'. Langsung mulai test di detik 3."
+            contoh_judul:
+              - "Ayam geprek Rp15rb vs Rp80rb — blind test dan hasilnya mengejutkan"
+              - "Kopi kafe Rp50rb vs kopi sachetan Rp2rb — tes rasa yang jujur"
+              - "Sate kambing Rp100rb vs sate pinggir jalan Rp25rb — pemenangnya siapa?"
+              - "Nasi padang warung vs restoran padang premium — beda apa selain harga?"
+              - "Es teh manis Rp3rb vs Rp35rb — bayar 10x lipat untuk apa sebenarnya?"
+            content_runway: "Setiap jenis makanan Indonesia punya versi murah dan premium (warteg vs restoran, angkringan vs kafe); kombinasi makanan dan rentang harga hampir tidak terbatas; format perbandingan ini selalu relevan karena penonton selalu ingin tahu apakah harga mahal worth it."
+
+    - slug: street-food
+      name: Street Food
+      description: Footage jajanan kaki lima.
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: footage + ASMR + caption
+      example_hook: "Jajanan legendaris yang hampir punah..."
+      guide:
+        audience: "Penonton 18–45 yang rindu jajanan kaki lima dan kuliner pinggir jalan; generasi muda yang ingin mengenal warisan kuliner Indonesia; diaspora Indonesia yang kangen suasana makan di kaki lima."
+        tone: "Hangat, nostalgik, dan dokumentatif. Setiap pedagang punya cerita; setiap jajanan punya sejarah. Konten ini adalah arsip kuliner sekaligus hiburan."
+        format: "60–90 detik. Fokus pada satu pedagang atau satu jenis jajanan per video. Suara proses memasak di kaki lima diboost. Teks caption nama jajanan, harga, dan lokasi singkat. Close-up proses dan produk akhir. Vertikal 9:16."
+        boleh:
+          - "Tangkap suasana kaki lima yang autentik — gerobak tua, asap, dan lampu jalan"
+          - "Boost suara proses masak: kompor, wajan, dan suara pelanggan"
+          - "Caption nama jajanan, harga, dan sedikit konteks sejarah jika ada"
+          - "Dokumentasikan pedagang veteran sebagai nilai human interest tambahan"
+        hindari:
+          - "Jangan tampilkan wajah jika channel faceless — fokus pada tangan dan produk"
+          - "Jangan pakai musik keras yang bunuh suasana kaki lima autentik"
+          - "Jangan filter berlebihan yang membuat visual terlihat tidak nyata"
+          - "Jangan klaim satu pedagang sebagai 'terenak' tanpa konteks perbandingan"
+        pola_hook: "Detik 0: close-up proses memasak paling dramatis di kaki lima (bakar sate, gorengan panas, atau aduk bubur) + teks nama jajanan dan klaim menarik. Langsung tunjukkan proses lebih detail di detik 3."
+        contoh_judul:
+          - "Jajanan ini hampir punah dan hanya satu pedagang yang masih bisa bikinnya"
+          - "Pedagang ini sudah jualan di sini sejak 1985 dan resepnya tidak pernah berubah"
+          - "Keliling pasar malam dan ini semua yang ditemukan malam ini"
+
+      micro:
+        - slug: street-food-pedagang-40-tahun
+          name: Pedagang Kaki Lima yang Sudah Berjualan 40 Tahun
+          description: Dokumentasi pedagang kaki lima veteran yang telah berjualan di tempat yang sama selama puluhan tahun, menggabungkan kuliner dengan cerita manusia yang menyentuh.
+          example_hook: "Bapak ini sudah jual di sini sejak 1985, dan resepnya tidak pernah berubah..."
+          guide:
+            audience: "Penonton 25–50 yang tertarik human interest dan kuliner; diaspora yang kangen suasana kaki lima Indonesia; generasi muda yang menghargai tradisi dan konsistensi."
+            tone: "Penuh rasa hormat dan hangat. Bukan sekedar review makanan — ini penghargaan terhadap dedikasi. Fokus pada detail kecil yang menunjukkan usia: gerobak tua, gerakan hafalan, dan pelanggan setia."
+            format: "75–90 detik. Dokumentasi proses memasak pedagang → close-up produk dengan detail tekstur → suasana pelanggan antre atau duduk makan → caption tahun mulai jualan dan satu fakta menarik. Vertikal 9:16."
+            boleh:
+              - "Tampilkan detail yang menunjukkan usia: peralatan tua, gerakan otomatis, dan pelanggan langganan lama"
+              - "Caption timeline singkat: 'Buka sejak 1985. Lokasi tidak pernah berubah.'"
+              - "Boost suara memasak autentik — tangan veteran mengerjakan sesuatu berbeda terasa dan terdengar"
+              - "Close-up tangan pedagang saat bekerja — tangan yang sudah sangat terbiasa"
+            hindari:
+              - "Jangan tampilkan wajah pedagang tanpa izin — hormati privasi"
+              - "Jangan romanticize kemiskinan atau kondisi sulit tanpa konteks yang respectful"
+              - "Jangan pakai musik yang terlalu dramatis atau sentimental"
+              - "Jangan rekam dengan kualitas buruk yang tidak menghormati subjek dokumentasi"
+            pola_hook: "Detik 0: close-up gerobak tua atau alat masak yang sudah aus + caption tahun mulai berjualan. Tangan pedagang langsung bekerja di detik 2."
+            contoh_judul:
+              - "Bapak ini jualan di sini sejak 1985 dan hafalkan setiap pelanggan tetapnya"
+              - "Gerobak ini sudah berjalan 40 tahun tanpa satu hari pun libur selain lebaran"
+              - "Resep ini tidak pernah berubah sejak beliau pertama kali berjualan"
+              - "Pedagang sate ini ajarkan putranya cara masak yang sama persis sejak umur 8"
+              - "40 tahun di tempat yang sama dan pelanggannya kini bawa cucu mereka kesini"
+            content_runway: "Di setiap kota Indonesia ada pedagang veteran dengan cerita yang berbeda; dikombinasikan dengan jenis makanan, lokasi, dan generasi yang dilalui, seri ini bisa berjalan puluhan episode per kota."
+
+        - slug: street-food-jajanan-hampir-punah
+          name: Jajanan Tradisional yang Hampir Tidak Ada Lagi
+          description: Dokumentasi jajanan tradisional Indonesia yang pedagangnya semakin langka dan generasi muda tidak mengenalnya, sebagai arsip kuliner sekaligus konten nostalgia.
+          example_hook: "Jajanan ini aku makan waktu kecil dan sekarang cuma ada satu penjual yang tersisa di kota ini..."
+          guide:
+            audience: "Penonton 30–55 yang rindu jajanan masa kecil yang sudah langka; penonton muda 18–30 yang ingin mengenal kuliner Indonesia yang belum pernah mereka coba; pencinta heritage kuliner nusantara."
+            tone: "Arsip dan nostalgik. Setiap video terasa seperti mendokumentasikan sesuatu sebelum menghilang. Urgensi ringan: 'kalau tidak sekarang, mungkin tidak ada lagi.'"
+            format: "60–90 detik. Tampilkan jajanan dari sudut yang memperlihatkan keunikannya → proses membuat atau menyajikan → close-up tekstur dan detail → caption nama, asal daerah, dan mengapa langka. Vertikal 9:16."
+            boleh:
+              - "Caption yang menempatkan jajanan dalam konteks sejarah atau budaya"
+              - "Tunjukkan proses yang tidak umum lagi: teknik tradisional, alat khusus"
+              - "Suara proses autentik yang tidak akan pernah terdengar di factory food"
+              - "Ajak penonton berkomentar apakah mereka pernah makan jajanan ini"
+            hindari:
+              - "Jangan tampilkan wajah jika channel faceless"
+              - "Jangan dramatisasi berlebihan — cukup tunjukkan betapa langka dan baiknya"
+              - "Jangan pakai musik keras yang mengalihkan dari nuansa dokumentasi"
+              - "Jangan rekam dengan kualitas buruk untuk konten yang misinya adalah preservasi"
+            pola_hook: "Detik 0: close-up jajanan yang mungkin tidak dikenal penonton muda + teks nama dan klaim kelangkaannya ('1 penjual tersisa di kota ini'). Proses atau cicip langsung di detik 2."
+            contoh_judul:
+              - "Jajanan ini aku makan kecil dulu, sekarang cuma ada satu penjual di kota ini"
+              - "Kue ini hampir tidak ada lagi — aku dokumentasikan sebelum benar-benar hilang"
+              - "Generasi kamu mungkin tidak pernah makan ini, dan itu sangat disayangkan"
+              - "Gethuk ini dibuat dengan cara yang sudah 100 tahun tidak berubah"
+              - "Jajanan yang kakekmu dulu jual ini sekarang hanya ada di satu tempat"
+            content_runway: "Indonesia punya lebih dari 300 jenis jajanan tradisional yang terdokumentasi, dan banyak yang belum; setiap daerah punya jajanan khasnya; seri dokumentasi ini bisa berjalan bertahun-tahun dan semakin relevan seiring jajanan itu benar-benar menghilang."
+
+        - slug: street-food-malam-pasar-kaget
+          name: Keliling Pasar Malam & Pasar Kaget Indonesia
+          description: Dokumentasi suasana dan kuliner unik pasar malam atau pasar kaget di berbagai daerah Indonesia, memperlihatkan keragaman kuliner jajanan yang hanya ada di acara khusus.
+          example_hook: "Datang ke pasar malam ini jam 9 malam dan ini yang ditemukan..."
+          guide:
+            audience: "Penonton 16–40 yang suka kuliner malam dan suasana pasar malam; keluarga muda yang ingin tahu tempat jajan anak di akhir pekan; traveler lokal yang ingin eksplorasi kota baru melalui kuliner malamnya."
+            tone: "Petualangan dan discovery. Seperti ikut berkeliling pasar malam bersama. Suara keramaian, aroma jajanan, dan cahaya lampu merkuri jadi elemen atmosfer yang kuat."
+            format: "75–90 detik. POV berkeliling pasar malam → highlight 3–4 jajanan paling menarik atau unik → close-up proses dan produk → caption nama, harga, dan alasan menarik. Vertikal 9:16, handheld."
+            boleh:
+              - "Tangkap suasana pasar malam — lampu berwarna, keramaian, dan asap jajanan"
+              - "Fokus pada jajanan yang hanya ada di pasar malam atau acara tertentu"
+              - "Caption harga jajanan untuk konteks budget keliling pasar malam"
+              - "Akhiri dengan total biaya keliling jika mau — konten yang transparan selalu disukai"
+            hindari:
+              - "Jangan tampilkan wajah jika channel faceless"
+              - "Jangan hanya sorot jajanan mainstream — cari yang unik atau daerah"
+              - "Jangan pakai musik keras yang kalahkan suasana pasar malam autentik"
+              - "Jangan filter warna yang membuat lampu pasar malam terlihat tidak autentik"
+            pola_hook: "Detik 0: wide shot suasana pasar malam yang ramai dan berwarna-warni + teks 'Pasar malam [nama tempat] jam 21:00'. Langsung close-up jajanan pertama yang menarik di detik 2."
+            contoh_judul:
+              - "Keliling pasar malam ini jam 9 malam dengan Rp100rb — ini semua yang bisa dibeli"
+              - "Pasar kaget ini hanya ada setiap Jumat malam dan jajanannya tidak ada di tempat lain"
+              - "Jajanan di pasar malam ini tidak akan kamu temukan di mall manapun"
+              - "5 jajanan pasar malam yang wajib dicoba sebelum pulang — ini daftarnya"
+              - "Pasar malam daerah ini punya satu jajanan yang tidak ada di kota lain"
+            content_runway: "Setiap kota dan kabupaten Indonesia punya pasar malam atau pasar kaget dengan jadwal dan produk yang berbeda; ditambah event musiman (ramadan, lebaran, pesta rakyat), supply lokasi dan konten hampir tidak terbatas."
+
+    - slug: baking
+      name: "Baking / Dessert"
+      description: "Kue, dessert, dekorasi satisfying."
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: POV + time-lapse + ASMR
+      example_hook: "Kue ini cuma butuh 2 bahan..."
+      guide:
+        audience: "Perempuan dan pria 18–40 yang tertarik baking dan dessert; ibu rumah tangga yang ingin tambah variasi kue di rumah; UMKM kue rumahan yang mencari inspirasi resep dan teknik dekorasi."
+        tone: "Menyenangkan dan accessible. Baking tidak harus rumit atau mahal. Setiap resep dan teknik dipresentasikan sebagai 'kamu pasti bisa ini.' Hasil yang indah adalah reward bersama."
+        format: "60–90 detik. Kombinasi POV tangan dan shot overhead. Suara mixing, tuang adonan, dan reveal kue jadi sangat satisfying. Teks overlay bahan dan langkah kunci. Time-lapse untuk proses pemanggangan. Vertikal 9:16."
+        boleh:
+          - "Tampilkan proses mixing dan tuang adonan dari close-up — visual yang sangat satisfying"
+          - "Boost suara mixer, tuang adonan, dan kue keluar dari cetakan"
+          - "Reveal dekorasi akhir sebagai klimaks video"
+          - "Teks bahan kunci dan takaran tanpa harus pause video untuk baca resep"
+        hindari:
+          - "Jangan tampilkan wajah jika channel faceless"
+          - "Jangan gunakan bahan impor yang mahal tanpa alternatif lokal"
+          - "Jangan skip proses dekorasi — itu bagian yang paling satisfying untuk penonton"
+          - "Jangan pakai musik keras yang kalahkan suara proses baking yang ASMR"
+        pola_hook: "Detik 0: reveal kue/dessert jadi yang paling indah + teks klaim menarik ('cuma 2 bahan' atau 'tanpa oven'). Potong ke awal proses di detik 2."
+        contoh_judul:
+          - "Kue ini cuma butuh 2 bahan dan tidak ada yang percaya kamu membuatnya sendiri"
+          - "Brownies tanpa oven ini dibuat di wajan dan tidak ada bedanya"
+          - "Dekorasi kue ini terlihat butuh kursus, tapi ini langkah mudahnya"
+
+      micro:
+        - slug: baking-no-oven-kompor
+          name: Kue Lezat Tanpa Oven Pakai Wajan
+          description: Resep kue dan dessert yang bisa dibuat tanpa oven menggunakan wajan atau panci biasa, membuka dunia baking untuk yang tinggal di kos atau tidak punya oven.
+          example_hook: "Brownies ini dimasak di wajan dan tidak bisa dibedakan dari yang pakai oven..."
+          guide:
+            audience: "Anak kos dan penghuni apartemen kecil 18–30 yang tidak punya oven; ibu rumah tangga yang ingin buat kue tanpa investasi oven; siapapun yang penasaran apakah kue bisa dibuat tanpa alat mahal."
+            tone: "Membuktikan dan memberdayakan. Nada 'oven bukan syarat utama untuk kue enak.' Setiap langkah terlihat bisa dilakukan di dapur kos yang sempit."
+            format: "60–80 detik. Tampilkan wajan/panci biasa di awal untuk establish setup → campurkan adonan → masak di wajan dengan tutup → reveal kue jadi yang mengejutkan. Close-up tekstur kue. Teks bahan dan takaran. Vertikal 9:16."
+            boleh:
+              - "Tampilkan wajan biasa yang ada di setiap dapur Indonesia — bukan wajan khusus"
+              - "Tunjukkan teknik mengecek kematangan kue tanpa termometer oven"
+              - "Close-up tekstur bagian dalam kue saat dipotong — proof bahwa hasilnya setara"
+              - "Teks perbandingan singkat 'waktu di wajan vs di oven' jika relevan"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan gunakan bahan baking impor yang tidak ada di minimarket lokal"
+              - "Jangan tampilkan wajan yang terlalu khusus atau mahal — harus yang umum ada"
+              - "Jangan skip langkah setup panas wajan yang krusial untuk hasil yang baik"
+            pola_hook: "Detik 0: close-up brownies atau kue jadi yang terlihat premium + teks 'Dibuat di wajan biasa. Tanpa oven.' Langsung potong ke awal proses di detik 2."
+            contoh_judul:
+              - "Brownies ini dimasak di wajan biasa dan tidak ada yang percaya tidak pakai oven"
+              - "Kue kukus pandan ini dibuat di panci stainless kos dan hasilnya lembut banget"
+              - "Tanpa oven, tanpa mixer — kue ini butuh satu wajan dan 20 menit saja"
+              - "Anak kos ini bikin bolu kukus yang lebih enak dari yang dijual di pasar"
+              - "Test: kue yang sama dibuat di oven vs wajan — kamu bisa bedakan mana mana?"
+            content_runway: "Ada ratusan resep kue yang bisa diadaptasi untuk wajan dan panci — dari kue basah tradisional hingga brownies dan lava cake modern; setiap kue menghasilkan video dengan teknik berbeda, dan komunitas no-oven baking di Indonesia sangat besar."
+
+        - slug: baking-dekorasi-kue-pemula
+          name: Dekorasi Kue yang Terlihat Pro untuk Pemula
+          description: Tutorial dekorasi kue step-by-step menggunakan teknik yang hasilnya terlihat profesional tapi prosesnya bisa dilakukan pemula dengan alat sederhana.
+          example_hook: "Dekorasi kue ini terlihat butuh kursus profesional, tapi ini langkah-langkahnya yang ternyata bisa siapapun lakukan..."
+          guide:
+            audience: "Perempuan 18–40 yang ingin membuat kue cantik untuk ulang tahun keluarga atau dijual; UMKM kue rumahan yang ingin naik level tampilannya; siapapun yang takut dengan dekorasi kue karena terlihat sulit."
+            tone: "Percaya diri dan encouraging. Setiap langkah dipecah menjadi gerakan yang bisa ditiru. Hasil akhir harus terlihat sangat berbeda dari bayangan awal penonton tentang 'kue buatan sendiri.'"
+            format: "75–90 detik. Mulai dari kue plain → proses dekorasi step-by-step (satu teknik per langkah) → reveal kue sudah didekorasi penuh. Close-up teknik spatula, piping bag, dan detail hiasan. Teks langkah kunci. Vertikal 9:16."
+            boleh:
+              - "Tampilkan alat yang digunakan — pastikan semuanya tersedia di toko kue Indonesia"
+              - "Close-up teknik piping dan spatula yang menunjukkan gerakan tangan"
+              - "Breakdown setiap lapisan dekorasi secara berurutan"
+              - "Reveal akhir kue jadi dari beberapa sudut untuk menunjukkan semua detailnya"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan gunakan pewarna atau fondant impor yang tidak ada di toko kue lokal"
+              - "Jangan skip teknik dasar yang justru paling penting untuk pemula"
+              - "Jangan musik terlalu keras yang ganggu fokus pada teknik dekorasi"
+            pola_hook: "Detik 0: close-up kue jadi yang sudah didekorasi indah + teks 'Dibuat pemula pertama kali — ini langkah-langkahnya'. Potong ke kue plain di detik 2 dan mulai dekorasi."
+            contoh_judul:
+              - "Dekorasi kue ulang tahun ini terlihat butuh kursus — ternyata ini caranya untuk pemula"
+              - "Teknik piping ini bikin kue terlihat dari bakeri mahal padahal dibuat di dapur sendiri"
+              - "Pertama kali dekorasi kue dan hasilnya bikin teman-teman gak percaya"
+              - "5 teknik dekorasi kue yang hasilnya pro tapi bisa dipelajari dalam 30 menit"
+              - "Kue polos ini berubah jadi karya dalam 15 menit dengan teknik ini"
+            content_runway: "Ada puluhan teknik dekorasi berbeda (piping, fondant, mirror glaze, drip, naked cake); setiap teknik bisa dikombinasikan dengan berbagai jenis kue dan tema; musim ulang tahun, lebaran, dan natal selalu menciptakan demand konten dekorasi baru."
+
+        - slug: baking-kue-tradisional-modern
+          name: Kue Tradisional Indonesia dengan Twist Modern
+          description: Resep yang mengambil kue tradisional nusantara dan memberinya presentasi atau variasi rasa modern, memadukan nostalgia dengan tren kuliner kekinian.
+          example_hook: "Klepon ini bentuknya sama tapi rasanya beda, ini twist yang bikin orang penasaran..."
+          guide:
+            audience: "Penonton 20–40 yang mencintai kuliner tradisional tapi terbuka dengan inovasi; UMKM kue yang ingin diferensiasi produk; food enthusiast yang suka 'fusion' kuliner lokal."
+            tone: "Inovatif tapi respectful. Menghormati kue aslinya sambil menghadirkan sudut pandang baru. Bukan mengganti tradisi — tapi membuka pintu bagi yang belum pernah coba."
+            format: "60–85 detik. Tampilkan kue tradisional asli sekilas → introduce twist (rasa, warna, atau presentasi) → proses membuat versi modern → bandingkan keduanya → reveal versi modern yang menarik. Teks nama kue asli dan nama twist. Vertikal 9:16."
+            boleh:
+              - "Tampilkan versi asli kue untuk konteks sebelum memperkenalkan twist"
+              - "Teks singkat asal daerah kue tradisionalnya"
+              - "Boost suara proses yang paling satisfying — isi klepon, cetak mochi, dst"
+              - "Reveal close-up kue jadi dengan twist yang terlihat menarik dan berbeda"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan ubah kue tradisional sampai tidak bisa dikenali lagi tanpa alasan kuat"
+              - "Jangan gunakan bahan impor yang membuat resep tidak terjangkau"
+              - "Jangan skip menunjukkan kue versi aslinya — konteks itu kunci relevansinya"
+            pola_hook: "Detik 0: close-up kue tradisional yang sudah dikenal + teks nama kue + satu kata twist ('MATCHA', 'TIRAMISU', 'SALTED CARAMEL'). Proses langsung mulai di detik 2."
+            contoh_judul:
+              - "Klepon isi nutella ini terlihat sama dari luar tapi gigit pertama tidak ada yang siap"
+              - "Onde-onde matcha ini menggabungkan dua hal yang tidak seharusnya cocok — tapi ternyata"
+              - "Kue lapis ini aku buat dengan warna dan rasa yang tidak pernah ada sebelumnya"
+              - "Serabi tradisional ini aku modifikasi dan hasilnya dipesan 50 porsi habis dalam 2 jam"
+              - "Dadar gulung yang sama tapi isi cream cheese dan stroberi — boleh atau tidak boleh?"
+            content_runway: "Indonesia punya lebih dari 300 kue tradisional; setiap kue bisa dipadukan dengan berbagai 'twist' modern (rasa, warna, teknik presentasi); tren kuliner terus berkembang dan selalu ada kombinasi baru yang bisa dieksplorasi."
+
+    - slug: coffee
+      name: "Kopi / Barista"
+      description: "Bikin kopi, latte art, alat seduh."
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: POV + ASMR + close-up
+      example_hook: "Latte art ini bikin pelanggan balik lagi..."
+      guide:
+        audience: "Pencinta kopi Indonesia 20–40 yang ingin leveling up cara menyeduh kopi di rumah; barista pemula yang ingin belajar teknik; penonton yang tertarik kopi single origin Indonesia dan budaya kedai kopi lokal."
+        tone: "Presisi dan apresiatif. Setiap detail penyeduhan — rasio kopi-air, suhu, dan teknik tuang — diperlihatkan dengan penuh perhatian. Penonton harus merasakan 'ini bukan sekadar ngopi biasa.'"
+        format: "45–90 detik. Close-up proses seduh dari grinding → pouring → hasil kopi. Suara grinder, air tuang, dan uap diboost untuk ASMR. Teks teknis singkat (suhu, rasio) jika relevan. Vertikal 9:16, pencahayaan hangat."
+        boleh:
+          - "Boost suara grinder, air panas dituang, dan kopi yang menetes"
+          - "Pencahayaan hangat yang membuat kopi terlihat memiliki kedalaman warna"
+          - "Teks teknis singkat (suhu, rasio, waktu ekstraksi) tanpa jargon berlebihan"
+          - "Close-up latte art atau bloom pertama saat air menyentuh kopi"
+        hindari:
+          - "Jangan tampilkan wajah — channel ini faceless"
+          - "Jangan gunakan istilah teknis terlalu banyak tanpa penjelasan sederhana"
+          - "Jangan rekam dengan pencahayaan yang membuat kopi terlihat tidak menarik"
+          - "Jangan pakai musik keras yang bunuh suara proses seduh yang ASMR"
+        pola_hook: "Detik 0: close-up kopi yang sudah jadi dengan warna dan uap yang sempurna ATAU latte art yang sedang dibuat + teks singkat metode seduh. Langsung proses di detik 2."
+        contoh_judul:
+          - "Latte art ini setiap pagi bikin pelanggan posting dan balik lagi besoknya"
+          - "Manual brew V60 pertama kali tanpa istilah yang membingungkan"
+          - "Kopi Gayo vs Toraja vs Flores — aku brew ketiganya dan bandingkan rasanya"
+
+      micro:
+        - slug: coffee-manual-brew-untuk-pemula
+          name: Manual Brew Kopi Indonesia untuk Pemula Absolut
+          description: Panduan pertama kali membuat kopi manual brew — V60, French press, atau AeroPress — dengan kopi single origin Indonesia, tanpa istilah teknis yang membingungkan.
+          example_hook: "Kopi paling enak yang pernah kamu minum tidak butuh mesin mahal, ini yang kamu butuhkan..."
+          guide:
+            audience: "Pecinta kopi pemula 20–35 yang mau pindah dari sachet ke manual brew; anak muda yang baru beli V60 atau French press dan tidak tahu mulai dari mana; siapapun yang ingin kopi enak di rumah tanpa investasi mesin mahal."
+            tone: "Accessible dan non-intimidating. Nada 'ini lebih mudah dari yang kamu bayangkan.' Semua istilah teknis dijelaskan dalam bahasa sehari-hari. Penonton harus merasa percaya diri setelah nonton."
+            format: "60–80 detik. Urutan: tampilkan alat → grinding kopi → tuang air panas (teknik bloom) → proses filter → tuang ke gelas → first sip visual. Teks panduan suhu dan rasio yang simpel. Close-up bloom kopi. Vertikal 9:16."
+            boleh:
+              - "Tampilkan alat yang terjangkau — V60 plastik atau French press murah tetap bisa hasilkan kopi bagus"
+              - "Boost suara air panas menyentuh kopi dan suara drip saat kopi menetes"
+              - "Close-up bloom pertama — uap dan kopi mengembang adalah visual yang selalu menarik"
+              - "Teks satu kalimat teknis per langkah ('90°C', '1:15 rasio') tanpa penjelasan panjang"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan gunakan jargon specialty coffee tanpa penjelasan sederhana"
+              - "Jangan rekomendasikan alat atau kopi yang harganya terlalu premium untuk pemula"
+              - "Jangan rekam dengan pencahayaan yang tidak memperlihatkan warna kopi dengan baik"
+            pola_hook: "Detik 0: close-up cangkir kopi dengan warna amber yang sempurna + teks 'Kopi enak di rumah — tanpa mesin mahal'. Langsung ke proses grinding di detik 2."
+            contoh_judul:
+              - "V60 pertama kali tanpa bingung — panduan yang tidak pakai istilah aneh"
+              - "Kopi ini lebih enak dari yang dijual di kedai kopi Rp60rb, dan aku buat sendiri"
+              - "Manual brew kopi Gayo ini bisa dibuat dengan alat Rp50rb total — caranya"
+              - "Pemula pertama kali bikin pour over dan hasilnya bikin barista di kedai kopi kagum"
+              - "5 kesalahan manual brew yang bikin kopi kamu pahit — ini cara betulkannya"
+            content_runway: "Setiap metode seduh (V60, French press, AeroPress, Moka pot, cold brew) menghasilkan video berbeda; dikombinasikan dengan setiap kopi daerah Indonesia, variasi konten hampir tidak terbatas; kultur kopi Indonesia terus berkembang dan selalu ada audiens baru."
+
+        - slug: coffee-kopi-daerah-indonesia
+          name: Perjalanan Rasa Kopi dari Berbagai Daerah Indonesia
+          description: Perbandingan karakter rasa kopi dari berbagai daerah Indonesia — Gayo, Toraja, Flores, Kintamani — membantu penonton menemukan kopi daerah favorit mereka.
+          example_hook: "Aku brew 5 kopi Indonesia berbeda dalam satu sesi, dan pemenangnya mengejutkan..."
+          guide:
+            audience: "Pencinta kopi Indonesia 22–40 yang ingin eksplorasi kopi single origin lokal; mereka yang bangga dengan produk Indonesia dan ingin tahu lebi lebih dalam; penonton yang sudah manual brew tapi hanya kenal satu jenis kopi."
+            tone: "Eksploratif dan bangga lokal. Setiap kopi dari setiap daerah punya cerita dan karakter. Nada 'Indonesia punya kopi terbaik di dunia, dan ini buktinya.'"
+            format: "75–90 detik. Tampilkan kemasan atau biji kopi dari setiap daerah → brew satu per satu dengan metode yang sama → deskripsi rasa singkat per kopi → ranking akhir. Teks nama daerah dan satu kata karakter rasa per kopi. Vertikal 9:16."
+            boleh:
+              - "Tampilkan kemasan atau packaging kopi daerahnya untuk identitas visual"
+              - "Teks singkat per kopi: nama daerah + satu kata karakter ('cokelat', 'floral', 'smoky')"
+              - "Format blind test atau ranking membuat penonton lebih engaged"
+              - "Boost suara seduh yang konsisten untuk setiap kopi — menciptakan ritme yang menenangkan"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan gunakan istilah cupping profesional yang tidak dipahami penonton umum"
+              - "Jangan bandingkan dengan kopi luar negeri sebagai tolok ukur — kopi Indonesia cukup bangga berdiri sendiri"
+              - "Jangan rekam dengan pencahayaan yang membuat perbedaan warna kopi tidak terlihat"
+            pola_hook: "Detik 0: tampilkan 5 kemasan kopi daerah Indonesia berdampingan + teks 'Brew dan test semua dalam satu sesi'. Langsung ke proses grinding kopi pertama di detik 2."
+            contoh_judul:
+              - "5 kopi Indonesia terbaik aku brew satu per satu dan ini ranking jujurnya"
+              - "Kopi Gayo vs Toraja vs Flores — karakter rasa yang berbeda dalam satu meja"
+              - "Kopi daerah ini menang dari kopi impor manapun yang pernah aku coba"
+              - "Perjalanan rasa kopi Indonesia dari Aceh ke NTT dalam satu sesi seduh"
+              - "Kopi ini berasal dari 2000 meter di atas permukaan laut dan rasanya tidak ada yang sama"
+            content_runway: "Indonesia adalah salah satu produsen kopi terbesar di dunia dengan puluhan kopi single origin berbeda dari berbagai daerah; setiap musim panen menghasilkan karakter rasa yang berbeda; format perbandingan dan eksplorasi kopi daerah bisa dijalankan bertahun-tahun."
+
+        - slug: coffee-latte-art-latihan-rumah
+          name: Latihan Latte Art di Rumah Tanpa Mesin Espresso
+          description: Teknik membuat latte art menggunakan susu yang dikocok manual dan kopi espresso dari moka pot, membuktikan seni kopi bisa dipelajari tanpa investasi besar.
+          example_hook: "Latte art ini aku buat pakai moka pot Rp100rb dan pengocok susu Rp30rb..."
+          guide:
+            audience: "Pecinta kopi 20–35 yang terpesona latte art tapi tidak mau beli mesin espresso mahal; barista rumahan yang ingin naik level; penonton yang tertarik seni visual dalam kopi sehari-hari."
+            tone: "Motivasional dan teknis. Latte art bukan hanya untuk barista profesional dengan mesin mahal — tangan yang terlatih bisa menghasilkan ini dengan alat sederhana. Setiap progress terlihat, dan kegagalan juga normal."
+            format: "60–85 detik. Tampilkan alat yang digunakan dan harganya → kocok susu manual → tuang ke moka pot espresso → proses latte art step-by-step → reveal pola jadi. Close-up proses tuang susu ke kopi. Teks teknik kunci. Vertikal 9:16."
+            boleh:
+              - "Tampilkan harga alat yang digunakan — bukti tidak butuh investasi besar"
+              - "Slow-motion saat susu dituang dan pola mulai terbentuk"
+              - "Boost suara pengocokan susu dan percikan kopi"
+              - "Tampilkan beberapa attempt jika ada — keautentikan membuat konten lebih relatable"
+            hindari:
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan gunakan mesin espresso mahal tanpa menyebutkan alternatif yang lebih terjangkau"
+              - "Jangan skip teknik dasar texturing susu — itu yang menentukan hasilnya"
+              - "Jangan edit keluar kegagalan attempt — itu bagian dari proses belajar yang relatable"
+            pola_hook: "Detik 0: close-up latte art yang sudah jadi + teks 'Moka pot Rp100rb + pengocok susu Rp30rb'. Langsung ke setup alat di detik 2."
+            contoh_judul:
+              - "Latte art ini aku buat dengan moka pot Rp100rb dan hasilnya tidak kalah dari kafe"
+              - "Latihan latte art dari nol sampai bisa bentuk hati dalam seminggu — ini progressnya"
+              - "Susu dari minimarket dan moka pot murah — ternyata cukup untuk latte art"
+              - "Teknik tuang susu ini yang membedakan latte art yang berhasil dan yang gagal"
+              - "Aku gagal 20 kali sebelum bisa yang ini — dan ini yang akhirnya berhasil"
+            content_runway: "Ada puluhan pola latte art yang bisa dipelajari bertahap (hati, tulip, rosetta, phoenix, swan); setiap teknik membutuhkan video tersendiri; dikombinasikan dengan berbagai jenis kopi dan variasi susu (oat, almond, full cream), seri ini bisa berjalan sangat panjang."

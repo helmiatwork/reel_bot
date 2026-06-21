@@ -1,0 +1,681 @@
+version: 1
+vertical:
+  slug: v-cerita
+  name: Cerita
+  description: Konten narasi, horor, misteri, dan recap untuk penonton yang suka cerita pendek.
+  guide:
+    audience: "Penonton 16–35 yang suka konten cerita pendek sebelum tidur atau saat commute; campuran pria-wanita yang tertarik drama, misteri, dan horor; aktif di platform seperti TikTok dan YouTube Shorts Indonesia."
+    tone: "Dramatis, penasaran, dan sedikit tegang. Narasi harus terasa personal — seperti teman cerita, bukan presenter. Bahasa kasual, kalimat pendek, ritme cepat."
+    format: "Video 30–90 detik dengan voiceover sebagai tulang punggung. Visual mendukung narasi (footage, animasi, screenshot, atau B-roll gameplay). Hard-sub di setiap kalimat voiceover. Musik/ambiens sebagai pembangun mood, bukan distraksi."
+    boleh:
+      - "Mulai dengan konflik langsung — penonton harus langsung bertanya 'lalu apa?'"
+      - "Gunakan cliffhanger di tengah video untuk mencegah skip"
+      - "Sisipkan detail spesifik (nama kota, tanggal, angka) agar cerita terasa nyata"
+      - "Hard-sub setiap baris voiceover untuk aksesibilitas dan retensi"
+      - "Akhiri dengan pertanyaan atau twist yang mendorong komen"
+    hindari:
+      - "Jangan intro panjang lebih dari 5 detik sebelum konflik dimulai"
+      - "Jangan gunakan bahasa formal atau kaku — bunuh tone cerita"
+      - "Jangan pakai musik ber-hak-cipta tanpa lisensi"
+      - "Jangan buat judul clickbait tanpa payoff di video"
+      - "Jangan menyebarkan informasi hoaks atau kejadian fiksi yang diklaim nyata tanpa disclaimer"
+    pola_hook: "Detik 0–3: ucapkan atau tampilkan kalimat yang memotong di tengah situasi tegang — jangan mulai dari awal cerita. Contoh: langsung ke momen paling dramatis, baru mundur ke konteks."
+    contoh_judul:
+      - "Mantanku kira aku gak tahu, sampai aku temukan ini di HP-nya"
+      - "Kasus ini sudah ditutup, tapi ada satu detail yang gak pernah dijelaskan"
+      - "Jam 3 pagi, aku dengar suara ini dari bawah ranjang"
+
+  niches:
+    - slug: ai-story
+      name: "AI Story / Reddit"
+      description: Narasi cerita + AI voice + gameplay bg.
+      faceless: true
+      difficulty: pemula
+      rpm: sedang
+      formats: AI voice + gameplay + auto-caption
+      example_hook: "Mantanku kira aku gak tahu, sampai..."
+      guide:
+        audience: "Penonton 17–30 yang suka cerita drama relatable — hubungan, keluarga, kerja — dan menikmati format Reddit-style confession; sering scroll malam hari sambil main game atau rebahan."
+        tone: "Curhat santai tapi dramatis. Seperti teman yang akhirnya buka suara soal sesuatu yang lama disimpan. Bahasa kasual, ritme cepat, sedikit sarkasme atau ironi di momen yang tepat."
+        format: "45–90 detik. AI voiceover di atas gameplay B-roll (Subway Surfers, Minecraft, atau serupa). Hard-sub setiap kalimat. Teks onscreen di momen paling dramatis untuk double-emphasis. Musik Lo-fi atau ambient ringan di latar."
+        boleh:
+          - "Pilih cerita dengan konflik yang bisa dirasakan banyak orang (selingkuh, keluarga toxic, atasan jahat)"
+          - "Gunakan detail spesifik dalam narasi — membuat cerita terasa nyata dan tidak template"
+          - "Sisipkan pause dramatis sebelum twist atau reveal"
+          - "Akhiri dengan pertanyaan ke penonton untuk memancing komentar"
+        hindari:
+          - "Jangan gunakan cerita fiksi yang diklaim 100% nyata tanpa disclaimer"
+          - "Jangan narasi terlalu panjang tanpa variasi visual atau teks onscreen"
+          - "Jangan pilih gameplay B-roll yang terlalu distracting atau punya audio sendiri yang kencang"
+          - "Jangan lewatkan hard-sub — penonton sering tonton tanpa suara"
+        pola_hook: "Detik 0: mulai langsung dari kalimat paling menggantung — jangan dari awal kronologi. Contoh: 'Mantanku kira aku gak tahu...' bukan 'Jadi ceritanya aku pacaran sama seseorang...'"
+        contoh_judul:
+          - "Mantanku kira aku gak tahu, sampai aku buka HP-nya sendiri"
+          - "Baru setelah ayah meninggal, aku tahu siapa dia sebenarnya"
+          - "Atasan ini minta aku kerja lembur di hari pernikahanku sendiri"
+      micro:
+        - slug: ai-story-hubungan-toxic
+          name: Cerita Hubungan Toxic & Manipulatif
+          description: Narasi cerita pendek tentang hubungan beracun dari sudut pandang orang pertama, diangkat dari Reddit-style confession, untuk penonton yang suka drama relatable.
+          example_hook: "Mantanku kira aku gak tahu, sampai aku temukan ini di HP-nya..."
+          guide:
+            audience: "Perempuan dan pria 18–28 yang pernah atau sedang di hubungan bermasalah; penonton yang mencari validasi atas pengalaman mereka sendiri; penonton yang suka drama relatable dengan ending yang memuaskan atau menyedihkan."
+            tone: "Personal dan raw. Narasi terasa seperti confession teman dekat — ada marah, sedih, dan akhirnya lega. Tidak menggurui, tidak menghakimi."
+            format: "45–75 detik. AI voiceover orang pertama di atas gameplay ringan atau B-roll abstract. Hard-sub setiap kalimat. Titik paling dramatis ditandai dengan teks besar onscreen. Musik melankolis ringan."
+            boleh:
+              - "Gunakan detail spesifik (durasi hubungan, cara pelaku berbohong) untuk bikin cerita terasa nyata"
+              - "Sertakan momen 'turning point' yang jelas — kapan narator sadar ada yang salah"
+              - "Akhiri dengan pertanyaan ke penonton: 'Kamu pernah ngalamin ini?'"
+              - "Ambil sudut pandang narator yang akhirnya keluar atau mengambil keputusan — ada resolusi"
+            hindari:
+              - "Jangan buat ending yang ambiguous tanpa payoff emosional — penonton frustasi"
+              - "Jangan gunakan nama atau detail yang bisa mengidentifikasi orang nyata"
+              - "Jangan narasi terlalu panjang tanpa beat visual yang memecah ritme"
+              - "Jangan tambahkan moral/pesan yang terlalu eksplisit — biarkan penonton menyimpulkan"
+            pola_hook: "Detik 0: langsung ke momen paling dramatis — 'Mantanku kira aku gak tahu...' — lalu mundur ke konteks. Jangan mulai dari 'Jadi aku kenal dia waktu SMA...'"
+            contoh_judul:
+              - "Mantanku kira aku gak tahu dia selingkuh, sampai aku ketemu orangnya sendiri"
+              - "Dia bilang sayang tapi ini yang dia lakuin di belakangku selama 2 tahun"
+              - "3 tahun hubungan ini dan aku baru sadar semua yang dia bilang adalah kebohongan"
+              - "Aku yang minta maaf padahal dia yang selingkuh — ini yang akhirnya membuatku keluar"
+              - "Red flag ini aku abaikan 50 kali sampai akhirnya meledak di depan mataku"
+            content_runway: "Setiap variasi dinamika hubungan toxic (gas-lighting, love bombing, ghosting, triangulasi) menghasilkan cerita berbeda; konten ini selalu relevan selama hubungan manusia ada, dan penonton sering kirim cerita mereka sendiri sebagai sumber."
+
+        - slug: ai-story-keluarga-rahasia
+          name: Rahasia Gelap Keluarga
+          description: Cerita keluarga dengan twist mengejutkan yang diungkap perlahan, menyasar penonton yang suka drama keluarga dengan akhir yang tidak terduga.
+          example_hook: "Baru setelah ayah meninggal, aku tahu siapa dia sebenarnya..."
+          guide:
+            audience: "Penonton 20–35 yang tertarik dinamika keluarga dan rahasia generasional; mereka yang pernah merasakan dikhianati oleh anggota keluarga; penonton yang suka cerita dengan twist yang membalikkan semua asumsi awal."
+            tone: "Pelan dan menggantung di awal, lalu membangun ketegangan menuju reveal. Ada kesedihan di balik kemarahan. Narasi tidak menghakimi keluarga — tapi jujur soal luka yang ditinggalkan."
+            format: "60–90 detik. AI voiceover perlahan dengan jeda dramatis sebelum twist. Gameplay B-roll atau footage black-and-white keluarga. Hard-sub. Musik melankolis yang naik menjelang reveal."
+            boleh:
+              - "Bangun setup yang normal dan tenang sebelum reveal — kontras membuat twist lebih keras"
+              - "Sertakan detail emosional kecil yang membuat penonton merasa kenal narator"
+              - "Twist harus mengubah semua yang penonton pikir mereka tahu di awal"
+              - "Akhiri dengan emosi, bukan solusi — kehidupan nyata jarang punya jawaban bersih"
+            hindari:
+              - "Jangan reveal twist terlalu cepat — suspense adalah nilainya"
+              - "Jangan gunakan nama dan lokasi spesifik yang bisa mengidentifikasi keluarga nyata"
+              - "Jangan buat cerita yang tidak masuk akal secara emosional — penonton akan detect fake"
+              - "Jangan akhiri dengan moral yang terlalu neat — seringkali merusak impact"
+            pola_hook: "Detik 0: mulai dari momen setelah twist — 'Baru setelah ayah meninggal, aku tahu...' — lalu mundur ke kehidupan sebelumnya yang terasa normal."
+            contoh_judul:
+              - "Baru setelah ayah meninggal aku buka lemarinya dan temukan ini di balik dinding"
+              - "Ibuku merahasiakan ini selama 30 tahun dan aku tidak pernah curiga"
+              - "Kakakku yang selama ini aku anggap terbaik, ternyata ini yang dia lakukan"
+              - "Aku pikir kami keluarga biasa sampai aku temukan dokumen ini di loteng"
+              - "Warisan ayah bukan uang — tapi rahasia yang menghancurkan semua yang aku percaya"
+            content_runway: "Setiap variasi rahasia keluarga (adopsi tersembunyi, perselingkuhan, identitas palsu, aset tersembunyi, masa lalu kriminal) menghasilkan cerita berbeda; format ini selalu relevan karena setiap keluarga punya dinamika kompleks."
+
+        - slug: ai-story-kerja-absurd
+          name: Kisah Absurd di Tempat Kerja
+          description: Cerita lucu sekaligus miris tentang drama kantor dan atasan gila dari perspektif karyawan, untuk penonton pekerja muda yang butuh validasi.
+          example_hook: "Atasan ini minta aku kerja lembur di hari pernikahanku sendiri..."
+          guide:
+            audience: "Pekerja muda 22–32 yang pernah mengalami drama kantor tidak masuk akal; penonton yang butuh tawa dan validasi atas pengalaman kerja yang buruk; komunitas pekerja Indonesia yang aktif di media sosial."
+            tone: "Ironis dan sedikit komedi gelap. Humor dari absurditas situasi — bukan dari menghina. Narator adalah orang yang bisa tertawa pada situasi yang menyedihkan setelah melewatinya."
+            format: "45–75 detik. AI voiceover kasual dengan timing komedi di momen paling absurd. Gameplay B-roll ringan. Hard-sub. Musik upbeat atau quirky untuk kontras dengan cerita menyedihkan."
+            boleh:
+              - "Jadikan absurditas situasi sebagai punchline — 'dan bosnya minta maaf lalu melakukan hal yang sama minggu depan'"
+              - "Gunakan detail spesifik yang membuat penonton berkata 'ini sama persis dengan atasku'"
+              - "Akhiri dengan keputusan narator yang memuaskan (resign, konfrontasi, atau jalan keluar kreatif)"
+              - "Ajak penonton berbagi cerita serupa di komentar"
+            hindari:
+              - "Jangan menyebut nama perusahaan atau orang nyata yang bisa diidentifikasi"
+              - "Jangan lebay sampai cerita tidak masuk akal — harus tetap relatable"
+              - "Jangan buat narasi terlalu panjang — komedi kantor bekerja paling baik dalam cerita pendek padat"
+              - "Jangan akhiri tanpa resolusi apapun — penonton butuh sedikit kepuasan"
+            pola_hook: "Detik 0: langsung ke permintaan paling absurd dari atasan/rekan kerja, tanpa setup. 'Atasan ini minta aku...' lalu ikuti dengan sesuatu yang membuat penonton langsung tertawa atau geleng kepala."
+            contoh_judul:
+              - "Atasan ini minta aku kerja lembur di hari pernikahan sendiri dan aku hampir iya"
+              - "Rekan kerjaku lapor ke HRD karena aku tidak mau share password pribadiku"
+              - "Meeting ini dijadwal ulang 7 kali dan ketika jadi, topiknya bisa diselesaikan lewat email"
+              - "Aku dipecat karena menolak bekerja saat sakit, dan ini yang terjadi 2 minggu kemudian"
+              - "Atasan baruku ternyata orang yang dia sendiri rekrut untuk menggantikan aku sebelumnya"
+            content_runway: "Setiap variasi toxic workplace (micromanagement, nepotisme, gaslighting di kantor, unpaid overtime, rekan kerja sabotase) menghasilkan cerita berbeda; penonton sering submit pengalaman sendiri sehingga sumber konten terus mengalir."
+
+    - slug: scary-story
+      name: "Cerita Horor"
+      description: Cerita seram + ambience.
+      faceless: true
+      difficulty: pemula
+      rpm: sedang
+      formats: voiceover gelap + ambience
+      example_hook: "Jam 3 pagi, aku dengar suara ini..."
+      guide:
+        audience: "Penonton 16–30 yang suka konten horor Indonesia; campuran pria-wanita yang menikmati sensasi takut yang aman; sering tonton malam hari dengan headset untuk efek maksimal."
+        tone: "Gelap, pelan, dan mencekam. Suara lebih penting dari visual — ambiens, suara langkah, dan bunyi misterius membangun atmosfer. Narasi seperti whisper atau bisikan teman yang takut."
+        format: "45–90 detik. Voiceover pelan dengan ambient SFX (angin, detak jam, suara langkah). Footage gelap atau B-roll malam hari. Hard-sub di setiap kalimat. Musik ambiens horor sebagai latar terus-menerus."
+        boleh:
+          - "Gunakan lokasi yang familier bagi penonton Indonesia (gang, ruko, kampung) untuk efek lebih dekat"
+          - "Bangun suspense dengan deskripsi detail indrawi — suara, bau, temperatur — bukan hanya penampakan"
+          - "Sisipkan jeda diam dalam voiceover sebelum momen paling seram"
+          - "Akhiri dengan ambiguitas — tidak semua cerita horor perlu penjelasan"
+        hindari:
+          - "Jangan over-explain fenomena — misteri yang tidak terpecahkan lebih menakutkan"
+          - "Jangan gunakan jump scare audio yang terlalu tiba-tiba — bisa di-flag platform"
+          - "Jangan klaim cerita fiksi sebagai 'kejadian nyata' tanpa disclaimer"
+          - "Jangan voiceover dengan nada flat — intonasi adalah setengah dari seram tidaknya cerita"
+        pola_hook: "Detik 0: masuk langsung ke momen paling intens — 'Jam 3 pagi, aku dengar suara ini...' — tidak perlu setup lokasi panjang. Suara ambient langsung aktif dari detik pertama."
+        contoh_judul:
+          - "Jam 3 pagi, aku dengar suara ketukan dari dalam lemari yang sudah dikunci"
+          - "Kamera CCTV ini rekam sesuatu yang polisi tolak untuk lihat"
+          - "Di kota ini ada satu gang yang warganya tidak pernah lewat setelah magrib"
+      micro:
+        - slug: scary-story-urban-legend
+          name: Urban Legend Indonesia
+          description: Versi audio-sinematik dari urban legend khas Indonesia seperti Kuntilanak, Pocong, dan Tuyul, menyasar penonton horor lokal yang suka cerita familier.
+          example_hook: "Di kota ini ada satu gang yang warganya gak pernah lewat malam hari..."
+          guide:
+            audience: "Penonton Indonesia 16–30 yang sudah familier dengan mitologi lokal; mereka yang suka versi baru dari cerita yang sudah dikenal; penonton yang menikmati horor dengan konteks budaya yang relevan."
+            tone: "Familier tapi mengancam. Nada seperti cerita yang sudah pernah didengar tapi versi ini punya detail baru yang belum diketahui. Voiceover pelan dan berhati-hati."
+            format: "45–75 detik. Voiceover pelan di atas footage gang atau tempat gelap Indonesia. Ambient SFX khas (jangkrik, angin, suara pintu). Hard-sub. Musik gamelan atau ambient tradisional dengan sentuhan modern."
+            boleh:
+              - "Tambahkan detail geografis spesifik (nama kota, jenis bangunan) untuk membuat legenda terasa lebih nyata"
+              - "Gunakan versi regional urban legend yang tidak terlalu dikenal — unsur kejutan dari familiar story"
+              - "Sertakan satu detail baru yang belum ada di versi umum yang beredar"
+              - "Akhiri dengan pertanyaan yang mengajak penonton berbagi pengalaman lokal mereka"
+            hindari:
+              - "Jangan menyebut alamat atau nama tempat nyata yang masih aktif dan bisa menimbulkan masalah"
+              - "Jangan over-describe penampakan fisik — imajinasi penonton selalu lebih seram"
+              - "Jangan gunakan musik atau SFX jump scare berlisensi"
+              - "Jangan sajikan sebagai fakta historis yang terverifikasi jika tidak ada buktinya"
+            pola_hook: "Detik 0: pernyataan tentang tempat atau kebiasaan aneh yang lokal tapi mengintimidasi — 'Di kota ini ada satu gang...' — tanpa nama kuntilanak dulu. Biarkan penonton menebak."
+            contoh_judul:
+              - "Di kota ini ada satu gang yang tidak ada di Google Maps dan warganya tidak mau jelaskan kenapa"
+              - "Nenek-nenek ini cerita tentang kuntilanak yang dia temui setiap malam selama 3 tahun"
+              - "Tuyul tidak selalu curi uang — ini yang kamu tidak tahu dari cerita aslinya"
+              - "Pocong di versi Jawa Timur ini berperilaku berbeda dan itu yang lebih menakutkan"
+              - "Urban legend jembatan ini ternyata punya rekaman CCTV yang tidak pernah dirilis"
+            content_runway: "Indonesia memiliki ratusan urban legend per daerah — dari Aceh hingga Papua — dengan variasi lokal yang berbeda-beda; setiap kota, suku, dan generasi punya versi sendiri yang bisa dikemas ulang."
+
+        - slug: scary-story-true-paranormal
+          name: Pengalaman Paranormal Nyata
+          description: Cerita pengalaman horor nyata yang dikirim penonton atau dikurasi dari forum lokal, diformat ulang dengan narasi dramatis dan ambiens suara.
+          example_hook: "Kameranya terus mati setiap kali diarahkan ke sudut itu..."
+          guide:
+            audience: "Penonton 18–32 yang percaya atau setidaknya penasaran dengan pengalaman paranormal; mereka yang suka konten user-generated yang terasa otentik; penonton horor yang bosan dengan cerita fiksi generik."
+            tone: "Skeptis tapi terbuka. Narasi tidak memaksakan kepercayaan, tapi menyajikan detail dengan serius. 'Aku gak tahu penjelasannya, tapi ini yang terjadi' adalah tone yang tepat."
+            format: "60–90 detik. Voiceover seperti orang yang menceritakan ulang pengalaman orang lain dengan hati-hati. Footage B-roll tempat gelap atau koridor kosong. Ambient terus berjalan. Hard-sub. Sesekali SFX halus (detak jantung, langkah) yang tidak mencolok."
+            boleh:
+              - "Sertakan detail yang tidak bisa dijelaskan dengan mudah — itulah yang membuat cerita kuat"
+              - "Sebutkan sumber cerita secara umum ('dikirim ke DM', 'dari forum Reddit lokal') untuk kredibilitas"
+              - "Gunakan detail fisik spesifik — suhu, bau, suara — bukan hanya penampakan"
+              - "Akhiri dengan pertanyaan atau minta penonton kirim pengalaman mereka"
+            hindari:
+              - "Jangan klaim 100% nyata jika tidak bisa diverifikasi — disclaimer 'cerita dari penonton' cukup"
+              - "Jangan tambahkan detail sensasional yang tidak ada di cerita asli"
+              - "Jangan rekam voiceover dengan nada dramatic overacting — kurangi kepercayaan"
+              - "Jangan gunakan footage yang terlalu jelas bertanda copyright"
+            pola_hook: "Detik 0: mulai dari detail fisik yang aneh dan tidak bisa diabaikan — 'Kameranya terus mati...' — bukan dari 'Ini cerita dari salah satu follower...' Langsung ke kejadiannya."
+            contoh_judul:
+              - "Kamera ini terus mati setiap kali diarahkan ke sudut ruang itu dan tidak ada penjelasannya"
+              - "Penonton ini kirim video yang tidak berani dia tonton sendiri dan aku mengerti kenapa"
+              - "Semua orang di keluarga ini alami hal yang sama di rumah itu, tapi berbeda cerita"
+              - "Ini bukan cerita buatanku — ini yang dikirim 200 orang ke DM setelah videoku kemarin"
+              - "Rekaman suara ini diambil saat sedang sendirian di kos dan tidak ada penjelasan sampai sekarang"
+            content_runway: "Penonton yang aktif berinteraksi dengan channel horor hampir selalu punya cerita sendiri untuk dibagikan; format submission-based ini menciptakan pipeline konten yang self-sustaining dari komunitas."
+
+        - slug: scary-story-rumah-angker
+          name: Rumah Angker & Tempat Terlarang
+          description: Narasi tentang lokasi angker terkenal di Indonesia dengan sejarah kelam di baliknya, untuk penonton horor yang suka konteks historis.
+          example_hook: "Rumah ini sudah 20 tahun kosong, dan siapa yang masuk gak pernah sama lagi..."
+          guide:
+            audience: "Penonton 18–35 yang suka intersection antara sejarah dan horor; mereka yang tertarik dengan tempat-tempat bersejarah Indonesia; penonton yang ingin tahu cerita di balik bangunan kosong yang sering mereka lewati."
+            tone: "Investigatif dan serius. Seperti dokumenter mini yang tidak takut menyebut fakta sejarah kelam. Hormat terhadap korban jika ada sejarah tragis, tapi tidak menghindari detail yang membuat cerita kuat."
+            format: "60–90 detik. Voiceover naratif di atas footage atau foto bangunan (dengan izin atau dari domain publik). Timeline singkat dalam teks onscreen untuk konteks historis. Ambient yang konsisten. Hard-sub."
+            boleh:
+              - "Tambahkan konteks sejarah singkat mengapa lokasi ini punya reputasi seperti ini"
+              - "Gunakan footage dari luar bangunan saja jika tidak ada akses legal ke dalam"
+              - "Sertakan saksi atau catatan historis yang bisa diverifikasi untuk kredibilitas"
+              - "Bandingkan kondisi sekarang vs kondisi dulu menggunakan foto arsip"
+            hindari:
+              - "Jangan masuk ke properti privat atau terlarang untuk konten — risiko hukum dan keselamatan"
+              - "Jangan sensasionalisasi sejarah tragis yang melibatkan korban nyata tanpa respek"
+              - "Jangan klaim aktivitas paranormal sebagai terverifikasi secara ilmiah"
+              - "Jangan sebut nama orang hidup atau keluarga korban tanpa izin"
+            pola_hook: "Detik 0: pernyataan tentang kondisi tempat sekarang yang mengundang pertanyaan — 'Rumah ini sudah 20 tahun kosong...' — lalu segera masuk ke kenapa."
+            contoh_judul:
+              - "Rumah ini sudah 20 tahun kosong padahal lokasinya prime dan tidak ada yang mau beli"
+              - "Gedung ini punya sejarah yang pemerintah kota tidak mau bahas secara terbuka"
+              - "Pulau ini ada di peta tapi tidak ada di daftar resmi dan nelayan tidak mau mendekat"
+              - "Hotel tua ini tutup mendadak 15 tahun lalu dan karyawannya tidak pernah cerita kenapa"
+              - "Jembatan ini punya aturan tak tertulis yang semua warga lokal tahu tapi tidak ada yang tuliskan"
+            content_runway: "Indonesia memiliki ribuan bangunan bersejarah, bekas penjara colonial, rumah sakit tua, dan lokasi dengan latar perang yang belum pernah dibahas; setiap kota besar dan kecil punya versinya sendiri."
+
+    - slug: text-story
+      name: "Chat / Text Story"
+      description: Cerita lewat screenshot chat.
+      faceless: true
+      difficulty: pemula
+      rpm: rendah
+      formats: chat bubble + SFX + musik
+      example_hook: "Dia kirim chat ini sebelum hilang..."
+      guide:
+        audience: "Penonton 16–28 yang akrab dengan format chat; mereka yang suka cerita dengan format visual yang mudah dikonsumsi di 30 detik; penonton yang tertarik drama relatable berbasis percakapan."
+        tone: "Intim dan real-time. Seolah penonton sedang membaca chat orang lain di atas bahu mereka. Tidak ada narasi panjang — visual chat bubble berbicara sendiri dengan SFX ketikan."
+        format: "30–60 detik. Animasi chat bubble muncul satu per satu dengan SFX suara notifikasi dan ketikan. Musik ambient atau lo-fi di latar. Hard-sub opsional karena teks sudah onscreen. Vertical 9:16."
+        boleh:
+          - "Gunakan desain chat bubble yang familier (WhatsApp-style) untuk immersion"
+          - "SFX suara notifikasi dan ketikan memberi ritme yang engaging"
+          - "Tampilkan reaksi atau perubahan emosi melalui timing jeda antar pesan"
+          - "Twist atau red flag diperlihatkan perlahan melalui chat yang berkembang"
+        hindari:
+          - "Jangan tampilkan screenshot chat nyata dengan nama dan nomor asli"
+          - "Jangan buat bubble chat terlalu cepat — penonton harus bisa baca"
+          - "Jangan gunakan nama yang terlalu generik ('A' dan 'B') — beri nama fiktif yang terasa nyata"
+          - "Jangan musik terlalu keras yang kalahkan SFX chat"
+        pola_hook: "Detik 0: tampilkan pesan chat yang mengundang pertanyaan besar — tanpa konteks. Penonton otomatis scroll terus untuk tahu kelanjutannya."
+        contoh_judul:
+          - "Dia kirim chat ini jam 2 pagi sebelum semua berubah"
+          - "3 tahun gak ada kabar, dia kirim 'hei' jam 11 malam"
+          - "Penipu ini yakin aku mau percaya — tonton bagaimana akhirnya"
+      micro:
+        - slug: text-story-percakapan-mencurigakan
+          name: Chat Percakapan Mencurigakan
+          description: Cerita pendek berbasis percakapan chat yang mengandung red flag atau twist mengejutkan, untuk penonton yang suka format visual teks yang mudah dikonsumsi.
+          example_hook: "Dia kirim chat ini jam 2 pagi sebelum semua berubah..."
+          guide:
+            audience: "Penonton 17–27 yang suka drama relatable berbasis chat; mereka yang ingin menebak apa yang akan terjadi sebelum twist terjadi; penonton yang akrab dengan tanda-tanda hubungan bermasalah."
+            tone: "Tegang dan menggantung. Setiap pesan baru memperburuk atau memperjelas situasi. Penonton harus bisa merasakan sesuatu yang salah sebelum twist diungkap."
+            format: "30–50 detik. Animasi chat bubble WhatsApp-style. SFX notifikasi untuk setiap pesan masuk. Musik ambient tegang di latar. Teks nama sender-receiver jelas di awal. Twist diperlihatkan di pesan terakhir atau reveal."
+            boleh:
+              - "Bangun red flag secara bertahap — setiap pesan menambah satu layer kecurigaan"
+              - "Gunakan timing jeda panjang antara beberapa pesan untuk efek dramatis"
+              - "Twist terakhir harus mengubah interpretasi semua pesan sebelumnya"
+              - "Ajak penonton tebak di komentar apa yang akan terjadi setelah video berakhir"
+            hindari:
+              - "Jangan gunakan screenshot chat nyata dengan informasi pribadi yang teridentifikasi"
+              - "Jangan buat twist yang tidak logis dengan chat sebelumnya — harus ada clue tersembunyi"
+              - "Jangan animasi bubble terlalu cepat sehingga tidak terbaca"
+              - "Jangan buat chat yang terlalu panjang — 6–10 pesan maksimal untuk satu video"
+            pola_hook: "Detik 0: tampilkan chat pertama yang sudah mencurigakan tanpa konteks — 'Kamu masih di rumah?' — lalu jawaban yang membuat semuanya lebih aneh."
+            contoh_judul:
+              - "Dia kirim pesan ini jam 2 pagi dan keesokan harinya semua berbeda"
+              - "Chat ini terlihat biasa sampai kamu baca pesan terakhirnya"
+              - "Setiap pesan dalam chat ini menyembunyikan sesuatu yang aku baru sadari di akhir"
+              - "Dia minta tolong lewat chat ini tapi tidak ada yang menyadari sampai terlambat"
+              - "Red flag dalam chat ini sudah ada dari pesan pertama dan aku miss semua"
+            content_runway: "Setiap jenis hubungan (teman, pacar, keluarga, rekan kerja, orang asing) dan setiap jenis twist (pengkhianatan, bahaya, misteri, perpisahan) menghasilkan cerita yang berbeda; format ini bisa diproduksi baru setiap hari."
+
+        - slug: text-story-mantan-comeback
+          name: Chat Mantan yang Comeback
+          description: Drama relatable tentang mantan yang tiba-tiba muncul lagi dengan berbagai alasan, format chat bubble dengan reaksi komedi atau dramatis.
+          example_hook: "3 tahun gak ada kabar, dia kirim 'hei' jam 11 malam..."
+          guide:
+            audience: "Penonton 18–28 yang pernah mengalami mantan yang tiba-tiba muncul lagi; mereka yang suka campuran humor dan drama relatable; penonton yang ingin validasi bahwa mereka tidak sendiri."
+            tone: "Komedi ironis tapi ada emosi di baliknya. Nada bergerak antara 'ini lucu banget' dan 'tapi ini juga menyakitkan'. Tidak menghakimi mantan, tapi juga tidak meminta simpati berlebihan."
+            format: "30–50 detik. Chat bubble animasi dengan reaksi onscreen (emoji besar, teks komentar narator di atas chat). SFX notifikasi diboost untuk efek komedi. Musik lo-fi atau quirky."
+            boleh:
+              - "Tambahkan teks reaksi narator di atas chat untuk lapisan humor ('bro ini gak mungkin')"
+              - "Gunakan timing — jeda panjang antara pesan mantan dan balasan narator untuk komedi"
+              - "Akhiri dengan balasan terbaik narator atau 'biarkan dibaca' sebagai keputusan"
+              - "Pilih alasan comeback mantan yang paling relatable dan absurd sekaligus"
+            hindari:
+              - "Jangan sensasionalisasi situasi menjadi terlalu dramatis — kekuatan konten ini adalah relatabilitas"
+              - "Jangan gunakan screenshot chat nyata dengan info yang teridentifikasi"
+              - "Jangan buat narator terlihat terlalu sempurna — sedikit kerentanan membuat lebih relatable"
+              - "Jangan buat chat terlalu panjang — punch line harus datang dalam 8–10 pesan maksimal"
+            pola_hook: "Detik 0: tampilkan pesan pembuka mantan yang paling tidak punya konteks — 'hei' jam 11 malam setelah 3 tahun menghilang — langsung tanpa intro."
+            contoh_judul:
+              - "3 tahun menghilang dia kirim 'hei' jam 11 malam dan aku tidak tahu harus tertawa atau apa"
+              - "Mantanku comeback dengan alasan yang terlalu kreatif untuk tidak dishare"
+              - "Dia muncul lagi tepat 3 hari setelah aku move on dan memulai chat dengan ini"
+              - "Alasan mantan ini comeback paling tidak masuk akal yang pernah aku terima di chat"
+              - "Aku biarkan chat ini dibaca saja dan ini reaksinya yang membuktikan aku benar"
+            content_runway: "Mantan yang comeback adalah pengalaman universal yang tidak ada habisnya; setiap alasan comeback (minta maaf, cemburu, butuh sesuatu, iseng) dan setiap jenis respons menghasilkan konten yang berbeda dan selalu relatable."
+
+        - slug: text-story-scam-expose
+          name: Ekspos Chat Penipu
+          description: Rekap percakapan asli dengan penipu online yang terekspos, edukatif sekaligus menghibur, untuk penonton yang ingin waspada modus baru.
+          example_hook: "Dia bilang mau kirim hadiah, tapi minta ini dulu..."
+          guide:
+            audience: "Penonton 20–40 yang aktif di media sosial dan rentan terhadap penipuan online; mereka yang pernah atau hampir kena tipu dan ingin edukasi; penonton yang suka melihat penipu terekspos dan 'kalah'."
+            tone: "Investigatif dengan sentuhan komedi gelap. Ada kepuasan saat melihat modus penipu dibongkar. Edukatif tapi tidak menggurui — penonton belajar sambil terhibur."
+            format: "45–75 detik. Chat bubble dengan highlight merah atau tanda bahaya di pesan penipu. Teks penjelasan singkat di atas chat untuk konteks ('ini tanda pertama'). SFX alarm atau efek 'exposed' untuk dramatisasi. Hard-sub."
+            boleh:
+              - "Tandai red flag dalam chat secara visual — kotak merah, tanda seru, highlight"
+              - "Sertakan nama modus penipuan di teks onscreen ('ini namanya love bombing scam')"
+              - "Tampilkan momen penipu mulai panik atau inkonsisten sebagai payoff"
+              - "Akhiri dengan tips konkret cara menghindari modus yang sama"
+            hindari:
+              - "Jangan tampilkan nomor telepon atau akun media sosial penipu yang masih aktif"
+              - "Jangan buat konten yang bisa dianggap doxing meski targetnya penipu"
+              - "Jangan exaggerate atau edit chat untuk dramatisasi — kepercayaan adalah aset utama"
+              - "Jangan gunakan chat scam yang melibatkan transfer uang nyata tanpa sensor informasi penting"
+            pola_hook: "Detik 0: tampilkan pesan penipu yang paling absurd atau manipulatif tanpa konteks — 'Kamu terpilih menerima hadiah senilai...' — dan biarkan penonton langsung mengenalinya."
+            contoh_judul:
+              - "Penipu ini yakin akunnya tidak bisa dilacak tapi salah satu pesannya mengkhianatinya"
+              - "Modus hadiah ini sudah makan ratusan korban dan bedanya ada di satu kalimat ini"
+              - "Aku pura-pura percaya penipu ini selama 2 hari dan ini yang aku temukan"
+              - "Chat dengan penipu berkedok CS bank ini mengungkap cara kerja mereka dari dalam"
+              - "Dia bilang mau kirim hadiah tapi minta ini dulu — ini cara kerjanya dari awal sampai akhir"
+            content_runway: "Modus penipuan terus berkembang setiap bulan di Indonesia (pinjol ilegal, romance scam, hadiah palsu, phishing); setiap modus baru adalah konten baru, dan penonton yang terhindar sering mengirim cerita mereka sendiri."
+
+    - slug: true-crime
+      name: "True Crime"
+      description: Kasus kriminal nyata + narasi.
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: voiceover + footage + timeline
+      example_hook: "Dia hilang tanpa jejak, lalu..."
+      guide:
+        audience: "Penonton 20–35 yang tertarik kasus kriminal nyata; campuran pria-wanita yang menyukai narasi investigatif; penonton podcast true crime yang beralih ke format video pendek."
+        tone: "Serius dan investigatif. Menghormati korban sambil menyajikan fakta yang memancing rasa penasaran. Tidak sensasionalis — kekuatan ada di detail dan kronologi yang dibangun dengan baik."
+        format: "60–90 detik. Voiceover naratif di atas footage B-roll (koridor gelap, dokumen, peta lokasi). Timeline teks onscreen di momen kunci. Musik ambient investigatif. Hard-sub setiap kalimat."
+        boleh:
+          - "Bangun kronologi yang jelas — kapan, di mana, siapa — sebelum masuk ke twist"
+          - "Sertakan fakta yang sering luput dari pemberitaan umum untuk diferensiasi"
+          - "Gunakan peta atau diagram sederhana untuk membantu penonton memahami alur kasus"
+          - "Akhiri dengan status kasus sekarang — apakah sudah ada putusan, masih berjalan, atau cold case"
+        hindari:
+          - "Jangan sensasionalisasi detail kekerasan secara grafis — sajikan fakta tanpa glorifikasi"
+          - "Jangan sebut nama korban yang masih hidup tanpa konteks yang perlu"
+          - "Jangan spekulasi tanpa menyebutnya sebagai teori — bedakan fakta dan opini jelas"
+          - "Jangan gunakan musik yang terlalu dramatic atau ceria untuk konten kriminal"
+        pola_hook: "Detik 0: mulai dari momen paling misterius atau mengejutkan dalam kasus — bukan dari kronologi awal. 'Dia hilang tanpa jejak...' sebelum menceritakan siapa dia."
+        contoh_judul:
+          - "Dia hilang tanpa jejak, dan satu-satunya clue ada di kolom komentar media sosialnya"
+          - "Kasus ini sudah ditutup, tapi ada satu detail yang tidak pernah dijelaskan ke publik"
+          - "Semua orang pikir itu kecelakaan, sampai sidang mulai dan fakta ini terungkap"
+      micro:
+        - slug: true-crime-kasus-indonesia
+          name: Kasus Kriminal Terkenal Indonesia
+          description: Rekonstruksi kasus kriminal besar Indonesia yang pernah menghebohkan publik, dengan narasi kronologis dan fakta yang sering luput dari pemberitaan awal.
+          example_hook: "Kasus ini sudah ditutup, tapi ada satu detail yang gak pernah dijelaskan..."
+          guide:
+            audience: "Penonton Indonesia 20–35 yang mengingat kasus besar di media massa; mereka yang ingin tahu lebih dari versi berita umum; penonton true crime yang mencari kasus lokal dengan konteks yang dalam."
+            tone: "Faktual tapi menggugah. Seperti dokumenter investigatif dalam 60 detik. Hormati kompleksitas kasus dan korban, sambil sajikan informasi yang belum dikenal luas."
+            format: "75–90 detik. Voiceover naratif dengan timeline teks onscreen. Footage B-roll relevan (pengadilan, peta, dokumen). Musik investigatif ambient. Hard-sub penuh."
+            boleh:
+              - "Sertakan fakta atau detail yang tidak muncul di pemberitaan mainstream untuk nilai tambah"
+              - "Gunakan timeline visual yang jelas — tanggal dan kejadian key dalam teks onscreen"
+              - "Sebutkan status kasus saat ini (sudah inkrah, banding, atau cold case)"
+              - "Beri konteks sosial atau sistemik yang membuat kasus bisa terjadi"
+            hindari:
+              - "Jangan sajikan spekulasi sebagai fakta yang terbukti"
+              - "Jangan sebut nama korban yang masih hidup atau keluarga yang tidak mau go public"
+              - "Jangan sajikan detail kekerasan grafis secara eksplisit"
+              - "Jangan bias terhadap tersangka sebelum ada putusan pengadilan"
+            pola_hook: "Detik 0: mulai dari kejanggalan paling besar dalam kasus — 'Ada satu detail yang gak pernah dijelaskan ke publik...' — sebelum menceritakan kasusnya dari awal."
+            contoh_judul:
+              - "Kasus ini pernah jadi headline tapi satu fakta kunci ini tidak pernah masuk berita"
+              - "Kronologi kasus ini punya lubang yang sampai sekarang tidak ada yang tanya"
+              - "Terdakwa ini divonis bebas, tapi bukti yang tidak diterima pengadilan mengatakan lain"
+              - "Kasus ini sudah tutup buku, tapi keluarga korban masih pertanyakan satu hal ini"
+              - "Sidang ini disiarkan langsung tapi 80% orang tidak tahu yang terjadi di luar kamera"
+            content_runway: "Indonesia memiliki ratusan kasus kriminal besar per dekade yang belum pernah dibahas secara mendalam di format short-form; banyak kasus yang sudah dilupakan publik tapi relevan untuk diangkat kembali."
+
+        - slug: true-crime-modus-penipuan
+          name: Modus Penipuan yang Memakan Korban
+          description: Rekap kasus penipuan skala besar — investasi bodong, arisan online, romansa — yang mengorbankan banyak orang, disajikan sebagai peringatan.
+          example_hook: "Ribuan orang percaya dia, sampai uangnya raib semua..."
+          guide:
+            audience: "Penonton 22–40 yang pernah atau kenal orang yang kena tipu investasi atau penipuan online; mereka yang ingin waspada dan mendidik diri; penonton yang marah pada ketidakadilan dan ingin melihat penipu terekspos."
+            tone: "Peringatan yang kuat tapi tidak menghakimi korban. Fokus pada mekanisme penipuan — bagaimana penipu membangun kepercayaan — bukan pada 'bodoh'-nya korban. Ada kemarahan yang terkontrol."
+            format: "60–90 detik. Voiceover naratif dengan teks angka korban dan jumlah kerugian di onscreen untuk dampak. Footage B-roll (uang, dokumen, tangkapan layar bukti). Musik ambient serius. Hard-sub."
+            boleh:
+              - "Tampilkan angka spesifik (jumlah korban, total kerugian) sebagai hook emosional"
+              - "Jelaskan mekanisme manipulation yang digunakan penipu dengan jelas"
+              - "Sertakan tanda-tanda yang bisa dikenali agar penonton bisa hindari di masa depan"
+              - "Update status hukum penipu jika sudah ada proses pengadilan"
+            hindari:
+              - "Jangan menyalahkan korban — framing selalu tentang manipulasi penipu, bukan kenaifan korban"
+              - "Jangan sebut nama korban individu yang tidak mau dipublikasikan"
+              - "Jangan sajikan sebagai hiburan semata — konten ini punya tanggung jawab edukasi"
+              - "Jangan spekulasi soal jaringan atau aktor di balik penipu tanpa bukti"
+            pola_hook: "Detik 0: sajikan skala kerusakan langsung — 'Ribuan orang percaya dia...' atau 'Rp 50 miliar raib dalam 6 bulan...' — sebelum jelaskan siapa dan bagaimana."
+            contoh_judul:
+              - "Ribuan orang percaya dia adalah ahli investasi sampai semua uang mereka raib"
+              - "Arisan online ini sudah jalan 2 tahun sebelum penyelenggaranya menghilang bersama miliaran"
+              - "Cara penipu ini membangun kepercayaan selama 3 bulan sebelum melancarkan aksinya"
+              - "50 korban laporan ke polisi tapi kasusnya tidak pernah sampai ke pengadilan — ini kenapa"
+              - "Modus investasi bodong ini pakai nama agama dan itu yang membuatnya sulit dideteksi korban"
+            content_runway: "Modus penipuan di Indonesia terus berkembang seiring teknologi (pinjol, kripto, arisan digital, AI romance scam); setiap modus baru adalah konten baru dengan audiens yang selalu relevan dan besar."
+
+        - slug: true-crime-pembunuhan-terencana
+          name: Pembunuhan Terencana & Persidangan
+          description: Narasi mendalam kasus pembunuhan berencana di Indonesia dengan rekonstruksi motif dan proses hukum, untuk penonton true crime yang ingin kasus lokal.
+          example_hook: "Semua orang pikir itu kecelakaan, sampai sidang mulai..."
+          guide:
+            audience: "Penonton 22–35 yang mengikuti podcast true crime dan ingin konten lokal; mereka yang tertarik psikologi pelaku dan proses hukum; penonton yang ingin memahami bagaimana kasus direkonstruksi di pengadilan."
+            tone: "Serius, mendalam, dan hormat terhadap semua pihak. Tidak glorifikasi pelaku — fokus pada kebenaran dan proses hukum. Ada rasa keadilan yang dicari, bukan sekadar sensasi."
+            format: "75–90 detik. Voiceover naratif dengan timeline kejadian di teks onscreen. Footage B-roll pengadilan atau lokasi kejadian (tanpa identifikasi korban). Musik investigatif serius. Hard-sub penuh."
+            boleh:
+              - "Bangun kronologi yang jelas — kondisi sebelum, hari kejadian, penyelidikan, persidangan"
+              - "Sertakan detail bukti forensik atau kesaksian yang digunakan pengadilan"
+              - "Jelaskan motif yang terungkap di persidangan dengan nuansa, bukan simplifikasi"
+              - "Sebutkan putusan akhir dan apakah dianggap adil oleh publik atau keluarga korban"
+            hindari:
+              - "Jangan sajikan detail kekerasan secara grafis atau eksplisit"
+              - "Jangan sebut nama anggota keluarga korban yang tidak mau go public"
+              - "Jangan bias ke satu sisi sebelum semua fakta disajikan"
+              - "Jangan gunakan istilah hukum yang salah secara teknis — kredibilitas di atas segalanya"
+            pola_hook: "Detik 0: mulai dari twist terbesar dalam kasus — 'Semua orang pikir itu kecelakaan, sampai sidang mulai...' — sebelum mundur ke kronologi awal."
+            contoh_judul:
+              - "Semua orang pikir itu kecelakaan sampai forensik temukan satu hal yang tidak sesuai"
+              - "Persidangan ini berjalan 3 tahun dan akhirnya satu kalimat saksi membalik segalanya"
+              - "Motif kasus ini baru terungkap di hari terakhir persidangan dan tidak ada yang terduga"
+              - "Terdakwa ini menangis di setiap sidang sampai CCTV ini diputar di depan hakim"
+              - "Kasus ini dinyatakan selesai tapi keluarga korban masih pertanyakan satu lubang besar ini"
+            content_runway: "Kasus pembunuhan berencana di Indonesia yang masuk persidangan menghasilkan rekaman publik yang bisa dikemas ulang; setiap dekade punya kasus ikonik yang belum pernah dibahas mendalam di format short-form."
+
+    - slug: mystery
+      name: "Misteri / Konspirasi"
+      description: Misteri belum terpecahkan, teori.
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: voiceover + footage misterius
+      example_hook: "Sinyal ini dari luar angkasa, tapi..."
+      guide:
+        audience: "Penonton 18–32 yang suka konten yang membuat berpikir dan penasaran; mereka yang tertarik teori konspirasi yang punya dasar faktual; campuran sains, sejarah, dan misteri adalah sweet spot mereka."
+        tone: "Penasaran dan terbuka. Tidak memaksakan kesimpulan — menyajikan fakta dan teori, biarkan penonton memutuskan. Ada rasa takjub yang dipelihara sampai akhir video."
+        format: "60–90 detik. Voiceover naratif dengan footage B-roll mendukung (angkasa, arsip, peta). Teks onscreen untuk fakta kunci. Musik ambient misterius. Hard-sub penuh. Akhir dengan pertanyaan terbuka."
+        boleh:
+          - "Bedakan antara fakta terverifikasi dan teori — kredibilitas bergantung pada kejujuran ini"
+          - "Sajikan beberapa teori yang berbeda dan biarkan penonton memilih yang paling masuk akal"
+          - "Gunakan detail spesifik yang mengejutkan untuk membuat misteri terasa nyata"
+          - "Akhiri dengan pertanyaan yang mengundang diskusi di komentar"
+        hindari:
+          - "Jangan sajikan teori konspirasi tanpa basis sebagai fakta"
+          - "Jangan diskreditkan ilmu pengetahuan atau mendorong disinfo berbahaya"
+          - "Jangan gunakan footage yang teridentifikasi sebagai hoaks atau manipulasi"
+          - "Jangan buat judul yang lebih besar dari isi — misteri harus deliver"
+        pola_hook: "Detik 0: mulai dengan pernyataan yang membangun ketidakyakinan langsung — 'Sinyal ini dari luar angkasa, tapi sains masih belum punya jawaban 40 tahun kemudian...' — tanpa buildup panjang."
+        contoh_judul:
+          - "Sinyal ini diterima dari luar angkasa tahun 1977 dan tidak pernah berulang"
+          - "Dulu dianggap gila karena percaya ini, sekarang dokumen resmi membuktikannya"
+          - "Fenomena ini terekam ratusan kali di seluruh dunia tapi sains masih belum bisa jelaskan"
+      micro:
+        - slug: mystery-hilang-misterius
+          name: Orang Hilang Misterius
+          description: Kasus orang hilang yang belum terpecahkan dari seluruh dunia maupun Indonesia, dengan teori dan fakta yang masih simpang siur.
+          example_hook: "Dia hilang di tengah keluarganya, dan kamera tidak menangkap apapun..."
+          guide:
+            audience: "Penonton 19–33 yang tertarik kasus orang hilang dan cold case; mereka yang suka membangun teori sendiri dari fakta yang ada; penonton true crime yang juga suka unsur misterius tak terpecahkan."
+            tone: "Empati dan penasaran. Hormati orang yang hilang dan keluarga yang ditinggalkan. Sajikan fakta dengan serius, teori dengan tanda tanya yang jelas."
+            format: "60–90 detik. Voiceover faktual di atas footage B-roll lokasi atau peta. Timeline kejadian di teks onscreen. Musik ambient serius. Hard-sub penuh. Akhir dengan status kasus terkini."
+            boleh:
+              - "Sajikan fakta kronologis yang terverifikasi sebelum masuk ke teori"
+              - "Sertakan teori yang paling banyak didukung, bukan hanya yang paling sensasional"
+              - "Sebutkan jika kasus masih aktif dan ada kontak untuk melaporkan informasi"
+              - "Ceritakan dampak pada keluarga yang mencari — membuat penonton peduli"
+            hindari:
+              - "Jangan spekulasi identitas pelaku jika kasus belum solved tanpa disclaimer jelas"
+              - "Jangan sajikan detail yang bisa mengganggu penyelidikan aktif"
+              - "Jangan sensasionalisasi kehilangan seseorang untuk views"
+              - "Jangan gunakan foto korban tanpa izin keluarga jika masih hidup"
+            pola_hook: "Detik 0: mulai dari detail yang paling tidak masuk akal dalam hilangnya seseorang — 'Dia hilang di tengah keluarganya dan kamera tidak menangkap apapun...' — sebelum kronologi lengkap."
+            contoh_judul:
+              - "Dia hilang di depan matanya sendiri dan tidak ada yang bisa jelaskan apa yang terjadi"
+              - "Kasus orang hilang ini sudah 15 tahun tapi keluarganya masih temukan clue baru setiap tahun"
+              - "Hilang di kerumunan ramai dan tidak ada satu pun saksi yang ingat melihatnya"
+              - "Cold case Indonesia ini punya satu detail yang tidak pernah masuk ke berita manapun"
+              - "Semua jejak digitalnya berhenti di titik ini dan tidak ada yang tahu kenapa"
+            content_runway: "Kasus orang hilang yang belum terpecahkan ada di setiap negara dan dekade; Indonesia sendiri punya ratusan kasus cold case yang belum pernah dibahas di format pendek yang aksesibel."
+
+        - slug: mystery-fenomena-tak-terpecahkan
+          name: Fenomena Alam Tak Terpecahkan
+          description: Fenomena fisik dan alam yang belum ada penjelasan sains pasti, disajikan dengan nada penasaran bukan sensasional.
+          example_hook: "Kejadian ini terekam ratusan kali tapi sains belum bisa jelaskan..."
+          guide:
+            audience: "Penonton 17–30 yang suka konten sains kasual dengan elemen misterius; mereka yang ingin terasa pintar setelah menonton; penonton yang menikmati 'sains belum tahu ini' sebagai pemantik rasa ingin tahu."
+            tone: "Penasaran dan berbasis fakta. Bukan horor, bukan konspirasi — murni rasa takjub bahwa sains masih punya batas. Nada seperti presenter sains yang jujur soal ketidaktahuannya."
+            format: "45–75 detik. Voiceover dengan teks fakta kunci onscreen. Footage fenomena yang relevan (jika ada rekaman asli atau simulasi) atau B-roll alam. Musik ambient penasaran. Hard-sub."
+            boleh:
+              - "Bedakan dengan jelas antara 'belum terpecahkan' dan 'tidak ada penjelasannya sama sekali'"
+              - "Sertakan teori ilmiah yang paling diterima saat ini, sekalipun belum konklusif"
+              - "Gunakan analogi sederhana untuk membuat fenomena kompleks mudah dipahami"
+              - "Akhiri dengan pertanyaan terbuka yang mendorong penonton mencari tahu lebih lanjut"
+            hindari:
+              - "Jangan klaim fenomena sebagai bukti UFO, supernatural, atau konspirasi tanpa dasar"
+              - "Jangan gunakan footage yang sudah terbukti hoaks"
+              - "Jangan oversimplify fenomena yang butuh konteks ilmiah untuk dipahami"
+              - "Jangan diskreditkan upaya ilmuwan untuk menjelaskan fenomena ini"
+            pola_hook: "Detik 0: nyatakan bahwa sains belum punya jawaban untuk ini, lalu segera deskripsikan fenomenanya — 'Kejadian ini terekam ratusan kali di seluruh dunia dan sains belum punya jawaban resminya...'"
+            contoh_judul:
+              - "Fenomena ini terekam ratusan kali di seluruh dunia dan sains masih belum punya penjelasan"
+              - "Suara bawah laut ini terdengar di seluruh samudra dan tidak ada yang tahu sumbernya"
+              - "Pola ini muncul di tempat berbeda tanpa koneksi dan ilmuwan masih belum setuju kenapa"
+              - "Fenomena alam Indonesia ini dicatat sejak abad ke-18 tapi masih misteri sampai sekarang"
+              - "Rekaman ini valid secara ilmiah tapi tidak bisa dijelaskan dengan fisika yang ada"
+            content_runway: "Sains selalu menghasilkan fenomena baru yang belum terpecahkan; kombinasi fenomena lama yang belum resolved, studi baru yang mempertanyakan teori lama, dan fenomena lokal Indonesia yang belum pernah dibahas menciptakan pipeline yang panjang."
+
+        - slug: mystery-konspirasi-terverifikasi
+          name: Konspirasi yang Ternyata Nyata
+          description: Teori konspirasi masa lalu yang akhirnya terbukti benar dengan dokumen resmi, memberi penonton rasa validasi dan kejutan.
+          example_hook: "Dulu dianggap gila karena percaya ini, sekarang dokumen resmi membuktikannya..."
+          guide:
+            audience: "Penonton 20–35 yang skeptis tapi terbuka; mereka yang pernah dianggap 'lebay' karena meragukan narasi resmi; penonton yang suka konten yang memberi mereka rasa 'aku sudah bilang kan'."
+            tone: "Faktual dan memuaskan. Bukan gloating — tapi ada kepuasan yang jelas saat fakta tersembunyi akhirnya terungkap. Serius dan berbasis dokumen, bukan sensasional."
+            format: "60–90 detik. Voiceover naratif di atas footage arsip atau dokumen yang ter-declassify. Teks timeline onscreen dari 'teori' ke 'terbukti'. Musik ambient yang sedikit ironis. Hard-sub penuh."
+            boleh:
+              - "Sertakan sumber dokumen resmi yang membuktikan — nomor dokumen, tahun declassified"
+              - "Bandingkan reaksi publik saat ini vs saat konspirasi pertama kali muncul"
+              - "Fokus pada konspirasi yang sudah 100% terbukti, bukan yang masih dalam teori"
+              - "Jelaskan mengapa ini relevan untuk masa kini — bukan hanya trivia sejarah"
+            hindari:
+              - "Jangan campur konspirasi yang sudah terbukti dengan yang masih teori dalam satu video"
+              - "Jangan gunakan konspirasi sebagai gateway untuk mendorong teori berbahaya lainnya"
+              - "Jangan exaggerate seberapa banyak yang tahu di masa lalu — tetap akurat"
+              - "Jangan sajikan sebagai bukti bahwa semua pemerintah berbohong tentang segalanya"
+            pola_hook: "Detik 0: mulai dari persepsi umum saat itu — 'Dulu dianggap gila karena percaya ini...' — lalu segera reveal bahwa dokumen resmi telah membuktikan kebenaran teori tersebut."
+            contoh_judul:
+              - "Dulu dianggap gila karena percaya ini, sekarang ada dokumen resmi yang membuktikannya"
+              - "Teori konspirasi ini ditertawakan selama 20 tahun sampai arsip ini dibuka ke publik"
+              - "Pemerintah ini memang tahu tentang itu dan dokumen yang baru declassified membuktikannya"
+              - "Semua yang dibilang conspiracy theorist tentang program ini ternyata lebih dekat dari yang diakui"
+              - "Konspirasi Indonesia ini akhirnya punya bukti resminya dan tidak ada yang bahas"
+            content_runway: "Sejarah penuh dengan operasi pemerintah, eksperimen rahasia, dan perjanjian tersembunyi yang akhirnya terungkap; arsip yang baru-baru ini dibuka di berbagai negara terus menghasilkan konten baru."
+
+    - slug: plot-recap
+      name: "Recap Film / Alur"
+      description: Ringkas alur film/series.
+      faceless: true
+      difficulty: menengah
+      rpm: rendah
+      formats: "klip film + voiceover (hati2 hak cipta)"
+      example_hook: "Pria ini dipenjara 15 tahun tanpa alasan..."
+      guide:
+        audience: "Penonton 17–32 yang ingin tahu isi film tanpa nonton penuh; mereka yang sudah nonton dan ingin recap untuk diskusi; penonton yang cari rekomendasi film pendek sebelum memutuskan menonton."
+        tone: "Energik dan efisien. Setiap kata dalam voiceover punya fungsi — tidak ada padding. Seperti teman yang menceritakan film dengan antusias tapi tidak spoil ending sebelum waktunya."
+        format: "60–90 detik. Voiceover cepat di atas klip film atau ilustrasi. Hard-sub setiap kalimat. Musik yang membangun mood sesuai genre film (tegang untuk thriller, emosional untuk drama). Hati-hati hak cipta — blur wajah aktor jika perlu atau gunakan footage minimal."
+        boleh:
+          - "Strukturkan sebagai: setup tokoh → konflik → turning point → outcome (tanpa spoil akhir jika tujuan rekomendasi)"
+          - "Fokus pada satu atau dua elemen paling menarik dari film untuk memancing rasa ingin nonton"
+          - "Untuk recap penuh, akhiri dengan analisis singkat kenapa film ini layak tonton atau tidak"
+          - "Gunakan judul original film dalam Bahasa Indonesia untuk SEO lokal"
+        hindari:
+          - "Jangan gunakan klip film berlebihan yang bisa kena copyright claim — voiceover + sedikit B-roll lebih aman"
+          - "Jangan recap film yang sedang tayang di bioskop tanpa disclaimer spoiler jelas"
+          - "Jangan tambahkan opini pribadi yang terlalu panjang — ini recap, bukan review"
+          - "Jangan salah eja nama tokoh atau judul film — penonton hardcore akan langsung pergi"
+        pola_hook: "Detik 0: mulai dari momen paling dramatis atau pertanyaan terbesar dalam film — bukan dari 'Film ini dirilis tahun...' atau 'Hari ini kita bahas...' Langsung ke konflik."
+        contoh_judul:
+          - "Pria ini dipenjara 15 tahun untuk kejahatan yang tidak dia lakukan dan ini yang terjadi"
+          - "Film ini memiliki twist ending yang tidak akan kamu terima jika tidak tahu konteksnya"
+          - "Arc ini bikin jutaan penonton menangis dan ini kenapa kalau kamu belum tonton"
+      micro:
+        - slug: plot-recap-film-indonesia
+          name: Recap Film Indonesia Klasik & Baru
+          description: Ringkasan alur film Indonesia dari era klasik hingga terkini dengan konteks budaya, menyasar penonton yang ingin nostalgia atau tahu sinopsis sebelum nonton.
+          example_hook: "Film ini meraih 5 juta penonton, dan ini alasan sebenarnya kenapa..."
+          guide:
+            audience: "Penonton Indonesia 18–35 yang cinta film lokal; mereka yang ingin nostalgia dengan film lama atau cari info film baru sebelum beli tiket; komunitas film Indonesia yang aktif berdiskusi di media sosial."
+            tone: "Cinta film dan penuh rasa hormat pada sineas Indonesia. Ada kebanggaan lokal tapi jujur soal kualitas — tidak over-praise dan tidak unduly harsh."
+            format: "60–90 detik. Voiceover dengan klip resmi (gunakan minimal, prioritaskan footage promo resmi). Hard-sub. Musik sesuai genre film yang direcap. Teks judul film, tahun, dan sutradara di awal."
+            boleh:
+              - "Sertakan konteks budaya yang membuat film Indonesia unik — apa yang tidak bisa dibuat di negara lain"
+              - "Untuk film klasik, tambahkan konteks era produksi untuk penonton muda"
+              - "Rekomendasikan siapa yang akan menikmati film ini — target audiens yang spesifik"
+              - "Akhiri dengan rating singkat atau apakah layak ditonton ulang"
+            hindari:
+              - "Jangan gunakan klip film berlebihan yang bisa kena DMCA"
+              - "Jangan spoil twist ending tanpa warning jelas di awal video"
+              - "Jangan membandingkan film Indonesia dengan film asing secara dismissif"
+              - "Jangan recap film yang belum izin tayang resmi"
+            pola_hook: "Detik 0: mulai dari fakta atau momen paling memukau dari film — pencapaian penonton, award, atau adegan ikonik — bukan dari informasi produksi."
+            contoh_judul:
+              - "Film Indonesia ini tembus 5 juta penonton dan ini yang bikin orang rela nonton dua kali"
+              - "Film klasik Indonesia tahun 90-an ini ternyata punya lapisan yang tidak disadari saat itu"
+              - "Sutradara ini buat twist ending yang tidak akan kamu terima tanpa tonton dari awal"
+              - "Film horror Indonesia ini lebih menakutkan dari versi Hollywood yang menginspirasinya"
+              - "Ini alasan kenapa film Indonesia ini masih relevan 20 tahun setelah rilisnya"
+            content_runway: "Indonesia menghasilkan ratusan film per tahun ditambah puluhan tahun arsip film klasik yang belum pernah di-recap dalam format short-form modern; komunitas film Indonesia sangat aktif dan selalu mencari konten."
+
+        - slug: plot-recap-anime-populer
+          name: Recap Anime Populer dalam Bahasa Indonesia
+          description: Ringkasan arc atau season anime populer dalam narasi Bahasa Indonesia yang ringkas, untuk penonton anime yang ketinggalan atau ingin refresh ingatan.
+          example_hook: "Arc ini bikin jutaan penonton nangis, ini kenapa..."
+          guide:
+            audience: "Penonton anime Indonesia 16–28 yang mengikuti anime populer; mereka yang ketinggalan episode atau ingin refresh sebelum season baru; penonton yang ingin berdiskusi tapi butuh konteks dulu."
+            tone: "Antusias dan penuh energi. Seperti teman sesama weeb yang excited cerita. Ada rasa cinta terhadap materi sumbernya — bukan sekadar merangkum."
+            format: "60–90 detik. Voiceover energik di atas footage anime resmi atau ilustrasi fanart (dengan credit). Hard-sub. Musik dari anime itu sendiri jika royalty-free, atau OST ambient alternatif. Nama karakter di teks onscreen saat pertama disebut."
+            boleh:
+              - "Gunakan nama karakter dengan benar — konsistensi antara nama Jepang dan terjemahan Indonesia"
+              - "Sertakan konteks arc sebelumnya jika diperlukan untuk memahami arc yang di-recap"
+              - "Tambahkan reaksi atau analisis singkat mengapa momen ini impactful"
+              - "Tag dan recap konten yang lagi trending untuk riding momentum"
+            hindari:
+              - "Jangan spoil arc berikutnya jika recap ini untuk penonton yang belum sampai"
+              - "Jangan salah eja nama karakter atau judul — komunitas anime sangat perhatian terhadap detail"
+              - "Jangan gunakan footage anime berlebihan yang pasti kena copyright"
+              - "Jangan buat recap yang terlalu panjang — 60–90 detik sudah harus cukup untuk satu arc"
+            pola_hook: "Detik 0: mulai dari momen paling ikonik atau emosional dari arc — 'Arc ini bikin jutaan penonton nangis...' — sebelum mundur ke setup."
+            contoh_judul:
+              - "Arc ini bikin jutaan penonton nangis dan ini kenapa kalau kamu belum tonton"
+              - "Season terbaru anime ini punya plot twist yang tidak ada yang prediksi sebelumnya"
+              - "Karakter ini bilang satu kalimat di episode 1 yang maknanya baru jelas di episode 24"
+              - "Anime ini terasa biasa di 3 episode pertama tapi alasan orang gak berhenti nonton ada di sini"
+              - "Momen terbaik dari finale arc ini dan kenapa kreatornya berani ambil keputusan itu"
+            content_runway: "Anime baru terus rilis setiap season dengan puluhan judul aktif; ditambah backlog ratusan anime lama yang belum pernah di-recap dalam Bahasa Indonesia, pipeline konten ini hampir tidak ada batasnya."
+
+        - slug: plot-recap-twist-ending
+          name: Film dengan Twist Ending Gila
+          description: Khusus membahas film dan series dengan plot twist mengejutkan, dianalisis dengan penjelasan detail apa yang sebenarnya terjadi.
+          example_hook: "Kamu pasti miss detail ini di menit ke-12 yang ubah segalanya..."
+          guide:
+            audience: "Penonton film 18–32 yang suka tebak-tebakan plot twist; mereka yang sudah nonton film tapi masih bingung dengan ending; penonton yang suka re-watch film setelah tahu twistnya."
+            tone: "Detektif yang excited menemukan clue. Ada rasa kepuasan saat menjelaskan sesuatu yang membingungkan menjadi jelas. Tidak menghakimi penonton yang miss detail — tapi menunjukkan dengan excited."
+            format: "60–90 detik. Voiceover dengan teks penjelasan onscreen di momen kunci. Minimal footage — cukup untuk konteks, tidak sampai kena copyright. Hard-sub. Musik yang membangun ketegangan menjelang reveal penjelasan."
+            boleh:
+              - "Tunjukkan clue yang ada di film jauh sebelum twist — retrospective adalah kekuatan konten ini"
+              - "Gunakan timestamp atau deskripsi lokasi adegan untuk membantu penonton yang ingin rewatch"
+              - "Beri warning spoiler yang jelas di awal — tidak semua orang sudah nonton"
+              - "Tawarkan interpretasi alternatif jika twist punya multiple reading yang valid"
+            hindari:
+              - "Jangan skip warning spoiler — ini konten spoiler by nature"
+              - "Jangan gunakan klip film yang terlalu panjang — deskripsi naratif lebih aman dari copyright"
+              - "Jangan over-explain sampai kehilangan elemen kejutan untuk penonton yang baru tahu"
+              - "Jangan cover film yang terlalu obscure sampai tidak ada penonton yang akan relate"
+            pola_hook: "Detik 0: mulai dari clue tersembunyi yang paling tidak disadari — 'Kamu pasti miss detail ini di menit ke-12...' — sebelum reveal apa twistnya."
+            contoh_judul:
+              - "Kamu pasti miss detail di menit ke-12 ini yang mengubah arti semua adegan sebelumnya"
+              - "Twist ending film ini sudah dihint dari menit pertama tapi tidak ada yang sadari"
+              - "Penjelasan ending film ini yang membingungkan dan kenapa interpretasi ini paling masuk akal"
+              - "Tonton film ini dua kali dan kamu akan lihat ini adalah film yang berbeda sama sekali"
+              - "Detail kecil di background adegan ini yang membuktikan karakter ini tidak bohong dari awal"
+            content_runway: "Film baru dengan twist ending rilis setiap bulan; ditambah backlog film klasik seperti Fight Club, The Sixth Sense, dan ratusan film Indonesia yang twist-nya belum pernah dianalisis mendalam dalam format pendek Bahasa Indonesia."
