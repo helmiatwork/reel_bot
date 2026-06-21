@@ -12,6 +12,10 @@ services:
       - "host.docker.internal:host-gateway"
     environment:
       - CLIPROXY_URL=http://host.docker.internal:8317/v1
+      # The host-run cli-proxy-api accepts this key (its config api-keys list);
+      # the .env CLIPROXY_KEY is for the linux cliproxy container, not this host
+      # instance. Override so the openclaw agent brain can authenticate.
+      - CLIPROXY_KEY=your-api-key-1
 
   # Backend storage follows ~/Downloads/ReelBot (protected source/output store).
   # Override the named volumes with host binds so sources, per-run output, and
