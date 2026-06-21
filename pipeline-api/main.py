@@ -1104,7 +1104,17 @@ def get_transcript(req: TranscriptRequest):
         try:
             result = json.loads(proc.stdout)
             return _json(result)
-        except Exception as e:
+        except (json.JSONDecodeError, ValueError) as e:
+            # Fallback: if stdout has diagnostics before JSON, scan for the last valid JSON block
+            lines = proc.stdout.strip().split('\n')
+            for line in reversed(lines):
+                if line.strip().startswith('{'):
+                    try:
+                        result = json.loads(line)
+                        if isinstance(result, dict) and "segments" in result:
+                            return _json(result)
+                    except (json.JSONDecodeError, ValueError):
+                        continue
             print(f"  [transcript] JSON parse failed: {e}")
             return _json({"segments": []})
     except Exception as e:
@@ -1955,8 +1965,21 @@ def _fetch_transcript(youtube_url: str) -> list:
             capture_output=True, text=True, timeout=60)
         if proc.returncode != 0:
             return []
-        result = json.loads(proc.stdout)
-        return result.get("segments", []) if isinstance(result, dict) else []
+        try:
+            result = json.loads(proc.stdout)
+            return result.get("segments", []) if isinstance(result, dict) else []
+        except (json.JSONDecodeError, ValueError):
+            # Fallback: if stdout has diagnostics before JSON, scan for the last valid JSON block
+            lines = proc.stdout.strip().split('\n')
+            for line in reversed(lines):
+                if line.strip().startswith('{'):
+                    try:
+                        result = json.loads(line)
+                        if isinstance(result, dict) and "segments" in result:
+                            return result.get("segments", [])
+                    except (json.JSONDecodeError, ValueError):
+                        continue
+            return []
     except Exception:
         return []
 
