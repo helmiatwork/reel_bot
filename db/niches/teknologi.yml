@@ -1,0 +1,681 @@
+version: 1
+vertical:
+  slug: v-teknologi
+  name: Teknologi
+  description: Konten teknologi — gadget, tips aplikasi, AI tools, dan coding untuk penonton tech-savvy Indonesia.
+  guide:
+    audience: "Penonton 18–35 tahun, dominan pria, yang aktif pakai smartphone dan tertarik perkembangan teknologi; campuran mahasiswa, profesional muda, dan freelancer yang ingin produktif dan up-to-date; penonton yang scroll sambil mencari tips praktis, bukan sekadar hiburan."
+    tone: "Cerdas tapi kasual — seperti teman yang lebih ngerti teknologi menjelaskan sesuatu yang berguna. Tidak terlalu formal, tidak terlalu receh. Penonton harus merasa lebih pintar setelah menonton."
+    format: "Video pendek 45–90 detik dengan dominasi screen recording atau demo langsung. Voiceover atau teks overlay wajib — konten ini butuh penjelasan singkat. Struktur: hook fakta mengejutkan → inti tips/informasi → CTA singkat. Vertikal 9:16."
+    boleh:
+      - "Mulai dengan fakta atau data yang mengejutkan untuk hook yang kuat"
+      - "Gunakan screen recording asli — bukan animasi atau mockup yang terlihat palsu"
+      - "Tampilkan sebelum-sesudah (workflow lama vs baru) untuk tips produktivitas"
+      - "Sebut konteks Indonesia spesifik — harga rupiah, aplikasi populer lokal, kondisi pasar lokal"
+      - "Kalimat pendek dan to-the-point — penonton tech tidak suka basa-basi"
+    hindari:
+      - "Jangan pakai jargon teknis berat tanpa penjelasan singkat — penonton bukan semua developer"
+      - "Jangan buka dengan salam panjang atau intro channel — langsung ke hook"
+      - "Jangan rekam layar dengan resolusi rendah atau UI yang ter-zoom aneh"
+      - "Jangan buat klaim sensasional tanpa bukti nyata — credibility adalah aset utama channel tech"
+      - "Jangan pakai musik ber-hak-cipta; pilih lo-fi instrumental yang tidak distraktif"
+    pola_hook: "Detik 0–3: fakta atau klaim mengejutkan yang relevan penonton ('HP kamu nyimpan ini tanpa sepengetahuanmu' / 'Tool ini gantiin 3 aplikasi berbayar dengan gratis'). Langsung masuk demo atau bukti."
+    contoh_judul:
+      - "Setting HP ini wajib dimatikan sekarang, kamu belum tahu risikonya"
+      - "Tool gratis ini bikin kerja yang biasanya 2 jam jadi 10 menit"
+      - "Ini yang terjadi di industri tech Indonesia yang media besar tidak ceritakan"
+
+  niches:
+    - slug: tech-news
+      name: "Tech / Gadget News"
+      description: "Berita teknologi, bocoran gadget."
+      faceless: true
+      difficulty: menengah
+      rpm: tinggi
+      formats: screen-record + voiceover
+      example_hook: "Fitur HP ini disembunyikan..."
+      guide:
+        audience: "Penonton 20–35 yang aktif mengikuti berita teknologi dan rilis gadget terbaru; pembaca The Verge atau TeknoJurnal versi video; tertarik pada implikasi praktis berita tech, bukan sekadar headline."
+        tone: "Analitis tapi ringan. Bukan sekadar baca ulang press release — tambahkan sudut pandang dan relevansi untuk pengguna Indonesia. Seperti anchor berita tech yang punya opini."
+        format: "60–90 detik. Struktur: fakta atau bocoran mengejutkan (hook) → konteks cepat → implikasi untuk penonton Indonesia → pendapat singkat presenter. Screen recording artikel atau UI produk sebagai visual. Voiceover wajib."
+        boleh:
+          - "Sertakan angka dan data konkret — penonton tech menghargai presisi"
+          - "Tambahkan sudut pandang lokal: 'Di Indonesia, ini artinya…'"
+          - "Gunakan footage atau screenshot resmi dari sumber primer sebagai visual"
+          - "Format 'berita + opini singkat' lebih engaging dari sekadar reporting datar"
+        hindari:
+          - "Jangan hanya parafrase press release tanpa tambahan nilai atau sudut pandang"
+          - "Jangan buat judul clickbait yang tidak sesuai isi — audiens tech sangat kritis"
+          - "Jangan gunakan footage atau gambar yang tidak jelas sumber lisensinya"
+          - "Jangan rekam berita yang sudah berumur lebih dari 3 hari tanpa angle baru"
+        pola_hook: "Detik 0: tampilkan screenshot atau visual produk/berita + kalimat klaim yang mengejutkan ('Google sembunyikan fitur ini di update terakhir'). Langsung masuk penjelasan di detik 3."
+        contoh_judul:
+          - "Fitur HP ini sengaja disembunyikan oleh produsen, ini alasannya"
+          - "Update Android terbaru hapus fitur yang dipakai jutaan orang tanpa pengumuman"
+          - "Startup Indonesia ini baru dapat pendanaan, tapi model bisnisnya mengkhawatirkan"
+      micro:
+        - slug: tech-news-fitur-android-tersembunyi
+          name: Fitur Android yang Disembunyikan di Menu Developer
+          description: Showcase fitur-fitur Android yang tersembunyi di balik Developer Options atau pengaturan yang jarang dibuka, memberikan pengguna kontrol lebih atas perangkat tanpa harus root.
+          example_hook: "Setting ini ada di semua HP Android tapi tersembunyi di sini, dan fungsinya sangat berguna..."
+          guide:
+            audience: "Pengguna Android 18–32 yang ingin memaksimalkan HP mereka; penonton yang bosan dengan pengaturan default; orang yang penasaran 'apa lagi yang bisa dilakukan HP-ku' tanpa harus beli HP baru."
+            tone: "Informatif dan sedikit conspiratorial — seperti mengungkap sesuatu yang sengaja disembunyikan. Penonton harus merasa mendapat akses eksklusif ke informasi yang tidak semua orang tahu."
+            format: "45–75 detik. Screen recording HP langsung (bukan emulator) — tampilkan navigasi ke Settings → Developer Options → fitur target → demo fitur aktif. Teks overlay nama fitur dan fungsinya. Vertikal 9:16."
+            boleh:
+              - "Tunjukkan cara mengaktifkan Developer Options di awal jika fitur ada di sana"
+              - "Demo langsung perbedaan sebelum dan sesudah fitur diaktifkan"
+              - "Gunakan close-up layar HP fisik jika memungkinkan — lebih autentik dari screen mirroring"
+              - "Sebut merek dan versi Android yang digunakan untuk relevansi spesifik"
+            hindari:
+              - "Jangan tampilkan fitur yang butuh root — mayoritas penonton tidak mau root HP"
+              - "Jangan skip langkah navigasi — penonton harus bisa mengikuti sendiri"
+              - "Jangan gunakan device dengan UI sangat berbeda dari mayoritas HP Indonesia tanpa penjelasan"
+              - "Jangan klaim semua fitur bekerja di semua HP tanpa catatan kompatibilitas"
+            pola_hook: "Detik 0: tunjukkan HP dengan teks 'ada setting tersembunyi di HP kamu yang produsen tidak promosikan'. Langsung masuk navigasi di detik 3."
+            contoh_judul:
+              - "Setting Android ini diaktifkan developer HP tapi kamu tidak dikasih tahu"
+              - "Menu tersembunyi di HP kamu bisa 2x-kan performa gaming tanpa aplikasi tambahan"
+              - "Fitur Developer Options yang wajib diaktifkan pengguna Android berpengalaman"
+              - "HP kamu rekam layar tanpa aplikasi pihak ketiga, begini cara aktifkannya"
+              - "3 pengaturan Android ini bikin baterai tahan 30% lebih lama, tersembunyi di sini"
+            content_runway: "Setiap versi Android baru membawa fitur tersembunyi baru; perbedaan antar merek (Samsung, Xiaomi, OPPO, Vivo) menghasilkan video spesifik per brand; kombinasi use-case (gaming, baterai, privasi, performa) hampir tidak terbatas."
+
+        - slug: tech-news-startup-indonesia-gagal
+          name: Startup Teknologi Indonesia yang Tutup Tahun Ini
+          description: Liputan singkat startup teknologi Indonesia yang baru saja tutup atau pivot drastis, dengan analisis cepat apa yang salah — bukan gosip tapi pelajaran industri yang berguna.
+          example_hook: "Startup ini baru raih pendanaan Seri A, 8 bulan kemudian tutup. Ini yang terjadi..."
+          guide:
+            audience: "Profesional muda 22–38 yang bekerja di atau tertarik dengan ekosistem startup Indonesia; founder pemula yang ingin belajar dari kegagalan orang lain; penonton yang skeptis terhadap hype startup."
+            tone: "Analitis dan empatik — bukan menghakimi tapi belajar. Faktual, berbasis data publik, dan berikan konteks industri yang membuat kegagalan masuk akal secara struktural."
+            format: "75–90 detik. Struktur: fakta penutupan (hook dengan angka) → kronologi singkat (founding → funding → pivot/tutup) → analisis 2–3 faktor kegagalan → takeaway untuk penonton. Voiceover dengan visual logo startup dan screenshot berita. Vertikal 9:16."
+            boleh:
+              - "Gunakan data publik yang bisa diverifikasi — funding round, tanggal, angka pengguna"
+              - "Sebut industri sejenis yang berhasil sebagai kontras untuk analisis lebih dalam"
+              - "Format 'timeline collapse' sangat efektif untuk konten ini — visual yang mudah dipahami"
+              - "Akhiri dengan satu insight yang bisa diterapkan oleh founder atau profesional yang menonton"
+            hindari:
+              - "Jangan buat spekulasi tanpa bukti atau sumber yang bisa diverifikasi"
+              - "Jangan bernada schadenfreude — kegagalan startup adalah pelajaran berharga, bukan hiburan"
+              - "Jangan bahas startup yang kasusnya sedang dalam proses hukum aktif tanpa legal disclaimer"
+              - "Jangan hanya daftar fakta tanpa analisis — penonton ingin tahu 'kenapa', bukan hanya 'apa'"
+            pola_hook: "Detik 0: logo startup + angka funding yang diraih + teks 'tutup X bulan kemudian'. Kontras angka ini adalah hook utamanya."
+            contoh_judul:
+              - "Startup ini dapat Rp50M funding, tutup dalam 8 bulan — ini yang salah"
+              - "Kenapa super-app Indonesia selalu gagal padahal idenya bagus?"
+              - "Startup unicorn ini ternyata membakar uang dengan cara yang tidak masuk akal"
+              - "Tiga startup Indonesia yang pivot drastis tahun ini dan alasan di baliknya"
+              - "Founder startup ini jujur ceritakan kenapa perusahaannya tutup — langka dan penting"
+            content_runway: "Ekosistem startup Indonesia sangat aktif dengan ratusan perusahaan yang berdiri dan tutup setiap tahun; setiap sektor (fintech, edtech, healthtech, agritech) menghasilkan pelajaran berbeda; siklus funding dan krisis ekonomi global menciptakan gelombang kegagalan yang berulang."
+
+        - slug: tech-news-ai-gantikan-pekerjaan
+          name: Pekerjaan yang Sudah Mulai Digantikan AI di Indonesia
+          description: Laporan konkret tentang profesi di Indonesia yang sudah mulai terdampak otomasi dan AI — bukan prediksi spekulatif tapi kasus nyata yang sedang terjadi — untuk penonton yang ingin antisipasi.
+          example_hook: "3 profesi ini sudah mulai kehilangan pekerjaan di Indonesia karena AI, ini datanya..."
+          guide:
+            audience: "Profesional 22–40 yang khawatir dampak AI pada karir mereka; fresh graduate yang memilih jurusan atau pekerjaan pertama; penonton yang ingin tahu harus pivot ke mana sebelum terlambat."
+            tone: "Realistis dan berdaya — bukan alarmis. Sajikan fakta dengan dingin tapi akhiri dengan informasi yang memberdayakan penonton untuk mengambil tindakan, bukan panik."
+            format: "75–90 detik. Struktur: data atau kasus konkret di Indonesia (hook) → 2–3 profesi yang terdampak dengan contoh nyata → apa yang belum bisa digantikan → satu langkah antisipasi konkret. Voiceover dengan infografis sederhana atau screen recording data. Vertikal 9:16."
+            boleh:
+              - "Gunakan data dari sumber Indonesia yang bisa dikutip — BPS, laporan konsultan lokal, berita bisnis"
+              - "Tampilkan contoh spesifik — nama perusahaan yang sudah mengimplementasi AI pengganti pekerja"
+              - "Bedakan 'pekerjaan yang hilang' vs 'pekerjaan yang bertransformasi' — nuansa ini penting"
+              - "Akhiri dengan skill yang justru makin bernilai — penonton butuh arah positif"
+            hindari:
+              - "Jangan gunakan data global yang tidak relevan untuk konteks Indonesia"
+              - "Jangan buat konten yang memperparah kecemasan tanpa memberikan jalan keluar"
+              - "Jangan klaim AI akan gantikan 'semua pekerjaan' — oversimplifikasi yang tidak akurat"
+              - "Jangan sebut nama individu yang kehilangan pekerjaan tanpa izin atau sumber publik"
+            pola_hook: "Detik 0: angka konkret (berapa pekerja terdampak, di sektor apa) + teks 'ini bukan prediksi, ini sudah terjadi'. Data spesifik Indonesia lebih powerful dari klaim global."
+            contoh_judul:
+              - "3 profesi Indonesia ini sudah mulai digantikan AI — ini datanya, bukan prediksi"
+              - "Perusahaan ini PHK 200 karyawan dan ganti dengan AI, ini yang terjadi"
+              - "Customer service berbahasa Indonesia sudah bisa digantikan AI, ini buktinya"
+              - "Skill ini yang bikin kamu tidak tergantikan AI dalam 5 tahun ke depan"
+              - "Designer grafis Indonesia sudah merasakan dampak AI image generation, ini ceritanya"
+            content_runway: "Setiap industri (perbankan, retail, logistik, media, hukum) menghasilkan angle berbeda; setiap tools AI baru yang dirilis membuka angle liputan baru; dampak AI berkembang setiap bulan sehingga konten selalu relevan diperbarui."
+
+    - slug: app-tips
+      name: "Tips Aplikasi"
+      description: "Trik aplikasi, hidden feature."
+      faceless: true
+      difficulty: pemula
+      rpm: tinggi
+      formats: screen-record + caption
+      example_hook: "Setting WhatsApp ini wajib kamu matiin..."
+      guide:
+        audience: "Pengguna smartphone 18–40 yang aktif pakai aplikasi sehari-hari tapi tidak mengeksplor pengaturan di balik permukaan; penonton yang ingin produktif tapi tidak mau baca manual; semua level tech literacy."
+        tone: "Langsung dan praktis. Seperti teman yang iseng nemuin fitur keren dan langsung share. Tidak perlu explain background panjang — langsung ke manfaat dan cara lakukannya."
+        format: "30–60 detik. Screen recording langsung dari HP (bukan emulator). Struktur: tunjukkan masalah atau fakta yang hilang (hook) → navigasi ke pengaturan atau fitur → demo manfaat langsung → CTA. Teks overlay di setiap langkah navigasi. Vertikal 9:16."
+        boleh:
+          - "Rekam navigasi real-time yang bisa diikuti penonton secara langsung"
+          - "Tampilkan 'sebelum' (masalah yang umum dialami) sebelum reveal solusinya"
+          - "Fokus pada satu tips per video — jangan campur banyak tips yang mengencerkan nilai"
+          - "Gunakan versi aplikasi yang paling umum dipakai di Indonesia"
+        hindari:
+          - "Jangan rekam dengan resolusi layar rendah atau teks yang tidak terbaca"
+          - "Jangan buat tutorial yang butuh langkah lebih dari 5 — terlalu kompleks untuk format pendek"
+          - "Jangan gunakan aplikasi berbayar atau premium tanpa menyebutkan statusnya"
+          - "Jangan asumsikan penonton punya OS atau versi aplikasi tertentu tanpa disclaimer"
+        pola_hook: "Detik 0: tampilkan masalah umum yang penonton sering alami ('kamu sering gini di WhatsApp?') atau klaim mengejutkan ('setting ini diam-diam lacak kamu'). Langsung masuk ke navigasi."
+        contoh_judul:
+          - "Setting ini di WhatsApp kamu kasih tahu orang asing kapan kamu online"
+          - "Fitur Google Maps ini bekerja tanpa internet, 99% orang tidak tahu"
+          - "Shortcut keyboard ini hemat 1 jam kerja setiap hari, coba sekarang"
+      micro:
+        - slug: app-tips-whatsapp-privasi
+          name: Setting WhatsApp yang Melindungi Privasi Kamu
+          description: Panduan konfigurasi privasi WhatsApp yang sering diabaikan — siapa yang bisa lihat foto profil, status online, dan last seen — dengan penjelasan risiko jika dibiarkan default.
+          example_hook: "Setting WhatsApp ini membiarkan orang asing tahu kapan kamu online, matikan sekarang..."
+          guide:
+            audience: "Pengguna WhatsApp 17–45 dari semua kalangan — hampir semua pengguna smartphone Indonesia; khususnya yang pernah merasa risih karena orang tidak dikenal bisa melihat statusnya atau menghubungi kapan saja."
+            tone: "Sedikit alarm tapi solutif — bukan paranoia, tapi kesadaran. Penonton harus merasa perlu bertindak sekarang, bukan 'nanti'."
+            format: "45–60 detik. Screen recording WhatsApp asli di HP. Navigasi: Settings → Privacy → setiap pengaturan penting ditampilkan satu per satu dengan penjelasan risiko + rekomendasi setting. Teks overlay di setiap step. Vertikal 9:16."
+            boleh:
+              - "Tampilkan setting default (yang berisiko) sebelum rekomendasi — kontras membangun urgensi"
+              - "Jelaskan risiko konkret untuk tiap setting dalam satu kalimat singkat"
+              - "Urutkan dari yang paling berisiko ke paling rendah untuk prioritas penonton"
+              - "Sertakan tips bonus: 'Blocked contacts' dan 'Fingerprint lock' jika durasi masih ada"
+            hindari:
+              - "Jangan buat penonton panik berlebihan — framing harus memberdayakan, bukan menakut-nakuti"
+              - "Jangan bahas pengaturan yang butuh akses root atau pihak ketiga"
+              - "Jangan rekam dengan notifikasi chat nyata yang bisa terlihat — lindungi privasi sendiri"
+              - "Jangan gunakan versi WhatsApp Business sebagai demo utama jika target adalah pengguna personal"
+            pola_hook: "Detik 0: buka WhatsApp → Settings → Privacy dan tampilkan setting 'Everyone' yang default aktif + teks 'siapa saja bisa lihat ini'. Langsung jelaskan risikonya."
+            contoh_judul:
+              - "Setting WhatsApp ini membiarkan siapa saja tahu kapan kamu online — matikan sekarang"
+              - "Foto profil WhatsApp kamu bisa dilihat semua orang termasuk nomor yang tidak tersimpan"
+              - "5 pengaturan privasi WhatsApp yang wajib diubah dari default hari ini"
+              - "Kenapa kamu dapat panggilan spam di WhatsApp dan cara menghentikannya"
+              - "Last seen kamu bisa tersembunyi dari semua orang tapi tetap lihat punya orang lain — ini caranya"
+            content_runway: "WhatsApp rutin update fitur privasi baru; setiap update besar menghasilkan video baru; platform alternatif (Telegram, Signal) menghasilkan angle perbandingan; isu privasi digital terus berkembang dan selalu relevan di Indonesia."
+
+        - slug: app-tips-google-maps-offline
+          name: Fitur Google Maps yang Berguna Saat Tidak Ada Sinyal
+          description: Tutorial fitur offline dan tersembunyi Google Maps yang sangat berguna saat traveling ke daerah sinyal lemah Indonesia, termasuk download peta dan navigasi tanpa internet.
+          example_hook: "Di daerah tanpa sinyal ini, Google Maps masih bisa navigasi karena setting ini..."
+          guide:
+            audience: "Pengguna 20–40 yang sering traveling ke daerah-daerah sinyal lemah di Indonesia; pengemudi ojol atau delivery yang butuh navigasi andal; penonton yang pernah tersesat karena Maps mati saat tidak ada sinyal."
+            tone: "Praktis dan berpengalaman — seperti tips dari traveler veteran yang sudah sering ke daerah terpencil. Penonton harus merasa 'kenapa aku baru tahu ini sekarang'."
+            format: "50–70 detik. Screen recording Google Maps di HP. Demo langsung: cara download area offline, cara gunakan saat airplane mode, fitur-fitur yang tetap berfungsi offline. Tampilkan airplane mode aktif sebagai bukti. Vertikal 9:16."
+            boleh:
+              - "Demo dengan airplane mode aktif saat menunjukkan navigasi offline — bukti visual yang kuat"
+              - "Tampilkan estimasi ukuran file download peta agar penonton bisa persiapkan storage"
+              - "Tunjukkan batas area yang bisa di-download dan cara pilih area yang optimal"
+              - "Tambahkan tips bonus: 'pin lokasi sebelum berangkat' untuk antisipasi tanpa sinyal"
+            hindari:
+              - "Jangan rekam dengan koneksi internet aktif saat demo offline — penonton harus tahu ini benar-benar offline"
+              - "Jangan gunakan versi Maps yang berbeda jauh dari versi yang umum di Indonesia"
+              - "Jangan skip langkah cara update peta offline — peta kedaluwarsa bisa sesat"
+              - "Jangan klaim semua fitur Maps tersedia offline — beberapa fitur (live traffic, Street View) tidak"
+            pola_hook: "Detik 0: tampilan HP di daerah sinyal nol bar + Google Maps yang tetap bisa navigasi + teks 'sinyal tidak ada, Maps tetap jalan — ini caranya'. Langsung masuk tutorial."
+            contoh_judul:
+              - "Google Maps tetap navigasi tanpa sinyal internet sama sekali — ini cara setupnya"
+              - "Download peta offline ini sebelum liburan ke daerah sinyal lemah Indonesia"
+              - "Fitur Maps ini yang bikin aku tidak pernah tersesat di daerah terpencil"
+              - "Cara simpan lokasi offline di Google Maps yang bekerja di airplane mode"
+              - "Maps tanpa kuota — fitur ini sudah ada di HP kamu tapi belum pernah diaktifkan"
+            content_runway: "Setiap daerah Indonesia dengan karakteristik sinyal berbeda menghasilkan konteks berbeda; update Google Maps rutin menambah fitur baru; tips serupa bisa dibuat untuk Waze, Here Maps, dan aplikasi navigasi lokal; musim liburan selalu menghadirkan relevansi konten perjalanan."
+
+        - slug: app-tips-shortcuts-produktivitas
+          name: Shortcut Aplikasi Produktivitas yang Hemat 1 Jam Sehari
+          description: Kumpulan shortcut keyboard dan gesture di aplikasi produktivitas populer — Notion, Google Docs, Gmail — yang pengguna rutin pun jarang ketahui tapi signifikan menghemat waktu.
+          example_hook: "Shortcut ini ada di aplikasi yang kamu buka setiap hari, dan aku hemat 45 menit per hari karenanya..."
+          guide:
+            audience: "Profesional dan mahasiswa 20–35 yang pakai aplikasi produktivitas setiap hari tapi bekerja lebih lambat dari seharusnya; penonton yang ingin jadi power user tanpa belajar dari nol; freelancer yang waktu adalah uang."
+            tone: "Efisien dan terkejut menyenangkan — penonton harus merasakan 'aku buang-buang waktu selama ini'. Setiap shortcut yang ditampilkan harus terasa seperti cheat code yang langsung applicable."
+            format: "45–75 detik. Screen recording desktop atau tablet (shortcut keyboard lebih relevan di layar besar). Tampilkan 3–5 shortcut paling impactful per video. Setiap shortcut: demo masalah lama → demo shortcut → tampilkan waktu yang dihemat. Vertikal 9:16 dengan pilihan landscape untuk readability."
+            boleh:
+              - "Tampilkan keystroke di layar (key overlay) sehingga penonton tahu persis tombol yang ditekan"
+              - "Hitung atau estimasi waktu yang dihemat per shortcut — angka konkret sangat persuasif"
+              - "Fokus pada aplikasi paling umum di Indonesia: Google Workspace, Notion, Microsoft Office"
+              - "Format 'challenge' — 'coba lakukan ini tanpa shortcut, berapa detiknya?' — sangat engaging"
+            hindari:
+              - "Jangan campurkan shortcut Mac dan Windows tanpa label yang jelas — konfus"
+              - "Jangan tampilkan shortcut yang hanya berlaku di versi Pro atau berbayar tanpa keterangan"
+              - "Jangan buat video yang terlalu panjang dengan terlalu banyak shortcut — fokus 3–5 terbaik"
+              - "Jangan rekam di layar yang penuh file sensitif atau notifikasi pribadi"
+            pola_hook: "Detik 0: tampilkan cara lama yang lambat melakukan sesuatu (misal: klik menu → klik → klik) + teks 'kamu masih lakukan ini?'. Langsung demo shortcut di detik 3 dan tunjukkan perbedaan waktu."
+            contoh_judul:
+              - "Shortcut Notion ini bikin navigasi 5x lebih cepat, kenapa tidak diajarkan dari awal"
+              - "Gmail punya 30 keyboard shortcut yang hemat 40 menit kerja sehari — ini 5 yang wajib"
+              - "Google Docs bisa lakukan ini dengan satu tombol dan aku baru tahu bulan ini"
+              - "Cara select teks di HP ini 10x lebih cepat dari yang biasa kamu lakukan"
+              - "Shortcut Copy-Paste yang lebih dari sekadar Ctrl+C — ada versi yang jauh lebih powerful"
+            content_runway: "Setiap aplikasi produktivitas populer punya puluhan shortcut; setiap update aplikasi menambah shortcut baru; kombinasi aplikasi dan use-case (pelajar, freelancer, HRD, akuntan) menciptakan angle berbeda yang hampir tidak ada habisnya."
+
+    - slug: ai-tools
+      name: "AI Tools"
+      description: "Review/tutorial tools AI terbaru."
+      faceless: true
+      difficulty: menengah
+      rpm: tinggi
+      formats: screen-record + voiceover
+      example_hook: "5 tools AI yang bikin kerjamu 10x..."
+      guide:
+        audience: "Profesional dan freelancer 20–38 yang ingin mengadopsi AI untuk pekerjaan sehari-hari; penonton yang sudah dengar tentang ChatGPT tapi belum tahu tools lain yang lebih spesifik; penonton yang takut tertinggal tren AI."
+        tone: "Antusias tapi kritis — bukan hype semua tools AI bagus, tapi kurasi yang jujur. Penonton harus bisa trust rekomendasi karena presenter pernah pakai sendiri, bukan sekadar baca fitur list."
+        format: "60–90 detik. Screen recording tool yang sedang di-review atau di-demo. Struktur: klaim utama tool (hook) → demo langsung use-case konkret → kelebihan nyata + keterbatasan jujur → rekomendasi siapa yang cocok pakai. Voiceover wajib. Vertikal 9:16."
+        boleh:
+          - "Demo use-case yang konkret dan langsung relevan untuk penonton Indonesia"
+          - "Bandingkan dengan tool yang sudah dikenal (ChatGPT, Canva) sebagai referensi"
+          - "Jujur tentang keterbatasan atau harga — kepercayaan lebih valuable dari views sesaat"
+          - "Sebut tier gratis vs berbayar secara eksplisit — sangat relevan untuk audiens Indonesia"
+        hindari:
+          - "Jangan review tool hanya dari website tanpa mencoba sendiri — terlihat dari konten yang dangkal"
+          - "Jangan buat setiap tool terdengar revolusioner — selektif dan kritis lebih credible"
+          - "Jangan gunakan demo yang sudah cherry-picked sempurna tanpa menunjukkan limitation"
+          - "Jangan sebut harga dollar tanpa konversi atau konteks untuk penonton Indonesia"
+        pola_hook: "Detik 0: demo output tool yang mengejutkan ('AI ini bikin video 60 detik dari satu kalimat') atau perbandingan waktu ('ini butuh 2 jam manual, AI ini butuh 90 detik'). Visual output langsung lebih kuat dari klaim verbal."
+        contoh_judul:
+          - "5 AI tools yang langsung berguna untuk freelancer Indonesia, semua gratis"
+          - "Tool AI ini gantikan asisten virtual seharga Rp5jt per bulan"
+          - "Cara nulis prompt yang benar di ChatGPT untuk hasil 10x lebih baik"
+      micro:
+        - slug: ai-tools-untuk-freelancer-indonesia
+          name: AI Tools yang Langsung Berguna untuk Freelancer Indonesia
+          description: Review dan tutorial AI tools yang secara konkret berguna untuk freelancer Indonesia — desainer, penulis, dan penerjemah — dengan perbandingan versi gratis vs berbayar.
+          example_hook: "5 AI tools ini aku pakai setiap hari sebagai freelancer dan semuanya gratis atau murah..."
+          guide:
+            audience: "Freelancer Indonesia 22–35 di berbagai bidang (desain, penulisan, terjemahan, social media management, data entry); penonton yang bekerja sendiri dan ingin multiply produktivitas tanpa nambah biaya besar."
+            tone: "Personal dan tested — seperti rekomendasi dari freelancer yang lebih berpengalaman, bukan iklan produk. Harus terasa seperti 'aku sudah coba ini sendiri dan ini yang terjadi'."
+            format: "75–90 detik. Screen recording setiap tool dalam konteks pekerjaan nyata. Struktur: profil freelancer yang cocok → demo tool per use-case (3–5 tools) → tier gratis vs berbayar per tool → rekomendasi urutan adopsi. Vertikal 9:16 dengan teks overlay tool name dan harga."
+            boleh:
+              - "Gunakan contoh pekerjaan nyata freelancer Indonesia — terjemahkan dokumen, buat konten Instagram, dll."
+              - "Tampilkan output nyata dari tool — bukan screenshot fitur tapi hasil kerja"
+              - "Urutkan dari yang paling mudah diadopsi ke yang butuh learning curve"
+              - "Sertakan estimasi berapa project bisa diselesaikan lebih cepat — angka konkret"
+            hindari:
+              - "Jangan rekomendasikan tool yang tidak tersedia atau terlalu lambat untuk diakses dari Indonesia"
+              - "Jangan abaikan tool-tool buatan Asia atau lokal yang kadang lebih sesuai kebutuhan pasar Indonesia"
+              - "Jangan buat konten yang terasa seperti affiliate review — prioritaskan value, bukan komisi"
+              - "Jangan tampilkan tool yang membutuhkan VPN atau akses terbatas tanpa catatan jelas"
+            pola_hook: "Detik 0: screenshot pending order atau brief klien + teks 'tanpa AI ini selesai 6 jam, dengan AI ini 45 menit'. Langsung masuk demo pertama."
+            contoh_judul:
+              - "5 AI tools yang aku pakai setiap hari sebagai freelancer, semua gratis atau di bawah Rp100rb"
+              - "Freelancer desain Indonesia hemat 4 jam per project dengan tools ini"
+              - "AI penulis yang bisa bahasa Indonesia dengan baik — ini yang benar-benar kerja"
+              - "Tools AI untuk translator yang langsung berguna dan tidak butuh langganan mahal"
+              - "Dari terima brief sampai kirim hasil: workflow freelancer saya dengan AI sepenuhnya"
+            content_runway: "Ekosistem AI tools berkembang sangat cepat — tools baru diluncurkan setiap bulan; setiap profesi freelancer (desainer, penulis, videografer, marketer) butuh tool set yang berbeda; update pricing dan fitur selalu membuat konten ini perlu diperbarui secara berkala."
+
+        - slug: ai-tools-prompt-engineering-dasar
+          name: Cara Nulis Prompt yang Dapat Hasil 10x Lebih Baik
+          description: Tutorial prompt engineering dasar yang langsung bisa diterapkan untuk ChatGPT, Claude, dan Gemini — bukan teori tapi contoh sebelum-sesudah yang memperlihatkan perbedaan kualitas output.
+          example_hook: "Prompt yang sama, tapi cara penulisan yang berbeda, hasilnya jauh berbeda. Ini contohnya..."
+          guide:
+            audience: "Pengguna ChatGPT, Claude, atau Gemini 18–40 yang sering dapat hasil mengecewakan; penonton yang merasa AI 'tidak sesuai ekspektasi' padahal masalahnya ada di prompt mereka sendiri; siapapun yang pakai AI untuk kerja atau belajar."
+            tone: "Edukasi tapi mengejutkan — penonton harus terkejut melihat betapa besar perbedaan output dari prompt yang berbeda. Setiap contoh harus membuat penonton ingin langsung mencoba."
+            format: "60–80 detik. Split-screen atau side-by-side: prompt buruk di kiri → output buruk, prompt baik di kanan → output jauh lebih baik. Demo langsung di interface AI. Teks overlay highlighting perbedaan teknik prompt. Vertikal 9:16."
+            boleh:
+              - "Gunakan contoh use-case yang langsung relevan: buat email, rangkum artikel, bantu coding"
+              - "Highlight secara visual (underline, color) bagian prompt yang membuat perbedaan"
+              - "Tunjukkan 3 teknik dasar: spesifisitas, format output, dan role-assignment — cukup untuk satu video"
+              - "Gunakan contoh dalam Bahasa Indonesia — lebih relevan dari contoh dalam Bahasa Inggris"
+            hindari:
+              - "Jangan gunakan jargon 'prompt engineering' berlebihan — bikin penonton merasa intimidasi"
+              - "Jangan tampilkan contoh yang terlalu panjang sehingga teks tidak terbaca di mobile"
+              - "Jangan hanya tampilkan output teks — ringkaskan dan highlight perbedaan kunci secara visual"
+              - "Jangan buat konten yang terasa seperti kelas online panjang — ini short-form, satu insight per video"
+            pola_hook: "Detik 0: tampilkan dua output AI yang jauh berbeda kualitasnya dari prompt yang 'mirip' + teks 'satu kata yang ubah hasilnya sepenuhnya'. Langsung masuk perbandingan prompt."
+            contoh_judul:
+              - "Prompt ini dan prompt ini terlihat mirip tapi hasilnya sangat berbeda — ini kenapa"
+              - "Cara minta ChatGPT tulis email profesional yang benar-benar bisa langsung dikirim"
+              - "Tambah kata ini di awal prompt kamu dan lihat bedanya sendiri"
+              - "Kenapa hasil AI kamu mengecewakan dan cara fix-nya dalam 30 detik"
+              - "Teknik prompt ini dipakai developer senior untuk dapat output coding yang benar dari pertama"
+            content_runway: "Setiap use-case (menulis, coding, analisis, brainstorming, terjemahan) butuh teknik prompt yang berbeda; update model AI selalu mengubah best practice; berbagai profesi menghasilkan angle berbeda; format 'before-after prompt' hampir tidak ada habisnya."
+
+        - slug: ai-tools-image-generation-lokal
+          name: Generate Foto Realistis Orang Indonesia dengan AI
+          description: Tutorial menggunakan AI image generation untuk membuat foto berkualitas tinggi dengan wajah dan konteks visual Indonesia yang akurat, termasuk tips prompt untuk hasil lokal yang konsisten.
+          example_hook: "AI ini bisa generate foto orang Indonesia yang lebih realistis dari tool lain, ini cara settingnya..."
+          guide:
+            audience: "Content creator dan marketer Indonesia 20–35 yang butuh visual untuk konten media sosial tanpa stock photo berbayar; desainer yang ingin generate mockup orang Indonesia untuk presentasi klien; penonton yang penasaran sejauh mana AI bisa generate visual lokal."
+            tone: "Teknis tapi visual — demo output adalah argumen utama. Penonton harus terpukau oleh hasilnya dan penasaran untuk mencoba sendiri. Sedikit rasa 'ini luar biasa' yang genuine."
+            format: "60–80 detik. Screen recording tool image generation dengan tampilkan prompt secara jelas. Struktur: prompt yang gagal menghasilkan wajah Indonesia → teknik modifikasi → prompt yang berhasil → gallery output. Teks overlay pada bagian prompt yang krusial. Vertikal 9:16."
+            boleh:
+              - "Tampilkan prompt secara jelas dan lengkap sehingga penonton bisa langsung mencoba"
+              - "Bandingkan output dari berbagai tools untuk konteks — mana yang paling baik untuk visual Indonesia"
+              - "Tunjukkan variasi penggunaan: foto produk, mockup orang, background Indonesia"
+              - "Jujur tentang keterbatasan — AI masih sering salah soal konteks visual Indonesia tertentu"
+            hindari:
+              - "Jangan gunakan output AI yang menampilkan wajah yang bisa disalahgunakan untuk impersonation"
+              - "Jangan abaikan isu etika penggunaan AI image — sebutkan best practice singkat"
+              - "Jangan promosikan tool yang tidak tersedia di Indonesia atau butuh payment method yang tidak umum"
+              - "Jangan tampilkan output yang mengandung konten sensitif meskipun tidak sengaja"
+            pola_hook: "Detik 0: tampilkan foto yang terlihat seperti foto asli orang Indonesia + teks '100% dibuat AI, tidak ada foto asli di sini'. Langsung masuk penjelasan bagaimana membuatnya."
+            contoh_judul:
+              - "AI ini bisa generate wajah orang Indonesia yang realistis — ini cara dan promptnya"
+              - "Buat foto model Indonesia untuk konten brand tanpa sewa fotografer dan model asli"
+              - "Kenapa AI image generator sering gagal generate wajah Asia dan cara mengatasinya"
+              - "Generate background khas Indonesia (sawah, batik, pasar) dengan AI — prompts yang bekerja"
+              - "Dari prompt ke foto produk dengan model Indonesia dalam 2 menit menggunakan AI ini"
+            content_runway: "Setiap platform AI image generation yang baru dirilis membuka angle review; setiap use-case komersial (fashion, kuliner, properti, skincare) butuh teknik prompt berbeda; perkembangan kemampuan AI generate wajah Asia terus meningkat sehingga konten perlu diperbarui berkala."
+
+    - slug: coding
+      name: "Coding / Programming"
+      description: "Tips ngoding, demo, karir tech."
+      faceless: true
+      difficulty: menengah
+      rpm: tinggi
+      formats: screen-record + caption
+      example_hook: "Kode ini bikin programmer pemula kaget..."
+      guide:
+        audience: "Developer pemula hingga menengah 18–32 yang ingin naik level; mahasiswa informatika atau bootcamp yang mau lebih dari sekadar lulus; fresh graduate tech yang sedang membangun karir; penonton yang mempertimbangkan karir di tech."
+        tone: "Menginspirasi dan practical — seperti mentor tech yang sabar tapi langsung ke inti. Konten harus terasa seperti cheat code karir, bukan kuliah. Penonton harus merasa 'aku bisa lakukan ini'."
+        format: "60–90 detik. Screen recording IDE atau terminal, close-up sehingga kode terbaca. Struktur: hook dengan gap pengetahuan ('kamu mungkin melakukan ini tapi developer senior lakukan ini') → demo teknik atau konsep → hasil yang konkret. Teks overlay pada bagian kode paling penting. Vertikal 9:16."
+        boleh:
+          - "Gunakan font besar dan color scheme yang kontras di IDE — kode harus terbaca di layar kecil"
+          - "Tampilkan konteks karir atau profesional yang relevan, bukan hanya teknik teknis murni"
+          - "Demo di bahasa pemrograman paling populer di Indonesia — Python, JavaScript, atau PHP"
+          - "Format 'cara junior vs cara senior' sangat engaging dan relatable"
+        hindari:
+          - "Jangan rekam dengan font terlalu kecil yang tidak terbaca di layar mobile"
+          - "Jangan gunakan bahasa Inggris untuk semua komentar kode tanpa terjemahan — buat campuran yang natural"
+          - "Jangan buat konten yang terlalu teoritis tanpa contoh implementasi langsung"
+          - "Jangan asumsikan penonton punya setup environment yang sama tanpa menyebutkan tools yang dipakai"
+        pola_hook: "Detik 0: tampilkan kode yang 'terlihat normal' yang kebanyakan developer junior lakukan + teks 'kamu mungkin lakukan ini dan ini masalahnya'. Langsung tunjukkan versi yang benar."
+        contoh_judul:
+          - "Developer senior debug dengan cara ini — bootcamp tidak mengajarkan ini"
+          - "Portfolio coding ini yang dapat panggilan interview, bukan project TODO list biasa"
+          - "Git workflow yang sebenarnya dipakai tim professional, jauh dari yang diajarkan di kampus"
+      micro:
+        - slug: coding-debugging-cara-pro
+          name: Cara Pro Debugging yang Tidak Diajarkan di Bootcamp
+          description: Teknik debugging yang dipakai developer senior — binary search debugging, rubber duck method, dan membaca stack trace efisien — yang jarang ada di kurikulum bootcamp tapi sangat menentukan produktivitas.
+          example_hook: "Kamu bisa Google error, tapi developer senior debug dengan cara ini yang jauh lebih cepat..."
+          guide:
+            audience: "Developer junior dan mahasiswa informatika 18–28 yang sering habiskan berjam-jam debug; penonton yang familiar dengan Google error tapi belum punya mental model debugging yang sistematis; bootcamp graduate yang ingin kerja lebih efisien."
+            tone: "Mentor yang mengungkap rahasia guild. Penonton harus merasa sedang dikasih akses ke 'cara kerja sebenarnya' yang tidak ada di kurikulum resmi. Sedikit 'why didn't anyone tell me this sooner'."
+            format: "60–80 detik. Screen recording IDE dengan sesi debugging nyata — tampilkan bug asli, bukan yang dibuat-buat terlalu mudah. Struktur: contoh developer junior yang stuck berjam-jam → teknik senior yang solve dalam menit → penjelasan mengapa teknik ini bekerja. Teks overlay pada langkah kunci. Vertikal 9:16."
+            boleh:
+              - "Gunakan bug yang realistis dan sering ditemui developer junior Indonesia"
+              - "Tampilkan stack trace yang dibaca secara sistematis — sering diabaikan tapi sangat informatif"
+              - "Demo binary search debugging: comment-out setengah kode untuk isolasi masalah"
+              - "Tunjukkan penggunaan debugger IDE yang proper, bukan sekadar console.log di mana-mana"
+            hindari:
+              - "Jangan gunakan bug yang terlalu trivial atau terlalu advanced untuk audiens target"
+              - "Jangan rekam proses debugging yang benar-benar real-time sangat panjang — edit ke bagian kunci"
+              - "Jangan gunakan bahasa pemrograman niche yang tidak relevan untuk mayoritas developer Indonesia"
+              - "Jangan tampilkan solusi tanpa penjelasan mengapa — penonton butuh mental model, bukan jawaban"
+            pola_hook: "Detik 0: tampilkan error message yang umum (NullPointerException, undefined is not a function, atau sejenisnya) + teks 'developer junior stuck 3 jam, developer senior selesai 10 menit — ini bedanya'. Langsung masuk demo."
+            contoh_judul:
+              - "Developer senior debug error ini dalam 8 menit, junior biasanya butuh 3 jam — ini kenapa"
+              - "Cara baca stack trace yang benar — ini skill yang tidak diajarkan di bootcamp manapun"
+              - "Binary search debugging: teknik yang memotong waktu debug 80% yang tidak pernah viral"
+              - "Console.log di mana-mana adalah tanda developer junior — ini cara yang benar"
+              - "Rubber duck debugging terdengar konyol sampai kamu coba dan bug-nya solve sendiri"
+            content_runway: "Setiap bahasa pemrograman populer menghasilkan pola bug yang berbeda; setiap kategori bug (logic error, runtime error, async issues, dependency conflict) butuh teknik debug berbeda; tools debugging yang terus berkembang (IDE AI assistant, dll.) selalu membuka angle baru."
+
+        - slug: coding-portfolio-tanpa-pengalaman
+          name: Bangun Portfolio Coding yang Dilirik HRD Tanpa Pengalaman
+          description: Panduan membuat portfolio coding yang menarik untuk fresh graduate atau career switcher — jenis project yang dipilih, cara presentasi di GitHub, dan cara jelaskan di interview.
+          example_hook: "Portfolio ini yang bikin developer tanpa pengalaman kerja dapat panggilan interview di startup unicorn..."
+          guide:
+            audience: "Fresh graduate informatika dan bootcamp graduate 20–27 yang sedang job hunting; career switcher yang baru belajar coding dan belum tahu cara showcase skill mereka; penonton yang lamar kerja berkali-kali tapi tidak dapat callback."
+            tone: "Coach yang sudah tahu formula — optimis dan spesifik. Penonton harus keluar dengan action item yang jelas, bukan inspirasi kabur. Satu video harus cukup untuk mulai membuat perubahan nyata pada portfolio."
+            format: "75–90 detik. Screen recording GitHub profile + contoh project page yang bagus vs yang kurang menarik. Struktur: kesalahan umum portfolio developer Indonesia (hook) → 3 prinsip portfolio yang dilirik HRD → contoh konkret per prinsip → CTA actionable. Vertikal 9:16."
+            boleh:
+              - "Tampilkan contoh GitHub profile nyata yang bagus sebagai referensi visual — dengan izin atau profil anonim"
+              - "Sebut jenis project spesifik yang relevan untuk pasar kerja tech Indonesia saat ini"
+              - "Demo cara tulis README.md yang menarik — sering diabaikan tapi sangat mempengaruhi kesan pertama"
+              - "Sertakan tips interview: cara jelaskan project yang bukan dari pengalaman kerja nyata"
+            hindari:
+              - "Jangan buat rekomendasi yang terlalu umum ('buat project yang menarik') — harus spesifik"
+              - "Jangan tampilkan GitHub profile asli orang tanpa izin bahkan untuk contoh negatif"
+              - "Jangan fokus hanya pada kuantitas project — kualitas dan presentasi jauh lebih penting"
+              - "Jangan abaikan konteks pasar kerja Indonesia — skill yang dicari berbeda dari Silicon Valley"
+            pola_hook: "Detik 0: tampilkan GitHub profile yang penuh project tapi mendapat sedikit perhatian HRD + teks 'ini bukan masalah skill, ini masalah presentasi'. Langsung masuk kesalahan pertama."
+            contoh_judul:
+              - "Portfolio GitHub ini yang dapat panggilan interview di Gojek dan Tokopedia tanpa pengalaman"
+              - "Kenapa fresh graduate coding jarang dapat callback meskipun sudah banyak project"
+              - "README.md yang baik lebih penting dari 50 project — ini cara menulisnya"
+              - "3 jenis project ini yang HRD startup Indonesia benar-benar perhatikan"
+              - "Career switcher ini dapat kerja dev pertamanya dalam 3 bulan dengan portfolio seperti ini"
+            content_runway: "Tren hiring tech Indonesia terus berubah mengikuti tech stack yang populer; setiap tahun ada framework atau bahasa yang naik atau turun permintaannya; perbedaan antara startup early-stage, unicorn, dan korporasi menghasilkan angle berbeda; format interview terus berevolusi."
+
+        - slug: coding-git-workflow-tim
+          name: Git Workflow yang Dipakai Tim Profesional
+          description: Tutorial workflow Git yang sesungguhnya dipakai tim software profesional — branching strategy, PR review, dan merge conflict resolution — jauh melampaui sekadar git add commit push.
+          example_hook: "Cara pakai Git ini yang membedakan junior dari mid-level developer di tim profesional..."
+          guide:
+            audience: "Developer 20–30 yang sudah tahu Git dasar tapi belum pernah kerja di tim profesional; bootcamp graduate yang sebentar lagi masuk kerja pertama; developer yang mau naik dari junior ke mid-level."
+            tone: "Insider knowledge — seperti developer yang baru pindah dari kerja solo ke tim besar dan mau share culture shock-nya. Penonton harus merasa sedang mendapat preview dunia kerja nyata sebelum masuk."
+            format: "75–90 detik. Screen recording terminal + GitHub PR interface. Struktur: cara junior pakai Git (semuanya ke main) → cara tim profesional (branching, PR, review) → demo satu siklus feature branch penuh → highlight mana yang paling sering bikin junior kaget. Vertikal 9:16."
+            boleh:
+              - "Tampilkan PR review interface GitHub yang nyata — bukan hanya terminal"
+              - "Demo merge conflict resolution yang umum terjadi — sangat dicari penonton yang pernah panik"
+              - "Tunjukkan commit message yang baik vs buruk dengan contoh nyata"
+              - "Sebut konvensi yang spesifik dipakai perusahaan tech Indonesia besar (Gojek, Tokopedia, dll.)"
+            hindari:
+              - "Jangan tampilkan workflow yang terlalu advanced (GitFlow penuh) untuk target pemula menengah"
+              - "Jangan rekam terminal dengan output yang terlalu panjang tidak terbaca"
+              - "Jangan abaikan aspek kolaborasi — Git di tim sangat berbeda dari Git solo"
+              - "Jangan gunakan contoh repository kosong — pakai yang punya code nyata untuk konteks realistis"
+            pola_hook: "Detik 0: tampilkan git log yang penuh commit 'fix', 'fix2', 'final fix', 'FINAL' + teks 'ini tanda developer yang belum siap kerja di tim'. Langsung masuk cara yang benar."
+            contoh_judul:
+              - "Cara pakai Git ini yang membedakan developer junior dari yang siap kerja di tim"
+              - "Merge conflict yang menakutkan ini ternyata bisa selesai dalam 3 menit — ini caranya"
+              - "PR (Pull Request) adalah cara developer profesional kerja — ini yang perlu kamu tahu sebelum kerja pertama"
+              - "Commit message seperti ini yang bikin senior developer langsung tahu siapa junior di tim"
+              - "Branching strategy yang dipakai startup Indonesia — lebih sederhana dari yang ada di tutorial"
+            content_runway: "Setiap tools Git hosting (GitHub, GitLab, Bitbucket) memiliki workflow dan UI berbeda; setiap tim memiliki konvensi yang berbeda sehingga banyak angle yang bisa dieksplorasi; Git terus diperbarui dengan fitur baru; topik merge conflict dan rebase resolusi selalu relevan."
+
+    - slug: gadget-review
+      name: "Review Gadget"
+      description: "Unboxing/review perangkat. Afiliasi."
+      faceless: true
+      difficulty: menengah
+      rpm: tinggi
+      formats: POV + close-up + voiceover
+      example_hook: "Gadget Rp200rb ini ngalahin yang jutaan..."
+      guide:
+        audience: "Konsumen Indonesia 18–40 yang sedang pertimbangkan pembelian gadget atau aksesoris; penonton yang tidak percaya review berbayar dan mencari second opinion jujur; pelajar dan mahasiswa yang cari nilai terbaik untuk budget terbatas."
+        tone: "Jujur dan tidak tedeng aling-aling — kalau jelek bilang jelek. Kredibilitas dibangun dari kejujuran, bukan hanya pujian. Penonton harus bisa trust bahwa reviewer benar-benar pakai dan uji produk."
+        format: "60–90 detik. POV hands-on yang menampilkan produk dari dekat. Struktur: hook dengan klaim nilai (harga vs performa) → unboxing singkat → demo fitur utama → satu pengujian konkret → verdict jelas. Close-up fisik produk. Vertikal 9:16."
+        boleh:
+          - "Tampilkan pengujian nyata yang bisa direplikasi — bukan sekadar lihat-lihat produk"
+          - "Perbandingan head-to-head dengan produk lebih mahal selalu engaging"
+          - "Sebut harga marketplace Indonesia yang aktual — Shopee, Tokopedia, atau offline"
+          - "Verdict yang jelas dan langsung: 'worth it / tidak worth it / tergantung kebutuhanmu'"
+        hindari:
+          - "Jangan buat review yang semua positif tanpa satu kelemahan pun — tidak credible"
+          - "Jangan sebut harga tanpa tanggal atau platform referensi — harga berubah cepat"
+          - "Jangan review produk yang tidak bisa didapat di Indonesia tanpa informasi cara beli"
+          - "Jangan tutup-tutupi jika produk adalah kiriman sponsor — disclosure wajib"
+        pola_hook: "Detik 0: tampilkan produk murah di sebelah produk mahal + klaim yang mengejutkan ('yang Rp200rb ini lebih baik di kategori ini'). Langsung masuk ke proof."
+        contoh_judul:
+          - "Charger Rp50rb ini lebih aman dari charger original Rp500rb — ini testnya"
+          - "Laptop second ini aku beli Rp2jt dan masih lebih kencang dari laptop baru Rp4jt"
+          - "Earphone Rp150rb ini aku blind test lawan JBL Rp600rb, hasilnya mengejutkan"
+      micro:
+        - slug: gadget-review-aksesoris-under-200rb
+          name: Aksesoris HP Terbaik di Bawah Rp200rb
+          description: Review jujur aksesoris smartphone murah yang kinerjanya mengejutkan — casing, charger, dan kabel — mengidentifikasi yang benar-benar worth it dari lautan produk murah di marketplace.
+          example_hook: "Charger Rp50rb ini ternyata lebih aman dari charger original yang 10x harganya, ini testnya..."
+          guide:
+            audience: "Pengguna smartphone 16–35 yang belanja aksesoris di marketplace Indonesia; pelajar dan mahasiswa yang harus bijak dengan budget; penonton yang bingung pilih dari ratusan pilihan murah di Shopee."
+            tone: "Consumer advocate — seperti teman yang rajin research sebelum beli dan mau share hasilnya. Jujur tentang mana yang 'surprisingly good' dan mana yang 'kelihatan bagus di foto doang'."
+            format: "60–75 detik. Close-up fisik produk yang jelas. Struktur: produk mahal sebagai referensi → produk murah yang diuji → test konkret (charging speed, drop test ringan, audio test) → comparison → verdict + rekomendasi beli di mana. Vertikal 9:16."
+            boleh:
+              - "Gunakan alat pengukur yang terlihat di frame — ammeter, stopwatch, decibel meter — sebagai bukti"
+              - "Tampilkan packaging dan build quality yang sering beda jauh dari foto marketplace"
+              - "Sebut link atau keyword pencarian di marketplace untuk memudahkan penonton"
+              - "Format 'best of' (charger, kabel, casing, earphone) per video menghasilkan seri konten"
+            hindari:
+              - "Jangan review produk yang tidak bisa diverifikasi safety-nya — bahaya charger palsu nyata"
+              - "Jangan tampilkan merek atau toko tanpa disclosure jika ada kerjasama komersial"
+              - "Jangan buat kesan semua produk murah bagus — beberapa memang buruk dan harus dikatakan"
+              - "Jangan lupa sebut tanggal review karena produk marketplace berubah model tanpa pemberitahuan"
+            pola_hook: "Detik 0: close-up charger murah di sebelah charger original + teks 'yang ini Rp50rb, yang ini Rp500rb — mana yang lebih aman di test ini'. Langsung masuk pengujian."
+            contoh_judul:
+              - "Charger Rp50rb di Shopee ini aku uji keamanannya — hasilnya bikin kaget"
+              - "5 aksesoris HP terbaik di bawah Rp200rb yang aku pakai setiap hari"
+              - "Kabel data Rp15rb vs Rp200rb — perbedaan charging speed-nya segini"
+              - "Casing Rp20rb ini ternyata punya proteksi yang tidak kalah dari yang Rp150rb"
+              - "Earphone true wireless Rp150rb ini aku blind test dan hasilnya mengubah pandanganku"
+            content_runway: "Marketplace Indonesia dirilis ribuan produk aksesoris baru setiap bulan; setiap kategori aksesoris (charger, kabel, casing, earphone, powerbank, mount) butuh review berbeda; momen kampanye belanja (Harbolnas, Lebaran, Back to School) menciptakan urgensi konten yang berulang."
+
+        - slug: gadget-review-laptop-second-worth
+          name: Laptop Second Berapa yang Masih Layak Dibeli
+          description: Panduan membeli laptop bekas dengan benchmark yang jelas — usia maksimal, spec minimum per harga, dan cara cek kondisi fisik — untuk mahasiswa yang harus memilih laptop dengan budget terbatas.
+          example_hook: "Di bawah budget ini, laptop baru tidak ada yang worth it. Ini alternatif second yang lebih baik..."
+          guide:
+            audience: "Mahasiswa dan fresh graduate 18–25 yang harus beli laptop dengan budget ketat; orang tua yang carikan laptop untuk anak kuliah; penonton yang frustrasi dengan pilihan laptop baru di bawah Rp5 juta."
+            tone: "Advisor yang berpihak pada pembeli — bukan dealer. Jujur tentang risiko beli second, tapi juga jujur bahwa untuk budget tertentu second adalah pilihan rasional yang lebih baik dari baru yang underpowered."
+            format: "75–90 detik. Demo fisik laptop second yang sedang diinspeksi. Struktur: argumen kenapa second kadang lebih rasional (hook dengan perbandingan spec) → checklist inspeksi visual dan fungsional → benchmark singkat → rekomendasi budget range per use-case. Vertikal 9:16."
+            boleh:
+              - "Tampilkan checklist inspeksi yang bisa dilakukan siapapun tanpa keahlian teknis"
+              - "Gunakan benchmark yang konkret dan mudah dipahami — bukan hanya angka teknis"
+              - "Sebut toko atau platform second yang terpercaya di Indonesia dengan tips red flag"
+              - "Sertakan skenario penggunaan per budget — pelajar, desainer pemula, programmer"
+            hindari:
+              - "Jangan rekomendasikan laptop dengan usia sangat tua yang baterainya tidak bisa bertahan"
+              - "Jangan abaikan risiko tidak ada garansi — harus disebutkan sebagai tradeoff nyata"
+              - "Jangan buat generalisasi merek tertentu tanpa data yang cukup"
+              - "Jangan sebut toko tertentu tanpa disclosure jika ada kerjasama atau afiliasi"
+            pola_hook: "Detik 0: tampilkan spec laptop baru Rp4jt yang rendah di sebelah spec laptop second harga sama yang jauh lebih tinggi + teks 'dengan budget ini, second jauh lebih masuk akal'. Langsung masuk penjelasan."
+            contoh_judul:
+              - "Budget Rp3–5 juta untuk laptop? Ini kenapa second lebih masuk akal dari baru"
+              - "Cara cek kondisi laptop second sebelum beli agar tidak tertipu — checklist lengkap"
+              - "ThinkPad second Rp2,5jt vs laptop baru Rp4jt untuk mahasiswa — mana yang menang?"
+              - "Laptop second ini aku beli Rp2jt dan masih lebih kencang dari laptop teman yang beli baru Rp5jt"
+              - "Red flag yang harus kamu hindari saat beli laptop second di Tokopedia atau offline"
+            content_runway: "Setiap generasi prosesor baru menggeser value proposition laptop second; setiap segment (gaming, desain, programming, perkantoran) butuh rekomendasi berbeda; kondisi pasar second Indonesia sangat aktif dengan variasi merek dan model yang luas."
+
+        - slug: gadget-review-earphone-lokal
+          name: Earphone Brand Lokal yang Bersaing dengan JBL
+          description: Review komparatif earphone buatan Indonesia atau brand Asia yang kurang dikenal melawan brand besar pada rentang harga yang sama, membongkar apakah harga brand premium selalu justified.
+          example_hook: "Earphone Rp150rb ini aku test blind dengan earphone Rp600rb, hasilnya mengejutkan..."
+          guide:
+            audience: "Konsumen musik dan konten 17–35 yang butuh earphone tapi tidak mau bayar brand premium; penonton yang curiga brand lokal atau unknown bisa lebih bagus dari yang branded; pelajar yang anggaran untuk audio terbatas."
+            tone: "Investigatif dan fair — seperti consumer report yang tidak memihak brand besar atau kecil. Penonton harus percaya test-nya objektif karena metodologinya transparan."
+            format: "60–80 detik. Close-up fisik kedua earphone. Demo: masukkan audio yang sama, rekam output, bandingkan frekuensi. Blind test dengan teks overlay hasil voting. Verdict berdasarkan value-for-money, bukan sekedar kualitas absolut. Vertikal 9:16."
+            boleh:
+              - "Gunakan blind test methodology yang jelas dan bisa diverifikasi"
+              - "Tampilkan berat, build quality, dan aksesori yang disertakan sebagai faktor value"
+              - "Tes aspek yang relevan untuk pengguna Indonesia: durability di cuaca panas dan lembab"
+              - "Sertakan earphone lokal buatan Indonesia jika ada yang relevan untuk mendorong industri lokal"
+            hindari:
+              - "Jangan buat test yang tidak bisa direplikasi atau terlihat sudah tahu hasilnya"
+              - "Jangan hanya bandingkan suara tanpa mempertimbangkan durability dan value keseluruhan"
+              - "Jangan gunakan sample produk yang tidak representatif dari produk yang dijual di pasaran"
+              - "Jangan rekomendasikan produk yang tidak tersedia di marketplace Indonesia"
+            pola_hook: "Detik 0: dua earphone berdampingan + harga masing-masing terlihat jelas + teks 'aku tidak bisa bedakan suaranya dalam blind test'. Langsung masuk metodologi test."
+            contoh_judul:
+              - "Earphone Rp150rb ini aku blind test lawan JBL Rp600rb dan hasilnya mengejutkan"
+              - "Brand earphone Malaysia ini lebih bagus dari Sony di harga yang sama — ini testnya"
+              - "Earphone Indonesia ini dapat rating lebih tinggi dari JBL dalam blind test 20 orang"
+              - "Kenapa kamu bayar mahal untuk nama brand earphone kalau ini ada"
+              - "True wireless Rp200rb vs Rp800rb — test ANC, baterai, dan suara selama 2 minggu"
+            content_runway: "Pasar earphone sangat aktif dengan ratusan model baru setiap bulan; setiap kategori (wired, TWS, ANC, gaming, sport) butuh review berbeda; brand Asia (Moondrop, KZ, Soundcore, Edifier) terus meluncurkan produk baru yang menarik untuk diuji."
+
+    - slug: product-review
+      name: "Product Review"
+      description: "Review produk konsumen dengan perbandingan harga dan performa untuk keputusan beli."
+      faceless: true
+      difficulty: menengah
+      rpm: tinggi
+      formats: unboxing + demo + voiceover
+      example_hook: "Produk viral ini worth it atau cuma hype?"
+      guide:
+        audience: "Konsumen Indonesia 20–40 yang aktif belanja online dan terpengaruh review sebelum beli; penonton yang capek dengan review endorsement berbayar yang tidak objektif; pembeli yang ingin second opinion jujur sebelum checkout."
+        tone: "Jujur dan tidak bisa dibeli. Penonton harus bisa membedakan konten ini dari iklan. Kalimat 'ini kekurangannya' dan 'ini yang lebih baik' adalah nilai utama — bukan hanya pujian."
+        format: "60–90 detik. Unboxing cepat + demo langsung dalam kondisi penggunaan nyata. Struktur: hype vs realita (hook) → test konkret → kelebihan nyata + kelemahan yang jujur → verdict siapa yang cocok beli / tidak perlu beli. Voiceover wajib. Vertikal 9:16."
+        boleh:
+          - "Lakukan uji coba nyata yang relevan untuk penonton Indonesia — kondisi cuaca, kebiasaan lokal"
+          - "Bandingkan dengan kompetitor atau alternatif yang lebih murah secara langsung"
+          - "Verdict harus spesifik siapa yang cocok dan tidak cocok — bukan 'tergantung kebutuhan' yang samar"
+          - "Sebut harga teraktual di marketplace Indonesia saat review dibuat"
+        hindari:
+          - "Jangan sembunyikan kelemahan produk atau framing kelemahan sebagai 'hanya masalah kecil'"
+          - "Jangan review produk yang tidak bisa diuji dalam kondisi penggunaan nyata"
+          - "Jangan buat konten yang tidak bisa dibedakan dari iklan berbayar tanpa disclosure"
+          - "Jangan abaikan aspek safety untuk produk konsumsi (suplemen, peralatan listrik, dll.)"
+        pola_hook: "Detik 0: tampilkan klaim iklan yang besar atau hype media sosial + teks 'aku beli dan uji ini selama X hari, ini yang sebenarnya terjadi'. Penonton yang sedang pertimbangkan beli produk ini langsung tertarik."
+        contoh_judul:
+          - "Produk viral ini aku beli dan test 2 minggu — jauh dari yang dijanjikan iklannya"
+          - "Skincare lokal Rp80rb ini aku bandingkan dengan Korea Rp300rb — ini hasilnya"
+          - "Alat masak viral Shopee ini aku test masak nyata — worth it atau cuma bagus di video?"
+      micro:
+        - slug: product-review-skincare-lokal-vs-impor
+          name: Skincare Lokal vs Impor Harga Sama — Mana yang Menang?
+          description: Perbandingan head-to-head produk skincare lokal Indonesia dengan produk impor pada rentang harga yang sama, menggunakan pengujian nyata bukan sekadar baca kandungan.
+          example_hook: "Serum lokal Rp80rb ini aku bandingkan dengan serum Korea Rp90rb selama 4 minggu, ini hasilnya..."
+          guide:
+            audience: "Perempuan dan pria 18–35 yang aktif pakai skincare; penonton yang ingin tahu apakah produk lokal worth it dibanding impor; konsumen yang peduli kandungan tapi tidak punya waktu riset panjang."
+            tone: "Empiris dan relatable — seperti teman yang sungguh-sungguh test selama beberapa minggu dan mau cerita hasilnya. Tidak terlalu saintifik tapi juga bukan sekadar kesan pertama."
+            format: "60–80 detik. Side-by-side produk + usage log singkat. Struktur: profil kulit penguji (untuk relevansi) → kandungan utama yang dibandingkan → hasil setelah X minggu dengan foto progress jika ada → verdict berdasarkan value → rekomendasi untuk jenis kulit tertentu. Vertikal 9:16."
+            boleh:
+              - "Tampilkan foto atau close-up kulit sebagai bukti perubahan yang bisa dilihat"
+              - "Bandingkan kandungan kunci secara singkat — bukan chemistry lecture, tapi konteks yang cukup"
+              - "Sertakan informasi BPOM untuk produk lokal — relevan untuk penonton Indonesia"
+              - "Sebut jenis kulit penguji untuk membantu penonton yang kulitnya serupa"
+            hindari:
+              - "Jangan buat klaim medis atau dermatologi tanpa disclaimer bahwa ini bukan saran dokter"
+              - "Jangan tampilkan gambar kulit yang mungkin sensitif tanpa warning"
+              - "Jangan review produk yang tidak bisa didapat secara luas di Indonesia"
+              - "Jangan abaikan faktor eksternal yang mempengaruhi hasil (cuaca, diet, stress) tanpa menyebutnya"
+            pola_hook: "Detik 0: dua produk berdampingan dengan harga terlihat jelas + teks 'aku pakai keduanya 4 minggu — ini yang benar-benar lebih baik'. Langsung masuk perbandingan."
+            contoh_judul:
+              - "Serum lokal Rp80rb vs Korea Rp90rb — aku pakai keduanya 4 minggu dan ini yang menang"
+              - "Skincare Indonesia ini ternyata mengalahkan brand Korea di kategori ini"
+              - "Kenapa aku berhenti beli serum Korea setelah coba produk lokal Rp75rb ini"
+              - "Kandungan Niacinamide di produk lokal dan impor ini berbeda signifikan — ini pengaruhnya"
+              - "Moisturizer Indonesia vs Jepang untuk kulit berminyak — 30 hari test, ini hasilnya"
+            content_runway: "Setiap kategori skincare (cleanser, toner, serum, moisturizer, SPF) menghasilkan video terpisah; industri skincare lokal Indonesia berkembang sangat pesat dengan brand baru setiap bulan; tren ingredient baru (bakuchiol, centella, snail mucin) menciptakan angle baru secara berulang."
+
+        - slug: product-review-peralatan-dapur-murah
+          name: Peralatan Dapur Viral Shopee — Worth It atau Tidak?
+          description: Review jujur peralatan dapur yang sedang viral di Shopee dan TikTok Indonesia — apakah sesuai klaim iklan atau hanya bagus di video — dengan uji coba nyata di dapur.
+          example_hook: "Alat masak ini 50.000 terjual bulan ini di Shopee, aku beli dan ini yang sebenarnya terjadi..."
+          guide:
+            audience: "Ibu rumah tangga dan penghuni kos 20–45 yang sering tergoda beli alat dapur viral; penonton yang pernah beli produk viral dan kecewa; siapapun yang sebelum checkout Shopee butuh second opinion jujur."
+            tone: "Consumer champion — campuran skeptis dan terbuka. Penonton harus merasa reviewer tidak ingin produknya bagus atau jelek, tapi sungguh ingin tahu faktanya. Kadang produk viral memang bagus, kadang tidak."
+            format: "60–80 detik. Demo langsung di dapur nyata bukan studio. Struktur: klaim iklan atau video viral (hook) → unboxing singkat → test masak nyata → hasil vs klaim → verdict + siapa yang cocok dan tidak cocok beli. Vertikal 9:16."
+            boleh:
+              - "Tampilkan screenshot iklan atau video viral aslinya sebagai referensi klaim"
+              - "Test dalam kondisi dapur nyata — bukan setup sempurna yang tidak realistis"
+              - "Bandingkan dengan alat dapur yang sudah ada — apakah benar-benar lebih baik?"
+              - "Tunjukkan proses pembersihan — sering diabaikan tapi sangat relevan untuk produk dapur"
+            hindari:
+              - "Jangan review produk yang potensi bahayanya tinggi tanpa prosedur safety yang terlihat"
+              - "Jangan buat review yang terlihat dipesan untuk positif atau negatif — objektivitas adalah nilainya"
+              - "Jangan gunakan bahan masakan yang tidak umum di Indonesia untuk demo — tidak relevan"
+              - "Jangan abaikan durability — kesan pertama berbeda dengan ketahanan jangka panjang"
+            pola_hook: "Detik 0: tampilkan screenshot jumlah terjual di Shopee ('50 ribu terjual bulan ini') + teks 'aku beli untuk cari tahu kenapa'. Langsung masuk ke unboxing."
+            contoh_judul:
+              - "Alat masak ini 50 ribu terjual di Shopee bulan ini — aku test dan ini yang terjadi"
+              - "Wajan viral TikTok yang katanya anti lengket sehebat itu — aku uji 2 minggu"
+              - "Rice cooker mini Rp100rb yang viral — layak beli atau cuma bagus di foto?"
+              - "Chopper sayur Rp60rb ini yang bikin konten food prep mudah — tapi ada catatan penting"
+              - "Alat masak viral ini iklannya sempurna, realitanya ini setelah sebulan pemakaian"
+            content_runway: "Setiap minggu ada produk dapur baru yang viral di marketplace Indonesia; musim-musim tertentu (Ramadan, Lebaran, akhir tahun) memunculkan gelombang produk baru; setiap kategori dapur (memasak, menyimpan, membersihkan) menghasilkan video terpisah."
+
+        - slug: product-review-suplemen-populer
+          name: Suplemen Paling Laris Indonesia — Mana yang Benar-benar Kerja?
+          description: Review berbasis sains terhadap suplemen populer Indonesia — vitamin C dosis tinggi, collagen, dan omega-3 — dengan penjelasan apakah klaim marketing-nya sesuai riset aktual.
+          example_hook: "Suplemen ini iklannya ada di mana-mana, tapi riset bilang efeknya ini..."
+          guide:
+            audience: "Konsumen suplemen 22–45 yang menghabiskan puluhan hingga ratusan ribu per bulan untuk suplemen dan belum yakin apakah efektif; penonton yang ingin keputusan beli berdasarkan fakta, bukan iklan artis; mereka yang skeptis tapi terbuka pada bukti."
+            tone: "Science-based tapi accessible — seperti teman yang sempat baca risetnya dan mau cerita singkat yang jujur. Tidak alarmis, tidak dismissive. Klaim yang didukung riset diterima; yang tidak punya bukti cukup dibilang apa adanya."
+            format: "75–90 detik. Close-up produk + tampilkan packaging klaim. Struktur: klaim marketing yang besar (hook) → apa yang riset aktual katakan (3 poin sederhana) → konteks dosis dan kondisi yang membuat suplemen bekerja → verdict siapa yang benar-benar perlu vs siapa yang mungkin buang uang. Vertikal 9:16."
+            boleh:
+              - "Kutip sumber riset yang bisa diverifikasi — bukan harus full citation tapi sebut journal atau institusinya"
+              - "Tunjukkan perbedaan antara klaim marketing dan klaim yang didukung riset secara visual"
+              - "Sertakan konteks penting — kondisi kekurangan, dosis efektif, cara konsumsi yang benar"
+              - "Rekomendasikan kapan suplemen benar-benar diperlukan vs kapan bisa dari makanan saja"
+            hindari:
+              - "Jangan buat klaim medis yang menggantikan saran dokter — disclaimer wajib"
+              - "Jangan review suplemen yang klaim kesehatan berlebihan tanpa izin BPOM Indonesia"
+              - "Jangan oversimplifikasi riset yang kompleks sampai pesannya salah"
+              - "Jangan rekomendasikan dosis spesifik tanpa menyarankan konsultasi profesional"
+            pola_hook: "Detik 0: tampilkan iklan atau klaim marketing suplemen yang besar + teks 'ini yang riset sebenarnya katakan tentang klaim ini'. Kontras antara klaim besar dan realita riset adalah hook-nya."
+            contoh_judul:
+              - "Vitamin C dosis tinggi yang diminum jutaan orang Indonesia — riset bilang ini efeknya"
+              - "Collagen drink yang iklannya ada di mana-mana — ini yang sains katakan sebenarnya"
+              - "Suplemen paling laris di Shopee ini aku cek klaim iklannya ke riset — hasilnya mengejutkan"
+              - "Omega-3 worth it atau tidak? Ini kondisi di mana riset bilang ya dan kondisi di mana tidak"
+              - "Multivitamin vs suplemen spesifik — mana yang lebih worth it untuk orang Indonesia rata-rata"
+            content_runway: "Industri suplemen Indonesia sangat besar dan aktif dengan produk baru terus diluncurkan; tren kesehatan global (immunity, anti-aging, gut health) menciptakan gelombang produk baru yang perlu diverifikasi; setiap kategori suplemen butuh video terpisah; update riset sains memungkinkan revisit topik lama."

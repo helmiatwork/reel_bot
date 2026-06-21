@@ -1,0 +1,461 @@
+version: 1
+vertical:
+  slug: v-lainnya
+  name: Lainnya
+  description: Konten yang tidak masuk kategori utama — berkebun, buku, kuis interaktif, dan kompilasi tematik.
+  guide:
+    audience: "Penonton 18–40 Indonesia yang serba ingin tahu dan punya minat beragam; tidak terikat satu niche kuat, tapi loyal pada creator yang konsisten menyajikan konten berkualitas tentang hal-hal sehari-hari yang sering diabaikan."
+    tone: "Kasual dan ingin tahu. Tidak perlu dramatis atau viral-bait — cukup autentik, informatif, dan mudah dicerna. Gaya bicara teman yang tahu banyak tanpa menggurui."
+    format: "Variatif tergantung niche: voiceover + b-roll untuk edukasi, teks + reveal untuk kuis, time-lapse + before-after untuk gardening, dan klip + caption untuk kompilasi. Durasi 30–90 detik, vertikal 9:16 kecuali ada catatan khusus."
+    boleh:
+      - "Gabungkan edukasi ringan dengan hiburan — penonton datang untuk belajar tapi tetap mau terhibur"
+      - "Gunakan contoh lokal Indonesia yang relevan untuk memperkuat koneksi emosional"
+      - "Format kuis dan interaksi dorong komentar yang meningkatkan engagement organik"
+      - "Kompilasi dan ringkasan buku bisa dijadikan seri untuk membangun habit tonton yang berkelanjutan"
+    hindari:
+      - "Jangan buat konten yang terlalu niche sampai kehilangan audiens umum"
+      - "Jangan klaim fakta atau saran tanpa dasar — kredibilitas di vertikal ini mudah rusak"
+      - "Jangan pakai musik ber-hak-cipta pada format yang tidak memerlukannya"
+      - "Jangan buat hook yang overpromise tapi kontennya underdeliver"
+    pola_hook: "Detik 0–3: tunjukkan hasil yang menarik atau ajukan pertanyaan yang membuat penonton tidak bisa skip (bukan clickbait, tapi rasa ingin tahu yang jujur)."
+    contoh_judul:
+      - "Hal ini ada di sekitar kamu setiap hari tapi kamu tidak pernah perhatikan"
+      - "Coba tebak ini, 90% orang Indonesia ternyata salah"
+      - "Satu hal sederhana yang bisa dimulai hari ini dan hasilnya terlihat dalam seminggu"
+
+  niches:
+    - slug: gardening
+      name: "Berkebun / Tanaman"
+      description: "Tips tanaman, urban farming."
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: time-lapse + POV + voiceover
+      example_hook: "Tanam ini sekali, panen selamanya..."
+      guide:
+        audience: "Penghuni kota 22–40 yang ingin berkebun tapi merasa tidak punya cukup lahan atau waktu; generasi muda yang tertarik gaya hidup berkelanjutan; pemilik kos atau apartemen yang ingin membuat ruangnya lebih hijau."
+        tone: "Sabar dan encouraging. Gardening terasa menakutkan bagi pemula — nada harus selalu meyakinkan penonton bahwa mereka bisa melakukannya, dengan langkah yang mudah diikuti dan hasil yang terlihat nyata."
+        format: "45–90 detik. Time-lapse pertumbuhan sangat efektif untuk kepuasan visual. POV tangan menanam, menyiram, dan memanen membangun koneksi personal. Voiceover singkat untuk konteks. Vertikal 9:16."
+        boleh:
+          - "Tampilkan hasil nyata — tanaman yang sudah tumbuh atau panen yang bisa dimakan"
+          - "Gunakan tanaman yang mudah ditemukan di pasar atau toko online Indonesia"
+          - "Time-lapse pertumbuhan 1–4 minggu adalah konten paling memuaskan di niche ini"
+          - "Beri estimasi biaya awal yang jujur dan rendah untuk menurunkan barrier entry"
+        hindari:
+          - "Jangan rekomendasikan tanaman atau produk yang sulit ditemukan di Indonesia"
+          - "Jangan tampilkan wajah jika channel ini dirancang faceless"
+          - "Jangan skip kegagalan — penonton lebih percaya creator yang jujur tentang trial and error"
+          - "Jangan gunakan jargon botani yang tidak perlu — tujuannya mengajak, bukan mengajar akademis"
+        pola_hook: "Detik 0: tampilkan hasil akhir (tanaman subur atau panen) + teks 'dari benih kecil dalam X minggu'. Langsung masuk ke langkah pertama di detik 3."
+        contoh_judul:
+          - "Tanam ini sekali di polybag dan panen setiap minggu selama setahun"
+          - "Urban farming di balkon 1 meter — setup yang sudah aku pakai 6 bulan"
+          - "Tanaman ini gratis diperbanyak dari satu pot yang sudah ada"
+      micro:
+        - slug: gardening-polybag-balkon-sempit
+          name: Urban Farming di Balkon Sempit dengan Polybag
+          description: Panduan menanam sayuran produktif di balkon kos atau apartemen menggunakan polybag murah, membuktikan urban farming bisa dimulai dengan lahan kurang dari 2 meter persegi.
+          example_hook: "Balkon 1x2 meter ini hasilkan sayuran cukup untuk seminggu, ini setup-nya..."
+          guide:
+            audience: "Penghuni kos dan apartemen 20–35 yang ingin menanam tapi tidak punya halaman; mahasiswa dan pekerja muda yang tertarik ketahanan pangan skala kecil; penonton yang terinspirasi konten sustainable living."
+            tone: "Praktis dan memotivasi. Setiap tantangan (lahan sempit, anggaran terbatas) dijawab dengan solusi konkret. Penonton harus merasa bahwa ini bisa dilakukan mulai hari ini tanpa persiapan besar."
+            format: "60–90 detik. Tunjukkan setup balkon nyata (bukan studio) → susun polybag dan media tanam → tanam → time-lapse pertumbuhan → panen kecil pertama. Vertikal 9:16, close-up tangan dan tanaman."
+            boleh:
+              - "Tampilkan total biaya setup di awal — transparansi biaya adalah daya tarik utama"
+              - "Gunakan sayuran cepat panen (kangkung, bayam, selada) agar time-lapse tidak terlalu panjang"
+              - "Before-after balkon kosong vs balkon penuh polybag hijau sangat efektif"
+              - "Sebutkan merk polybag, tanah, dan pupuk yang mudah ditemukan di Tokopedia atau Shopee"
+            hindari:
+              - "Jangan rekomendasikan setup yang butuh balkon besar atau peralatan mahal"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan skip kegagalan awal — kreator yang jujur lebih dipercaya"
+              - "Jangan gunakan tanaman hias yang tidak bisa dipanen — kurangi relevansi praktis"
+            pola_hook: "Detik 0: tampilkan balkon kecil penuh tanaman hijau dari atas + teks 'lahan 1x2 meter, panen setiap minggu'. Langsung tunjukkan polybag dan media tanam di detik 3."
+            contoh_judul:
+              - "Balkon kos 1x2 meter ini hasilkan sayuran cukup untuk seminggu, ini setup-nya"
+              - "Urban farming polybag dari Rp150rb — sudah 4 bulan panen bayam sendiri"
+              - "Kangkung di balkon apartemen lantai 12 — ini yang aku pelajari setelah 3 bulan"
+              - "Setup urban farming terkecil yang masih produktif, tes di balkon sempit"
+              - "Dari polybag pertama sampai panen pertama — timeline jujur urban farming pemula"
+            content_runway: "Setiap jenis sayuran, metode tanam (polybag, hidroponik sederhana, pot bekas), musim, dan level pengalaman pemula menghasilkan video yang berbeda; komunitas urban farming Indonesia terus berkembang dan selalu butuh konten pemula."
+
+        - slug: gardening-tanaman-pengusir-nyamuk
+          name: Tanaman Hias yang Sekaligus Pengusir Nyamuk
+          description: Panduan menanam tanaman yang terbukti mengusir nyamuk secara alami sambil tetap estetik sebagai tanaman hias dalam ruangan, relevan untuk iklim tropis Indonesia.
+          example_hook: "Tanaman ini sudah aku tanam 3 bulan di kamar dan nyamuk benar-benar berkurang..."
+          guide:
+            audience: "Penghuni rumah dan kos 20–45 yang terganggu nyamuk dan tidak ingin bergantung pada obat nyamuk kimia; orangtua muda yang ingin solusi aman untuk anak; penonton yang tertarik gaya hidup alami."
+            tone: "Informatif dan meyakinkan. Klaim tentang efektivitas harus disampaikan dengan jujur dan berbasis bukti — hindari hiperbola. Nada teman yang sudah mencoba dan berbagi pengalaman nyata."
+            format: "45–75 detik. Tunjukkan tanaman yang sudah tumbuh → close-up daun atau bunga khas → penjelasan singkat kenapa mengusir nyamuk → cara tanam dan perawatan minimal. Voiceover atau teks overlay. Vertikal 9:16."
+            boleh:
+              - "Tampilkan perbandingan sebelum dan sesudah menggunakan tanaman (anekdotal, bukan klaim medis)"
+              - "Sebut tanaman dengan nama Indonesia yang umum dikenal, bukan hanya nama Latin"
+              - "Tunjukkan cara meletakkan tanaman di sudut kamar yang estetik sekaligus efektif"
+              - "Rekomendasikan kombinasi 2–3 tanaman untuk efek maksimal di ruangan kecil"
+            hindari:
+              - "Jangan klaim tanaman bisa menggantikan 100% obat nyamuk — tidak realistis dan menyesatkan"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan rekomendasikan tanaman yang sulit ditemukan di Indonesia"
+              - "Jangan buat konten terlalu ilmiah hingga kehilangan daya tarik praktis"
+            pola_hook: "Detik 0: close-up tanaman hias yang subur + teks 'nyamuk berkurang sejak tanam ini 3 bulan lalu'. Langsung masuk ke nama tanaman pertama di detik 3."
+            contoh_judul:
+              - "Tanaman ini aku taruh di kamar dan nyamuk benar-benar berkurang dalam 3 bulan"
+              - "5 tanaman hias yang juga pengusir nyamuk alami, semua ada di pasar lokal"
+              - "Ganti obat nyamuk dengan tanaman ini — lebih aman dan lebih estetik"
+              - "Sereh, lavender, dan ini — kombinasi tanaman yang bikin nyamuk kabur dari kamar"
+              - "Tanaman pengusir nyamuk yang juga enak dipandang, semua di bawah Rp50rb"
+            content_runway: "Setiap jenis tanaman (sereh, lavender, mint, citronella, kemangi), cara perawatan per tanaman, kombinasi yang berbeda, dan ruangan yang berbeda (kamar, ruang tamu, dapur) menghasilkan konten yang tidak ada habisnya."
+
+        - slug: gardening-propagasi-gratis
+          name: Perbanyak Tanaman Sendiri Tanpa Beli Benih
+          description: Teknik propagasi berbagai jenis tanaman hias dan sayuran dari stek, biji, dan daun yang sudah ada, sehingga koleksi tanaman bisa berkembang tanpa biaya tambahan.
+          example_hook: "Satu tanaman monstera ini sudah jadi 12 tanaman dalam 6 bulan tanpa beli sesuatu..."
+          guide:
+            audience: "Pecinta tanaman 20–40 yang sudah punya beberapa tanaman dan ingin memperbanyak tanpa biaya; penonton yang terinspirasi konten zero-waste dan berkelanjutan; penggemar tanaman hias yang aktif di komunitas tanaman Indonesia."
+            tone: "Gembira dan berbagi. Nada seperti membongkar rahasia yang terlalu lama disimpan — propagasi adalah 'life hack' dunia tanaman yang bikin penonton langsung ingin mencoba."
+            format: "60–90 detik. Tunjukkan tanaman induk → potong bagian yang akan dipropagasi (stek, daun, biji) → proses penanaman di media baru → time-lapse pertumbuhan akar/tunas → tanaman baru yang sudah tumbuh. Close-up tangan dan tanaman, vertikal 9:16."
+            boleh:
+              - "Tunjukkan kondisi akar yang mulai tumbuh di air — sangat memuaskan secara visual"
+              - "Gunakan toples kaca atau pot transparan agar akar terlihat saat propagasi di air"
+              - "Tampilkan berapa banyak tanaman baru yang bisa dihasilkan dari satu tanaman induk"
+              - "Sebutkan berapa lama proses propagasi — jujur tentang ekspektasi waktu"
+            hindari:
+              - "Jangan klaim semua teknik propagasi berhasil 100% — gagal adalah bagian prosesnya"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan gunakan media tanam atau alat yang sulit ditemukan di Indonesia"
+              - "Jangan skip fase tunggu — time-lapse pertumbuhan akar adalah bagian paling memuaskan"
+            pola_hook: "Detik 0: tampilkan deretan tanaman yang sama tumbuh dari satu tanaman induk + teks 'semua ini gratis dari satu tanaman'. Langsung tunjukkan cara memotong stek di detik 3."
+            contoh_judul:
+              - "Satu monstera ini aku propagasi jadi 12 tanaman dalam 6 bulan tanpa beli apapun"
+              - "Cara perbanyak pothos dari stek air, berhasil 9 dari 10 kali"
+              - "Propagasi daun sukulen sampai tumbuh tunas kecil — proses 4 minggu dalam 60 detik"
+              - "Tanaman hias mahal ini bisa diperbanyak gratis dengan cara yang hampir semua orang tidak tahu"
+              - "Dari 1 tanaman sirih gading jadi 20 tanaman — ini teknik propagasi airnya"
+            content_runway: "Setiap jenis tanaman (monstera, pothos, sukulen, sirih gading, lidah mertua, begonia) memiliki teknik propagasi yang berbeda; kombinasi media (air, tanah, perlite) dan metode (stek batang, daun, akar) menghasilkan variasi konten yang sangat banyak."
+
+    - slug: books
+      name: "Buku / Ringkasan"
+      description: "Ringkas buku, rekomendasi."
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: teks + b-roll + voiceover
+      example_hook: "1 buku yang ubah cara pikirku..."
+      guide:
+        audience: "Pembaca muda 20–35 yang ingin terus belajar tapi tidak punya banyak waktu membaca; penonton yang tertarik self-help dan bisnis tapi kewalahan dengan banyaknya pilihan buku; mahasiswa dan pekerja muda yang ingin efisien dalam konsumsi pengetahuan."
+        tone: "Cerdas tapi bersahabat. Bukan kuliah — lebih seperti teman yang baru selesai baca buku bagus dan tidak sabar untuk cerita. Jujur tentang mana yang benar-benar berguna dan mana yang overhyped."
+        format: "45–90 detik. Kombinasi b-roll buku fisik atau halaman buku, teks overlay kutipan kunci, dan voiceover yang menjelaskan ide utama. Tidak perlu tampilkan wajah. Satu ide per video lebih kuat dari rangkuman penuh. Vertikal 9:16."
+        boleh:
+          - "Ambil satu ide kunci yang paling berdampak, bukan rangkuman seluruh bab"
+          - "Gunakan contoh nyata dari kehidupan Indonesia untuk membumikan konsep buku luar negeri"
+          - "Format 'satu kalimat yang mengubah segalanya' sangat efektif untuk engagement"
+          - "Jujur tentang buku yang mengecewakan — review negatif yang jujur membangun kredibilitas"
+        hindari:
+          - "Jangan plagiat konten buku secara harfiah — ringkas dan interpretasikan dengan kata sendiri"
+          - "Jangan tampilkan wajah jika channel ini dirancang faceless"
+          - "Jangan rekomendasikan buku hanya karena populer tanpa benar-benar membacanya"
+          - "Jangan buat konten terlalu panjang — penonton datang untuk efisiensi waktu"
+        pola_hook: "Detik 0: tampilkan sampul buku + teks pernyataan mengejutkan dari isi buku. Langsung masuk ke ide utama di detik 3 tanpa setup panjang."
+        contoh_judul:
+          - "1 buku yang ubah cara aku melihat uang, dan aku baca 3 tahun terlambat"
+          - "Buku ini 400 halaman, tapi satu ide ini yang benar-benar perlu kamu tahu"
+          - "Buku paling overrated yang tetap aku rekomendasikan dengan catatan penting"
+      micro:
+        - slug: books-satu-ide-buku-bisnis
+          name: Satu Ide Inti dari Buku Bisnis Terbaik
+          description: Setiap video mengambil satu konsep kunci dari buku bisnis atau self-help terbaik dan menjelaskannya dalam 60 detik dengan contoh nyata yang relevan untuk Indonesia.
+          example_hook: "Buku ini 400 halaman, tapi satu idenya ini yang benar-benar mengubah cara aku bekerja..."
+          guide:
+            audience: "Pekerja muda dan pemilik usaha kecil 22–38 yang ingin belajar bisnis dan pengembangan diri tapi tidak punya waktu membaca buku penuh; penonton yang akrab dengan nama-nama buku populer tapi belum sempat membacanya."
+            tone: "Langsung ke inti. Tidak ada basa-basi panjang — penonton tahu buku apa yang dibicarakan, langsung masuk ke ide yang paling berharga. Gaya bicara teman senior yang berbagi insight dari pengalamannya."
+            format: "60–75 detik. Tampilkan sampul buku → satu kalimat hook dari isi buku → penjelasan ide utama dengan contoh konteks Indonesia → satu kalimat takeaway yang bisa langsung diterapkan. Teks overlay kutipan kunci. Voiceover. Vertikal 9:16."
+            boleh:
+              - "Pilih buku yang sudah dikenal namanya — recognition meningkatkan klik"
+              - "Hubungkan ide buku dengan situasi konkret Indonesia (startup lokal, UMKM, kultur kerja)"
+              - "Kutipan langsung dari buku yang ditampilkan sebagai teks overlay sangat efektif"
+              - "Akhiri dengan satu pertanyaan reflektif untuk memancing komentar"
+            hindari:
+              - "Jangan rangkum seluruh buku — satu ide kuat lebih berdampak dari sepuluh ide dangkal"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan gunakan ide yang terlalu abstrak tanpa contoh konkret"
+              - "Jangan salin teks buku secara langsung panjang-panjang — simpulkan dengan kata sendiri"
+            pola_hook: "Detik 0: tampilkan sampul buku yang dikenal + teks pernyataan dari ide kunci yang mengejutkan atau counterintuitive. Langsung mulai penjelasan di detik 3."
+            contoh_judul:
+              - "Buku ini 400 halaman, tapi satu ide ini yang mengubah cara aku bekerja selamanya"
+              - "Atomic Habits punya ratusan tips, tapi yang ini yang benar-benar bekerja untukku"
+              - "The Psychology of Money punya satu prinsip yang tidak pernah aku dengar dibahas orang"
+              - "Rich Dad Poor Dad sudah tua tapi satu kalimat ini masih relevan untuk generasi sekarang"
+              - "Buku Zero to One — satu ide di halaman 50 yang bikin aku lihat kompetisi secara berbeda"
+            content_runway: "Ratusan buku bisnis dan self-help yang populer masing-masing punya puluhan ide kunci; format ini bisa terus berjalan selama ada buku baru yang terbit dan buku lama yang layak dibahas ulang."
+
+        - slug: books-buku-yang-tidak-perlu-dibaca
+          name: Buku yang Tidak Perlu Kamu Baca Penuh
+          description: Review jujur buku populer yang ringkasannya lebih bermanfaat dari membaca penuh, membantu penonton memutuskan mana buku yang layak investasi waktu penuh.
+          example_hook: "Buku ini ada di mana-mana tapi setelah baca sampai akhir, ini yang benar-benar berguna..."
+          guide:
+            audience: "Pembaca selektif 22–38 yang sudah kehabisan waktu dan ingin tahu apakah sebuah buku layak investasi 8–10 jam membaca; penonton yang pernah kecewa membeli buku hype tapi isinya mengecewakan."
+            tone: "Jujur dan sedikit berani. Berani mengatakan bahwa buku terkenal tertentu tidak sepadan dengan hypenya adalah konten yang berbeda dan menarik. Bukan meremehkan penulis — tapi jujur tentang nilai per halaman."
+            format: "60–90 detik. Tampilkan sampul buku → rating singkat (layak baca penuh / cukup ringkasan / skip) → alasan dengan bukti dari isi buku → rekomendasi alternatif jika ada. Teks overlay. Voiceover. Vertikal 9:16."
+            boleh:
+              - "Berikan verdict yang jelas — penonton butuh keputusan, bukan 'tergantung'"
+              - "Kutip bagian buku yang mengecewakan untuk mendukung review — spesifik lebih meyakinkan"
+              - "Format 'yang berguna vs yang padding' sangat efektif untuk buku tebal"
+              - "Rekomendasikan buku yang lebih baik di topik yang sama jika ada"
+            hindari:
+              - "Jangan review buku tanpa benar-benar membacanya — pembaca yang sudah baca bisa langsung deteksi"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan terlalu negatif tanpa memberikan sesuatu yang berguna dari buku tersebut"
+              - "Jangan review buku yang terlalu obscure — penonton butuh konteks kenal dulu"
+            pola_hook: "Detik 0: tampilkan sampul buku yang sangat terkenal + teks 'buku ini ada di mana-mana tapi tidak semua isinya perlu dibaca'. Langsung masuk ke verdict di detik 3."
+            contoh_judul:
+              - "Buku bestseller ini punya 300 halaman, tapi yang berguna cuma 40 halaman ini"
+              - "Jangan beli buku ini sebelum tahu bagian mana yang bisa di-skip"
+              - "Review jujur Think and Grow Rich — apa yang tidak ada yang berani bilang"
+              - "Buku ini ada di rak semua orang tapi setelah baca sampai akhir, ini yang aku temukan"
+              - "5 buku paling overhyped yang ringkasannya 10 menit lebih berguna dari buku penuhnya"
+            content_runway: "Setiap buku bestseller baru yang terbit adalah konten potensial; backlog buku lama yang sudah populer juga bisa dibahas ulang dengan perspektif baru; format ini tidak ada habisnya selama industri penerbitan terus berjalan."
+
+        - slug: books-fiksi-yang-ajarkan-kehidupan
+          name: Novel Fiksi yang Ajarkan Hal Nyata
+          description: Analisis mendalam novel fiksi populer yang memuat pelajaran kehidupan tersembunyi di balik ceritanya — dari Bumi Manusia hingga The Alchemist — untuk penonton yang suka insight di balik hiburan.
+          example_hook: "Ini bukan buku self-help, ini novel, tapi halaman ini ubah cara aku lihat kegagalan..."
+          guide:
+            audience: "Pembaca dan calon pembaca 18–35 yang menikmati fiksi tapi juga ingin konten bermakna; penonton yang tidak tertarik buku self-help tapi terbuka pada pelajaran yang dikemas dalam cerita; penggemar sastra Indonesia dan dunia."
+            tone: "Apresiatif dan penuh insight. Bukan spoiler review — lebih pada mengungkap 'mengapa cerita ini lebih dari sekedar cerita'. Nada penggemar sastra yang excited berbagi penemuan tersembunyi."
+            format: "60–90 detik. Tampilkan sampul novel → kutipan singkat dari buku → pelajaran tersembunyi yang diungkap → relevansi dengan kehidupan nyata. Teks overlay kutipan. Voiceover. Tidak perlu spoiler plot lengkap. Vertikal 9:16."
+            boleh:
+              - "Pilih kutipan singkat yang kuat dan tampilkan sebagai teks dengan font yang menarik"
+              - "Gunakan novel yang sudah dikenal namanya di Indonesia untuk memaksimalkan reach"
+              - "Hubungkan pelajaran dari novel dengan situasi kehidupan Indonesia yang konkret"
+              - "Format 'bukan buku self-help tapi mengajarkan X' adalah hook yang selalu berhasil"
+            hindari:
+              - "Jangan spoil twist utama tanpa warning — hancurkan pengalaman baca orang"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan buat analisis terlalu akademis — ini short-form, bukan esai sastra"
+              - "Jangan pilih novel yang terlalu obscure — penonton butuh konteks kenal dulu"
+            pola_hook: "Detik 0: tampilkan sampul novel terkenal + teks 'ini novel fiksi, tapi pelajaran di halaman ini lebih dalam dari buku self-help manapun'. Langsung kutip satu kalimat kuat dari buku di detik 3."
+            contoh_judul:
+              - "Bumi Manusia bukan buku sejarah — ini pelajaran tentang martabat yang tersembunyi di balik ceritanya"
+              - "The Alchemist sudah baca? Tapi apakah kamu tangkap pelajaran tersembunyi di bagian ini?"
+              - "Novel 1984 Orwell punya satu konsep yang semakin relevan di era media sosial"
+              - "Laskar Pelangi mengajarkan ini tentang kemiskinan dan pilihan yang tidak pernah dibahas"
+              - "Sapiens bukan fiksi, tapi cara dia cerita tentang manusia lebih mengubah pandangan dari novel manapun"
+            content_runway: "Ratusan novel Indonesia dan dunia masing-masing punya puluhan momen dan pelajaran yang bisa dianalisis; format ini mencakup fiksi lama dan baru, lokal dan internasional, sehingga konten bisa berjalan bertahun-tahun."
+
+    - slug: quiz
+      name: "Kuis / Tebak-tebakan"
+      description: Tebak gambar/jawaban interaktif.
+      faceless: true
+      difficulty: pemula
+      rpm: rendah
+      formats: teks + timer + reveal
+      example_hook: "Cuma 1% bisa jawab ini..."
+      guide:
+        audience: "Penonton Indonesia 15–40 yang suka uji pengetahuan dan kompetisi ringan; pengguna aktif media sosial yang menikmati konten interaktif di kolom komentar; penonton yang suka nostalgia dan trivia tentang Indonesia."
+        tone: "Seru dan sedikit menantang. Buat penonton merasa sedikit tidak yakin sebelum reveal — tapi tidak terlalu sulit hingga frustrasi. Nada teman yang ajak tebak-tebakan sambil senyum."
+        format: "20–45 detik. Tampilkan gambar/pertanyaan → timer hitung mundur untuk membangun suspense → reveal jawaban dengan penjelasan singkat. Teks besar dan jelas, efek suara timer jika ada. Vertikal 9:16."
+        boleh:
+          - "Gunakan timer visual hitung mundur 5–10 detik untuk memaksa penonton berpikir sebelum scroll"
+          - "Pilih topik yang relevan untuk Indonesia — kota, brand lokal, tokoh, sejarah"
+          - "Reveal jawaban selalu disertai fakta menarik yang tidak semua orang tahu"
+          - "Format 'cuma X% yang tahu ini' mendorong penonton untuk komentar dan share"
+        hindari:
+          - "Jangan buat soal yang terlalu mudah — tidak ada tantangan, tidak ada engagement"
+          - "Jangan buat soal yang terlalu sulit hingga penonton frustrasi dan skip"
+          - "Jangan gunakan gambar ber-hak-cipta tanpa izin"
+          - "Jangan lupa reveal jawaban — tunda terlalu lama dan penonton kabur"
+        pola_hook: "Detik 0: tampilkan gambar atau pertanyaan + teks 'berapa detik kamu butuh untuk jawab ini?'. Timer langsung mulai di detik 2."
+        contoh_judul:
+          - "Cuma 1% orang Indonesia bisa jawab ini dengan benar"
+          - "Tebak ini dalam 5 detik — lebih susah dari yang kamu pikir"
+          - "Kamu kenal brand ini setiap hari tapi bisa tebak logonya kalau dipotong?"
+      micro:
+        - slug: quiz-tebak-kota-indonesia
+          name: Tebak Kota dari Satu Detail Foto
+          description: Kuis visual menebak kota Indonesia dari satu foto detail — bangunan, kuliner, atau pemandangan khas — menyasar penonton lokal yang suka uji pengetahuan geografi Indonesia.
+          example_hook: "Foto ini diambil di satu kota di Indonesia, kamu tahu di mana? Petunjuknya hanya ini..."
+          guide:
+            audience: "Penonton Indonesia 15–40 yang suka geografi dan trivia lokal; perantau dan traveler yang ingin uji pengetahuan tentang kota-kota yang pernah dikunjungi; penggemar konten Indonesia yang bangga dengan keberagaman nusantara."
+            tone: "Penuh semangat lokal. Momen reveal kota yang benar harus terasa seperti 'ah, benar!' — bangga karena tahu. Dorong penonton yang dari kota tersebut untuk komentar dengan pengalaman mereka."
+            format: "25–40 detik. Tampilkan satu foto detail khas kota (detail arsitektur, makanan khas, atau pemandangan unik) → timer hitung mundur 8 detik → reveal nama kota + fakta menarik tentang kota tersebut. Teks besar dan jelas. Vertikal 9:16."
+            boleh:
+              - "Pilih detail yang ikonik tapi tidak terlalu mudah — jepretan sudut yang jarang difoto lebih menarik"
+              - "Reveal selalu disertai satu fakta tentang kota yang tidak semua orang tahu"
+              - "Dorong penonton dari kota tersebut untuk komentar — ini membangun engagement organik"
+              - "Variasi tingkat kesulitan: satu soal gampang, satu sedang, satu susah dalam satu video"
+            hindari:
+              - "Jangan gunakan foto landmark paling terkenal yang semua orang langsung tahu — terlalu mudah"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan gunakan foto dengan teks nama kota yang masih terlihat di frame"
+              - "Jangan reveal jawaban sebelum timer habis — suspense adalah nilainya"
+            pola_hook: "Detik 0: tampilkan foto detail kota + teks 'kota mana di Indonesia ini?'. Timer 8 detik langsung mulai — tidak ada penjelasan tambahan."
+            contoh_judul:
+              - "Foto ini diambil di Indonesia — kamu punya 8 detik untuk tebak kotanya"
+              - "Detail bangunan ini mengungkap kota yang mana? Cuma 15% yang jawab benar"
+              - "Makanan ini hanya ada di satu kota — kamu bisa tebak di mana?"
+              - "Sudut kota ini terlihat biasa tapi ada detail yang langsung ungkap lokasinya"
+              - "Tebak 3 kota dari 3 foto ini — berapa yang bisa kamu benar?"
+            content_runway: "Indonesia punya lebih dari 500 kota dan kabupaten, masing-masing dengan landmark, kuliner, dan pemandangan khas yang berbeda; format ini hampir tidak ada habisnya dan bisa diperbarui saat ada momen atau acara lokal baru."
+
+        - slug: quiz-logo-brand-terpotong
+          name: Tebak Brand dari Logo yang Dipotong
+          description: Kuis menebak merek terkenal hanya dari sebagian kecil logo yang dipotong, format permainan visual yang mendorong partisipasi tinggi di kolom komentar.
+          example_hook: "Logo ini dipotong 90%, berapa lama kamu butuh untuk tebak ini brand apa..."
+          guide:
+            audience: "Penonton 15–35 yang familiar dengan brand lokal dan internasional; pengguna aktif media sosial yang suka kompetisi komentar; penonton yang menikmati sensasi 'aku tahu ini!' saat mengenali brand dari detail minimal."
+            tone: "Kompetitif dan seru. Penonton harus merasa tertantang tapi tidak putus asa — pilih potongan logo yang bisa ditebak dengan effort, bukan yang mustahil. Reward penonton yang menebak benar dengan acknowledgement."
+            format: "20–35 detik. Tampilkan logo yang dipotong besar 80–90% → timer 10 detik → reveal logo penuh + nama brand. Ulangi dengan 2–3 logo dalam satu video. Font besar, kontras tinggi. Vertikal 9:16."
+            boleh:
+              - "Campurkan brand lokal Indonesia dan brand internasional yang familiar"
+              - "Variasi tingkat kesulitan dalam satu video — satu mudah, satu sedang, satu susah"
+              - "Tambahkan fakta menarik tentang brand saat reveal untuk nilai tambah konten"
+              - "Gunakan format 'reveal bertahap' — tampilkan bagian kecil dulu, lalu lebih besar"
+            hindari:
+              - "Jangan gunakan logo brand yang tidak dikenal di Indonesia — penonton tidak bisa engage"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan potong logo sampai benar-benar tidak bisa ditebak — frustasi bukan engagement"
+              - "Jangan gunakan logo versi lama yang sudah berubah — menimbulkan kebingungan"
+            pola_hook: "Detik 0: tampilkan potongan kecil logo brand terkenal + teks 'logo ini dipotong 90%, kamu bisa tebak brand apa?'. Timer langsung mulai di detik 2."
+            contoh_judul:
+              - "Logo ini dipotong 90% — berapa detik kamu butuh untuk tebak brand-nya?"
+              - "Tebak 5 brand dari potongan logo ini, nomor 4 yang paling susah"
+              - "Brand Indonesia ini logonya dikenal semua orang, tapi dipotong jadi susah tiba-tiba"
+              - "Cuma dari warna dan bentuk ini, brand apa yang langsung muncul di pikiranmu?"
+              - "10 logo brand terpotong dalam 60 detik — berapa yang bisa kamu tebak?"
+            content_runway: "Ratusan brand lokal dan internasional yang dikenal di Indonesia masing-masing punya logo yang bisa dipotong dengan tingkat kesulitan berbeda; format ini bisa diperbarui saat logo baru diluncurkan atau rebranding terjadi."
+
+        - slug: quiz-tahun-berapa-foto-ini
+          name: Tebak Foto Ini dari Tahun Berapa
+          description: Kuis visual menebak dekade foto-foto historis Indonesia dari petunjuk visual seperti mode, kendaraan, dan bangunan, memadukan trivia sejarah dengan format permainan.
+          example_hook: "Foto ini diambil di Indonesia, kamu bisa tebak tahunnya hanya dari yang terlihat di sini..."
+          guide:
+            audience: "Penonton Indonesia 20–50 yang tertarik sejarah visual dan nostalgia; generasi yang pernah hidup di era foto tersebut yang menikmati pengakuan; generasi muda yang penasaran dengan Indonesia di masa lalu."
+            tone: "Nostalgia dan edukatif. Reveal tidak hanya menjawab 'kapan' tapi juga 'kenapa' — apa yang terjadi di Indonesia pada tahun tersebut yang membuat foto terlihat seperti itu. Nada yang menghargai sejarah tanpa terkesan museum."
+            format: "30–50 detik. Tampilkan foto historis Indonesia → zoom pada detail kunci (pakaian, kendaraan, bangunan) → timer hitung mundur 10 detik → reveal dekade/tahun + konteks sejarah singkat. Teks overlay. Vertikal 9:16."
+            boleh:
+              - "Pilih foto yang punya petunjuk visual yang cukup untuk ditebak tapi tidak terlalu obvious"
+              - "Reveal selalu disertai konteks sejarah menarik — apa yang terjadi Indonesia saat itu"
+              - "Zoom pada detail petunjuk terkuat sebelum timer habis sebagai hint terakhir"
+              - "Gunakan foto publik domain atau foto dengan izin dari arsip nasional"
+            hindari:
+              - "Jangan gunakan foto yang terlalu buram atau tidak jelas — penonton tidak bisa engage"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan gunakan foto yang mengandung konten sensitif atau kontroversial tanpa konteks"
+              - "Jangan reveal hanya tahun tanpa konteks — fakta sejarah adalah nilai tambah yang membedakan"
+            pola_hook: "Detik 0: tampilkan foto historis Indonesia + teks 'foto ini diambil di Indonesia, kamu bisa tebak tahun berapa hanya dari detailnya?'. Timer langsung mulai di detik 3."
+            contoh_judul:
+              - "Foto ini diambil di Indonesia — kamu bisa tebak tahunnya dari detail yang terlihat?"
+              - "Pakaian dan kendaraan di foto ini mengungkap dekade mana di sejarah Indonesia"
+              - "Jakarta tahun berapa ini? Detail di sudut foto ini yang jadi petunjuknya"
+              - "Foto ini terlihat hitam putih tapi bukan dari tahun yang kamu kira"
+              - "Tebak 3 foto Indonesia dari 3 dekade berbeda — berapa yang bisa kamu tepat?"
+            content_runway: "Indonesia punya lebih dari 100 tahun sejarah fotografi yang kaya, dari era kolonial hingga reformasi; setiap dekade punya karakteristik visual unik; arsip foto nasional dan koleksi komunitas sejarah lokal menyediakan material hampir tidak terbatas."
+
+    - slug: compilation
+      name: Kompilasi Tematik
+      description: Kumpulan klip satu tema.
+      faceless: true
+      difficulty: pemula
+      rpm: rendah
+      formats: klip + musik + caption
+      example_hook: "10 momen paling memuaskan minggu ini..."
+      guide:
+        audience: "Penonton 16–40 yang menikmati konten kurasi dan tidak ingin mencari sendiri; penggemar highlight dan best-of yang ingin efisiensi; penonton yang menikmati keberagaman dalam satu video pendek."
+        tone: "Kuratorial dan antusias. Creator berperan sebagai kurator terpercaya yang sudah menyaring yang terbaik untuk penonton. Nada editorial — 'aku pilihkan ini karena alasan tertentu, bukan asal kumpul'."
+        format: "45–90 detik. 5–10 klip pendek masing-masing 5–10 detik. Transisi cepat dan rapi. Musik yang mendukung mood tema. Caption singkat untuk konteks setiap klip. Vertikal 9:16."
+        boleh:
+          - "Tema yang spesifik lebih kuat dari kompilasi umum — 'profesi langka Indonesia' lebih baik dari 'konten keren'"
+          - "Transisi yang rapi dan konsisten memberi kesan profesional"
+          - "Caption singkat untuk setiap klip menambah informasi tanpa memotong tempo"
+          - "Musik yang membangun emosi sesuai tema — epik untuk prestasi, tenang untuk alam"
+        hindari:
+          - "Jangan gunakan klip ber-hak-cipta tanpa izin atau fair use yang jelas"
+          - "Jangan tampilkan wajah kreator sendiri — channel ini faceless"
+          - "Jangan buat kompilasi dengan tema yang terlalu luas dan tidak fokus"
+          - "Jangan gunakan klip dengan kualitas video sangat rendah yang merusak estetika keseluruhan"
+        pola_hook: "Detik 0: tampilkan klip paling impresif dari kompilasi + teks tema ('10 profesi yang hampir punah di Indonesia'). Langsung masuk ke klip pertama di detik 3 tanpa intro panjang."
+        contoh_judul:
+          - "10 profesi Indonesia yang hampir punah tapi masih ada sampai sekarang"
+          - "Tangan manusia bisa lakukan semua ini, dan ini buktinya dalam 60 detik"
+          - "Fenomena alam Indonesia yang sulit dipercaya tapi semua terekam kamera"
+      micro:
+        - slug: compilation-profesi-jarang-terlihat
+          name: Kompilasi Profesi yang Jarang Kita Lihat
+          description: Kumpulan klip pekerja di profesi tidak biasa yang jarang disorot media — penyelam mutiara, pembuat gamelan, penenun tradisional — sebagai penghargaan terhadap keberagaman profesi.
+          example_hook: "10 profesi Indonesia yang masih ada sampai sekarang tapi jarang kamu tahu..."
+          guide:
+            audience: "Penonton Indonesia 18–45 yang tertarik keberagaman budaya dan pekerjaan; penonton yang apresiasi kerajinan tangan dan profesi tradisional; generasi muda yang belum pernah lihat profesi-profesi ini secara langsung."
+            tone: "Hormat dan penuh rasa ingin tahu. Setiap profesi ditampilkan dengan martabat — bukan tontonan eksotis, tapi penghargaan terhadap keahlian dan dedikasi. Nada dokumenter pendek yang merayakan keberagaman."
+            format: "60–90 detik. 6–8 klip profesi berbeda, masing-masing 8–12 detik. Caption nama profesi dan lokasi Indonesia untuk setiap klip. Musik yang mendukung nuansa budaya. Transisi rapi. Vertikal 9:16."
+            boleh:
+              - "Tampilkan nama profesi dan asal daerah Indonesia di caption setiap klip"
+              - "Pilih momen paling visual dari setiap profesi — tangan terampil bekerja lebih menarik dari wajah"
+              - "Akhiri dengan klip yang paling impresif atau emosional sebagai penutup kuat"
+              - "Format seri bisa membangun audiens loyal — 'profesi Indonesia ep.1, ep.2'"
+            hindari:
+              - "Jangan gunakan klip tanpa izin kreator asal atau yang jelas melanggar hak cipta"
+              - "Jangan tampilkan wajah kreator sendiri — channel ini faceless"
+              - "Jangan sajikan profesi tradisional secara eksotis atau merendahkan"
+              - "Jangan pilih profesi yang sudah terlalu sering dibahas — cari yang benar-benar jarang disorot"
+            pola_hook: "Detik 0: klip paling visual dari satu profesi langka + teks '10 profesi Indonesia yang hampir kamu tidak tahu masih ada'. Langsung masuk ke klip pertama di detik 3."
+            contoh_judul:
+              - "10 profesi Indonesia yang masih ada sampai sekarang tapi hampir tidak pernah disorot"
+              - "Pembuat gamelan, penyelam mutiara, dan 8 profesi lain yang hampir hilang"
+              - "Tangan-tangan ini menjaga profesi yang sudah ada ratusan tahun di Indonesia"
+              - "Profesi-profesi ini tidak ada di aplikasi lowongan kerja, tapi masih hidup"
+              - "Keahlian ini diwariskan turun-temurun dan hampir tidak ada yang mendokumentasikannya"
+            content_runway: "Indonesia punya ratusan profesi tradisional yang tersebar di 34 provinsi, masing-masing dengan keunikan visual yang berbeda; setiap wilayah dan budaya menghasilkan profesi yang berbeda sehingga seri ini bisa berjalan sangat lama."
+
+        - slug: compilation-skill-tangan-luar-biasa
+          name: Kompilasi Keahlian Tangan yang Mengagumkan
+          description: Kumpulan klip pengrajin dan seniman dengan keahlian tangan luar biasa — ukiran detail, kaligrafi cepat, merajut dengan kecepatan tidak wajar — format satisfying yang selalu ditonton sampai habis.
+          example_hook: "Tangan manusia bisa lakukan ini, dan video ini membuktikannya dalam 60 detik..."
+          guide:
+            audience: "Penonton 15–40 yang mengagumi keahlian ekstrem dan presisi; penggemar konten satisfying dan craftsmanship; penonton yang mencari inspirasi atau sekadar terkagum dengan kemampuan manusia."
+            tone: "Kagum dan semangat. Setiap klip harus membuat penonton berpikir 'kok bisa?' atau 'berapa tahun latihan ini?'. Nada yang merayakan keahlian manusia tanpa hype berlebihan."
+            format: "45–75 detik. 6–8 klip keahlian tangan berbeda, masing-masing 6–10 detik. Caption singkat nama keahlian. Transisi cepat dengan musik yang energik tapi tidak berlebihan. SFX suara proses bisa dimasukkan untuk klip tertentu. Vertikal 9:16."
+            boleh:
+              - "Pilih variasi keahlian — ukiran, kaligrafi, merajut, keramik, kertas, logam — untuk ritme visual yang menarik"
+              - "Caption nama keahlian dan asal daerah Indonesia jika relevan"
+              - "Akhiri dengan yang paling spektakuler — urutan kompilasi penting untuk retensi"
+              - "Musik up-tempo yang tidak terlalu keras mendukung ritme klip yang cepat"
+            hindari:
+              - "Jangan gunakan klip tanpa izin atau yang jelas melanggar hak cipta"
+              - "Jangan tampilkan wajah kreator sendiri — channel ini faceless"
+              - "Jangan pilih klip dengan kualitas video rendah yang merusak kesan profesional"
+              - "Jangan buat klip terlalu panjang per segmen — ritme cepat adalah kuncinya"
+            pola_hook: "Detik 0: klip paling spektakuler dari kompilasi langsung dimulai + teks 'tangan manusia bisa lakukan ini'. Tidak ada intro — langsung ke aksi."
+            contoh_judul:
+              - "Tangan manusia bisa lakukan semua ini, dan ini buktinya dalam 60 detik"
+              - "8 keahlian tangan yang bikin kamu ingin tonton ulang terus"
+              - "Ukiran, kaligrafi, dan 6 keahlian lain yang terlalu presisi untuk dipercaya"
+              - "Berapa tahun latihan untuk bisa seperti ini? Kompilasi keahlian yang mengagumkan"
+              - "Keahlian tangan paling satisfying yang pernah terekam kamera, semua dari Indonesia"
+            content_runway: "Keahlian tangan manusia hampir tidak terbatas variasi dan kombinasinya; setiap tradisi budaya Indonesia menghasilkan teknik unik; format ini bisa diperbarui terus saat kreator baru dengan keahlian baru bermunculan di media sosial."
+
+        - slug: compilation-reaksi-alam-indonesia
+          name: Kompilasi Momen Alam Indonesia yang Jarang Terekam
+          description: Kumpulan footage langka fenomena alam Indonesia — letusan gunung berapi dari dekat, ikan terbang, dan aurora tropis — yang jarang terekam dengan kualitas baik.
+          example_hook: "10 fenomena alam Indonesia yang sulit dipercaya tapi semua terekam kamera..."
+          guide:
+            audience: "Penonton Indonesia 18–45 yang bangga dengan keindahan alam nusantara; pecinta alam dan traveler yang ingin tahu fenomena yang belum pernah mereka lihat langsung; penonton yang menikmati konten sains ringan dan alam."
+            tone: "Kagum dan bangga. Indonesia adalah salah satu negara dengan keanekaragaman alam terkaya di dunia — ini bukan sekadar konten, tapi pengingat betapa luar biasanya tanah air. Nada dokumenter alam yang menginspirasi."
+            format: "60–90 detik. 6–8 klip fenomena alam berbeda, masing-masing 8–12 detik. Caption nama fenomena dan lokasi di Indonesia. Musik yang epik tapi tidak berlebihan. Transisi rapi. Vertikal 9:16."
+            boleh:
+              - "Tampilkan nama fenomena dan lokasi spesifik di Indonesia di caption setiap klip"
+              - "Campurkan fenomena yang dikenal (gunung meletus) dengan yang jarang diketahui (aurora tropis)"
+              - "Akhiri dengan fenomena paling dramatis atau paling indah sebagai penutup kuat"
+              - "Musik orkestral atau ambient yang membangun emosi sangat cocok untuk konten ini"
+            hindari:
+              - "Jangan gunakan footage tanpa izin atau dari sumber yang tidak jelas asal-usulnya"
+              - "Jangan tampilkan wajah kreator sendiri — channel ini faceless"
+              - "Jangan buat klaim ilmiah yang tidak akurat tentang fenomena yang ditampilkan"
+              - "Jangan pilih klip dengan kualitas sangat rendah — kualitas visual adalah nilainya"
+            pola_hook: "Detik 0: klip fenomena paling dramatis + teks '10 fenomena alam Indonesia yang sulit dipercaya tapi semua terekam kamera'. Langsung masuk ke klip pertama di detik 3."
+            contoh_judul:
+              - "10 fenomena alam Indonesia yang sulit dipercaya tapi semua terekam kamera"
+              - "Letusan, aurora, dan bioluminesensi — fenomena alam Indonesia yang jarang dibahas"
+              - "Indonesia punya ini semua dan masih banyak yang tidak tahu keberadaannya"
+              - "Alam Indonesia yang jarang terekam dengan kualitas seperti ini, semua dalam 60 detik"
+              - "Fenomena langka ini hanya bisa dilihat di Indonesia, dan beberapa hampir tidak pernah difoto"
+            content_runway: "Indonesia adalah negara dengan biodiversitas tertinggi ketiga di dunia dan berada di cincin api Pasifik; ribuan fenomena alam — dari sabang sampai merauke — memberikan material kompilasi yang hampir tidak ada habisnya sepanjang tahun."

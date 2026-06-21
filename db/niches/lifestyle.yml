@@ -1,0 +1,681 @@
+version: 1
+vertical:
+  slug: v-lifestyle
+  name: Lifestyle
+  description: Konten gaya hidup, produktivitas, minimalism, dan estetika untuk generasi muda Indonesia.
+  guide:
+    audience: "Penonton 18–35 tahun, campuran pria dan wanita urban Indonesia, yang sedang membentuk identitas dan gaya hidup; tertarik pada produktivitas, estetika ruang, kemandirian, dan perbaikan diri; banyak nonton di pagi hari atau malam hari sebelum tidur."
+    tone: "Autentik, jujur, dan relatable — bukan sempurna. Bahasa kasual Indonesia tanpa pretensi. Boleh serius tapi tidak menggurui; boleh aspirasional tapi tetap membumi. Penonton ingin merasa 'aku juga bisa'."
+    format: "Video 30–90 detik, vertikal 9:16. Campuran b-roll estetik, teks overlay singkat, dan voiceover ringan atau narasi on-screen. Musik lo-fi atau ambient sebagai latar. Struktur: hook relatable → isi padat → CTA lembut atau cliffhanger."
+    boleh:
+      - "Gunakan momen personal dan jujur sebagai hook — kelemahan dan kegagalan lebih engaging dari kesempurnaan"
+      - "Tampilkan lingkungan nyata Indonesia (kos, warung, KRL) untuk resonansi lokal"
+      - "Teks overlay pendek di atas b-roll agar pesan tersampaikan meski ditonton tanpa suara"
+      - "Sertakan angka konkret (budget Rp500rb, 30 potong baju, 15 menit) untuk kredibilitas"
+      - "Akhiri dengan pertanyaan ke penonton untuk mendorong komentar"
+    hindari:
+      - "Jangan gunakan voiceover dengan intonasi formal atau 'siaran berita' — membunuh vibe personal"
+      - "Jangan tunjukkan gaya hidup mewah yang tidak terjangkau audiens Indonesia rata-rata"
+      - "Jangan pakai musik ber-hak-cipta; pilih royalty-free lo-fi atau ambient"
+      - "Jangan hook lebih dari 5 detik tanpa informasi value — penonton akan skip"
+      - "Jangan klaim hasil universal ('pasti berhasil') — niche ini sangat sensitif terhadap over-promise"
+    pola_hook: "Detik 0–3: pernyataan jujur atau situasi relatable yang langsung menyentuh titik nyeri audiens (mis. 'HP penuh, pikiran penuh, tapi berat buat mulai bebersih'). Tidak ada intro nama atau salam pembuka."
+    contoh_judul:
+      - "Hari di mana semuanya berubah setelah satu keputusan kecil"
+      - "Kenapa aku berhenti optimasi hidup dan mulai sekadar hidup"
+      - "Rutinitas pagi yang aku jaga 6 bulan dan ini yang benar-benar berubah"
+
+  niches:
+    - slug: vlog
+      name: "Vlog / Day-in-life"
+      description: Dokumentasi keseharian.
+      faceless: false
+      difficulty: menengah
+      rpm: sedang
+      formats: handheld + b-roll + voiceover
+      example_hook: "Hari di mana semuanya berubah..."
+      guide:
+        audience: "Penonton 18–28 yang suka merasa 'ikut' dalam kehidupan orang lain; mencari inspirasi atau validasi bahwa pengalaman mereka normal; tertarik pada vlog kehidupan nyata Indonesia tanpa filter berlebihan."
+        tone: "Intim dan jujur seperti bercerita ke teman dekat. Tidak harus selalu positif — momen canggung, ragu, dan gagal justru yang paling engaging. Voiceover bisa informal dan sedikit mengalir."
+        format: "60–90 detik. Campuran footage handheld dan b-roll suasana. Voiceover naratif di atas footage, atau talking-head pendek diseling b-roll. Musik lo-fi sebagai latar. Struktur: setup situasi → momen kunci → refleksi atau punchline. Vertikal 9:16."
+        boleh:
+          - "Tampilkan momen awkward atau tidak sempurna — itu yang membuat penonton merasa terhubung"
+          - "Gunakan b-roll lingkungan nyata Indonesia: stasiun, warung, jalan kecil, kos"
+          - "Voiceover bisa direkam ulang dengan narasi lebih reflektif dari footage aslinya"
+          - "Tambahkan teks overlay singkat untuk konteks tanggal atau lokasi"
+        hindari:
+          - "Jangan buka vlog dengan 'halo guys, welcome back' — langsung ke momen"
+          - "Jangan gunakan pencahayaan atau editing yang terlalu halus sehingga terlihat dibuat-buat"
+          - "Jangan pakai musik ber-hak-cipta"
+          - "Jangan overshare informasi pribadi yang bisa menimbulkan masalah keamanan"
+        pola_hook: "Detik 0: langsung ke footage momen paling intens atau emosional hari itu + voiceover satu kalimat yang membuat penonton bertanya 'kenapa?'. Tidak ada intro."
+        contoh_judul:
+          - "Hari di mana semuanya berubah dan aku tidak menyangka itu akan terjadi"
+          - "Satu minggu tinggal sendiri di kota baru — ini kejujurannya"
+          - "Day in the life yang lebih jujur dari yang biasanya ditampilkan"
+      micro:
+        - slug: vlog-pindah-kota-baru
+          name: Vlog Pindah Kerja ke Kota yang Belum Dikenal
+          description: Dokumentasi pengalaman nyata pindah ke kota baru untuk kerja — mencari kos, adaptasi budaya lokal, dan membangun lingkaran sosial dari nol — untuk penonton yang sedang merencanakan hal serupa.
+          example_hook: "Hari pertama di kota baru, tidak kenal siapapun, dan ini yang terjadi dalam 7 hari..."
+          guide:
+            audience: "Anak muda 20–27 yang sedang merencanakan atau baru menjalani pindah kota untuk kerja; pencari kerja fresh graduate yang belum pernah hidup jauh dari orang tua; penonton yang butuh gambaran realistis tentang relocating."
+            tone: "Sedikit nervous tapi antusias. Jujur tentang kesulitan tanpa mendramatisasi. Gaya naratif seperti jurnal harian yang dibaca ke teman."
+            format: "75–90 detik. Struktur per hari: hari 1 (tiba, cari kos) → hari 3-4 (adaptasi kerja, cari makan) → hari 7 (refleksi jujur). Footage handheld + b-roll lokasi. Voiceover naratif. Vertikal 9:16."
+            boleh:
+              - "Tampilkan angka nyata: biaya kos, harga makan sehari, biaya transport pertama"
+              - "Tunjukkan momen awkward atau salah navigasi — itu yang paling relatable"
+              - "Sertakan footage suasana kota baru yang khas dan berbeda dari kota asal"
+              - "Gunakan text overlay untuk tandai hari ke berapa"
+            hindari:
+              - "Jangan hanya tunjukkan sisi positif — penonton ingin tahu juga tantangannya"
+              - "Jangan rekam orang lain tanpa izim implisit atau explicit di tempat pribadi"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan skip momen bingung atau tidak tahu arah — itu inti konten ini"
+            pola_hook: "Detik 0: footage tiba di stasiun atau terminal baru dengan koper + voiceover 'hari pertama di kota baru, tidak kenal siapapun'. Langsung ke aktivitas pertama di detik 4."
+            contoh_judul:
+              - "Hari pertama di Jakarta sendirian, tidak kenal siapapun — ini yang terjadi dalam seminggu"
+              - "Pindah ke Surabaya untuk kerja pertama kali — biaya, kos, dan kejutan"
+              - "7 hari pertama di Bandung tanpa kenal siapapun — jujur dan apa adanya"
+              - "Fresh graduate pindah kota untuk kerja: semua yang tidak ada di buku panduan"
+              - "Relocating ke Jogja dengan tabungan Rp5jt — breakdown realistisnya"
+            content_runway: "Setiap kota tujuan di Indonesia menghasilkan vlog unik karena biaya, budaya, dan tantangan berbeda; ditambah variasi industri kerja dan latar belakang asal pembuat konten, kombinasi hampir tidak terbatas."
+
+        - slug: vlog-hari-hidup-freelancer
+          name: Day in the Life Freelancer Indonesia
+          description: Dokumentasi jujur satu hari penuh kehidupan freelancer Indonesia — jam kerja sebenarnya, tantangan income tidak tetap, dan kebebasan yang sering disalahpahami.
+          example_hook: "Freelancer bukan berarti santai, ini jam 6 pagi sampai tengah malam hari ini..."
+          guide:
+            audience: "Pria dan wanita 20–30 yang mempertimbangkan atau sudah menjadi freelancer; karyawan yang penasaran dengan kehidupan di luar kantor; penonton yang punya ekspektasi keliru tentang freelancing."
+            tone: "Jujur dan sedikit ironis — ada momen capek dan chaos yang diakui dengan humor. Bukan promosi gaya hidup, tapi eksplorasi realistis."
+            format: "75–90 detik. Time-stamp dari pagi hingga malam, footage aktivitas nyata kerja dan non-kerja. Voiceover reflektif. Sesekali screen-recording tools yang dipakai. Vertikal 9:16."
+            boleh:
+              - "Tunjukkan jam kerja sebenarnya termasuk yang tidak produktif atau distracted"
+              - "Sertakan angka income bulan ini atau project rate (bisa disamarkan sebagai range)"
+              - "Tampilkan setup kerja nyata — tidak harus estetik"
+              - "Ceritakan satu tantangan spesifik hari itu (klien susah, invoice telat)"
+            hindari:
+              - "Jangan pura-pura setiap hari selalu produktif dan menyenangkan"
+              - "Jangan rekam detail klien atau proyek yang bersifat rahasia"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan over-glorify kebebasan freelance tanpa mengakui ketidakpastiannya"
+            pola_hook: "Detik 0: footage bangun atau mulai kerja jam tidak normal (sangat pagi atau sangat malam) + voiceover 'freelancer bukan berarti santai'. Langsung ke aktivitas."
+            contoh_judul:
+              - "Day in the life freelancer Indonesia yang jujur: jam berapa aku mulai dan selesai"
+              - "Hari paling chaos sebagai freelancer — klien minta revisi jam 11 malam"
+              - "Berapa yang aku hasilkan bulan ini sebagai freelancer desain grafis"
+              - "Freelancer vs karyawan: ini sisi yang tidak pernah ditampilkan di konten motivasi"
+              - "Hari kerja freelancer dari jam 7 pagi sampai jam 1 dini hari — ini kenapa"
+            content_runway: "Setiap bidang freelance (desain, penulis, programmer, fotografer) menghasilkan daily life yang berbeda; variasi hari kerja, tantangan klien, dan income bulan menghasilkan konten berkelanjutan tanpa repetisi."
+
+        - slug: vlog-bulan-pertama-hidup-sendiri
+          name: Bulan Pertama Hidup Mandiri Pertama Kali
+          description: Dokumentasi jujur bulan pertama tinggal sendiri jauh dari orang tua — biaya tak terduga, rasa sepi, dan pelajaran yang tidak ada di buku — untuk yang sedang merencanakan kemandirian.
+          example_hook: "Bulan pertama hidup sendiri, ini yang tidak pernah diceritakan siapapun kepada aku sebelumnya..."
+          guide:
+            audience: "Anak muda 19–25 yang akan atau baru saja hidup mandiri; yang dibesarkan di rumah orang tua dan belum punya pengalaman tinggal sendiri; penonton yang ingin tahu realita finansial dan emosional hidup mandiri."
+            tone: "Rentan dan jujur. Momen kesepian dan kewalahan diakui, bukan ditutupi. Ada pelajaran yang didapat tapi tidak terkesan ceramah."
+            format: "75–90 detik. Rekap per minggu atau per kategori (keuangan, masak sendiri, kebersihan, sosial). Footage kos atau apartemen sehari-hari. Voiceover naratif. Teks overlay untuk angka dan fakta. Vertikal 9:16."
+            boleh:
+              - "Tampilkan breakdown pengeluaran nyata bulan pertama dengan angka"
+              - "Ceritakan momen paling kesepian atau kewalahan dengan jujur"
+              - "Tunjukkan hal yang ternyata lebih sulit dari ekspektasi (masak, laundry, belanja)"
+              - "Akhiri dengan satu hal yang tidak disangka justru menyenangkan"
+            hindari:
+              - "Jangan tampilkan kos atau apartemen yang tidak realistis secara finansial untuk audiens target"
+              - "Jangan skip momen negatif atau buat semuanya terlihat mudah"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan beri saran yang terkesan menggurui di akhir"
+            pola_hook: "Detik 0: footage kondisi kos pertama kali masuk (kosong atau berantakan) + voiceover 'ini yang tidak pernah ada yang ceritakan sebelumnya'. Langsung masuk cerita."
+            contoh_judul:
+              - "Bulan pertama hidup sendiri — pengeluaran asli, tantangan asli, sepi asli"
+              - "Ini yang tidak pernah diceritakan soal hidup mandiri pertama kali"
+              - "Berapa habis di bulan pertama kos di Jakarta dari nol"
+              - "Hal yang bikin aku hampir nyerah di bulan pertama hidup sendiri"
+              - "Minggu pertama sendiri setelah 22 tahun tinggal sama orang tua — jujur"
+            content_runway: "Setiap kota, latar belakang finansial, dan konteks (kuliah vs kerja) menghasilkan pengalaman yang berbeda; konten bisa diperpanjang ke update bulan ke-3, ke-6, dan ke-12 sebagai seri."
+
+    - slug: productivity
+      name: Produktivitas
+      description: "Rutinitas, habit, time-management."
+      faceless: true
+      difficulty: pemula
+      rpm: sedang
+      formats: b-roll + teks + voiceover
+      example_hook: "Rutinitas pagi yang ubah hidupku..."
+      guide:
+        audience: "Mahasiswa dan profesional muda 20–30 yang merasa hidupnya tidak cukup produktif; penonton yang suka baca buku self-help tapi kesulitan implementasi; mereka yang ingin sistem kerja lebih baik tapi tidak mau overcomplicating."
+        tone: "Praktis dan langsung ke intinya. Tidak filosofis berlebihan. Penonton ingin tahu 'apa yang harus dilakukan' bukan 'kenapa ini penting'. Bahasa sederhana, tidak jargon berat."
+        format: "45–75 detik. B-roll tangan, meja kerja, layar, atau notebook. Voiceover langsung dan padat. Teks overlay untuk langkah-langkah atau angka kunci. Tidak perlu tampil wajah. Vertikal 9:16."
+        boleh:
+          - "Berikan 1–3 langkah konkret yang bisa langsung dicoba hari ini"
+          - "Gunakan angka spesifik (15 menit, 3 task, 1 notifikasi) untuk membuat saran terasa nyata"
+          - "Tampilkan tools nyata yang digunakan (Notion, Obsidian, buku fisik)"
+          - "Akui keterbatasan metode — tidak ada sistem yang cocok untuk semua orang"
+        hindari:
+          - "Jangan gunakan jargon seperti 'PKS', 'SMART goals', atau buzzword berlebihan tanpa penjelasan"
+          - "Jangan klaim metode ini 'mengubah hidup' tanpa konteks yang jujur"
+          - "Jangan pakai musik ber-hak-cipta"
+          - "Jangan buat konten terlalu panjang — produktivitas audience adalah produk"
+        pola_hook: "Detik 0: pernyataan yang langsung menyentuh masalah umum ('kamu kerja 10 jam tapi hasilnya cuma 3 jam') + transisi langsung ke inti solusi di detik 3."
+        contoh_judul:
+          - "Rutinitas pagi 20 menit yang bikin harian lebih terarah"
+          - "Kenapa to-do list kamu tidak pernah berhasil — dan cara fiksinya"
+          - "Sistem ini bikin aku selesai kerja lebih cepat tanpa lembur"
+      micro:
+        - slug: productivity-sistem-catatan-second-brain
+          name: Sistem Catatan Digital yang Benar-benar Dipakai
+          description: Panduan membangun sistem pencatatan digital sederhana yang sustainable — bukan yang terlalu kompleks dan akhirnya ditinggalkan — untuk knowledge worker dan mahasiswa.
+          example_hook: "Sistem catatan ini aku pakai 2 tahun tanpa berhenti, dan ini yang berbeda dari yang lain..."
+          guide:
+            audience: "Mahasiswa dan knowledge worker 20–28 yang suka mencoba sistem pencatatan tapi selalu berhenti dalam sebulan; pengguna Notion yang membuat template kompleks lalu tidak dipakai; penonton yang mau second brain tapi tidak tahu mulai dari mana."
+            tone: "Empatis dan anti-hype. Akui bahwa sistem yang terlalu kompleks justru tidak dipakai. Rekomendasikan yang simpel dan pragmatis untuk mayoritas orang."
+            format: "60–75 detik. Screen-recording singkat aplikasi atau tampilan notebook. Voiceover naratif. Teks overlay untuk prinsip utama. B-roll tangan menulis atau mengetik. Vertikal 9:16."
+            boleh:
+              - "Tunjukkan tampilan nyata sistem yang dipakai (bukan template kosong yang terlalu cantik)"
+              - "Jelaskan satu prinsip utama yang membedakan sistem ini dengan yang gagal sebelumnya"
+              - "Sebutkan tools spesifik dengan kelebihan dan keterbatasannya"
+              - "Sertakan satu contoh use case konkret (mencatat meeting, belajar buku)"
+            hindari:
+              - "Jangan promosikan satu tools seolah satu-satunya pilihan"
+              - "Jangan tunjukkan Notion workspace dengan 50 database — itu intimidating bukan inspiratif"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan beri terlalu banyak langkah — maksimal 3 prinsip per video"
+            pola_hook: "Detik 0: akui bahwa sistem catatan yang indah tapi tidak dipakai itu umum + langsung sebut apa yang berbeda dari sistem ini."
+            contoh_judul:
+              - "Sistem catatan yang aku pakai 2 tahun tanpa berhenti — dan ini yang membuatnya berbeda"
+              - "Kenapa Notion template cantikmu tidak pernah dipakai setelah hari pertama"
+              - "Second brain versi simpel yang cocok untuk orang Indonesia yang sibuk"
+              - "Cara aku simpan semua info penting tanpa harus ingat di mana menyimpannya"
+              - "3 aturan sistem catatan yang bikin aku tidak pernah kehilangan info penting lagi"
+            content_runway: "Setiap tools (Notion, Obsidian, Logseq, buku fisik, Apple Notes), use case (kuliah, kerja, riset, baca buku), dan tingkat kompleksitas menghasilkan video berbeda; ekosistem produktivitas digital terus berkembang dan menghadirkan topik baru."
+
+        - slug: productivity-deep-work-indonesia
+          name: Deep Work di Era Distraksi Digital Indonesia
+          description: Teknik konkret membangun sesi kerja fokus mendalam di tengah distraksi WhatsApp, Instagram, dan lingkungan kerja Indonesia yang interruptif.
+          example_hook: "Aku bekerja 4 jam per hari dan hasilkan lebih banyak dari orang yang kerja 10 jam, ini caranya..."
+          guide:
+            audience: "Profesional dan mahasiswa 21–30 yang sering merasa sibuk tapi output tidak setimpal; pengguna smartphone aktif yang sadar distraksi tapi belum tahu cara konkret mengelolanya; penonton yang pernah baca tentang deep work tapi belum implementasi."
+            tone: "Pragmatis dan sedikit provokatif. Tantang asumsi bahwa lebih lama kerja = lebih banyak hasil. Fokus pada teknik yang bisa diterapkan dalam konteks Indonesia (notif WA, open office, budaya rapat)."
+            format: "60–75 detik. B-roll tangan di keyboard, layar fokus, atau notifikasi yang dimatikan. Voiceover langsung. Teks overlay untuk langkah atau data. Vertikal 9:16."
+            boleh:
+              - "Sertakan contoh konkret cara handle notifikasi WA dari grup kantor"
+              - "Berikan jadwal spesifik yang bisa langsung dicoba (mis. '2 jam pertama no-interrupt')"
+              - "Akui bahwa deep work bukan untuk setiap jenis pekerjaan — kontekstualisasi"
+              - "Tampilkan screen-recording tools fokus yang dipakai (Forest, Freedom, mode senyap)"
+            hindari:
+              - "Jangan sarankan 'matikan semua notifikasi' tanpa address konsekuensi sosial Indonesia"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan buat terkesan hanya orang super disiplin yang bisa lakukan ini"
+              - "Jangan over-klaim angka produktivitas tanpa konteks"
+            pola_hook: "Detik 0: tampilkan angka kontras ('kerja 4 jam vs 10 jam, output lebih banyak') + transisi langsung ke penjelasan kenapa."
+            contoh_judul:
+              - "Aku kerja 4 jam sehari dan hasilkan lebih banyak — ini caranya bukan tipu"
+              - "Cara matikan distraksi WA tanpa bikin kantor panik tidak bisa dihubungi"
+              - "Deep work di Indonesia — teknik fokus yang bisa diterapkan tanpa resign"
+              - "Satu perubahan ini bikin sesi kerja 2 jam lebih produktif dari 8 jam biasa"
+              - "Kenapa kamu merasa sibuk tapi tidak ada yang selesai — dan cara mengatasinya"
+            content_runway: "Setiap aspek lingkungan kerja Indonesia (WA grup, meeting tiba-tiba, open office, kerja dari kafe) menghasilkan video tersendiri; topik ini relevan untuk semua industri dan terus menjadi masalah aktual."
+
+        - slug: productivity-review-mingguan-sederhana
+          name: Review Mingguan 15 Menit yang Benar-benar Efektif
+          description: Template review mingguan yang bisa diselesaikan dalam 15 menit dan cukup untuk menjaga progres tujuan jangka panjang, tanpa harus menjadi perfeksionis perencanaan.
+          example_hook: "15 menit setiap Minggu malam yang bikin Senin paginya selalu dimulai dengan benar..."
+          guide:
+            audience: "Penonton 20–30 yang pernah coba weekly review tapi berhenti karena terlalu lama atau tidak konsisten; profesional yang ingin tahu apakah minggu ini produktif atau tidak; pengguna kalender dan todo list yang tidak pernah dievaluasi."
+            tone: "Sederhana dan anti-perfeksionis. Tegaskan bahwa 15 menit yang dilakukan konsisten lebih baik dari 2 jam yang hanya dilakukan sekali. Template yang disajikan harus benar-benar bisa selesai dalam waktu itu."
+            format: "60–75 detik. Screen-recording template atau notebook review. Voiceover menjelaskan tiap bagian. Teks overlay untuk 3–4 pertanyaan utama template. Vertikal 9:16."
+            boleh:
+              - "Tampilkan contoh pengisian template yang nyata, bukan template kosong"
+              - "Berikan 3–5 pertanyaan konkret yang menjadi inti review"
+              - "Jelaskan kapan dan di mana melakukan review (hari apa, jam berapa, di mana)"
+              - "Akui bahwa minggu tidak sempurna tetap bisa di-review tanpa drama"
+            hindari:
+              - "Jangan tampilkan template review yang punya 20+ field — tidak akan dipakai"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan buat review terkesan hanya untuk orang dengan tujuan besar — ini untuk semua orang"
+              - "Jangan skip penjelasan 'apa yang dilakukan saat review menunjukkan minggu buruk'"
+            pola_hook: "Detik 0: tampilkan momen Senin pagi yang terasa kacau karena tidak ada rencana + langsung transisi ke 'ini yang aku lakukan Minggu malam'."
+            contoh_judul:
+              - "Review 15 menit setiap Minggu malam yang bikin Senin tidak pernah overwhelming"
+              - "Template weekly review yang benar-benar bisa selesai dalam 15 menit — ini pertanyaannya"
+              - "Cara aku tahu setiap minggu produktif atau tidak dalam 15 menit"
+              - "Berhenti buat weekly review yang panjang dan tidak pernah diisi — coba yang ini"
+              - "5 pertanyaan sederhana yang menjaga aku tetap on track setiap minggu"
+            content_runway: "Setiap siklus perencanaan (harian, mingguan, bulanan, tahunan), tools yang berbeda (digital vs analog), dan konteks berbeda (mahasiswa, karyawan, freelancer) menghasilkan video tersendiri dengan audiens spesifik."
+
+    - slug: minimalism
+      name: "Minimalism / Declutter"
+      description: "Hidup minimalis, rapikan barang."
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: b-roll + before-after
+      example_hook: "Aku buang 100 barang dan..."
+      guide:
+        audience: "Penonton 20–35 yang merasa ruangan atau hidupnya terlalu penuh; pemilik kos atau apartemen kecil yang ingin hidup lebih ringan; penonton yang terinspirasi Marie Kondo atau minimalism aesthetics tapi butuh pendekatan Indonesia."
+        tone: "Reflektif dan praktis. Minimalism bukan soal estetika putih bersih tapi soal fungsi dan ketenangan. Jujur tentang hambatan (orang tua yang tidak setuju, attachment emosional terhadap barang)."
+        format: "60–90 detik. Before-after footage ruangan atau lemari. B-roll proses sortir dan membuang. Voiceover naratif yang jujur. Teks overlay untuk angka (100 barang, Rp0 budget). Vertikal 9:16."
+        boleh:
+          - "Tampilkan kondisi sebelum yang benar-benar berantakan — kontras adalah kunci"
+          - "Akui attachment emosional terhadap barang sebagai hal yang normal, bukan kelemahan"
+          - "Berikan tips donasi atau jual barang bekas yang relevan di Indonesia (Carousell, donasi masjid)"
+          - "Sertakan hasil yang konkret dan jujur — tidak harus sempurna atau estetik putih"
+        hindari:
+          - "Jangan rekam kondisi yang sebenarnya sudah cukup rapi — kontras harus nyata"
+          - "Jangan tampilkan gaya hidup minimalis yang mahal (furniture estetik seharga puluhan juta)"
+          - "Jangan pakai musik ber-hak-cipta"
+          - "Jangan buat terkesan membuang barang adalah mudah tanpa address hambatan emosional"
+        pola_hook: "Detik 0: tampilkan kondisi paling berantakan + teks angka yang akan dibuang atau perubahan yang akan terjadi. Langsung mulai proses di detik 3."
+        contoh_judul:
+          - "Aku buang 100 barang dan ini yang terjadi pada pikiranku"
+          - "Declutter kamar yang tidak muat lagi dalam 3 jam dengan budget nol"
+          - "Minimalism versi Indonesia — tidak perlu furniture putih seharga jutaan"
+      micro:
+        - slug: minimalism-rumah-ortu-penuh-barang
+          name: Declutter Rumah Orang Tua yang Tidak Mau Dibuang
+          description: Panduan mendekati percakapan tentang decluttering dengan orang tua yang sentimental dan tidak mau membuang barang, dengan teknik yang menghormati perasaan mereka.
+          example_hook: "Ibu aku simpan barang sejak 1990, ini percakapan yang akhirnya berhasil..."
+          guide:
+            audience: "Anak dewasa 22–35 yang tinggal bersama atau sering berkunjung ke orang tua; penonton yang ingin bantu orang tua declutter tapi takut konflik; mereka yang punya dinamika keluarga Indonesia yang sentimental terhadap barang."
+            tone: "Empatis dan tidak menghakimi. Hormati perspektif generasi orang tua terhadap barang. Teknik yang diberikan harus tentang pendekatan komunikasi, bukan pemaksaan."
+            format: "60–75 detik. B-roll rumah dengan banyak barang. Voiceover naratif. Teks overlay untuk langkah komunikasi. Bisa sertakan dialog contoh singkat. Vertikal 9:16."
+            boleh:
+              - "Akui bahwa orang tua Indonesia punya hubungan berbeda dengan barang karena masa sulitnya"
+              - "Berikan script percakapan konkret yang bisa langsung dipakai"
+              - "Sertakan alternatif selain buang: simpan foto, donasikan ke keluarga lain"
+              - "Ceritakan pengalaman percobaan yang gagal sebelum menemukan pendekatan yang berhasil"
+            hindari:
+              - "Jangan tampilkan orang tua secara negatif atau irasional"
+              - "Jangan sarankan cara yang bisa merusak kepercayaan atau hubungan keluarga"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan buat terkesan masalah ini mudah diselesaikan — butuh waktu dan kesabaran"
+            pola_hook: "Detik 0: footage tumpukan barang di rumah + voiceover 'ibu simpan ini sejak aku belum lahir, ini percakapan yang akhirnya berhasil'."
+            contoh_judul:
+              - "Ibu simpan barang sejak 1990 — ini cara aku ajak bicara tanpa ribut"
+              - "Declutter rumah orang tua tanpa hurt feelings — teknik yang akhirnya berhasil"
+              - "Cara minta orang tua buang barang yang sudah tidak terpakai tanpa konflik"
+              - "Barang-barang ini sudah 30 tahun di rumah — bagaimana kami akhirnya melepaskan"
+              - "Script percakapan yang aku pakai untuk ajak ibu declutter ruang tamunya"
+            content_runway: "Setiap jenis barang (pakaian, perkakas, kenangan, elektronik tua), jenis ruangan, dan dinamika keluarga menghasilkan pendekatan berbeda; topik ini sangat relevan untuk jutaan keluarga Indonesia multigenerasi."
+
+        - slug: minimalism-digital-hp-penuh
+          name: Minimalism Digital — Bersihkan HP yang Penuh Sesak
+          description: Panduan declutter digital menyeluruh — aplikasi tidak terpakai, foto duplikat, notifikasi tidak perlu — sebagai metafora dan praktek nyata pikiran yang lebih jernih.
+          example_hook: "HP aku 256GB penuh, setelah proses ini hanya 40GB terpakai dan hidup terasa lebih ringan..."
+          guide:
+            audience: "Pengguna smartphone 19–30 yang punya storage penuh tapi takut hapus sesuatu; penonton yang merasa overwhelmed dengan notifikasi dan aplikasi; mereka yang paham konsep digital clutter tapi belum mulai membersihkan."
+            tone: "Langsung dan membebaskan. Declutter digital terasa lebih aman dari declutter fisik karena penonton bisa backup dulu. Tampilkan rasa lega yang nyata setelah proses selesai."
+            format: "60–75 detik. Screen-recording proses hapus aplikasi, foto, dan atur notifikasi. Voiceover langsung. Tampilkan sebelum (storage penuh) dan sesudah (storage lega). Vertikal 9:16."
+            boleh:
+              - "Tampilkan angka konkret: GB sebelum dan sesudah, jumlah aplikasi dihapus"
+              - "Berikan urutan langkah yang jelas: mulai dari mana, lanjut ke mana"
+              - "Rekomendasikan tools gratis untuk deteksi foto duplikat yang tersedia di Indonesia"
+              - "Kaitkan storage HP dengan 'mental load' secara singkat tanpa berlebihan"
+            hindari:
+              - "Jangan sarankan hapus semua backup tanpa menjelaskan cara backup dulu"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan buat terkesan proses ini memerlukan aplikasi berbayar"
+              - "Jangan skip penjelasan cara handle foto dengan nilai emosional sebelum dihapus"
+            pola_hook: "Detik 0: tampilkan layar HP dengan storage hampir penuh + teks angka awal. Langsung ke langkah pertama di detik 3."
+            contoh_judul:
+              - "HP 256GB penuh ini aku bersihkan sampai 40GB terpakai — ini prosesnya"
+              - "Digital declutter HP dalam 30 menit — langkah demi langkah"
+              - "Cara hapus foto duplikat di HP yang akhirnya berhasil tanpa takut kehilangan"
+              - "Notifikasi ini yang pertama kali harus dimatikan dari HP kamu"
+              - "Bersihkan HP dari 500 aplikasi ke 50 yang benar-benar dipakai — hasilnya mengejutkan"
+            content_runway: "Setiap jenis perangkat (Android, iPhone), kategori konten (foto, aplikasi, chat, email), dan tingkat keparahan declutter menghasilkan video berbeda; masalah storage HP adalah universal dan selalu aktual."
+
+        - slug: minimalism-wardrobe-kapsul
+          name: Bangun Wardrobe Kapsul 30 Potong Pakaian
+          description: Panduan membangun lemari pakaian minimalis dengan 30 potong pakaian serbaguna yang bisa dikombinasikan untuk semua kesempatan, menghilangkan kebingungan pilih baju harian.
+          example_hook: "30 potong baju ini menggantikan lemari 200 potong dan aku tidak pernah bingung lagi mau pakai apa..."
+          guide:
+            audience: "Perempuan dan pria 20–30 yang buka lemari penuh tapi merasa tidak punya baju; penonton yang ingin berpakaian lebih intentional; mereka yang tahu tentang capsule wardrobe tapi bingung memulai di konteks Indonesia."
+            tone: "Praktis dan anti-snob fashion. Capsule wardrobe bukan tentang pakaian mahal — tentang pilihan yang tepat. Kontekstual Indonesia: iklim tropis, dress code kantor Indonesia, dan budget yang realistis."
+            format: "60–75 detik. Footage lemari sebelum dan sesudah. B-roll tangan menyortir pakaian. Teks overlay untuk angka (30 potong, kategori pakaian). Voiceover panduan. Vertikal 9:16."
+            boleh:
+              - "Sertakan breakdown 30 potong per kategori yang konkret (atasan, bawahan, outer, dll)"
+              - "Kontekstualisasi untuk iklim tropis Indonesia — tidak perlu musim"
+              - "Rekomendasikan brand lokal atau thrift sebagai sumber pakaian capsule yang terjangkau"
+              - "Tunjukkan contoh mix-and-match nyata dari 30 potong tersebut"
+            hindari:
+              - "Jangan rekomendasikan brand mewah yang tidak realistis untuk mayoritas audiens"
+              - "Jangan buat terkesan harus sempurna dari hari pertama"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan tampilkan lemari minimalis dengan hanya pakaian putih — tidak relevan untuk tropis"
+            pola_hook: "Detik 0: tampilkan lemari penuh sesak + teks '200 potong baju, tidak pernah tahu mau pakai apa'. Langsung ke konsep capsule wardrobe di detik 3."
+            contoh_judul:
+              - "30 potong baju ini menggantikan lemari 200 potong — tidak pernah bingung lagi"
+              - "Cara bangun capsule wardrobe di Indonesia dengan budget di bawah Rp2jt"
+              - "Breakdown 30 pakaian untuk semua occasion: kerja, santai, kondangan"
+              - "Kenapa lemari penuhmu membuat kamu selalu merasa tidak punya baju"
+              - "Wardrobe kapsul versi iklim tropis Indonesia — ini daftarnya"
+            content_runway: "Setiap gender, iklim kota (Jakarta vs kota dingin), profesi, dan budget menghasilkan capsule wardrobe yang berbeda; update musiman dan tren fashion menghadirkan alasan konten baru secara reguler."
+
+    - slug: room-makeover
+      name: Makeover Kamar
+      description: "Transformasi kamar/ruang."
+      faceless: true
+      difficulty: menengah
+      rpm: sedang
+      formats: before-after + time-lapse
+      example_hook: "Kamar kos sempit ini disulap..."
+      guide:
+        audience: "Penghuni kos dan kontrakan 19–30 yang ingin kamarnya lebih nyaman dan estetik; pemilik apartemen studio yang butuh inspirasi ruang kecil; penonton yang terinspirasi dari konten room tour tapi butuh versi yang realistis secara budget."
+        tone: "Inspiratif tapi membumi. Transformasi yang ditampilkan harus terasa achievable — bukan membutuhkan kontraktor atau budget ratusan juta. Kreativitas dan kepraktisan lebih dihargai dari estetika mahal."
+        format: "60–90 detik. Before footage kondisi kamar asli → time-lapse proses transformasi → reveal setelah. Teks overlay untuk budget total. B-roll detail elemen baru. Vertikal 9:16."
+        boleh:
+          - "Tampilkan kondisi kamar asli yang benar-benar biasa atau berantakan"
+          - "Breakdown budget secara transparan — berapa total yang dihabiskan dan di mana"
+          - "Rekomendasikan tempat belanja yang tersedia di Indonesia (IKEA, Tokopedia, pasar loak)"
+          - "Reveal dari sudut yang sama dengan footage before untuk perbandingan adil"
+        hindari:
+          - "Jangan tampilkan makeover yang membutuhkan renovasi struktural — tidak relevan untuk penghuni kos"
+          - "Jangan sembunyikan biaya total atau buat terkesan lebih murah dari yang sebenarnya"
+          - "Jangan pakai musik ber-hak-cipta"
+          - "Jangan rekam ruangan yang sebenarnya sudah cukup bagus — kontras before-after harus nyata"
+        pola_hook: "Detik 0: footage kamar paling berantakan atau polos + teks budget total. Langsung mulai proses di detik 3."
+        contoh_judul:
+          - "Kamar kos sempit ini disulap dalam sehari dengan budget Rp500rb"
+          - "Makeover kamar polos ini bikin tidak mau keluar rumah"
+          - "Transformasi kamar yang bikin orang mengira sewa apartemen mahal"
+      micro:
+        - slug: room-makeover-budget-500rb
+          name: Makeover Kamar Total Budget Rp500rb
+          description: Transformasi kamar dengan budget ketat Rp500rb menggunakan kombinasi kerajinan tangan, thrift, dan pembelian cerdas, dengan breakdown biaya yang transparan.
+          example_hook: "Kamar ini sebelumnya terlihat seperti gudang, ini setelah Rp500rb dan 2 hari kerja..."
+          guide:
+            audience: "Mahasiswa dan karyawan junior 19–25 yang punya budget sangat terbatas tapi ingin kamar yang nyaman; penghuni kos yang baru pindah dengan modal minim; penonton yang sering hanya bisa nonton room makeover mahal tapi tidak bisa replikasi."
+            tone: "Resourceful dan kreatif. Keterbatasan budget adalah tantangan yang harus dipecahkan dengan kreativitas, bukan keluhan. Setiap barang yang dibeli harus dipertahankan pentingnya."
+            format: "75–90 detik. Before footage + time-lapse proses belanja dan DIY + reveal + breakdown angka setiap item. Teks overlay untuk harga per item. Vertikal 9:16."
+            boleh:
+              - "Tampilkan struk atau tangkapan layar belanja online dengan harga asli"
+              - "Sertakan tips thrifting atau DIY yang spesifik dan bisa dilakukan sendiri"
+              - "Breakdown setiap elemen makeover dengan harganya (pot tanaman Rp15rb, lampu fairy Rp45rb)"
+              - "Akui kompromi yang harus dibuat karena keterbatasan budget"
+            hindari:
+              - "Jangan memasukkan item yang harganya melampaui budget total — tidak jujur"
+              - "Jangan skip proses DIY yang butuh keahlian tanpa menyebut tingkat kesulitannya"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan tampilkan kondisi before yang sebenarnya sudah cukup bagus"
+            pola_hook: "Detik 0: footage kamar sebelum + teks 'budget total Rp500rb'. Penonton harus langsung bertanya-tanya apakah mungkin. Langsung ke proses di detik 4."
+            contoh_judul:
+              - "Kamar seperti gudang ini disulap dengan total Rp500rb dalam 2 hari"
+              - "Breakdown lengkap makeover kamar kos Rp500rb — setiap rupiahnya"
+              - "Cara bikin kamar estetik dengan Rp500rb dari Tokopedia dan pasar loak"
+              - "Kamar ini tidak keluarkan satu juta pun tapi semua orang kira seharga itu"
+              - "Makeover kamar budget minimum — ini yang dibeli dan berapa harganya"
+            content_runway: "Setiap range budget (Rp200rb, Rp500rb, Rp1jt, Rp3jt), jenis kamar (kos, apartemen, rumah sendiri), dan gaya estetik (minimalis, boho, industrial) menghasilkan video unik; harga barang berubah dan tempat belanja baru terus muncul."
+
+        - slug: room-makeover-tanpa-bor-tempel
+          name: Dekorasi Kamar Tanpa Bor dan Tidak Merusak Dinding
+          description: Tutorial dekorasi kamar kos atau kontrakan menggunakan metode pemasangan yang tidak merusak dinding — command strip, tapestry, dan furniture freestanding.
+          example_hook: "Aku dekorasi kamar ini dan pas pindahan deposit kembali penuh karena tidak ada bekas apapun..."
+          guide:
+            audience: "Penghuni kos 18–27 yang takut kehilangan deposit karena kerusakan dinding; mereka yang ingin dekorasi tapi sering berpindah tempat; penonton yang pernah kena denda dari pemilik kos karena bekas paku."
+            tone: "Solusi nyata untuk masalah nyata. Setiap rekomendasi harus bisa diterapkan tanpa izin pemilik kos. Fokus pada yang works bukan yang Instagram-worthy."
+            format: "60–75 detik. Demo singkat cara pasang command strip, tapestry, dan rak freestanding. Before-after ruangan. Teks overlay untuk nama produk dan harga estimasi. Vertikal 9:16."
+            boleh:
+              - "Demo cara pasang dan cara lepas command strip dengan benar agar tidak merusak"
+              - "Tampilkan beberapa alternatif dekorasi yang semuanya tidak butuh bor"
+              - "Sertakan satu tips tentang cara cek batas maksimum berat command strip"
+              - "Rekomendasikan produk yang tersedia di Tokopedia atau Shopee Indonesia"
+            hindari:
+              - "Jangan rekomendasikan produk yang sulit ditemukan di Indonesia"
+              - "Jangan tampilkan cara yang sebenarnya tetap merusak dinding walau sedikit"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan skip penjelasan cara melepas dengan benar saat pindahan"
+            pola_hook: "Detik 0: tampilkan dekorasi kamar yang rapi + teks 'semua ini tidak ada satu pakupun di dinding'. Langsung demo produk pertama di detik 3."
+            contoh_judul:
+              - "Kamar kos ini penuh dekorasi dan tidak ada satu paku pun di dinding"
+              - "Command strip ini bikin aku tidak pernah takut kehilangan deposit lagi"
+              - "Dekorasi kamar kos yang bisa dibawa pindahan tanpa tinggalkan bekas"
+              - "7 cara dekorasi dinding tanpa bor yang works dan tidak mahal"
+              - "Cara pasang dan lepas command strip agar dinding tidak rusak sama sekali"
+            content_runway: "Setiap jenis dekorasi (foto, rak, lampu, cermin, tanaman gantung), material dinding berbeda, dan situasi berbeda (kos murah vs apartemen) menghasilkan video tersendiri; audiens ini selalu ada selama ada mahasiswa dan pekerja muda."
+
+        - slug: room-makeover-studio-kerja-rumah
+          name: Sudut Kerja Produktif di Kamar yang Sempit
+          description: Panduan membangun work-from-home setup yang ergonomis dan estetik di ruang sempit, termasuk solusi penyimpanan kabel dan pencahayaan yang benar untuk produktivitas.
+          example_hook: "Setup kerja ini di sudut 1x1 meter, dan ini yang bikin aku lebih produktif dari kerja di kantor..."
+          guide:
+            audience: "Remote worker dan freelancer 22–32 yang belum punya ruang kerja khusus; penghuni kos yang harus kerja di kasur atau meja makan; penonton yang WFH tapi setup-nya membuat sakit punggung atau tidak fokus."
+            tone: "Ergonomis dan fungsional dulu, estetik kemudian. Penonton butuh solusi nyata untuk masalah fisik (sakit punggung, pencahayaan buruk) sebelum memikirkan estetika."
+            format: "75–90 detik. Footage setup sebelum (tidak ergonomis) → proses beli dan atur elemen → reveal setup setelah. Teks overlay untuk nama dan harga item. Close-up detail (kabel management, posisi monitor). Vertikal 9:16."
+            boleh:
+              - "Jelaskan prinsip ergonomis dasar (tinggi monitor, posisi kursi) dalam satu kalimat per prinsip"
+              - "Tampilkan solusi cable management yang murah dan mudah"
+              - "Rekomendasikan lampu ring atau panel light yang tersedia di marketplace Indonesia"
+              - "Sertakan budget total dan breakdown per item"
+            hindari:
+              - "Jangan rekomendasikan meja atau kursi ergonomis seharga jutaan sebagai keharusan"
+              - "Jangan tampilkan setup yang hanya terlihat bagus tapi tidak ergonomis"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan skip solusi untuk ruang yang benar-benar sempit (kurang dari 1,5 meter)"
+            pola_hook: "Detik 0: footage kerja di kasur atau meja makan yang tidak ergonomis + teks 'sakit punggung sejak WFH dimulai'. Langsung ke solusi di detik 3."
+            contoh_judul:
+              - "Setup kerja di sudut 1x1 meter yang bikin punggung tidak sakit lagi"
+              - "WFH setup produktif di kamar kos sempit — total budget di bawah Rp2jt"
+              - "Cara kelola kabel WFH setup agar tidak ada yang menjuntai acak"
+              - "Sudut kerja ini di sudut paling kecil kamar dan hasilnya lebih fokus dari kantor"
+              - "5 elemen setup kerja rumah yang paling worth it dibeli duluan"
+            content_runway: "Setiap ukuran ruang, budget, jenis pekerjaan (desain butuh monitor besar, coding, writing), dan preferensi estetik menghasilkan video yang berbeda; WFH dan freelancing terus berkembang di Indonesia."
+
+    - slug: study-with-me
+      name: "Study / Work With Me"
+      description: "Belajar/kerja bareng, fokus."
+      faceless: true
+      difficulty: pemula
+      rpm: rendah
+      formats: timer + ambience + lo-fi
+      example_hook: "Belajar bareng 1 jam, no distraksi..."
+      guide:
+        audience: "Mahasiswa dan profesional muda 17–27 yang butuh teman belajar virtual; penonton yang lebih produktif ketika merasa ada orang lain yang juga bekerja; mereka yang berjuang dengan distraksi saat belajar sendiri."
+        tone: "Tenang dan fokus. Tidak ada narasi panjang — ini konten ambient. Penonton datang untuk suasana, bukan informasi. Musik lo-fi atau ambience kafe atau alam Indonesia menjadi identitas channel."
+        format: "30 menit – 3 jam. Timer atau timestamp yang terlihat di layar. Musik lo-fi atau ambience tanpa lirik. Visual bisa berupa footage meja belajar, jendela hujan, atau screen dari atas. Tidak ada voiceover selama sesi. Vertikal atau landscape 16:9."
+        boleh:
+          - "Tampilkan timer yang jelas di layar agar penonton bisa ikut sinkronisasi waktu"
+          - "Gunakan musik lo-fi atau ambience Indonesia yang tidak ada di tempat lain"
+          - "Tambahkan break reminder visual setiap 25-50 menit (Pomodoro)"
+          - "Pilih thumbnail yang langsung komunikasikan suasana dan durasi"
+        hindari:
+          - "Jangan tambahkan voiceover atau interupsi di tengah sesi — penonton sedang fokus"
+          - "Jangan gunakan musik ber-hak-cipta atau dengan lirik yang distraktif"
+          - "Jangan rekam dengan pencahayaan atau visual yang tidak nyaman ditonton lama"
+          - "Jangan interrupt dengan iklan atau CTA di tengah sesi tanpa visual break yang jelas"
+        pola_hook: "Detik 0: tampilkan meja belajar atau setup kerja + timer mulai + musik fade in. Tidak ada intro verbal — langsung masuk suasana belajar."
+        contoh_judul:
+          - "Belajar bareng 1 jam, no distraksi, lo-fi tenang"
+          - "Study with me 2 jam Pomodoro dengan timer di layar"
+          - "Work with me malam ini — ambient kafe untuk fokus"
+      micro:
+        - slug: study-with-me-pomodoro-visual
+          name: Study With Me Pomodoro dengan Timer Visual
+          description: Sesi belajar bersama dengan timer Pomodoro yang terlihat jelas di layar, musik lo-fi yang tidak mengganggu, dan transisi visual yang membantu penonton tetap sinkron.
+          example_hook: "Belajar bareng 2 jam dengan Pomodoro, timer muncul di layar, tidak ada excuse untuk berhenti..."
+          guide:
+            audience: "Mahasiswa 17–25 yang familiar dengan teknik Pomodoro tapi butuh akuntabilitas eksternal; penonton yang sering terganggu dan ingin belajar bersama seseorang secara virtual; mereka yang lebih disiplin jika ada timer yang terlihat."
+            tone: "Disiplin tapi tidak menekan. Timer memberi struktur, bukan tekanan. Transisi sesi kerja ke istirahat harus smooth dan tidak abrupt."
+            format: "1–3 jam. Timer 25 menit kerja + 5 menit istirahat terlihat di layar sepanjang waktu. Visual: meja belajar, buku, atau layar laptop dari atas. Musik lo-fi selama sesi kerja, ambience lebih cair saat istirahat. Tidak ada voiceover. Landscape 16:9 atau vertikal 9:16."
+            boleh:
+              - "Gunakan desain timer yang bersih dan terlihat jelas di thumbnail"
+              - "Beri transisi visual yang berbeda antara sesi kerja dan istirahat (perubahan warna overlay atau musik)"
+              - "Tambahkan notifikasi visual yang lembut saat istirahat dimulai dan selesai"
+              - "Pilih musik lo-fi yang benar-benar royalty-free dan konsisten throughout"
+            hindari:
+              - "Jangan interrupt sesi dengan iklan atau teks berlebihan"
+              - "Jangan gunakan timer yang audionya terlalu keras atau mengganggu"
+              - "Jangan pakai musik ber-hak-cipta atau dengan lirik"
+              - "Jangan ubah visual atau musik terlalu drastis antara sesi — penonton ingin konsistensi"
+            pola_hook: "Detik 0: tampilkan setup belajar + timer 25:00 mulai hitung mundur + musik lo-fi fade in. Tidak ada intro verbal."
+            contoh_judul:
+              - "Study with me 2 jam Pomodoro — timer di layar, tidak ada excuse untuk berhenti"
+              - "Belajar bareng 4 sesi Pomodoro malam ini, lo-fi playlist tersedia"
+              - "25 menit fokus bareng, 5 menit istirahat — ulang sampai selesai"
+              - "Study session Pomodoro untuk ujian besok — mulai dari sekarang"
+              - "Timer Pomodoro visual 3 jam untuk malam belajar yang produktif"
+            content_runway: "Setiap variasi durasi total (1 jam, 2 jam, 4 jam), waktu Pomodoro (25/5, 50/10), suasana (pagi, siang, malam), dan genre musik lo-fi menghasilkan video berbeda; demand konten ini stabil sepanjang tahun akademik."
+
+        - slug: study-with-me-malam-deadline
+          name: Study With Me Malam Sebelum Deadline
+          description: Sesi belajar intensitas tinggi untuk malam sebelum ujian atau deadline, dengan energi yang mencerminkan kondisi nyata — kopi, meja berantakan, dan fokus penuh.
+          example_hook: "Tinggal 12 jam sebelum deadline, belajar bareng dari sekarang sampai selesai..."
+          guide:
+            audience: "Mahasiswa 17–24 yang sedang krisis deadline atau malam sebelum ujian; penonton yang butuh teman belajar yang juga merasakan tekanan yang sama; mereka yang belajar lebih baik dalam suasana urgensi yang dirasakan bersama."
+            tone: "Urgent tapi tidak panik. Ada acknowledgment bahwa ini situasi crunch, tapi energinya fokus bukan dramatis. Kopi dan meja tidak sempurna adalah visual yang jujur dan relatable."
+            format: "2–6 jam. Timer countdown ke deadline terlihat di layar. Musik lebih energik dari sesi Pomodoro biasa — lo-fi dengan tempo lebih cepat. Visual boleh sedikit lebih 'chaos' (meja penuh buku). Tidak ada voiceover. Landscape 16:9 atau vertikal 9:16."
+            boleh:
+              - "Tampilkan countdown ke deadline di layar sebagai motivasi bersama"
+              - "Pilih playlist yang sedikit lebih energik untuk kondisi deadline night"
+              - "Visual meja sedikit berantakan lebih autentik daripada meja terlalu rapi"
+              - "Judul dan thumbnail yang communicate urgency tanpa sensationalism"
+            hindari:
+              - "Jangan tambahkan narasi tentang betapa stresnya situasi ini"
+              - "Jangan gunakan musik yang terlalu loud atau dengan lirik"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan tampilkan konten yang bisa dianggap mempromosikan ketidakdisiplinan akademis"
+            pola_hook: "Detik 0: tampilkan countdown '12 jam lagi' + meja buku dan kopi + musik fade in. Tidak ada intro — langsung suasana malam deadline."
+            contoh_judul:
+              - "Tinggal 12 jam sebelum deadline — belajar bareng dari sekarang sampai selesai"
+              - "Malam sebelum ujian, belajar bareng sampai jam 3 pagi kalau perlu"
+              - "Study with me deadline night — kopi, panik terkontrol, dan fokus"
+              - "UTS besok jam 8 pagi — belajar bareng malam ini dari nol"
+              - "Sprint belajar 6 jam untuk materi yang belum sempat dibaca"
+            content_runway: "Setiap semester, setiap musim ujian, dan setiap mata kuliah atau topik deadline menghasilkan konteks yang berbeda; audiens mahasiswa selalu ada dan siklus akademik menjamin relevansi konten ini."
+
+        - slug: study-with-me-cafe-ambience
+          name: Work With Me dengan Ambience Kafe Indonesia
+          description: Sesi kerja bersama dengan latar suara kafe Indonesia yang autentik — mesin kopi, obrolan samar, dan musik akustik — untuk yang tidak bisa ke kafe tapi butuh suasananya.
+          example_hook: "Tidak perlu keluar rumah untuk kerja dengan suasana kafe, belajar bareng di sini..."
+          guide:
+            audience: "Penonton 20–30 yang produktif di kafe tapi tidak selalu bisa ke sana; remote worker yang suka suasana kafe tapi budget atau waktu tidak memungkinkan; penonton yang tahu mereka lebih fokus dengan white noise kafe."
+            tone: "Hangat dan nyaman. Suasana kafe Indonesia yang familiar — mesin kopi manual, obrolan samar Bahasa Indonesia, musik akustik lokal — menciptakan koneksi emosional lebih dari ambient asing."
+            format: "1–4 jam. Campuran rekaman kafe nyata dan footage working setup. Suara kafe ambience sebagai audio utama. Visual: laptop di meja kafe, cangkir kopi, atau luar jendela kafe. Tidak ada timer eksplisit — lebih bebas dari Pomodoro. Vertikal atau landscape."
+            boleh:
+              - "Rekam suara kafe Indonesia yang autentik dengan mic eksternal untuk kualitas audio lebih baik"
+              - "Pilih kafe dengan karakter audio yang berbeda dari sesi ke sesi (kafe sunyi vs kafe ramai)"
+              - "Tampilkan visual kafe dari berbagai kota Indonesia untuk variasi"
+              - "Sisipkan ambient sound natural (hujan di luar kafe) untuk dimensi audio tambahan"
+            hindari:
+              - "Jangan gunakan ambience kafe asing yang tidak relevan secara budaya untuk penonton Indonesia"
+              - "Jangan rekam suara percakapan yang cukup jelas hingga privasi orang lain terekspos"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan overprocess audio sehingga kehilangan karakter autentik kafe Indonesia"
+            pola_hook: "Detik 0: langsung masuk suara kafe — mesin kopi atau obrolan samar — + footage meja kafe + teks durasi sesi. Tidak ada intro verbal."
+            contoh_judul:
+              - "Kerja bareng di kafe Bandung — 3 jam ambience dan lo-fi untuk fokus"
+              - "Work with me suasana kafe Jakarta yang autentik — tidak perlu keluar rumah"
+              - "Belajar bareng di kafe dengan suara mesin kopi dan hujan ringan di luar"
+              - "Ambience kafe Indonesia 2 jam untuk yang butuh suasana tapi malas keluar"
+              - "Study session di kafe indie Yogyakarta — musik akustik dan kopi pagi"
+            content_runway: "Setiap kota (Jakarta, Bandung, Jogja, Surabaya, Bali), jenis kafe (kopi specialty, kafe pinggir sawah, kafe coworking), waktu (pagi, sore, malam), dan kondisi cuaca menghasilkan ambience yang berbeda."
+
+    - slug: aesthetic
+      name: "Aesthetic / Mood"
+      description: "Visual estetik + musik, vibe."
+      faceless: true
+      difficulty: pemula
+      rpm: rendah
+      formats: footage estetik + musik
+      example_hook: "Hidup slow living kayak gini..."
+      guide:
+        audience: "Penonton 16–28 yang menghargai keindahan visual dan momen tenang; pengikut aesthetic content di Instagram dan TikTok; penonton yang butuh konten 'reset' untuk memperlambat tempo hari mereka."
+        tone: "Puitis dan penuh perasaan. Tidak ada informasi — hanya suasana. Penonton datang untuk merasakan sesuatu, bukan belajar sesuatu. Caption bisa singkat atau tidak ada sama sekali."
+        format: "30–90 detik. Footage estetik: detail visual kecil, cahaya, tekstur, alam, atau kota. Musik sebagai emosi utama — instrumental atau lo-fi. Editing lambat dan disengaja. Tidak ada voiceover. Teks minimal atau tidak ada. Vertikal 9:16."
+        boleh:
+          - "Pilih musik yang benar-benar mewakili mood yang ingin diciptakan"
+          - "Edit dalam ritme musik — setiap cut seharusnya terasa disengaja"
+          - "Fokus pada detail kecil yang biasanya tidak disadari — titik cahaya, uap kopi, hujan di kaca"
+          - "Gunakan color grading konsisten yang menjadi identitas visual channel"
+        hindari:
+          - "Jangan tampilkan wajah secara jelas — menjaga misteri visual lebih kuat"
+          - "Jangan pakai musik ber-hak-cipta"
+          - "Jangan berlebihan dalam teks overlay — merusak suasana"
+          - "Jangan rekam dengan tangan goyang tanpa stabilizer atau teknik handheld yang disengaja"
+        pola_hook: "Detik 0: shot paling visual indah atau emosional langsung di frame pertama + musik fade in. Tidak ada setup atau penjelasan."
+        contoh_judul:
+          - "Hidup slow living seperti ini seharusnya menjadi standar"
+          - "Momen-momen kecil yang bikin hari terasa cukup"
+          - "Tonton ini kalau kamu butuh 60 detik untuk berhenti sejenak"
+      micro:
+        - slug: aesthetic-pagi-slow-living
+          name: Pagi Hari yang Tenang dan Tidak Terburu-buru
+          description: Footage estetik rutinitas pagi yang lambat dan penuh kesadaran — kopi, cahaya matahari pagi, dan sarapan sederhana — menginspirasi penonton untuk memperlambat tempo.
+          example_hook: "Pagi seperti ini seharusnya menjadi standar, bukan pengecualian..."
+          guide:
+            audience: "Penonton 19–30 yang sering bangun terburu-buru dan merindukan pagi yang tenang; audiens aesthetic yang terinspirasi slow living tapi sibuk dalam keseharian; mereka yang menonton konten ini sebagai bentuk self-care vikarial."
+            tone: "Tenang dan aspirasional. Tidak ada pretensi — momen yang ditampilkan bisa sederhana, yang penting autentik. Cahaya pagi dan suara yang minimal adalah karakter utama."
+            format: "45–75 detik. Footage golden hour pagi, uap kopi, cahaya masuk jendela, tangan membuka buku. Musik instrumental tenang atau tidak ada. Editing sangat lambat. Tidak ada teks atau minimal. Vertikal 9:16."
+            boleh:
+              - "Rekam dalam cahaya pagi alami — tidak perlu ring light"
+              - "Tampilkan detail kecil: butir kopi, uap teh, cahaya di lantai kayu"
+              - "Gunakan color grading warm-tone yang konsisten"
+              - "Edit mengikuti ritme musik — jangan cut terlalu cepat"
+            hindari:
+              - "Jangan tampilkan wajah secara jelas — ini konten faceless"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan tambahkan teks motivasi panjang — merusak suasana"
+              - "Jangan rekam pagi yang sebenarnya terburu-buru lalu buat terlihat tenang"
+            pola_hook: "Detik 0: shot cahaya pagi pertama masuk jendela atau uap kopi naik + musik fade in lembut. Tidak ada teks."
+            contoh_judul:
+              - "Pagi seperti ini seharusnya standar, bukan pengecualian yang langka"
+              - "Slow morning yang bikin hari terasa lebih panjang dengan cara yang baik"
+              - "Rutinitas pagi yang tidak terburu-buru — footage untuk yang butuh rehat"
+              - "Cahaya pagi ini terlalu indah untuk tidak diabadikan"
+              - "60 detik pagi yang tenang untuk reset sebelum hari dimulai"
+            content_runway: "Setiap musim, cuaca pagi, lokasi (kota, desa, pegunungan, pantai), dan elemen pagi (kopi, teh, buku, tanaman) menghasilkan footage yang berbeda; rutinitas pagi adalah universal dan bisa diproduksi setiap hari."
+
+        - slug: aesthetic-malam-hujan-indoor
+          name: Suasana Malam Hujan di Dalam Ruangan
+          description: Footage estetik malam hujan dari dalam rumah atau kafe — suara hujan, lilin, dan buku — menciptakan mood yang nyaman dan mendorong penonton untuk menikmati momen sepi.
+          example_hook: "Hujan di luar, hangat di dalam, dan waktu yang akhirnya hanya untuk dirimu sendiri..."
+          guide:
+            audience: "Penonton 17–28 yang merasakan koneksi emosional kuat dengan suasana hujan; audiens yang menggunakan konten ini untuk relaksasi atau menemani malam; penonton Indonesia yang memiliki hubungan budaya kuat dengan suara hujan."
+            tone: "Melankolis dan nyaman sekaligus. Ada rasa protected dari dunia luar. Tidak sentimental berlebihan — biarkan visual dan audio menciptakan emosi tanpa narasi."
+            format: "60–90 detik. Footage jendela berhujan, lilin menyala, buku di tangan, cangkir hangat. Suara hujan asli sebagai audio utama, bisa dikombinasikan dengan musik ambient lembut. Tidak ada voiceover. Vertikal 9:16."
+            boleh:
+              - "Rekam suara hujan asli dengan mic eksternal untuk kualitas audio lebih baik"
+              - "Tampilkan kontras dalam-luar: hangat di dalam, gelap basah di luar"
+              - "Gunakan lighting warm (lilin atau lampu kuning) untuk suasana cozy"
+              - "Slow-motion tetes hujan di kaca untuk detail visual yang menarik"
+            hindari:
+              - "Jangan pakai suara hujan efek yang terlalu artificial — autentisitas adalah nilainya"
+              - "Jangan tampilkan wajah — channel ini faceless"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan rekam dengan pencahayaan yang terlalu terang — hancurkan suasana cozy"
+            pola_hook: "Detik 0: langsung suara hujan + shot jendela berhujan dari dalam. Tidak ada intro. Biarkan suara dan visual berbicara dari frame pertama."
+            contoh_judul:
+              - "Hujan di luar, hangat di dalam — momen yang jarang bisa dinikmati"
+              - "Suasana malam hujan untuk yang butuh waktu sendirian"
+              - "Malam hujan dan lilin — aesthetic yang belum pernah membosankan"
+              - "Footage hujan malam ini untuk teman rebahan yang tenang"
+              - "Dalam ruangan saat hujan lebat adalah satu-satunya tempat yang ingin aku tuju"
+            content_runway: "Setiap intensitas hujan, lokasi (kos, rumah desa, kafe), elemen indoor (lilin, buku, kopi, tanaman), dan waktu malam menghasilkan footage berbeda; musim hujan Indonesia menjamin pasokan konten hampir setengah tahun."
+
+        - slug: aesthetic-golden-hour-kota
+          name: Golden Hour di Kota-kota Indonesia
+          description: Kompilasi footage golden hour dari berbagai kota Indonesia — jalanan Jakarta, sawah Jogja, pantai Bali — sebagai konten estetik yang merayakan keindahan lokal yang sering terabaikan.
+          example_hook: "Kota yang sama setiap hari, tapi jam 6 sore dia berubah jadi ini..."
+          guide:
+            audience: "Penonton 18–30 yang tinggal di kota Indonesia dan sering lupa melihat keindahan di sekitar mereka; fotografer dan videografer amatir yang terinspirasi; penonton yang menghargai representasi estetik Indonesia yang tidak selalu Bali."
+            tone: "Bangga lokal dan penuh rasa kagum. Setiap kota Indonesia punya golden hour-nya sendiri. Tujuan konten ini adalah membuat penonton berhenti sejenak dan sadar keindahan yang ada."
+            format: "45–75 detik. Kompilasi 5–8 shot golden hour dari satu kota atau beberapa kota. Edit mengikuti ritme musik. Tidak ada teks atau minimal (nama kota saja). Musik sebagai emosi. Vertikal 9:16."
+            boleh:
+              - "Variasikan sudut: street level, rooftop, dari dalam kendaraan, tepi sawah"
+              - "Sertakan elemen khas kota masing-masing (bajaj Jakarta, becak Jogja, kapal Makassar)"
+              - "Color grading yang memaksimalkan warm tone golden hour"
+              - "Edit yang lambat dengan occasional cut cepat di peak moment"
+            hindari:
+              - "Jangan hanya rekam Bali atau Jakarta — Indonesia jauh lebih luas"
+              - "Jangan pakai musik ber-hak-cipta"
+              - "Jangan rekam golden hour dengan handphone tanpa stabilizer kecuali memang disengaja untuk efek"
+              - "Jangan tambahkan teks motivasi panjang — golden hour bicara sendiri"
+            pola_hook: "Detik 0: shot golden hour paling dramatis langsung di frame pertama + nama kota minimal + musik. Tidak ada build-up."
+            contoh_judul:
+              - "Kota yang sama setiap hari tapi jam 6 sore dia berubah jadi seperti ini"
+              - "Golden hour Jakarta yang tidak pernah ada di foto Instagram siapapun"
+              - "Yogyakarta saat golden hour adalah alasan untuk tidak pernah pindah"
+              - "5 kota Indonesia di jam paling indah dalam sehari"
+              - "Indonesia terlalu cantik saat golden hour untuk hanya dilihat dari feed orang lain"
+            content_runway: "Setiap kota besar dan kecil di Indonesia (ratusan), setiap musim, setiap cuaca berbeda (berawan vs cerah), dan setiap sudut yang belum pernah direkam menjamin pasokan konten golden hour yang hampir tidak terbatas."

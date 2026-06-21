@@ -1,0 +1,483 @@
+version: 1
+vertical:
+  slug: v-on-camera
+  name: On-Camera
+  description: Konten yang menampilkan pembuat secara langsung — wawancara, edukasi tatap muka, challenge, dan podcast clip.
+  guide:
+    audience: "Penonton 18–35 yang ingin koneksi nyata dengan kreator; generasi muda yang bosan konten anonim dan menghargai keberanian tampil di depan kamera; mereka yang mencari perspektif, cerita, dan opini dari sosok yang relatable."
+    tone: "Jujur, langsung, dan personal. Kreator adalah produknya — kepercayaan diri, ekspresi wajah, dan bahasa tubuh menentukan kualitas konten. Tidak perlu sempurna; autentik lebih kuat dari poles berlebihan."
+    format: "30–90 detik, bicara langsung ke kamera atau merekam interaksi nyata. Wajah dan ekspresi harus terlihat jelas — ini bukan faceless. Pencahayaan pada wajah adalah prioritas. Caption/subtitle wajib karena banyak penonton tonton tanpa suara. Vertikal 9:16."
+    boleh:
+      - "Tampilkan ekspresi wajah yang jujur — reaksi alami lebih menarik dari yang disiapkan"
+      - "Gunakan caption teks yang sinkron dengan ucapan untuk aksesibilitas dan retensi"
+      - "Hook pertama harus melibatkan wajah atau suara kreator secara langsung di detik pertama"
+      - "Edit ketat — potong filler word, potong jeda panjang, jaga ritme bicara tetap cepat"
+      - "Background yang konsisten membangun identitas visual channel"
+    hindari:
+      - "Jangan rekam di tempat dengan pencahayaan belakang (backlit) — wajah harus terang"
+      - "Jangan biarkan audio jelek; investasi minimal di microphone clip-on"
+      - "Jangan terlalu lama intro sebelum masuk ke inti — penonton skip setelah 3 detik"
+      - "Jangan membaca teks dari kertas atau teleprompter terlihat jelas — kontak mata ke kamera"
+      - "Jangan rekam dengan background berantakan yang mengalihkan perhatian dari wajah"
+    pola_hook: "Detik 0: wajah kreator langsung di frame, ucapkan kalimat pembuka yang paling mengejutkan atau mengundang penasaran. Bukan intro nama atau salam — langsung ke inti dalam 3 kata pertama."
+    contoh_judul:
+      - "Aku tanya 20 orang ini dan jawabannya bikin aku diam"
+      - "Hal yang tidak pernah aku ceritakan soal karir ini akhirnya keluar juga"
+      - "30 hari challenge ini mengubah cara aku lihat uang selamanya"
+
+  niches:
+    - slug: street-interview
+      name: "Street Interview"
+      description: "Wawancara orang di jalan."
+      faceless: false
+      difficulty: sulit
+      rpm: sedang
+      formats: wawancara + reveal jawaban
+      example_hook: "Aku tanya orang asing ini..."
+      guide:
+        audience: "Penonton 18–30 yang penasaran bagaimana orang lain berpikir; pecinta konten sosial dan eksperimen manusia; penonton yang merasa terwakili atau tersaingi oleh jawaban orang di jalan."
+        tone: "Ringan dan penuh rasa ingin tahu. Pewawancara harus terlihat hangat dan tidak mengancam agar narasumber mau menjawab jujur. Editing yang cerdas memperlihatkan kontras jawaban sebagai konten utama."
+        format: "45–90 detik. Struktur: pertanyaan disampaikan pewawancara di kamera → serangkaian jawaban orang berbeda → reaksi atau komentar singkat pewawancara di akhir. Potong ketat, jaga tempo. Vertikal 9:16, caption wajib."
+        boleh:
+          - "Pilih pertanyaan yang punya celah untuk jawaban mengejutkan atau mengundang diskusi"
+          - "Tampilkan keragaman narasumber — usia, gender, latar belakang — untuk kontras yang menarik"
+          - "Reaksi alami pewawancara saat jawaban mengejutkan adalah konten tersendiri"
+          - "Tutup dengan satu jawaban paling kuat atau paling tidak terduga sebagai climax"
+        hindari:
+          - "Jangan rekam di lokasi yang sangat bising sehingga suara tidak terdengar jelas"
+          - "Jangan tanya pertanyaan yang terlalu umum dan menghasilkan jawaban datar"
+          - "Jangan edit jawaban narasumber sampai terputus konteks sehingga menyesatkan"
+          - "Jangan tampilkan wajah narasumber tanpa persetujuan — blur jika perlu"
+          - "Jangan biarkan satu narasumber mendominasi lebih dari 20 detik kecuali jawabannya benar-benar luar biasa"
+        pola_hook: "Detik 0: pewawancara on-camera ucapkan pertanyaan langsung ke kamera dengan ekspresi penasaran, langsung potong ke jawaban pertama yang paling mengejutkan."
+        contoh_judul:
+          - "Aku tanya orang asing ini satu pertanyaan, tidak ada yang jawab sama"
+          - "Pertanyaan ini bikin 8 dari 10 orang yang aku tanya berhenti sebentar"
+          - "Jawaban generasi ini soal sukses sangat berbeda dari yang aku bayangkan"
+
+      micro:
+        - slug: street-interview-gaji-harapan
+          name: Berapa Gaji yang Kamu Anggap Layak?
+          description: Wawancara jalan tentang ekspektasi gaji masyarakat Indonesia dari berbagai latar belakang, memperlihatkan kesenjangan persepsi yang mengundang diskusi di kolom komentar.
+          example_hook: "Aku tanya 10 orang angka gaji yang bikin mereka merasa cukup, dan jawabannya mengejutkan..."
+          guide:
+            audience: "Pekerja dan mahasiswa 20–35 yang penasaran posisi mereka dibanding orang lain; fresh graduate yang merasa ragu saat negosiasi gaji; penonton yang suka konten sosial-ekonomi yang relatable."
+            tone: "Empatik dan tanpa menghakimi. Setiap angka yang disebut narasumber harus diperlakukan dengan respek — pewawancara tidak memberi komentar 'itu kecil' atau 'wah besar'. Reaksi alami saja yang tampil."
+            format: "60–90 detik. Pewawancara tanya pertanyaan on-camera di awal → 6–8 jawaban berbeda dipotong cepat → closeup angka ditulis di papan atau teks overlay → reaksi pewawancara singkat di akhir. Caption nama kota atau profesi narasumber. Vertikal 9:16."
+            boleh:
+              - "Tampilkan angka yang disebut sebagai teks overlay besar — visual data lebih kuat"
+              - "Cari narasumber dari latar belakang kontras: gojek driver vs karyawan kantoran"
+              - "Reaksi diam sebentar pewawancara setelah jawaban ekstrem sangat efektif"
+              - "Tanyakan follow-up singkat 'kenapa angka itu?' untuk satu atau dua narasumber terpilih"
+            hindari:
+              - "Jangan tunjukkan wajah narasumber yang tidak setuju direkam tanpa minta izin"
+              - "Jangan rekam di tempat bising sehingga angka yang disebut tidak jelas terdengar"
+              - "Jangan lead question yang mengarahkan narasumber ke jawaban tertentu"
+              - "Jangan potong jawaban narasumber di tengah kalimat penting — dengarkan dulu sampai selesai"
+              - "Jangan buat angka tertentu terlihat 'salah' lewat nada suara atau editing"
+            pola_hook: "Detik 0: pewawancara on-camera tanya 'Berapa angka gaji yang bikin kamu merasa cukup?' — langsung potong ke jawaban pertama yang paling mengejutkan dari narasumber pertama."
+            contoh_judul:
+              - "Aku tanya 10 orang di Jakarta berapa gaji yang bikin mereka merasa cukup"
+              - "Gaji layak versi Gen Z vs Milenial di kota yang sama — jaraknya segini"
+              - "Driver ojol ini jawab angka yang bikin karyawan kantoran berpikir dua kali"
+              - "Ekspektasi gaji fresh graduate 2025 vs angka HRD yang sebenarnya"
+              - "Pertanyaan gaji layak ini dijawab berbeda oleh orang Jakarta dan luar Jakarta"
+            content_runway: "Setiap kota, profesi, generasi, dan momen waktu (sebelum/sesudah lebaran, inflasi naik) menghasilkan jawaban yang berbeda; topik gaji selalu relevan di Indonesia yang upahnya bervariasi ekstrem antar daerah."
+
+        - slug: street-interview-pertanyaan-taboo
+          name: Pertanyaan yang Biasanya Tidak Ditanya di Depan Umum
+          description: Wawancara jalan dengan pertanyaan sensitif tapi relevan — soal pernikahan, tekanan keluarga, atau impian yang ditinggalkan — yang mengungkap kejujuran yang jarang tampil di media.
+          example_hook: "Aku tanya orang asing ini satu pertanyaan yang biasanya tidak ada yang berani tanya..."
+          guide:
+            audience: "Penonton 20–35 yang memendam perasaan atau pertanyaan serupa; mereka yang merasa norma sosial mencegah mereka jujur; penonton yang merasa lega saat orang lain mengungkap apa yang mereka rasakan sendiri."
+            tone: "Aman dan tidak menghakimi. Pewawancara harus menciptakan rasa aman agar narasumber berani jujur. Momen keheningan sebelum narasumber menjawab adalah konten yang sangat kuat."
+            format: "60–90 detik. Pertanyaan dibacakan pewawancara di kamera → beberapa jawaban dengan jeda emosional yang tidak dipotong → reaksi singkat pewawancara di akhir dengan pertanyaan terbuka ke penonton. Caption nama kota atau usia narasumber. Vertikal 9:16."
+            boleh:
+              - "Biarkan jeda hening sebelum narasumber menjawab tetap ada — potong silence adalah kesalahan"
+              - "Pilih pertanyaan yang universal: tekanan nikah, impian yang dikorbankan, hubungan orang tua"
+              - "Tampilkan reaksi emosional alami tanpa dramatisasi berlebihan di editing"
+              - "Pewawancara boleh share singkat perspektifnya sendiri di akhir untuk koneksi"
+            hindari:
+              - "Jangan minta narasumber yang jelas tidak nyaman untuk melanjutkan jawaban"
+              - "Jangan sensasionalisasi jawaban dengan musik dramatis berlebihan"
+              - "Jangan tampilkan pertanyaan yang mengandung asumsi negatif tentang kelompok tertentu"
+              - "Jangan rekam narasumber yang sedang dalam kondisi sangat emosional tanpa konfirmasi ulang"
+              - "Jangan potong jawaban narasumber sebelum kalimatnya selesai — bisa mengubah makna"
+            pola_hook: "Detik 0: pewawancara on-camera bilang 'Aku tanya satu pertanyaan yang biasanya tidak ada yang tanya' — jeda satu detik — lalu sebutkan pertanyaannya. Langsung potong ke reaksi narasumber pertama."
+            contoh_judul:
+              - "Aku tanya orang asing ini kapan terakhir merasa bangga pada diri sendiri"
+              - "Pertanyaan ini bikin narasumber ketiga berhenti sejenak sebelum menjawab"
+              - "Impian yang dikorbankan — jawaban orang-orang di jalan yang bikin diam"
+              - "Aku tanya soal tekanan menikah dan 7 dari 10 orang ini punya jawaban yang sama"
+              - "Pertanyaan ini tidak biasa untuk ditanya di depan orang asing, tapi jawabannya jujur luar biasa"
+            content_runway: "Pertanyaan taboo di Indonesia sangat banyak — pernikahan, karir vs impian, tekanan keluarga, agama, identitas — setiap pertanyaan menghasilkan seri episode sendiri yang bisa diproduksi mingguan."
+
+        - slug: street-interview-generasi-berbeda
+          name: Pertanyaan yang Sama kepada 3 Generasi Berbeda
+          description: Format wawancara yang mengajukan pertanyaan identik kepada orang dari generasi berbeda — Gen Z, Milenial, dan Baby Boomer — lalu memperlihatkan kontras jawaban yang menarik.
+          example_hook: "Pertanyaan sama soal sukses, tiga generasi berbeda — ini perbedaan jawabannya..."
+          guide:
+            audience: "Penonton lintas generasi yang penasaran bagaimana orang dari era berbeda memandang isu yang sama; penonton muda yang ingin memahami perspektif generasi lebih tua; orang tua yang ingin tahu apa yang dipikirkan generasi muda."
+            tone: "Penasaran dan respektif. Tidak ada generasi yang dijadikan 'yang benar' atau 'yang salah'. Kontras jawaban dihadirkan sebagai sesuatu yang menarik, bukan konflik."
+            format: "60–90 detik. Pertanyaan disampaikan pewawancara di kamera → potong-potong jawaban per generasi, disusun paralel (Gen Z dulu, lalu Milenial, lalu Boomer atau sebaliknya) → pewawancara komentar singkat soal polanya. Caption generasi + usia narasumber. Vertikal 9:16."
+            boleh:
+              - "Tampilkan label generasi dan usia narasumber sebagai teks overlay untuk konteks"
+              - "Pilih topik yang memang punya gap generasi nyata: pekerjaan, rumah, hubungan, teknologi"
+              - "Edit supaya jawaban per generasi dijajarkan berdampingan secara temporal untuk kontras"
+              - "Reaksi pewawancara saat menemukan kesamaan tak terduga lintas generasi sangat powerful"
+            hindari:
+              - "Jangan buat generasi mana pun terlihat lebih inferior atau lebih superior"
+              - "Jangan cherrypick hanya jawaban ekstrem yang merepresentasikan stereotip negatif"
+              - "Jangan rekam narasumber yang tidak representatif latar belakangnya"
+              - "Jangan pertanyaan yang terlalu teknis sehingga narasumber tua tidak bisa menjawab secara bermakna"
+              - "Jangan potong konteks penjelasan narasumber sehingga jawabannya terdengar naif"
+            pola_hook: "Detik 0: pewawancara on-camera tanya 'Apa artinya sukses buat kamu?' lalu langsung potong ke tiga jawaban berbeda yang sangat kontras dalam tiga detik — satu per generasi."
+            contoh_judul:
+              - "Pertanyaan sama soal sukses, jawaban tiga generasi ini sangat berbeda"
+              - "Generasi ini anggap punya rumah sebagai sukses, yang ini anggap sebaliknya"
+              - "Aku tanya Gen Z dan orang tuanya pertanyaan yang sama soal pekerjaan ideal"
+              - "Soal menikah muda, tiga generasi ini punya jawaban yang bikin diam"
+              - "Definisi bahagia dari tiga generasi berbeda — mana yang paling kamu setuju?"
+            content_runway: "Setiap topik isu sosial Indonesia — pekerjaan, pernikahan, teknologi, agama, politik, uang — menghasilkan episode sendiri; gap generasi di Indonesia sangat relevan karena percepatan perubahan budaya yang sangat cepat."
+
+    - slug: talking-head
+      name: "Talking Head / Edukasi"
+      description: "Bicara langsung ke kamera."
+      faceless: false
+      difficulty: menengah
+      rpm: tinggi
+      formats: bicara + b-roll + caption
+      example_hook: "3 hal yang aku harap tahu lebih awal..."
+      guide:
+        audience: "Penonton 20–35 yang mencari perspektif nyata dan edukasi dari orang yang sudah melewati sesuatu; profesional muda yang butuh panduan karir dan kehidupan; penonton yang lebih percaya kreator individu daripada konten korporat."
+        tone: "Jujur dan direct. Kreator bicara seperti teman yang sudah punya pengalaman — bukan dosen, bukan motivator. Pakai 'aku' bukan 'kita'. Ketidaksempurnaan dan keraguan adalah bagian dari otentisitas."
+        format: "45–90 detik. Kreator di depan kamera, pencahayaan pada wajah, background konsisten. Bicara langsung ke lensa. B-roll pendukung boleh disisipi tapi wajah kreator harus mendominasi. Caption/subtitle wajib. Edit filler words. Vertikal 9:16."
+        boleh:
+          - "Mulai dengan klaim atau pernyataan paling kontroversial atau mengejutkan dari konten"
+          - "Gunakan gesture tangan yang natural untuk memperkuat poin"
+          - "Sisipi b-roll singkat (screen recording, foto, grafik) untuk ilustrasi konkret"
+          - "Akhiri dengan pertanyaan terbuka yang mengundang komentar"
+        hindari:
+          - "Jangan baca dari kertas atau teleprompter yang terlihat — latih poin bukan kata per kata"
+          - "Jangan bicara terlalu lambat atau terlalu cepat — ikuti ritme percakapan natural"
+          - "Jangan rekam di tempat berisik atau dengan echo panjang — audio harus jernih"
+          - "Jangan buka video dengan 'Halo semuanya, hari ini aku mau...' — langsung ke isi"
+          - "Jangan biarkan video lebih panjang dari yang dibutuhkan kontennya"
+        pola_hook: "Detik 0: kreator on-camera langsung ucapkan klaim terkuat atau pertanyaan paling relevan. Tidak ada 'halo', tidak ada intro channel — langsung konten dalam kalimat pertama."
+        contoh_judul:
+          - "3 hal soal karir yang aku pelajari dengan cara paling pahit"
+          - "Kenapa aku stop mengejar passion dan hidup aku justru lebih baik"
+          - "Ini yang tidak diajarkan di kampus tentang dunia kerja nyata"
+
+      micro:
+        - slug: talking-head-pelajaran-karir-pahit
+          name: Pelajaran Karir yang Dipelajari dengan Cara Pahit
+          description: Konten talking head jujur tentang kesalahan karir nyata yang mahal — tanda tangan kontrak buruk, resign tanpa rencana, atau salah pilih jalur — untuk profesional muda yang ingin belajar tanpa harus mengalaminya.
+          example_hook: "Keputusan karir ini aku sesali 3 tahun, dan aku tidak mau kamu buat kesalahan yang sama..."
+          guide:
+            audience: "Profesional muda 22–32 yang baru atau sedang membangun karir; fresh graduate yang takut salah langkah pertama; pekerja yang mulai meragukan pilihan karir mereka saat ini."
+            tone: "Rendah hati dan jujur. Kreator adalah orang yang pernah salah, bukan yang sudah benar segalanya. Kerapuhan itu kekuatan di format ini — penonton connect lebih dalam dengan kreator yang akui kesalahan."
+            format: "60–90 detik. Kreator on-camera langsung ke intinya: kesalahan apa, konteksnya singkat, pelajaran konkret, apa yang akan dilakukan berbeda. Maksimal 3 poin agar tidak terlalu panjang. Caption aktif, ekspresi wajah ikut bercerita. Vertikal 9:16."
+            boleh:
+              - "Sebutkan angka atau timeline spesifik untuk memperkuat realisme — '3 tahun', 'Rp30jt' — bukan abstrak"
+              - "Ekspresi penyesalan yang genuine lebih powerful dari narasi dramatis"
+              - "Sisipi satu b-roll singkat (screenshot email, foto kondisi waktu itu) untuk konteks visual"
+              - "Akhiri dengan satu kalimat yang bisa di-screenshot sebagai takeaway"
+            hindari:
+              - "Jangan buat diri sendiri terlihat sebagai korban tanpa agensi — penonton butuh role model yang bisa bangkit"
+              - "Jangan beri nasihat yang terlalu umum seperti 'percaya diri' tanpa aksi konkret"
+              - "Jangan dramatisasi berlebihan — kesedihan diikuti langsung musik sendu terasa manipulatif"
+              - "Jangan rekam dengan ekspresi yang flat sepanjang video — ekspresi wajah adalah setengah kontennya"
+              - "Jangan lupa close dengan nada harapan — pelajaran pahit harus berakhir dengan arah positif"
+            pola_hook: "Detik 0: kreator on-camera langsung sebut kesalahan spesifik — 'Aku resign dari kerjaan yang bayarnya bagus karena alasan ini, dan itu keputusan paling mahal aku' — langsung masuk ke cerita."
+            contoh_judul:
+              - "Resign tanpa rencana di usia 27 — ini yang terjadi dan yang aku pelajari"
+              - "Kontrak kerja yang aku tanda tangani tanpa baca ini biaya aku 2 tahun"
+              - "Aku pilih jabatan lebih tinggi di perusahaan salah dan ini akibatnya"
+              - "Pelajaran karir paling mahal yang aku harap tahu sebelum umur 25"
+              - "Ini kesalahan karir yang aku sesali — bukan karena gagal, tapi karena tidak mencoba"
+            content_runway: "Setiap fase karir (melamar, onboarding, promosi, resign, freelance, pivot) menghasilkan pelajaran berbeda; kesalahan karir bersifat universal tapi detailnya spesifik nusantara, sehingga konten selalu segar."
+
+        - slug: talking-head-unpopular-opinion
+          name: Pendapat Kontroversial yang Tidak Populer tapi Benar
+          description: Format talking head yang menyampaikan pandangan yang bertentangan dengan narasi umum — tentang pendidikan, kesuksesan, atau budaya kerja Indonesia — dengan argumen yang solid bukan sekadar provokatif.
+          example_hook: "Semua orang bilang ini adalah jalan yang benar, tapi data dan pengalamanku bilang sebaliknya..."
+          guide:
+            audience: "Penonton 20–35 yang mulai mempertanyakan norma yang diterima begitu saja; mereka yang merasa ada yang tidak pas dengan narasi mainstream tapi tidak tahu cara artikulasinya; penonton yang suka diprovokasi secara intelektual."
+            tone: "Percaya diri tapi tidak arogan. Kreator menyampaikan pandangan dengan keyakinan tapi terbuka untuk diskusi — bukan ceramah kebenaran. Argumen harus berdasar logika atau data, bukan sekadar posturing."
+            format: "45–75 detik. Klaim kontroversial di kalimat pertama → alasan 2–3 poin konkret → akui kelemahan argumen singkat → konfirmasi ulang posisi → undang diskusi di komentar. Caption aktif. Vertikal 9:16."
+            boleh:
+              - "Sebutkan klaim berlawanan yang populer dulu sebelum membantahnya — lebih meyakinkan"
+              - "Gunakan data, pengalaman pribadi, atau contoh nyata untuk backing argumen"
+              - "Ekspresi wajah yang yakin tapi sedikit tersenyum mengurangi kesan defensif"
+              - "Ajak diskusi di komentar — konten kontroversial yang mengundang debat sehat performa tinggi"
+            hindari:
+              - "Jangan serang kelompok atau individu tertentu — kritik ide, bukan orang"
+              - "Jangan klaim sesuatu sebagai fakta jika hanya opini — bedakan keduanya secara eksplisit"
+              - "Jangan pilih topik yang terlalu sensitif secara agama atau politik tanpa konteks memadai"
+              - "Jangan buat video yang isinya hanya provokasi tanpa substansi — penonton cerdas bisa bedakan"
+              - "Jangan hindari nuansa — pandangan yang terlalu hitam-putih terasa tidak dewasa"
+            pola_hook: "Detik 0: kreator on-camera ucapkan klaim berlawanan arus secara langsung — 'Aku tidak setuju kalau kuliah adalah investasi terbaik buat semua orang, dan ini alasannya' — tanpa basa-basi."
+            contoh_judul:
+              - "Unpopular opinion: mengejar passion itu nasihat yang bahaya untuk orang ini"
+              - "Semua orang bilang networking penting, tapi ini yang sebenarnya lebih menentukan karir"
+              - "Aku tidak setuju bahwa kerja keras saja cukup untuk sukses — ini yang sering dilupakan"
+              - "Pendapat yang tidak populer soal kuliah yang aku yakini berdasarkan data"
+              - "Kenapa aku tidak percaya bahwa 'ikuti kata hati' adalah nasihat yang baik untuk semua orang"
+            content_runway: "Topik unpopular opinion hampir tidak terbatas — karir, pendidikan, hubungan, uang, sosial media, budaya kerja — setiap tren viral menghasilkan konter-narasi yang bisa dieksplor setiap minggu."
+
+        - slug: talking-head-quarter-life-crisis
+          name: Aku Juga Tidak Tahu Harus ke Mana di Usia 20-an
+          description: Konten relatable tentang kebingungan nyata di usia 20-an — tekanan sosial, ekspektasi karir, dan perasaan tertinggal — disajikan dengan jujur bukan sebagai ceramah.
+          example_hook: "Aku 26 tahun, punya pekerjaan, dan masih tidak tahu ini jalan yang benar untukku..."
+          guide:
+            audience: "Penonton 20–28 yang mengalami kebingungan identitas dan arah hidup; mereka yang membandingkan diri dengan teman sebaya yang 'terlihat' lebih maju; penonton yang butuh validasi bahwa kondisi ini normal."
+            tone: "Rentan dan relatable. Bukan pemecahan masalah — bukan 'ini 5 cara atasi quarter life crisis'. Ini tentang seorang manusia yang berbagi bahwa mereka juga tidak tahu sepenuhnya, dan itu tidak apa-apa."
+            format: "60–90 detik. Kreator bicara langsung, jujur, kadang sedikit tertawa pada diri sendiri. Tidak ada solusi sempurna — akhiri dengan refleksi terbuka, bukan penegasan. Caption aktif karena banyak penonton yang tonton sambil menahan napas. Vertikal 9:16."
+            boleh:
+              - "Bagikan momen spesifik yang memicu krisis — bukan narasi umum tapi detik yang nyata"
+              - "Tawa kecil pada diri sendiri saat cerita hal absurd dari periode itu membuat konten lebih ringan"
+              - "Akhiri dengan kalimat yang validasi tanpa memaksa optimisme — 'aku belum selesai mikirin ini'"
+              - "Kontak mata ke kamera yang kuat membuat penonton merasa sedang diajak bicara, bukan diceramahi"
+            hindari:
+              - "Jangan berikan solusi klise seperti 'temukan tujuanmu' — penonton sudah bosan mendengarnya"
+              - "Jangan rekam di saat kreator sedang sangat emosional yang belum diproses — perlu distansi sedikit"
+              - "Jangan buat video terasa seperti pity party tanpa arah — ada perbedaan antara rentan dan tanpa harapan"
+              - "Jangan bandingkan eksplisit dengan orang tertentu yang 'sukses' — bisa menyakiti dan tidak relevan"
+              - "Jangan biarkan video terlalu panjang karena topik ini bisa membuka pintu untuk oversharing"
+            pola_hook: "Detik 0: kreator on-camera bilang sesuatu yang terdengar bertentangan dengan ekspektasi — 'Aku baru dapat promosi minggu lalu dan aku tidak bisa tidur malam itu bukan karena senang' — langsung ke penjelasannya."
+            contoh_judul:
+              - "Aku 26, punya karir, dan masih tidak tahu ini jalan yang benar buat aku"
+              - "Semua teman aku terlihat tahu ke mana mereka pergi, aku tidak — dan ini yang aku temukan"
+              - "Quarter life crisis itu nyata dan ini yang aku rasakan tepat saat ini tanpa filter"
+              - "Bukan motivasi, cuma cerita jujur soal merasa tertinggal di usia 20-an"
+              - "Aku berhenti pura-pura punya segalanya teratur — ini kondisi sebenarnya"
+            content_runway: "Setiap milestone usia 20-an — lulus, kerja pertama, putus, pindah kota, resign, menikah atau tidak — menghasilkan episode tersendiri; topik ini relevan tanpa batas waktu karena setiap generasi mengalaminya ulang."
+
+    - slug: challenge
+      name: "Challenge"
+      description: "Tantangan, eksperimen sosial."
+      faceless: false
+      difficulty: menengah
+      rpm: rendah
+      formats: dokumentasi + reveal hasil
+      example_hook: "24 jam cuma makan warna kuning..."
+      guide:
+        audience: "Penonton 16–30 yang suka konten eksperimen dan dokumentasi nyata; mereka yang tertarik melihat orang lain menguji batas atau menjalani situasi tidak biasa; penonton yang penasaran 'apa yang terjadi kalau...' dan tidak mau melakukannya sendiri."
+        tone: "Transparan dan dokumenter. Kreator adalah subjek eksperimen — jujur tentang kesulitan, kegagalan, dan kejutan. Tidak ada penyelesaian paksa — jika challenge gagal di tengah, itu juga konten."
+        format: "60–90 detik untuk format pendek, atau seri multi-bagian. Kreator tampil sepanjang challenge. Setup di awal, dokumentasi proses, reveal hasil dan refleksi jujur. Caption aktif. Vertikal 9:16."
+        boleh:
+          - "Tunjukkan momen struggle yang nyata — ini yang membuat penonton betah menonton"
+          - "Update progress di tengah (hari 3, hari 7) menjaga penonton kembali ke seri"
+          - "Refleksi jujur di akhir lebih berharga dari sekedar 'aku berhasil'"
+          - "Tantangan yang bisa ditiru penonton menghasilkan komentar engagement tinggi"
+        hindari:
+          - "Jangan buat challenge yang berpotensi bahaya fisik atau mental yang nyata"
+          - "Jangan edit challenge untuk terlihat lebih berhasil dari yang sebenarnya"
+          - "Jangan pilih challenge yang sudah terlalu sering dilakukan kreator lain tanpa twist unik"
+          - "Jangan skip hari-hari yang sulit untuk langsung ke hasil — penonton butuh perjalanannya"
+          - "Jangan buat premise yang tidak masuk akal atau tidak ada urgensinya"
+        pola_hook: "Detik 0: kreator on-camera umumkan challenge dengan satu kalimat yang langsung menimbulkan pertanyaan 'kenapa' atau 'bisa gak ya' — lalu langsung potong ke hari pertama challenge."
+        contoh_judul:
+          - "Aku coba hidup tanpa media sosial 30 hari dan ini yang terjadi"
+          - "Challenge makan dengan budget Rp50rb sehari selama seminggu"
+          - "30 hari belajar hal baru dari nol — ini hasilnya"
+
+      micro:
+        - slug: challenge-hidup-tanpa-hp-sehari
+          name: 24 Jam Hidup Tanpa Smartphone
+          description: Dokumentasi jujur percobaan hidup seharian penuh tanpa smartphone — dari bangun tidur hingga malam — dengan temuan tentang ketergantungan digital yang mengejutkan pelakunya sendiri.
+          example_hook: "Aku coba hidup tanpa HP selama 24 jam dan jam ke-3 sudah terjadi hal yang tidak terduga..."
+          guide:
+            audience: "Penonton 18–30 yang merasa kecanduan smartphone tapi belum berani akui; mereka yang ingin detoks digital tapi tidak tahu bisa atau tidak; penonton yang penasaran seperti apa hidup tanpa notifikasi satu hari penuh."
+            tone: "Jujur dan sedikit lucu pada diri sendiri. Kreator tidak perlu tampil kuat — mengakui betapa susahnya itu justru konten. Setiap momen awkward saat tidak ada smartphone adalah material yang bagus."
+            format: "75–90 detik format ringkas, atau seri vlog pendek per fase hari. Kreator on-camera dokumentasi tiap fase: bangun pagi tanpa alarm HP, kerja tanpa WhatsApp, menunggu tanpa scroll. Refleksi jujur di akhir hari. Vertikal 9:16."
+            boleh:
+              - "Rekam reaksi fisik alami — tangan yang otomatis geragas ke saku HP adalah konten emas"
+              - "Catat waktu (jam 3, jam 7, jam 10 malam) untuk membangun arc satu hari"
+              - "Akhiri dengan satu insight spesifik yang tidak terduga — bukan generic 'jadi lebih present'"
+              - "Tunjukkan alternatif yang kreator lakukan sebagai pengganti HP untuk konteks"
+            hindari:
+              - "Jangan edit supaya terlihat mudah — tantangan nyata harus terlihat sulit"
+              - "Jangan rekam dengan kamera yang butuh HP untuk monitoring — siapkan kamera dedicated"
+              - "Jangan beri kesimpulan yang terlalu grand seperti 'HP itu jahat' — nuansa lebih kuat"
+              - "Jangan bikin challenge ini terdengar superiority flex — ini eksperimen, bukan ceramah"
+              - "Jangan skip momen temuan terpenting di tengah challenge karena ingin langsung ke hasil"
+            pola_hook: "Detik 0: kreator on-camera pegang HP lalu letakkan di laci sambil bilang 'Ini 24 jam terakhir aku pegang ini' — langsung potong ke waktu jam 7 pagi hari challenge dimulai."
+            contoh_judul:
+              - "24 jam tanpa smartphone — jam ke-3 aku sudah temukan sesuatu yang mengejutkan"
+              - "Aku taruh HP di laci 24 jam dan ini yang terjadi pada hari kerja biasa"
+              - "Satu hari tanpa notifikasi mengungkap kebiasaan yang aku tidak sadar aku punya"
+              - "Detoks HP 24 jam — momen paling awkward dan momen paling tenang dalam satu hari"
+              - "Aku hidup tanpa HP sehari di Jakarta dan ini yang lebih susah dari yang aku sangka"
+            content_runway: "Setiap variasi challenge digital detoks (seminggu tanpa Instagram, sebulan tanpa TikTok, sehari tanpa internet) menghasilkan episode baru; topik ketergantungan digital semakin relevan setiap tahunnya."
+
+        - slug: challenge-budget-ekstrem-seminggu
+          name: Hidup dengan Budget Rp50rb per Hari Selama Seminggu
+          description: Eksperimen nyata mencoba hidup dengan Rp50rb per hari selama tujuh hari — makan, transportasi, semua — dokumentasi survival yang relevan sekaligus membuka mata soal privilege.
+          example_hook: "Rp50rb sehari selama 7 hari, hari ke-3 ini yang membuat aku sadar selama ini boros..."
+          guide:
+            audience: "Penonton 20–30 yang penasaran seberapa efisien mereka bisa hidup; mahasiswa yang sedang struggling dengan uang bulanan; penonton yang ingin eksperimen serupa tapi butuh blueprint orang lain dulu."
+            tone: "Jujur dan tidak glamorous. Kreator harus tunjukkan betapa susahnya — bukan 'mudah kok', bukan 'gampang banget'. Momen lapar, momen frustrasi pilih angkutan, dan momen kreativif untuk hemat adalah inti kontennya."
+            format: "75–90 detik per hari atau kompilasi per 3 hari. Kreator on-camera dokumentasi setiap keputusan keuangan — makan apa, naik apa, beli apa yang paling perlu. Running total harian ditampilkan sebagai grafik sederhana. Vertikal 9:16."
+            boleh:
+              - "Tampilkan harga makanan konkret dengan teks overlay — Rp8.000 nasi kuning, bukan abstrak"
+              - "Dokumentasi trade-off yang harus dibuat setiap hari — ini yang membuat penonton berpikir"
+              - "Hari paling sulit (biasanya hari 3–5) harus didokumentasi paling detail"
+              - "Refleksi di hari terakhir dengan perbandingan pengeluaran biasa vs challenge — data konkret"
+            hindari:
+              - "Jangan romanticize kemiskinan — ini eksperimen kreator berada, bukan representasi hidup UMR"
+              - "Jangan cheat di tengah challenge tanpa transparansi ke penonton"
+              - "Jangan skip hari yang 'tidak menarik' — semua hari harus ada progress update"
+              - "Jangan buat kesimpulan bahwa Rp50rb sehari itu mudah atau cukup — tidak, dan katakan itu"
+              - "Jangan rekam makanan yang terlihat enak tanpa context harganya — misleading"
+            pola_hook: "Detik 0: kreator on-camera tunjukkan uang Rp350.000 di tangan (total seminggu) sambil bilang 'Ini semua yang aku punya untuk 7 hari ke depan — semua: makan, transport, semua' — langsung ke hari pertama."
+            contoh_judul:
+              - "Rp50rb sehari selama seminggu — hari ke-3 ini yang aku temukan tentang diri sendiri"
+              - "Budget challenge Rp350rb seminggu di Jakarta — bisa atau tidak?"
+              - "Hidup sehari dengan uang yang cukup buat dua gelas kopi kekinian"
+              - "7 hari challenge budget Rp50rb — ini breakdown makan tiap hari yang aku pilih"
+              - "Hari terakhir challenge Rp50rb dan ini yang aku tidak bisa lupakan dari seminggu ini"
+            content_runway: "Setiap kota Indonesia punya biaya hidup berbeda sehingga budget challenge bisa diulang di kota lain; variasi kategori (makan saja, transportasi saja, atau full spending) menghasilkan seri yang panjang."
+
+        - slug: challenge-belajar-skill-baru-30-hari
+          name: Belajar Skill Baru dari Nol dalam 30 Hari
+          description: Dokumentasi proses belajar skill spesifik dari nol — coding, gitar, atau memasak — selama 30 hari dengan rekap mingguan yang jujur tentang progres nyata vs ekspektasi awal.
+          example_hook: "Hari 1 vs hari 30 belajar gitar ini, ternyata ini yang benar-benar sulit..."
+          guide:
+            audience: "Penonton 18–32 yang ingin belajar sesuatu tapi ragu memulai; mereka yang butuh melihat bahwa orang lain juga kesulitan di awal; penonton yang mencari motivasi ekstrinsik melalui progress orang lain."
+            tone: "Transparan dan realistis. Kreator bukan guru — kreator adalah pelajar. Frustasi di hari 5, terobosan di hari 15, dan kejujuran bahwa 30 hari tidak cukup untuk mahir adalah konten yang lebih kuat dari success montage."
+            format: "Seri 4–5 video: hari 1 (mulai + ekspektasi), rekap minggu 1 (kenyataan mulai terlihat), rekap minggu 2–3, dan hari 30 (reveal + refleksi jujur). Kreator on-camera per update, dengan demonstrasi skill di kamera. Caption aktif. Vertikal 9:16."
+            boleh:
+              - "Rekam demonstrasi skill di kamera — penonton butuh melihat progres nyata bukan hanya kata-kata"
+              - "Bandingkan hari 1 vs hari 30 dalam satu video akhir untuk kepuasan visual"
+              - "Jujur tentang berapa jam per hari yang benar-benar bisa dilakukan — bukan target ideal"
+              - "Satu insight per episode tentang cara belajar yang efektif lebih berharga dari teknik skill itu sendiri"
+            hindari:
+              - "Jangan buat ekspektasi 30 hari terlalu tinggi di awal — penonton akan sadar jika overpromise"
+              - "Jangan skip update minggu yang progresnya lambat — itu yang paling relatable"
+              - "Jangan beri tips belajar yang tidak dipraktikkan sendiri oleh kreator"
+              - "Jangan edit video akhir terlalu highlight-heavy sampai terkesan kemampuannya lebih dari aslinya"
+              - "Jangan pilih skill yang terlalu mudah atau terlalu spesifik sehingga penonton tidak bisa relate"
+            pola_hook: "Detik 0: kreator on-camera tunjukkan skill di hari 30 (permainan gitar, baris kode yang jalan, masakan jadi) lalu bilang 'Hari 1 aku tidak bisa ini sama sekali — ini yang terjadi dalam 30 hari' — lalu cut ke hari 1."
+            contoh_judul:
+              - "Hari 1 vs hari 30 belajar gitar dari nol — ini yang tidak ada yang kasih tahu"
+              - "30 hari belajar coding dari nol, ini progres jujur yang tidak diedit berlebihan"
+              - "Belajar memasak dari nol selama sebulan — minggu ke-3 adalah yang terberat"
+              - "30 hari belajar bahasa Jepang sendiri, ini yang aku capai dan ini yang tidak"
+              - "Challenge 30 hari skill baru: ini yang lebih susah dari skill itu sendiri ternyata"
+            content_runway: "Setiap skill yang ingin dipelajari manusia — memasak, musik, bahasa, olahraga, coding, seni — menghasilkan seri 30-hari baru; format ini juga bisa diulangi dengan level lebih tinggi dari skill yang sama."
+
+    - slug: podcast-clip
+      name: "Podcast Clips"
+      description: "Potongan momen podcast viral."
+      faceless: false
+      difficulty: menengah
+      rpm: sedang
+      formats: klip + caption + b-roll
+      example_hook: "Tamu ini bongkar rahasia industri..."
+      guide:
+        audience: "Penonton 20–35 yang tidak punya waktu mendengarkan podcast penuh tapi ingin substansi; penggemar tokoh tertentu yang ingin tahu apa yang mereka katakan tanpa satu jam mendengarkan; penonton yang suka insight padat tanpa filler."
+        tone: "Kuratorial dan kontekstual. Kreator bukan hanya memotong — kreator memilih momen yang memang sepadan dijadikan konten sendiri. Caption harus memperkuat bukan sekadar mengulangi ucapan."
+        format: "30–90 detik. Klip podcast yang sudah paling relevan → caption overlay di momen kunci → minimal b-roll jika diperlukan konteks → tidak perlu penutup panjang. Thumbnail dan kalimat pertama menentukan apakah orang berhenti. Vertikal 9:16."
+        boleh:
+          - "Pilih momen yang berdiri sendiri tanpa perlu menonton konteks sebelumnya"
+          - "Caption yang sinkron dengan ucapan sangat penting — banyak penonton tonton tanpa suara"
+          - "Potong semua filler sebelum dan sesudah momen inti — jaga durasi seketat mungkin"
+          - "Credit podcast dan tamu tamu di caption atau teks overlay untuk integritas"
+        hindari:
+          - "Jangan gunakan klip yang butuh konteks panjang untuk dipahami — jika butuh setup 30 detik, cari klip lain"
+          - "Jangan remix ucapan tamu sampai artinya berubah — edit jujur atau tidak sama sekali"
+          - "Jangan gunakan audio dari podcast yang eksplisit tidak mengizinkan klipping tanpa izin"
+          - "Jangan buat thumbnail atau judul yang menyesatkan tidak sesuai isi klip"
+          - "Jangan unggah klip yang isinya hanya tawa atau basa-basi — momen harus punya substansi"
+        pola_hook: "Detik 0: langsung masuk ke kalimat terkuat dari klip — tidak ada intro, tidak ada nama kreator, tidak ada setup. Kalimat pertama tamu harus sudah mengundang penonton untuk tetap nonton."
+        contoh_judul:
+          - "Tamu ini ungkap yang biasanya disembunyikan industri ini"
+          - "Momen di podcast ini yang tidak ada yang expect akan sejujur ini"
+          - "Jawaban ini bikin host podcast diam beberapa detik"
+
+      micro:
+        - slug: podcast-clip-founder-jujur
+          name: Saat Founder Startup Jujur Soal Kegagalan
+          description: Potongan momen podcast di mana founder startup Indonesia berbicara jujur tentang kegagalan, hutang, dan keputusan buruk — konten langka yang lebih berharga dari success story biasa.
+          example_hook: "Founder ini untuk pertama kalinya cerita angka kerugian yang selama ini disembunyikan..."
+          guide:
+            audience: "Penonton 22–35 yang tertarik dunia startup dan bisnis; calon founder yang ingin gambaran realistis sebelum terjun; karyawan startup yang ingin tahu apa yang dipikirkan bos mereka sebenarnya."
+            tone: "Momen kejujuran langka yang harus diawetkan. Kreator boleh tambahkan sedikit konteks tapi jangan mengintervensi momen — biarkan kata-kata founder bicara sendiri."
+            format: "45–90 detik. Masuk langsung ke momen kejujuran founder tanpa setup panjang → caption memperkuat poin kunci → minimal atau tidak ada voiceover kreator selama klip berlangsung → satu kalimat konteks nama founder dan podcast di akhir. Vertikal 9:16."
+            boleh:
+              - "Pilih momen di mana founder menyebut angka spesifik — hutang berapa, rugi berapa, pivot ke mana"
+              - "Caption kata kunci keuangan atau keputusan kritis dengan teks besar untuk penonton tanpa suara"
+              - "Momen jeda atau suara parau founder sebelum menjawab jangan dipotong — itu emosi nyata"
+              - "Tambahkan konteks singkat di akhir: nama founder, perusahaan, dan nama podcast"
+            hindari:
+              - "Jangan potong di tengah pengakuan yang belum selesai — biarkan kalimatnya tuntas"
+              - "Jangan gunakan klip yang sudah berulang kali dikliping kreator lain tanpa nilai tambah baru"
+              - "Jangan buat thumbnail yang sensasionalisasi kegagalan dengan cara yang mengeksploitasi"
+              - "Jangan ambil konteks yang salah dari momen kejujuran — bisa merusak reputasi tamu"
+              - "Jangan cut respons host yang memperkuat atau memvalidasi kejujuran tamu — itu bagian dari momen"
+            pola_hook: "Detik 0: langsung masuk ke kalimat paling jujur dari founder — 'Waktu itu aku punya Rp200 juta hutang dan tidak ada yang tahu' — tanpa setup apapun dari kreator."
+            contoh_judul:
+              - "Founder ini cerita angka kerugian yang selama ini tidak pernah diungkap di podcast manapun"
+              - "Momen podcast ini saat startup founder akhirnya jujur soal hutang dan kegagalan"
+              - "Bukan success story — ini pengakuan yang lebih berharga dari semua motivasi startup"
+              - "Founder startup unicorn ini cerita momen di mana semua hampir habis"
+              - "Klip podcast ini yang paling jujur soal kegagalan bisnis yang pernah aku dengar"
+            content_runway: "Ekosistem podcast Indonesia berkembang sangat pesat — setiap podcast baru dengan tamu founder atau eksekutif menghasilkan momen potensial; topik kejujuran bisnis tidak pernah jenuh karena setiap orang punya cerita berbeda."
+
+        - slug: podcast-clip-ahli-bantah-mitos
+          name: Pakar yang Membantah Mitos Populer Langsung
+          description: Klip momen podcast di mana dokter, ekonom, atau pakar membantah mitos yang dipercaya luas — dari soal kesehatan hingga finansial — dengan penjelasan singkat yang mengejutkan penonton.
+          example_hook: "Dokter ini bantah langsung saran viral yang sudah dipercaya jutaan orang..."
+          guide:
+            audience: "Penonton 20–40 yang mengikuti saran dari media sosial tanpa memverifikasi; mereka yang ingin dasar ilmiah dari pilihan sehari-hari; penonton yang suka konten debunking dengan otoritas yang kredibel."
+            tone: "Edukasi yang mengejutkan. Kreator sebagai kurator — memilih momen di mana pakar bicara dengan kejelasan dan keyakinan yang tidak perlu dramatisasi berlebihan. Fakta harus bicara sendiri."
+            format: "30–75 detik. Langsung ke pernyataan pakar yang membantah mitos → caption highlight klaim utama → momen reaksi host (jika ada) → tidak perlu voiceover kreator kecuali untuk konteks nama pakar. Vertikal 9:16."
+            boleh:
+              - "Tampilkan mitos yang dibantah sebagai teks overlay di awal untuk kontras — 'Mitos: X, Fakta: Y'"
+              - "Pilih pakar dengan kredensial yang terlihat jelas — spesialisasi dan institusi"
+              - "Jika pakar menyebut riset atau data, tampilkan sebagai teks untuk memperkuat"
+              - "Reaksi host yang terkejut atau mengonfirmasi memperkuat momen — jangan dipotong"
+            hindari:
+              - "Jangan gunakan klip pakar yang debunking-nya tidak berdasar riset — cek dulu klaimnya"
+              - "Jangan ambil pernyataan out of context yang bisa membuat pakar terlihat berkata sebaliknya"
+              - "Jangan buat judul yang overpromise lebih dari isi klip"
+              - "Jangan gunakan pakar dari bidang yang tidak relevan untuk mitos yang dibantah"
+              - "Jangan potong disclaimer atau nuansa yang disampaikan pakar — bisa jadi disinformasi"
+            pola_hook: "Detik 0: langsung masuk ke kalimat pakar yang membantah — 'Minum 8 gelas air sehari itu tidak ada dasarnya secara ilmiah' — tanpa intro. Overlay teks mitos di detik 1."
+            contoh_judul:
+              - "Dokter ini bantah saran kesehatan yang sudah viral bertahun-tahun di Indonesia"
+              - "Ekonom ini jelaskan kenapa nasihat finansial paling populer itu salah untuk orang ini"
+              - "Pakar gizi ini koreksi kebiasaan makan yang dikira sehat tapi sebaliknya"
+              - "Momen podcast ini saat dokter spesialis bantah langsung mitos yang beredar di grup WA keluarga"
+              - "Klip ini mengubah cara aku lihat nasihat kesehatan yang selama ini aku percaya begitu saja"
+            content_runway: "Mitos di Indonesia sangat banyak — kesehatan, finansial, parenting, pendidikan, makanan — setiap episode podcast dengan pakar menghasilkan beberapa potensi klip debunking yang relevan untuk audiens lokal."
+
+        - slug: podcast-clip-pergolakan-batin-tamu
+          name: Momen Emosional Tamu Podcast yang Tidak Terduga
+          description: Potongan momen podcast di mana tamu mengalami pergolakan emosional nyata — menangis, tertawa tidak terduga, atau momen keheningan — yang terasa autentik dan melampaui konten biasa.
+          example_hook: "Pertanyaan ini bikin tamu yang selalu tampil kuat akhirnya berhenti sejenak..."
+          guide:
+            audience: "Penonton 20–40 yang menghargai kedalaman emosional di konten digital; mereka yang lelah dengan konten yang terlalu dipoles; penonton yang mencari konten yang membuat mereka merasakan sesuatu."
+            tone: "Respektif dan tidak eksploitatif. Kreator menampilkan momen emosional bukan untuk viral semata tapi karena momen itu genuine dan berharga. Tidak ada musik dramatis berlebihan yang memanipulasi emosi."
+            format: "45–90 detik. Langsung ke momen pergolakan emosional → biarkan silence atau suara terbata tetap ada jangan dipotong → caption minimal hanya di kalimat kunci → tidak perlu kreator berbicara. Vertikal 9:16."
+            boleh:
+              - "Biarkan keheningan tetap utuh — jangan potong jeda sebelum tamu bicara kembali"
+              - "Caption hanya pada kalimat terpenting, bukan setiap kata — biarkan emosi visual berbicara"
+              - "Jika ada reaksi host yang empati dan natural, sertakan — memperkuat koneksi emosional"
+              - "Credit tamu dan podcast dengan respek — nama lengkap dan judul episode"
+            hindari:
+              - "Jangan gunakan musik latar dramatis yang membesar-besarkan emosi — manipulatif"
+              - "Jangan potong di tengah momen emosional sebelum tamu selesai berproses"
+              - "Jangan buat thumbnail yang sensasionalisasi air mata atau ekspresi emosi tamu"
+              - "Jangan gunakan momen emosional yang konteksnya sensitif tanpa persetujuan yang jelas"
+              - "Jangan framing momen sedih sebagai hiburan — framing sebagai konten manusiawi"
+            pola_hook: "Detik 0: langsung masuk ke kalimat atau pertanyaan yang memicu pergolakan — bukan ke ekspresi emosi itu sendiri. Biarkan penonton menyaksikan momen pergolakan secara natural, bukan langsung ditunjuk."
+            contoh_judul:
+              - "Pertanyaan host ini bikin tamu yang biasanya tenang berhenti berbicara sejenak"
+              - "Momen podcast yang tidak direncanakan ini lebih berkesan dari semua konten yang disiapkan"
+              - "Tamu ini bicara soal ini untuk pertama kali dan reaksinya tidak ada yang expect"
+              - "Tidak ada yang tahu podcast ini akan berakhir seperti ini — momen paling jujur tahun ini"
+              - "Satu pertanyaan sederhana dan tamu yang selalu tampil kuat ini akhirnya bercerita jujur"
+            content_runway: "Setiap podcast yang menghadirkan tamu dengan cerita hidup yang dalam berpotensi menghasilkan momen emosional; ekosistem podcast Indonesia yang tumbuh pesat dengan topik kesehatan mental, karir, dan kehilangan menjamin pasokan konten."

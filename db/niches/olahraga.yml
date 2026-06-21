@@ -1,0 +1,243 @@
+version: 1
+vertical:
+  slug: v-olahraga
+  name: Olahraga
+  description: Konten olahraga — highlight, skill, tutorial, dan motivasi untuk pecinta olahraga Indonesia.
+  guide:
+    audience: "Pria dan wanita 16–40 yang aktif berolahraga atau mengikuti olahraga sebagai penonton; penggemar sepak bola, bulu tangkis, futsal, dan renang; komunitas olahraga lokal yang bangga dengan atlet Indonesia."
+    tone: "Energik, penuh semangat, dan autentik. Konten olahraga harus memancing emosi — baik euforia kemenangan maupun motivasi untuk berlatih lebih keras. Kasual tapi terasa 'ngerti olahraga'."
+    format: "Video pendek 30–90 detik, dominan footage aksi atau demo langsung. Slow-motion untuk momen kunci. Caption teks untuk poin teknikal. Musik energik atau dramatic sync. Vertikal 9:16."
+    boleh:
+      - "Gunakan slow-motion untuk memperlihatkan detail teknik yang tidak terlihat dalam kecepatan normal"
+      - "Sertakan teks caption singkat yang menonjolkan poin teknikal atau statistik dramatis"
+      - "Tampilkan reaksi setelah momen besar — sorak penonton, ekspresi atlet — untuk emosi tambahan"
+      - "Pakai musik yang sync dengan ritme aksi untuk meningkatkan dampak visual"
+    hindari:
+      - "Jangan gunakan footage siaran TV atau broadcast resmi yang berlisensi — risiko copyright strike sangat tinggi di niche ini"
+      - "Jangan klaim statistik atau fakta tanpa sumber yang jelas"
+      - "Jangan tampilkan teknik berbahaya tanpa disclaimer keselamatan"
+      - "Jangan pakai musik ber-hak-cipta dari label besar — pilih royalty-free atau dari library bebas"
+    pola_hook: "Detik 0–2: langsung masuk ke momen paling impresif (gol, smash, gerakan teknis) + teks singkat konteks. Tidak ada intro panjang."
+    contoh_judul:
+      - "Momen ini bikin stadion gila dan kamera tidak bisa menangkap semua reaksinya"
+      - "Teknik ini yang beda antara pemain biasa dan pemain yang diingat selamanya"
+      - "Atlet Indonesia ini buktikan dunia salah menilai mereka"
+
+  niches:
+    - slug: sports-clips
+      name: "Sports Highlights"
+      description: "Klip olahraga (hati2 hak cipta)."
+      faceless: true
+      difficulty: sulit
+      rpm: rendah
+      formats: klip + caption + SFX
+      example_hook: "Gol mustahil yang bikin stadion gila..."
+      guide:
+        audience: "Pria 15–35 yang mengikuti olahraga profesional Indonesia dan dunia secara aktif; penggemar Liga 1, Timnas, bulu tangkis, dan olahraga Asian Games; penonton yang mau menikmati momen terbaik tanpa harus tonton pertandingan penuh."
+        tone: "Dramatis dan impulsif. Setiap klip harus memancing reaksi — teriakan, geleng kepala, atau replay. Komentar singkat yang diperkuat teks caption, bukan narasi panjang."
+        format: "30–60 detik. Satu momen utama per video — jangan campurkan terlalu banyak klip. Close-up aksi → slow-motion momen kunci → reaksi singkat (jika ada). Caption teks besar untuk context dan poin emosional. Vertikal 9:16."
+        boleh:
+          - "Gunakan footage dari platform bebas lisensi, siaran langsung yang sudah kedaluwarsa hak distribusinya, atau footage original sendiri"
+          - "Slow-motion ekstrem di momen kunci untuk memperpanjang kepuasan visual"
+          - "Tambahkan SFX suara stadion atau crowd reaction untuk amplifikasi emosi"
+          - "Caption teks dengan statistik singkat menambah kredibilitas dan share rate"
+        hindari:
+          - "Jangan gunakan klip langsung dari siaran TV resmi (RCTI, SCTV, beIN Sports) — risiko copyright strike sangat tinggi"
+          - "Jangan ambil footage dari YouTube resmi klub atau federasi tanpa izin eksplisit"
+          - "Jangan tambahkan musik ber-hak-cipta di atas klip olahraga yang sudah ada audio asli"
+          - "Jangan buat thumbnail atau judul yang menyesatkan tentang konteks momen"
+        pola_hook: "Detik 0: langsung masuk ke aksi paling intens + teks konteks singkat ('momen ini diingat selamanya'). Tidak ada intro."
+        contoh_judul:
+          - "Gol mustahil yang bikin stadion gila dan lawan terdiam"
+          - "Momen comeback ini masih bikin merinding walau sudah nonton 10 kali"
+          - "Atlet Indonesia ini buktikan dunia salah tentang mereka"
+      micro:
+        - slug: sports-clips-gol-tendangan-bebas
+          name: Gol Tendangan Bebas Paling Ikonik Sepak Bola Indonesia
+          description: Rekap tendangan bebas paling membekas dari Liga 1 dan Timnas Indonesia, dikurasi untuk penonton yang ingin nostalgia momen bersejarah tanpa harus cari sendiri.
+          example_hook: "Tendangan bebas ini diingat ribuan orang di stadion yang sama sampai hari ini..."
+          guide:
+            audience: "Pria 18–40 penggemar sepak bola Indonesia khususnya Liga 1 dan Timnas; penonton yang ingin nostalgia momen bersejarah; penggemar yang terlambat mengenal era tertentu dan ingin catch up."
+            tone: "Nostalgia dan bangga. Setiap tendangan bebas ikonik membawa kenangan bersama — bukan sekadar olahraga tapi momen budaya yang menyatukan penonton Indonesia."
+            format: "45–75 detik. Konteks singkat (laga apa, skor saat itu) → build-up tendangan → eksekusi slow-motion → reaksi stadion → teks stats singkat (jarak, kecepatan jika tersedia). Vertikal 9:16."
+            boleh:
+              - "Tampilkan konteks pertandingan — lawan, skor, dan stakes — agar momen terasa lebih besar"
+              - "Slow-motion frame-by-frame di momen bola melewati pagar betis dan masuk gawang"
+              - "SFX crowd reaction yang asli atau royalty-free untuk mempertahankan nuansa stadion"
+              - "Tambahkan teks nama pemain dan tahun kejadian untuk konteks historis"
+            hindari:
+              - "Jangan gunakan footage siaran TV resmi (RCTI Sport, K-Vision, beIN) tanpa lisensi — risiko takedown sangat nyata"
+              - "Jangan gunakan klip dari channel resmi PSSI atau Liga 1 tanpa izin eksplisit"
+              - "Jangan klaim statistik spesifik (kecepatan bola, jarak) tanpa sumber yang bisa diverifikasi"
+              - "Jangan campur terlalu banyak tendangan dalam satu video — satu momen utama lebih kuat"
+            pola_hook: "Detik 0: close-up kaki pemain bersiap ambil ancang-ancang + teks 'tendangan bebas ini masih diingat sampai sekarang'. Langsung ke eksekusi di detik 3."
+            contoh_judul:
+              - "Tendangan bebas Timnas ini 15 tahun lalu masih bikin merinding sampai sekarang"
+              - "Gol tendangan bebas Liga 1 yang harusnya tidak mungkin masuk dari sudut itu"
+              - "Tendangan bebas ini diingat ribuan suporter yang hadir langsung di stadion"
+              - "Momen Timnas ini viral lagi setelah 10 tahun dan semua alasannya jelas"
+              - "Tendangan bebas paling teknikal yang pernah dieksekusi di Indonesia"
+            content_runway: "Setiap musim Liga 1 dan setiap laga Timnas menghasilkan setidaknya 3–5 momen tendangan bebas memorable; arsip puluhan tahun sepak bola Indonesia menyediakan ratusan klip yang belum banyak dikurasi ulang."
+
+        - slug: sports-clips-momen-comeback
+          name: Momen Comeback Terbaik Olahraga Dunia
+          description: Kompilasi momen tim atau atlet yang membalikkan keadaan dari posisi hampir kalah menjadi juara, format yang selalu memancing emosi dan komentar.
+          example_hook: "Tertinggal 3 gol di babak kedua, dan ini yang terjadi 15 menit kemudian..."
+          guide:
+            audience: "Pria dan wanita 16–35 penggemar olahraga lintas cabang; penonton yang lebih tertarik narasi dramatis daripada teknis olahraga; penonton motivasi yang menemukan inspirasi dari kisah atlet."
+            tone: "Dramatis dan penuh tensi. Setiap comeback harus terasa seperti mustahil sebelum terjadi — build up ketertinggalan dulu, baru berikan pembalikan. Emosi adalah produknya."
+            format: "45–90 detik. Tampilkan ketertinggalan/kondisi hampir kalah → momen titik balik → serial momen pembalikan → hasil akhir + reaksi. Musik yang menanjak sinkron dengan naik tensi video. Vertikal 9:16."
+            boleh:
+              - "Perlihatkan kondisi ketertinggalan atau tekanan sebelum comeback — tanpa konteks itu, pembalikan tidak dramatis"
+              - "Gunakan musik royalty-free yang intensitasnya meningkat seiring narasi video"
+              - "Caption teks waktu pertandingan memberikan konteks tensi (menit ke-85, skor 0-3)"
+              - "Gabungkan momen dari berbagai cabang olahraga dalam satu tema — varietasnya menambah daya tonton"
+            hindari:
+              - "Jangan gunakan footage siaran TV resmi tanpa lisensi — niche ini sangat rentan copyright claim"
+              - "Jangan skip konteks ketertinggalan — tanpa setup, comeback tidak terasa impresif"
+              - "Jangan tambahkan music ber-hak-cipta yang populer — pasti kena claim"
+              - "Jangan buat judul clickbait yang berlebihan melebihi fakta momen yang ada"
+            pola_hook: "Detik 0: tampilkan skor atau kondisi ketertinggalan ekstrem + teks 'dan ini yang terjadi kemudian'. Langsung potong ke momen pembalikan pertama di detik 3."
+            contoh_judul:
+              - "Tertinggal 3 gol di menit ke-70, dan 15 menit kemudian sejarah ditulis ulang"
+              - "Atlet ini sudah hampir menyerah di detik terakhir, lalu ini terjadi"
+              - "Comeback yang membuat komentator tidak bisa bicara selama 5 detik"
+              - "Final yang sudah dipastikan kalah ini berubah arah dalam 8 menit terakhir"
+              - "5 comeback olahraga yang tidak akan dipercaya sebelum melihatnya sendiri"
+            content_runway: "Setiap olahraga di setiap musim menghasilkan setidaknya satu momen comeback memorable; kombinasi lintas cabang (sepak bola, bulu tangkis, basket, renang) dan lintas era memberikan konten hampir tidak terbatas."
+
+        - slug: sports-clips-atletik-indonesia-viral
+          name: Atlet Indonesia yang Viral karena Prestasinya
+          description: Highlight momen viral atlet Indonesia — dari bulu tangkis, angkat besi, hingga lari — yang sempat trending tapi layak ditonton ulang untuk penonton yang melewatkannya.
+          example_hook: "Momen ini ditonton 20 juta orang dalam 48 jam, dan ini alasannya..."
+          guide:
+            audience: "Penonton Indonesia dari semua usia yang bangga dengan prestasi atlet lokal; generasi muda yang ingin tahu siapa atlet kebanggaan Indonesia; penonton yang melewatkan momen viral asli dan ingin catch up."
+            tone: "Bangga dan celebratory. Setiap video adalah penghormatan terhadap pencapaian atlet Indonesia yang sering diremehkan di panggung internasional. Nada positif dan penuh apresiasi."
+            format: "45–75 detik. Konteks event/kompetisi → build-up performa → momen kunci (medali, rekor, finish line) → reaksi atlet dan penonton → teks fakta singkat (medali ke berapa, rekor yang dipecahkan). Vertikal 9:16."
+            boleh:
+              - "Tampilkan konteks kompetisi — level event, negara pesaing — agar prestasi terasa lebih signifikan"
+              - "Tambahkan statistik pencapaian (medali Olympic ke berapa, rekor nasional) sebagai teks overlay"
+              - "Reaksi atlet setelah menang — tangis, peluk pelatih, cium bendera — selalu meningkatkan engagement"
+              - "Gunakan footage dari konten kreator lain yang sudah ada di platform bebas, bukan dari siaran resmi"
+            hindari:
+              - "Jangan gunakan footage dari siaran resmi Olympic, Asian Games, atau BWF tanpa lisensi"
+              - "Jangan buat klaim berlebihan tentang atlet yang tidak didukung fakta"
+              - "Jangan tampilkan momen kekalahan atau kontroversi dengan framing negatif"
+              - "Jangan copy-paste konten kreator lain tanpa transformasi atau nilai tambah"
+            pola_hook: "Detik 0: freeze-frame momen paling dramatis + teks '20 juta orang nonton ini dalam 48 jam'. Langsung mulai dari momen sebelum klimaks."
+            contoh_judul:
+              - "Momen atlet Indonesia ini ditonton 20 juta orang dalam 48 jam, ini alasannya"
+              - "Atlet bulu tangkis Indonesia ini cetak sejarah yang belum pernah dilakukan siapapun"
+              - "Angkat besi Indonesia ini bikin wasit dan penonton di venue tidak percaya"
+              - "Momen bendera merah putih naik di podium ini selalu bikin merinding walau nonton ulang"
+              - "Atlet muda Indonesia ini buktikan prediksi semua orang salah besar"
+            content_runway: "Indonesia aktif di puluhan cabang olahraga internasional setiap tahun (SEA Games, Asian Games, Olympic qualifier, BWF, FIFA qualifier); setiap event menghasilkan minimal beberapa momen yang layak dikurasi ulang."
+
+    - slug: sports-skills
+      name: "Skill / Tutorial Olahraga"
+      description: "Trik & latihan cabang olahraga."
+      faceless: false
+      difficulty: menengah
+      rpm: sedang
+      formats: demo + slow-mo + caption
+      example_hook: "Teknik tendangan yang dipakai pro..."
+      guide:
+        audience: "Pria dan wanita 15–35 yang aktif berolahraga rekreasi atau kompetitif; pemain amatir yang ingin naik level; pelatih pemula yang mencari referensi teknik; atlet muda Indonesia yang mau benchmark teknik mereka."
+        tone: "Instruktif dan percaya diri. Demonstrasi langsung lebih kuat dari penjelasan — tunjukkan dulu, jelaskan kemudian. Kasual tapi otoritatif, seperti senior di lapangan berbagi tips."
+        format: "45–90 detik. Struktur: perlihatkan teknik full speed (hook) → breakdown slow-motion dengan caption anatomi gerakan → repetisi dari berbagai angle → tips kunci 1–2 kalimat. Demo langsung oleh kreator atau atlet. Vertikal 9:16."
+        boleh:
+          - "Selalu tampilkan slow-motion untuk breakdown teknik — mata manusia tidak bisa tangkap detail di kecepatan penuh"
+          - "Caption anatomi gerakan: 'kaki tumpu di sini', 'siku sejajar bahu', 'follow-through ke sini'"
+          - "Tampilkan kesalahan umum sebelum teknik benar untuk membangun kontras yang membantu ingatan"
+          - "Demo dari angle berbeda (frontal, samping, belakang) untuk pemahaman 3D"
+        hindari:
+          - "Jangan demo teknik tanpa cukup latihan — konten salah teknik menyebar dan sulit dikoreksi"
+          - "Jangan gunakan narasi terlalu panjang yang mengalahkan visual demo — tunjukkan lebih banyak dari kata-kata"
+          - "Jangan skip warm-up atau safety note untuk teknik yang berpotensi cedera"
+          - "Jangan tampilkan teknik dengan terminologi asing yang tidak dijelaskan untuk penonton Indonesia"
+        pola_hook: "Detik 0: tampilkan teknik full speed oleh kreator atau referensi pro + teks 'ini rahasianya'. Langsung ke breakdown di detik 3."
+        contoh_judul:
+          - "Teknik tendangan pro ini terlihat sederhana tapi 90% orang melakukannya salah"
+          - "Ini yang beda antara smash yang mematikan dan smash yang bisa dibaca lawan"
+          - "Pernapasan renang yang benar itu bukan seperti yang diajarkan di kolam rekreasi"
+      micro:
+        - slug: sports-skills-badminton-smash
+          name: Teknik Smash Bulu Tangkis yang Benar
+          description: Tutorial smash bulu tangkis dari posisi kaki, ayunan raket, hingga follow-through, disajikan dengan slow-motion untuk penonton yang ingin naik level dari sekadar rekreasi.
+          example_hook: "Smash kamu tidak sekeras ini karena kesalahan di sini, bukan di lengan..."
+          guide:
+            audience: "Pemain bulu tangkis amatir pria dan wanita 15–40 yang main di GOR atau lapangan komunitas; penggemar badminton yang ingin teknik lebih baik tapi tidak ikut klub formal; penonton yang terinspirasi dari Timnas Indonesia."
+            tone: "Instruksional dan supportif. Tidak menghakimi pemain yang salah teknik — pendekatan 'ini yang lebih efektif' bukan 'kamu salah'. Kasual seperti senior lapangan yang mau berbagi."
+            format: "60–90 detik. Struktur: demo smash full speed (hook) → stop di titik kritis (posisi kaki, raket) → slow-motion breakdown dengan caption anatomis → tips kunci dalam 1–2 kalimat → demo ulang full speed. Kreator tampil langsung, vertikal 9:16."
+            boleh:
+              - "Perlihatkan posisi kaki tumpu dan kaki loncat secara eksplisit — itu yang paling sering diabaikan"
+              - "Gunakan garis atau arrow overlay untuk menunjukkan arah ayunan dan sudut raket"
+              - "Bandingkan smash yang salah (lengan saja) vs yang benar (seluruh tubuh) dalam satu video"
+              - "Slow-motion momen kontak raket-shuttlecock untuk visualisasikan kecepatan yang dihasilkan"
+            hindari:
+              - "Jangan demo teknik yang kreator sendiri belum kuasai dengan benar — video tersebar luas dan salah teknik sulit dikoreksi"
+              - "Jangan skip penjelasan posisi kaki — itu bagian yang paling sering dilupakan tapi paling menentukan"
+              - "Jangan gunakan terminologi teknis BWF tanpa penjelasan sederhana untuk penonton amatir"
+              - "Jangan terlalu banyak gerakan dalam satu video — fokus satu aspek smash lebih efektif"
+            pola_hook: "Detik 0: demo smash keras full speed + teks 'smash kamu tidak sekeras ini karena kesalahan di sini'. Langsung slow-motion di detik 3."
+            contoh_judul:
+              - "Smash bulu tangkis kamu tidak keras bukan karena lengan, ini yang sebenarnya salah"
+              - "Posisi kaki ini yang beda antara smash biasa dan smash yang bikin lawan mundur"
+              - "Breakdown slow-motion smash bulu tangkis — setiap detail yang tidak terlihat mata biasa"
+              - "Cara latihan smash sendiri di rumah tanpa partner dalam 15 menit"
+              - "Teknik smash yang dipakai pemain BWF yang bisa kamu pelajari hari ini"
+            content_runway: "Bulu tangkis memiliki puluhan teknik yang bisa dipecah per video (smash, drop shot, net kill, lift, serve) ditambah variasi masing-masing (jumping smash, cross-court, down-the-line); dikombinasikan dengan level kesulitan, setiap teknik bisa menghasilkan 3–5 video."
+
+        - slug: sports-skills-futsal-wall-pass
+          name: Kombinasi Wall Pass & Dribel Futsal
+          description: Tutorial kombinasi gerakan futsal yang dipakai tim-tim kompetitif — wall pass, 1-2, dan fake shot — untuk pemain amatir yang ingin terlihat lebih teknikal di lapangan.
+          example_hook: "Gerakan 2 detik ini bikin lawan bingung dan membuka ruang tembak langsung..."
+          guide:
+            audience: "Pria 15–30 yang rutin main futsal di komunitas, kantor, atau kampus; pemain yang ingin naik level dari sekadar main tapi belum sempat ikut latihan klub; tim futsal amatir yang butuh variasi pola serangan."
+            tone: "Praktis dan langsung bisa dicoba. Futsal adalah olahraga tim yang main di lapangan kecil — penonton harus bisa bayangkan dan coba gerakan ini di sesi futsal berikutnya. Energik dan encouraging."
+            format: "45–75 detik. Struktur: demo kombinasi lengkap full speed (hook) → perlambat ke slow-motion → breakdown posisi pemain 1 dan pemain 2 dengan caption → titik timing kritis → demo ulang dari angle berbeda. Kreator demo bersama rekan, vertikal 9:16."
+            boleh:
+              - "Tampilkan posisi kedua pemain secara jelas — kombinasi butuh timing bersama yang harus terlihat"
+              - "Garis atau arrow overlay untuk menunjukkan rute bola dan pergerakan pemain"
+              - "Demo dari atas (bird's eye view) jika memungkinkan untuk perlihatkan spacing lapangan"
+              - "Variasikan ending: finish tembak, dribel masuk, atau umpan ke pemain ketiga"
+            hindari:
+              - "Jangan demo dengan lapangan terlalu ramai atau cahaya buruk — detail gerakan harus jelas"
+              - "Jangan gunakan terminologi futsal profesional tanpa penjelasan untuk penonton komunitas"
+              - "Jangan skip timing — wall pass gagal hampir selalu karena timing, bukan teknik"
+              - "Jangan sertakan terlalu banyak variasi dalam satu video — satu kombinasi per video lebih mudah dipelajari"
+            pola_hook: "Detik 0: demo wall pass berhasil full speed dengan reaksi kiper atau lawan yang ketipu + teks 'gerakan 2 detik ini buka ruang langsung'. Slow-motion mulai di detik 3."
+            contoh_judul:
+              - "Kombinasi wall pass ini bingungkan lawan dalam 2 detik dan buka peluang tembak"
+              - "Gerakan futsal sederhana yang tim kompetitif pakai tapi jarang diajarkan di lapangan komunitas"
+              - "1-2 combination yang butuh latihan 10 menit tapi hasilnya langsung terasa di pertandingan"
+              - "Fake shot + wall pass ini bikin kiper tidak bisa baca ke mana bolanya pergi"
+              - "Tutorial kombinasi futsal 3 gerakan yang terlihat seperti tim latihan keras tapi mudah dipelajari"
+            content_runway: "Futsal memiliki puluhan pola kombinasi (wall pass, overlap, dummy run, double pass, give-and-go variation) yang masing-masing bisa di-breakdown per video; dikombinasikan dengan posisi (striker, midfielder, sayap) dan situasi (press tinggi, build-up, counter), konten hampir tidak ada habisnya."
+
+        - slug: sports-skills-renang-nafas-efisien
+          name: Teknik Pernapasan Renang untuk Pemula
+          description: Panduan teknik pernapasan di renang gaya bebas yang paling sering salah — rotasi kepala, timing, dan exhale bawah air — untuk pemula yang masih terengah-engah setelah 25 meter.
+          example_hook: "Bukan stamina yang bikin kamu cepat lelah renang, ini yang sebenarnya perlu diperbaiki..."
+          guide:
+            audience: "Pemula renang usia 16–40 yang bisa berenang tapi cepat lelah setelah beberapa lap; penonton yang ingin belajar gaya bebas yang benar; orang yang baru mulai rutin berenang sebagai olahraga dan ingin lebih efisien."
+            tone: "Sabar dan penjelasan bertahap. Renang adalah olahraga yang tidak intuitif — banyak hal yang terasa benar justru salah secara teknis. Nada 'aku kasih tahu rahasia yang tidak jelas' bukan 'kamu melakukan dengan salah'."
+            format: "60–90 detik. Struktur: demo problem umum (kepala terangkat, nafas terburu-buru) → breakdown teknik yang benar slow-motion (rotasi, timing exhale) → demonstrasi underwater angle → tips kunci. Butuh kamera underwater atau poolside. Kreator tampil langsung. Vertikal 9:16."
+            boleh:
+              - "Gunakan angle underwater untuk perlihatkan exhale bawah air — ini paling sulit divisualisasikan dari atas"
+              - "Tampilkan perbandingan teknik salah vs benar dalam satu video untuk kontras yang jelas"
+              - "Breakdown timing: kapan mulai exhale, kapan rotasi, kapan tarik napas — ini yang paling kritis"
+              - "Demo dalam kolam dangkal atau slow swim agar detail teknik lebih terlihat"
+            hindari:
+              - "Jangan demo dengan kreator yang napasnya sendiri masih tergesa-gesa — kredibilitas langsung turun"
+              - "Jangan skip penjelasan exhale bawah air — itu inti masalah tapi paling sering diabaikan tutorial online"
+              - "Jangan rekam di kolam yang terlalu ramai atau pencahayaan buruk — detail gerakan harus jelas"
+              - "Jangan beri terlalu banyak poin dalam satu video — satu aspek pernapasan per video lebih efektif untuk penerapan"
+            pola_hook: "Detik 0: tampilkan demo renang yang cepat lelah setelah 25 meter + teks 'bukan stamina yang bermasalah, ini yang sebenarnya'. Langsung ke breakdown di detik 4."
+            contoh_judul:
+              - "Kamu cepat lelah renang bukan karena stamina buruk, ini yang sebenarnya harus diperbaiki"
+              - "Teknik rotasi kepala renang ini yang beda antara perenang yang tahan nafas vs yang megap-megap"
+              - "Exhale bawah air renang gaya bebas — cara yang benar yang tidak diajarkan di kolam rekreasi"
+              - "25 meter pertama vs 25 meter kedua, ini kenapa timing napas sangat menentukan"
+              - "Tutorial pernapasan renang yang langsung bisa dicoba di sesi renang berikutnya"
+            content_runway: "Renang memiliki empat gaya utama (bebas, dada, punggung, kupu-kupu) yang masing-masing punya aspek pernapasan berbeda; ditambah teknik start, turn, dan finish — setiap aspek bisa mengisi 3–5 video tutorial tersendiri dengan cukup kedalaman."

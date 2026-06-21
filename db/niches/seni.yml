@@ -1,0 +1,355 @@
+version: 1
+vertical:
+  slug: v-seni
+  name: Seni
+  description: Konten kreasi seni — musik, anime edit, dan tari untuk kreator berbakat.
+  guide:
+    audience: "Penonton 16–35 yang mengapresiasi seni dan kreativitas; campuran penggemar musik, anime, dan budaya pop yang aktif di TikTok dan YouTube Shorts; kreator muda Indonesia yang mencari inspirasi ekspresi diri."
+    tone: "Ekspresif dan autentik. Konten seni bukan sekadar hiburan pasif — penonton ikut merasakan energi dan emosi kreator. Biarkan karya berbicara sendiri tanpa terlalu banyak penjelasan."
+    format: "Video 30–90 detik, dominan visual dan audio yang kuat. Beat-sync dan transisi halus untuk musik/anime; gerakan kamera yang dinamis untuk dance. Vertikal 9:16, edit rapi dengan pacing yang sesuai genre."
+    boleh:
+      - "Tampilkan proses kreatif di balik karya — penonton suka melihat 'dapur' seorang kreator"
+      - "Gunakan musik trending sebagai bahan baku atau referensi untuk relevansi algoritma"
+      - "Eksperimen dengan format baru yang belum banyak kreator lain lakukan di Indonesia"
+      - "Perkuat identitas budaya lokal — lagu daerah, tari tradisional, atau anime dengan konteks Indonesia"
+    hindari:
+      - "Jangan gunakan klip atau audio ber-hak-cipta tanpa izin atau transformasi kreatif yang cukup — risiko takedown"
+      - "Jangan posting konten yang terlalu mirip kreator lain tanpa sudut pandang unik"
+      - "Jangan abaikan kualitas audio — konten seni dengan audio buruk langsung ditinggal penonton"
+      - "Jangan overclaim klaim viral ('pasti viral') karena mencederai kepercayaan penonton"
+    pola_hook: "Detik 0–2: langsung masuk ke momen paling impactful — not i, chord pertama, gerakan dance, atau scene anime paling emosional. Teks singkat konteks jika perlu. Tidak ada intro panjang."
+    contoh_judul:
+      - "Suara ini bikin merinding setiap kali didengar ulang"
+      - "Kreator ini ubah sesuatu yang biasa jadi karya yang luar biasa"
+      - "Konten seni Indonesia yang seharusnya lebih viral dari ini"
+
+  niches:
+    - slug: music-edit
+      name: "Music / Beat Edit"
+      description: "Edit musik, cover, beat-making."
+      faceless: true
+      difficulty: menengah
+      rpm: rendah
+      formats: beat-sync + visual
+      example_hook: "Beat ini dibuat cuma 5 menit..."
+      guide:
+        audience: "Penggemar musik 17–30 yang tertarik di balik layar produksi; pendengar aktif yang ingin tahu cara lagu dibuat; komunitas musik lokal yang bangga dengan kreator Indonesia."
+        tone: "Kreatif dan terbuka. Bagi proses tanpa kesan sok eksklusif. Penonton harus merasa diajak masuk ke dalam studio, bukan dikagumi dari jauh."
+        format: "45–90 detik. Tampilkan proses secara nyata — DAW terbuka, layer demi layer dibangun, atau rekaman vokal bertahap. Beat-sync antara visual dan audio wajib. Vertikal 9:16 atau landscape 16:9 untuk konten studio."
+        boleh:
+          - "Tampilkan DAW atau alat produksi nyata untuk kredibilitas dan rasa otentik"
+          - "Sertakan perbandingan sebelum-sesudah produksi untuk dampak yang kuat"
+          - "Gunakan lagu atau beat yang sedang trending sebagai titik referensi audiens"
+          - "Kolaborasi vokal atau instrumen tambahan memperluas jangkauan konten"
+        hindari:
+          - "Jangan gunakan sample atau beat orang lain tanpa lisensi yang jelas — risiko DMCA"
+          - "Jangan pakai klip audio ber-hak-cipta dari artis major tanpa transformasi yang cukup"
+          - "Jangan sembunyikan proses produksi yang membuat hasil terlihat 'ajaib' — transparansi adalah nilainya"
+          - "Jangan rekam dengan audio monitor yang bocor ke mikrofon rekaman"
+        pola_hook: "Detik 0: langsung putar hasil akhir yang paling impactful 3–4 detik → cut ke proses pembuatannya. Penonton penasaran dengan asal-usul suara yang baru didengar."
+        contoh_judul:
+          - "Beat ini dibuat cuma 5 menit dan hasilnya di luar ekspektasi"
+          - "Proses membuat lagu dari nol yang selama ini tersembunyi di balik layar"
+          - "Kreator ini ubah suara sederhana jadi lagu yang layak masuk playlist"
+
+      micro:
+        - slug: music-edit-lagu-daerah-modern
+          name: Lagu Daerah Indonesia Diaransemen Ulang Modern
+          description: Produksi ulang lagu daerah nusantara dengan aransemen modern — trap, lo-fi, atau electronic — memperkenalkan kekayaan musik lokal kepada penonton yang biasanya tidak mendengarkan musik tradisional.
+          example_hook: "Lagu ini diajarkan di SD dulu, tapi versi ini terdengar seperti rilisan label internasional..."
+          guide:
+            audience: "Penonton Indonesia 18–30 yang tumbuh dengan lagu daerah di sekolah tapi kini mendengarkan musik modern; kreator musik yang mencari material dengan nilai budaya tinggi; diaspora yang rindu nuansa lokal dalam kemasan baru."
+            tone: "Bangga dan inovatif. Bukan mengejek lagu daerah tapi membuktikan bahwa musik tradisional Indonesia punya potensi global jika dikemas dengan benar. Setiap aransemen harus terdengar serius, bukan parodi."
+            format: "60–90 detik. Mulai dengan 3–5 detik versi asli yang familier → transisi ke aransemen modern → tampilkan proses produksi singkat (DAW, layer) → reveal full track bersih. Vertikal 9:16, visual beat-sync."
+            boleh:
+              - "Pertahankan melodi asli yang ikonik agar penonton langsung mengenali lagunya"
+              - "Tampilkan nama lagu dan daerah asalnya sebagai konteks budaya"
+              - "Gunakan instrumen tradisional asli (gamelan, angklung, suling) di-layer dengan produksi modern"
+              - "Tampilkan singkat proses di DAW untuk menunjukkan kerja nyata di balik hasil"
+            hindari:
+              - "Jangan gunakan rekaman asli penyanyi atau orkestra tradisional yang ber-hak-cipta — gunakan re-record sendiri"
+              - "Jangan remix dengan cara yang bisa dianggap merendahkan budaya aslinya"
+              - "Jangan skip identifikasi asal lagu — penonton yang tidak tahu akan bingung"
+              - "Jangan mix genre yang terlalu jauh dari karakter melodinya hingga lagunya tidak terkenali"
+            pola_hook: "Detik 0: putar 2–3 detik melodi lagu daerah yang dikenal dengan nada polos + teks nama lagu. Langsung cut ke intro aransemen modern di detik 4."
+            contoh_judul:
+              - "Lagu ini diajarkan di SD dulu, versi ini terdengar seperti rilisan label internasional"
+              - "Bungong Jeumpa diaransemen trap dan hasilnya bikin bergidik"
+              - "Lagu daerah ini aku produksi ulang dan kini terdengar seperti lagu viral TikTok"
+              - "Apuse dari Papua diubah jadi lo-fi beat dan hasilnya terlalu enak didengar"
+              - "Kreator ini ubah lagu sekolah dasar jadi banger yang layak masuk playlist Spotify"
+            content_runway: "Indonesia punya lebih dari 700 bahasa daerah dan ratusan lagu tradisional — setiap lagu bisa diaransemen ke berbagai genre modern (trap, lo-fi, EDM, jazz, R&B), menciptakan kombinasi hampir tak terbatas."
+
+        - slug: music-edit-beat-dari-suara-dapur
+          name: Beat Musik dari Suara Benda Dapur
+          description: Proses membuat beat musik hanya menggunakan suara rekaman benda dapur — ketukan panci, gesekan sendok, suara air — diproses menjadi lagu yang layak didengar dari awal hingga akhir.
+          example_hook: "Suara wajan, sendok, dan air ini dijadikan satu lagu yang terdengar dari studio rekaman..."
+          guide:
+            audience: "Penonton 16–28 yang tertarik produksi musik kreatif dan percobaan suara; penggemar konten 'sesuatu dari tidak ada'; kreator musik yang mencari inspirasi di luar instrumen konvensional."
+            tone: "Eksperimental dan mengejutkan. Penonton tidak percaya bahwa benda dapur biasa bisa menghasilkan musik yang terdengar profesional. Setiap reveal layer baru adalah momen 'wow'."
+            format: "60–90 detik. Rekam benda dapur satu per satu → tampilkan proses sampling di DAW → tambahkan layer → bangun beat secara bertahap → putar hasil akhir penuh. Close-up benda dapur dan DAW bergantian. Vertikal 9:16."
+            boleh:
+              - "Tampilkan rekaman suara asli sebelum diproses untuk kontras maksimal"
+              - "Layer demi layer build-up yang bertahap membangun antisipasi penonton"
+              - "Gunakan benda dapur yang universal dikenal di Indonesia (wajan, cobek, sendok)"
+              - "Tambahkan sedikit efek reverb atau pitch-shift untuk tunjukkan transformasi suara"
+            hindari:
+              - "Jangan gunakan sample atau loop dari library ber-hak-cipta — semua harus rekaman sendiri"
+              - "Jangan rekam dengan kualitas mikrofon buruk — suara dapur harus terdengar bersih dan kaya"
+              - "Jangan skip bagian rekaman benda — itu inti premis konten ini"
+              - "Jangan hasil akhir terdengar amatir — standar produksi harus tinggi agar kontras rekaman dapur mengejutkan"
+            pola_hook: "Detik 0: close-up benda dapur biasa (panci, sendok, cobek) + teks 'semua yang akan kamu dengar berasal dari ini'. Langsung mulai rekam ketukan pertama di detik 3."
+            contoh_judul:
+              - "Semua suara di lagu ini berasal dari dapur — tidak ada instrumen sungguhan"
+              - "Wajan, sendok, dan air dijadikan beat yang terdengar dari studio profesional"
+              - "Cobek batu ini jadi drum kit yang menghasilkan lagu enak didengar"
+              - "Beat TikTok ini dibuat 100% dari rekaman suara dapur ibu"
+              - "Kreator ini tidak punya instrumen, jadi dia rekam dapurnya dan ini hasilnya"
+            content_runway: "Setiap ruangan rumah (dapur, kamar mandi, bengkel) menawarkan benda dengan suara unik; setiap genre musik (trap, lo-fi, jazz, reggae) menghasilkan komposisi berbeda; pasokan ide hampir tidak ada habisnya selama ada kreativitas."
+
+        - slug: music-edit-cover-tanpa-instrumen
+          name: Cover Lagu Viral Hanya dengan Vokal Berlapis
+          description: A cappella atau vokal berlapis yang merekonstruksi lagu populer hanya menggunakan suara manusia — termasuk efek perkusi mulut — tanpa instrumen apapun.
+          example_hook: "Lagu ini dicover tanpa satu instrumen pun, semua yang kamu dengar adalah suara manusia..."
+          guide:
+            audience: "Penggemar musik 16–30 yang terinspirasi oleh kreativitas dan kemampuan vokal; penonton yang menghargai proses rekaman berlapis; komunitas a cappella dan beatbox yang berkembang di Indonesia."
+            tone: "Memukau dan autentik. Penonton harus ragu apakah yang didengar benar-benar hanya suara manusia. Reveal layer demi layer membangun rasa kagum yang terus bertumbuh."
+            format: "60–90 detik. Tampilkan rekaman vokal satu per satu (melodi, harmoni, bass, perkusi) → layer bertahap di DAW → reveal mix final yang utuh. Split-screen beberapa layer sangat efektif. Vertikal 9:16."
+            boleh:
+              - "Tampilkan rekaman setiap layer secara terpisah sebelum digabung — ini bagian terbaik"
+              - "Gunakan split-screen untuk perlihatkan semua layer berjalan bersamaan"
+              - "Pilih lagu yang penonton kenal agar kontras hasilnya terasa maksimal"
+              - "Teknik beatbox, vocal bass, dan scatting memperkaya tekstur produksi"
+            hindari:
+              - "Jangan cover lagu yang masih dalam masa perlindungan ketat tanpa menyebut kredit — ini area abu-abu hak cipta; always credit original artist"
+              - "Jangan rekam dengan reverb kamar yang terlalu keras — kualitas vokal harus jernih"
+              - "Jangan layer terlalu banyak hingga terdengar berantakan — kurang lebih adalah lebih"
+              - "Jangan pakai auto-tune berlebihan yang menghancurkan kesan 'manusia asli'"
+            pola_hook: "Detik 0: putar mix final 3 detik + teks 'tidak ada instrumen satupun dalam lagu ini'. Langsung cut ke rekaman layer pertama di detik 4."
+            contoh_judul:
+              - "Lagu ini dicover tanpa satu instrumen pun, semua dari suara manusia"
+              - "A cappella Halo-halo Bandung versi modern yang bikin bulu kuduk berdiri"
+              - "Cover lagu viral TikTok ini dibuat hanya dengan 12 layer suara mulut"
+              - "Semua yang kamu dengar di video ini keluar dari satu mulut manusia"
+              - "Beatbox dan vokal berlapis ini merekonstruksi lagu BTS tanpa satu chord pun"
+            content_runway: "Setiap lagu populer (Indonesia maupun internasional) bisa di-cover ulang; setiap genre menghadirkan tantangan teknik yang berbeda; format kolaborasi dua-tiga orang memperluas variasi konten tanpa batas."
+
+    - slug: anime-edit
+      name: "Anime Edit / AMV"
+      description: "Edit klip anime sinkron beat."
+      faceless: true
+      difficulty: menengah
+      rpm: rendah
+      formats: beat-sync + transisi
+      example_hook: "Scene ini bikin merinding..."
+      guide:
+        audience: "Penggemar anime 15–28 yang aktif di komunitas Indonesia; penonton yang terhubung secara emosional dengan karakter dan cerita anime; kreator edit video yang ingin eksplorasi teknik transisi dan beat-sync."
+        tone: "Emosional dan impactful. AMV yang bagus membuat penonton yang sudah tonton anime-nya merasakan emosi ulang, dan membuat yang belum tonton penasaran. Pilihan musik dan timing edit adalah segalanya."
+        format: "30–90 detik. Beat-sync ketat antara transisi dan musik. Klip dipilih berdasarkan emosi, bukan sekadar aksi. Color grading konsisten. Vertikal 9:16 untuk Shorts, landscape untuk YouTube penuh."
+        boleh:
+          - "Pilih momen yang punya emosi kuat — bukan sekadar scene keren tapi scene yang berarti"
+          - "Beat-sync yang presisi antara transisi visual dan hit musik adalah standar minimum"
+          - "Gunakan color grading untuk membangun mood yang konsisten dalam satu video"
+          - "Pilih musik yang memperkuat emosi scene, bukan bertentangan dengannya"
+        hindari:
+          - "Jangan gunakan klip anime ber-hak-cipta secara mentah tanpa transformasi edit yang signifikan — risiko DMCA; tambahkan efek, color grade, dan crop yang cukup"
+          - "Jangan gunakan musik ber-hak-cipta dari artis major tanpa lisensi — pilih royalty-free atau musik indie"
+          - "Jangan mix klip dari berbagai anime yang tone-nya bertentangan tanpa justifikasi"
+          - "Jangan rekap plot atau spoiler besar tanpa peringatan spoiler"
+        pola_hook: "Detik 0: masuk langsung ke scene paling emosional atau action paling impactful + musik yang langsung hit. Tidak ada credit sequence di awal."
+        contoh_judul:
+          - "Scene ini bikin merinding walau sudah ditonton 10 kali"
+          - "Edit anime ini terlalu bagus untuk dilewatkan begitu saja"
+          - "Momen ini baru terasa beratnya setelah dikombinasikan dengan musik ini"
+
+      micro:
+        - slug: anime-edit-karakter-underrated
+          name: Edit Karakter Anime Underrated yang Layak Lebih Populer
+          description: AMV yang menyorot karakter anime yang sering diabaikan fandom tapi memiliki arc atau kemampuan yang luar biasa, membuka perspektif baru bagi penonton yang sudah tonton serialnya.
+          example_hook: "Karakter ini bukan protagonis, tapi arc-nya lebih dalam dari siapapun di seri ini..."
+          guide:
+            audience: "Penggemar anime 16–27 yang sudah menonton serial yang ditampilkan; komunitas diskusi anime yang aktif mencari perspektif segar; penonton yang suka konten 'appreciation' terhadap karakter yang terabaikan."
+            tone: "Advokasi dan emosional. Ini bukan sekadar edit keren — ini argumen visual bahwa karakter ini layak mendapat pengakuan lebih. Edit harus menampilkan momen terbaik yang sering terlewatkan audiens."
+            format: "45–75 detik. Pilih 4–6 scene terkuat karakter → edit dengan beat-sync musik yang sesuai mood karakter → akhiri dengan momen paling impactful. Color grade yang mempertegas kepribadian karakter. Vertikal 9:16."
+            boleh:
+              - "Pilih momen yang biasanya diskip audiens karena terlalu fokus ke protagonis"
+              - "Musik yang sesuai dengan kepribadian karakter memperkuat argumen visual"
+              - "Tambahkan teks singkat nama karakter dan seri di awal untuk konteks"
+              - "Akhiri dengan scene yang paling membuktikan potensi karakter tersebut"
+            hindari:
+              - "Jangan gunakan klip mentah tanpa edit signifikan — color grade, crop, dan efek wajib ada untuk transformasi kreatif yang cukup agar terhindar DMCA"
+              - "Jangan gunakan lagu dari artis major ber-hak-cipta — pilih royalty-free yang sesuai mood"
+              - "Jangan pilih karakter yang sudah terlalu populer — justru kehilangan sudut pandang uniknya"
+              - "Jangan isi dengan terlalu banyak scene fighting jika karakter kekuatannya bukan di situ"
+            pola_hook: "Detik 0: tampilkan momen paling underrated karakter tersebut yang biasanya diskip + teks 'karakter ini lebih dalam dari yang kamu kira'. Musik masuk bersamaan."
+            contoh_judul:
+              - "Karakter ini bukan protagonis tapi arc-nya lebih dalam dari siapapun di seri ini"
+              - "Fandom selalu skip scene karakter ini padahal ini momen terkuatnya"
+              - "Edit ini membuktikan kenapa karakter underrated ini seharusnya favorit kamu"
+              - "10 momen karakter ini yang sering dilewatkan tapi menyimpan emosi paling dalam"
+              - "Kreator ini buat edit karakter side yang akhirnya lebih kena dari protagonis utama"
+            content_runway: "Setiap serial anime populer punya puluhan karakter side yang bisa di-spotlight; setiap sudut pandang baru (villain, mentor, rival) menghasilkan konten; tren anime baru setiap season menawarkan material segar terus-menerus."
+
+        - slug: anime-edit-ending-yang-menghancurkan
+          name: Kumpulan Ending Anime yang Bikin Tidak Bisa Tidur
+          description: Kompilasi potongan ending anime yang paling emosional atau mengejutkan, diedit dengan musik yang memperkuat emosi dan deskripsi singkat konteksnya untuk yang belum tonton.
+          example_hook: "10 ending anime yang masih bikin nangis walau sudah nonton 5 kali..."
+          guide:
+            audience: "Penggemar anime luas 16–30 yang pernah merasa terpukul oleh ending sebuah serial; penonton yang mencari validasi perasaan mereka terhadap anime tertentu; yang belum tonton pun tertarik oleh kekuatan emosional konten."
+            tone: "Emosional dan berbagi rasa. Bukan spoiler tanpa konteks — setiap ending harus diberi cukup konteks emosional agar penonton yang belum tonton tetap bisa merasakan beratnya. Yang sudah tonton ikut mengenang."
+            format: "60–90 detik. Kompilasi 3–5 ending dengan brief teks konteks per ending → edit dengan musik emosional yang konsisten → crescendo di ending paling berat di akhir. Transisi bersih antar segmen. Vertikal 9:16."
+            boleh:
+              - "Berikan peringatan spoiler di awal dan sebutkan judul anime yang dibahas"
+              - "Pilih musik instrumentalia yang netral dari genre agar tidak bertabrakan dengan emosi masing-masing ending"
+              - "Teks konteks singkat (1 kalimat) sebelum setiap klip agar penonton yang belum tonton tetap terhubung"
+              - "Akhiri dengan ending yang paling emosional sebagai payoff video"
+            hindari:
+              - "Jangan gunakan klip panjang tanpa edit — transformasi signifikan wajib untuk hindari DMCA dari studio anime"
+              - "Jangan gunakan musik ber-hak-cipta artis mayor — pilih royalty-free instrumental"
+              - "Jangan pilih ending yang kontroversial tanpa menyebutkan konteksnya — bisa memicu perdebatan yang mengalihkan"
+              - "Jangan masukkan terlalu banyak ending sehingga tidak ada yang terasa mendalam"
+            pola_hook: "Detik 0: tampilkan 1–2 detik momen paling emosional dari salah satu ending + teks 'ini masih bikin nangis walau sudah nonton berkali-kali'. Musik melankolis masuk bersamaan."
+            contoh_judul:
+              - "10 ending anime yang masih bikin nangis walau sudah nonton 5 kali"
+              - "Ending-ending ini tidak bisa tidur setelahnya — tonton kalau siap"
+              - "Kompilasi ending anime yang bikin semua penonton merasakan hal yang sama"
+              - "Ending anime ini terasa ringan saat nonton, tapi makin berat setelah dipikir ulang"
+              - "Edit ini kumpulkan momen ending yang selalu bikin rewatch dari episode pertama"
+            content_runway: "Setiap musim anime baru menghadirkan ending baru yang bisa dibahas; format 'top ending genre X' (shounen, slice of life, mecha) memperluas variasi; kolaborasi dengan penonton yang submit pilihan mereka menciptakan seri berkelanjutan."
+
+        - slug: anime-edit-fight-scene-terbaik
+          name: Fight Scene Terbaik Anime Diedit dengan Musik Epik
+          description: Kurasi fight scene paling ikonik dari berbagai anime yang diedit ulang dengan sinkronisasi musik untuk memaksimalkan dampak visual dan emosional, untuk penonton action anime.
+          example_hook: "Fight scene ini sudah hebat di anime aslinya, dengan musik ini jadi berbeda level..."
+          guide:
+            audience: "Penggemar anime action 15–28 yang menghargai animasi berkualitas tinggi; komunitas yang aktif mendebat 'fight scene terbaik sepanjang masa'; penonton yang ingin konten hype sebelum nonton anime baru."
+            tone: "Hype dan megah. Setiap potongan fight scene harus memuncak di momen paling ikonik. Musik bukan hanya pengiring — ia adalah narasi kedua yang menentukan apakah edit terasa epic atau biasa saja."
+            format: "45–75 detik. Pilih 3–6 fight scene ikonik → edit dengan beat-sync ketat pada pukulan, ledakan, dan gerakan kunci → musik epik yang build dari intro hingga climax → akhiri di puncak energi. Vertikal 9:16."
+            boleh:
+              - "Beat-sync presisi antara serangan kunci dan hit musik adalah standar wajib"
+              - "Color grade yang mempertegas intensitas — contrast lebih tinggi, saturation dramatik"
+              - "Pilih campuran scene yang sudah viral dan yang underrated untuk keseimbangan"
+              - "Slow-motion strategis di momen kunci untuk efek dramatis maksimal"
+            hindari:
+              - "Jangan gunakan klip mentah tanpa transformasi edit — color grade, crop, dan efek wajib agar terhindar dari DMCA; sertakan kredit anime di caption"
+              - "Jangan gunakan musik dari OST anime itu sendiri yang ber-hak-cipta — pilih royalty-free epic/orchestral"
+              - "Jangan mix terlalu banyak anime dalam satu video hingga tidak ada yang berkesan"
+              - "Jangan prioritaskan scene panjang atas momen kunci yang pendek — edit harus padat"
+            pola_hook: "Detik 0: langsung masuk ke frame fight scene paling ikonik + musik yang langsung hit di beat. Tidak ada title card atau intro — energi harus maksimal dari detik pertama."
+            contoh_judul:
+              - "Fight scene ini sudah hebat di anime aslinya, dengan musik ini jadi berbeda level"
+              - "Edit fight scene terbaik 2024 yang bikin penonton berdiri dari kursi"
+              - "5 fight scene yang animasinya terlalu bagus untuk ditonton hanya sekali"
+              - "Musik ini dipasangkan dengan fight scene ini dan hasilnya melebihi ekspektasi"
+              - "Kompilasi momen fight anime yang selalu replay meski sudah ratusan kali"
+            content_runway: "Setiap tahun menghadirkan puluhan anime baru dengan fight scene baru; format tematik ('fight scene terbaik per studio', 'per karakter', 'per tahun') memperluas variasi tanpa batas; komunitas selalu berdebat tentang fight terbaik — konten ini selalu relevan."
+
+    - slug: dance
+      name: "Dance / Choreo"
+      description: "Tarian/challenge, butuh tampil."
+      faceless: false
+      difficulty: menengah
+      rpm: rendah
+      formats: dance + musik trending
+      example_hook: "Challenge ini lagi viral..."
+      guide:
+        audience: "Penonton 14–28 yang mengikuti tren dance di TikTok dan Instagram; penggemar K-pop, tari tradisional, dan konten challenge yang mudah diikuti; kreator yang ingin showcase kemampuan tari."
+        tone: "Energik dan mengundang. Dance content yang bagus bukan hanya memperlihatkan kemampuan — ia membuat penonton ingin ikut mencoba. Energi kreator harus menular ke layar."
+        format: "15–60 detik. Gerakan jelas dan terbaca dari sudut kamera yang tepat. Lighting memadai agar gerakan terlihat dengan bersih. Musik in-sync sempurna. Vertikal 9:16. Baju yang kontras dengan latar membantu keterbacaan gerakan."
+        boleh:
+          - "Mulai langsung dari gerakan yang paling viral atau unik untuk hook kuat"
+          - "Tampilkan breakdown gerakan di akhir atau dalam video terpisah untuk interaksi"
+          - "Duet atau kolaborasi memperluas jangkauan penonton dan memperkaya visual"
+          - "Lokasi yang menarik atau tidak biasa menambah nilai produksi tanpa biaya besar"
+        hindari:
+          - "Jangan rekam dengan pencahayaan buruk yang membuat gerakan tidak terbaca"
+          - "Jangan gunakan musik ber-hak-cipta tanpa lisensi — pakai versi yang sudah tersedia di platform atau create audio sendiri"
+          - "Jangan terlalu banyak cut yang mengalihkan dari flow gerakan — edit harus melayani tarian, bukan menguasainya"
+          - "Jangan pilih lokasi yang berisik atau ramai yang mengganggu fokus pada gerakan"
+        pola_hook: "Detik 0: langsung masuk ke gerakan paling catchy atau paling sulit dalam koreografi. Tidak ada perkenalan diri atau setup — tari dari frame pertama."
+        contoh_judul:
+          - "Challenge ini lagi viral dan ini versi yang bikin semua orang stop scroll"
+          - "Koreografi ini dirancang agar siapapun bisa ikut dalam 5 menit latihan"
+          - "Gerakan ini sederhana tapi kenapa tidak ada yang lakukan begini sebelumnya"
+
+      micro:
+        - slug: dance-tari-tradisional-modern-fusion
+          name: Tari Tradisional Indonesia dengan Gerakan Modern
+          description: Koreografi yang menggabungkan gerakan tari tradisional Indonesia — Saman, Jaipong, atau Tor-tor — dengan elemen kontemporer, menyasar penonton yang menghargai warisan budaya yang tetap relevan.
+          example_hook: "Gerakan tari ini umurnya ratusan tahun, tapi dipadukan begini hasilnya luar biasa..."
+          guide:
+            audience: "Penonton Indonesia 17–30 yang bangga budaya lokal tapi juga mengikuti tren modern; penari muda yang mencari identitas antara tradisional dan kontemporer; diaspora yang ingin koneksi dengan budaya asal."
+            tone: "Hormat dan inovatif. Penggabungan harus terasa sebagai penghormatan terhadap tradisi, bukan eksploitasi. Setiap elemen tradisional yang diambil harus terlihat dipelajari dengan benar, bukan ditiru asal-asalan."
+            format: "30–60 detik. Mulai dengan 3–5 detik gerakan tradisional murni → transisi ke versi fusion → klimaks di momen paling impressive → brief credit 'terinspirasi dari [tari]'. Kostum atau elemen visual yang menggabungkan tradisional dan modern. Vertikal 9:16."
+            boleh:
+              - "Tampilkan penguasaan gerakan tradisional yang solid sebelum memfusikannya — kredibilitas penting"
+              - "Gunakan musik yang menggabungkan instrumen tradisional dengan produksi modern"
+              - "Sebutkan nama tari tradisional dan daerah asalnya di caption atau teks"
+              - "Kostum fusion yang menarik secara visual memperkuat identitas konten"
+            hindari:
+              - "Jangan gunakan musik dari label besar ber-hak-cipta — cari versi yang tersedia bebas di platform atau buat sendiri"
+              - "Jangan tampilkan gerakan tradisional yang salah secara teknis — bisa dianggap tidak menghormati budaya"
+              - "Jangan fusion hanya untuk viral tanpa pemahaman gerakan tradisionalnya — ini bisa menimbulkan kritik keras dari komunitas budaya"
+              - "Jangan rekam di lokasi yang tidak sesuai konteks budaya tanpa alasan kreatif yang jelas"
+            pola_hook: "Detik 0: gerakan tari tradisional yang dikenal langsung dimulai + teks nama tari. Transisi ke elemen modern di detik 5 tanpa jeda."
+            contoh_judul:
+              - "Gerakan Saman ini umurnya ratusan tahun, dipadukan begini hasilnya mengejutkan"
+              - "Jaipong bertemu hip-hop dan ini yang terjadi — lebih bagus dari yang dibayangkan"
+              - "Tari tradisional ini aku gabungkan dengan koreografi modern dan ini reaksi penonton"
+              - "Indonesia punya tari yang gerakannya lebih kompleks dari K-pop, ini buktinya"
+              - "Fusion Tor-tor Batak dengan contemporary dance yang bikin komunitas budaya angkat topi"
+            content_runway: "Indonesia punya lebih dari 3.000 tari tradisional — setiap tari dari setiap daerah bisa di-fuse dengan genre modern yang berbeda; format kolaborasi dengan penari daerah asli memperluas variasi dan keaslian konten."
+
+        - slug: dance-challenge-kreasi-sendiri
+          name: Dance Challenge yang Diciptakan Sendiri dan Viral
+          description: Dokumentasi proses membuat koreografi challenge original yang dirancang agar mudah ditiru penonton, termasuk breakdown gerakan untuk yang ingin ikut.
+          example_hook: "Challenge ini aku ciptakan sendiri 2 minggu lalu dan sekarang sudah 500 orang ikut..."
+          guide:
+            audience: "Penonton 14–25 yang aktif ikut dance challenge di TikTok; kreator yang ingin tahu cara membuat challenge yang bisa viral; penggemar yang ingin ikut challenge tapi butuh panduan gerakan."
+            tone: "Mengundang dan accessible. Kunci challenge yang viral adalah gerakan yang terasa bisa dilakukan siapapun setelah beberapa kali latihan. Jangan terlalu susah, jangan terlalu mudah — zona 'slightly challenging but achievable'."
+            format: "30–60 detik. Tampilkan challenge penuh sekali → breakdown gerakan kunci satu per satu dengan hitungan → undangan eksplisit untuk ikut. Musik in-sync sempurna. Vertikal 9:16."
+            boleh:
+              - "Desain gerakan yang punya 'signature move' yang mudah diidentifikasi dan dibagikan"
+              - "Tampilkan versi slow-motion di segmen breakdown untuk kejelasan gerakan"
+              - "Gunakan musik trending atau yang memiliki ritme yang mudah diikuti"
+              - "Tandai beberapa akun besar yang ikut challenge untuk validasi sosial"
+            hindari:
+              - "Jangan gunakan musik ber-hak-cipta yang belum tersedia bebas di platform — challenge bisa mati sebelum viral karena takedown audio"
+              - "Jangan desain gerakan yang butuh keahlian teknis tinggi — barrier masuk terlalu tinggi membunuh challenge"
+              - "Jangan skip bagian breakdown — ini yang membedakan challenge yang viral dari yang tidak"
+              - "Jangan klaim viral sebelum ada bukti nyata partisipasi — merusak kredibilitas"
+            pola_hook: "Detik 0: langsung tampilkan challenge dalam satu take utuh + teks 'ini challenge yang aku ciptakan, sudah X orang ikut'. Langsung cut ke breakdown di detik 10."
+            contoh_judul:
+              - "Challenge ini aku ciptakan 2 minggu lalu dan sekarang sudah 500 orang ikut"
+              - "Aku buat dance challenge yang bisa dipelajari siapapun dalam 10 menit — ini cara mainnya"
+              - "Challenge original ini viral di daerahku, sekarang aku ajak seluruh Indonesia"
+              - "Breakdown lengkap challenge baru ini agar kamu bisa ikut hari ini juga"
+              - "Gerakan ini simpel tapi unik — ini kenapa challenge ini menyebar lebih cepat dari yang lain"
+            content_runway: "Setiap lagu baru yang trending adalah peluang challenge baru; format seri ('challenge bulan ini') menciptakan ekspektasi rutin dari penonton; kolaborasi dengan kreator lain untuk spread challenge memperluas jangkauan tanpa batas."
+
+        - slug: dance-cover-beda-genre
+          name: Cover Dance K-Pop dengan Genre Musik yang Berlawanan
+          description: Koreografi K-pop yang dipertahankan tapi dijalankan dengan musik yang berlawanan genre — dangdut, gamelan, atau jazz — menciptakan kontras yang mengundang tawa sekaligus kagum.
+          example_hook: "Koreografi BTS ini aku jalankan dengan musik dangdut koplo dan hasilnya mengejutkan..."
+          guide:
+            audience: "Penonton 15–28 penggemar K-pop dan juga musik lokal Indonesia; penonton yang suka konten humor yang menampilkan kemampuan nyata; komunitas dance yang menghargai kreativitas dalam pendekatan koreografi."
+            tone: "Humor yang menghormati. Ini bukan mengejek K-pop atau musik lokal — ini menunjukkan bahwa koreografi yang bagus tetap bagus di konteks musik manapun. Eksekusi harus tetap serius dan berkualitas agar kontrasnya mengundang kagum."
+            format: "30–60 detik. Mulai dengan 3–5 detik versi asli koreografi dengan musik original → cut ke versi cover dengan musik genre berlawanan → pertahankan koreografi semirip mungkin. Reaksi kreator di akhir boleh ditampilkan. Vertikal 9:16."
+            boleh:
+              - "Pertahankan koreografi seoriginal dan setepat mungkin — kontras musiknya yang lucu, bukan karena gerakannya ngasal"
+              - "Pilih lagu lokal yang memiliki tempo yang mendekati lagu original untuk feasibility"
+              - "Ekspresi wajah yang serius saat menari dengan musik berlawanan menambah komedi"
+              - "Gunakan kostum atau setting yang juga mixing dua dunia untuk visual yang lebih kuat"
+            hindari:
+              - "Jangan gunakan musik dari label K-pop ber-hak-cipta untuk versi original — pakai versi yang tersedia bebas di platform atau instrumental"
+              - "Jangan eksekusi koreografi dengan buruk — kalau gerakannya ngasal, kontrasnya tidak lucu tapi memalukan"
+              - "Jangan pilih musik lokal yang terlalu berbeda temponya sehingga koreografi tidak bisa dijalankan sama sekali"
+              - "Jangan jadikan konten ini untuk merendahkan salah satu genre musik secara eksplisit"
+            pola_hook: "Detik 0: langsung tampilkan 2 detik koreografi K-pop dengan musik original → cut abrupt ke musik dangdut/gamelan dengan koreografi yang sama. Kontras langsung terasa di detik 3."
+            contoh_judul:
+              - "Koreografi BTS ini aku jalankan dengan musik dangdut koplo dan hasilnya mengejutkan"
+              - "Dance BLACKPINK tapi musiknya diganti campursari Jawa — masih keren atau tidak?"
+              - "Koreografi K-pop dengan gamelan Bali dan ternyata lebih epic dari versi aslinya"
+              - "Cover dance idol Korea ini aku jalankan dengan lagu daerah dan ini reaksinya"
+              - "Siapa sangka koreografi ini terdengar dan terlihat bagus dengan musik dangdut koplo"
+            content_runway: "Setiap lagu K-pop baru yang trending adalah konten baru; setiap genre musik Indonesia (dangdut, campursari, gamelan, keroncong, pop daerah) menghasilkan kontras yang berbeda; format seri 'koreografi X dengan musik Y' tidak ada habisnya."
