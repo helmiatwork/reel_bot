@@ -19,6 +19,7 @@ import os
 import json
 import subprocess
 import httpx
+import time
 from pathlib import Path
 from datetime import datetime
 
@@ -404,12 +405,40 @@ def _parse_vtt(vtt_path: str) -> list:
     return segments
 
 
+def _run_yt_dlp_transcript_attempt(youtube_url: str, tmp_dir: str, extra_args: list) -> tuple:
+    """
+    Run one yt-dlp subtitle fetch attempt with given extra arguments.
+    Returns (returncode, stderr, stdout).
+    Uses 60s timeout per attempt.
+    """
+    args = [
+        "yt-dlp",
+        "--write-auto-sub",
+        "--sub-format", "vtt",
+        "--skip-download",
+        "-o", f"{tmp_dir}/subs",
+        "--no-playlist",
+        "--socket-timeout", "60",
+        *extra_args,
+        youtube_url
+    ]
+    result = subprocess.run(args, capture_output=True, text=True, timeout=70)
+    return (result.returncode, result.stderr, result.stdout)
+
+
 def get_timecoded_transcript(youtube_url: str) -> list:
     """
     Fetch timecoded transcript for a YouTube video using auto-generated subtitles.
-    Uses yt-dlp's built-in subtitle download (--write-auto-sub), parses VTT, returns segments.
+    Hardened to survive YouTube 429 throttle and JS runtime issues.
+
+    Strategy:
+    1. Try with --impersonate to avoid bot detection (curl_cffi backend)
+    2. Fallback: try multiple player_client options (android, ios, web)
+    3. Retry with exponential backoff on 429 errors (2s, 4s, 8s)
+    4. Optional: use cookies from env YTDLP_COOKIES_FILE if set
+
     Returns: [{"start": float (seconds), "end": float (seconds), "text": str}, ...]
-    Returns [] gracefully if no subtitles available.
+    Returns [] gracefully if all attempts fail, with diagnostic prints.
     """
     import tempfile
     import shutil
@@ -418,31 +447,64 @@ def get_timecoded_transcript(youtube_url: str) -> list:
 
     tmp_dir = tempfile.mkdtemp(prefix="vtt_")
     try:
-        # yt-dlp downloads subtitles as .vtt files; we grab the first language available
-        result = subprocess.run([
-            "yt-dlp",
-            "--write-auto-sub",
-            "--sub-format", "vtt",
-            "--skip-download",  # don't download the video itself
-            "-o", f"{tmp_dir}/subs",  # output template
-            "--no-playlist",
-            youtube_url
-        ], capture_output=True, text=True, timeout=30)
+        # Check for cookies env var
+        cookies_args = []
+        cookies_file = os.getenv("YTDLP_COOKIES_FILE", "")
+        if cookies_file and Path(cookies_file).exists():
+            cookies_args = ["--cookies", cookies_file]
+            print(f"  [transcript] Using cookies from {cookies_file}")
 
-        if result.returncode != 0:
-            print(f"  [transcript] yt-dlp subtitle fetch failed: {result.stderr}")
-            return []
+        # Define attempt strategies: impersonate + player_client combos
+        # Each tuple is (attempt_name, extra_args_list)
+        strategies = [
+            ("impersonate-chrome", ["--impersonate", "chrome"] + cookies_args),
+            ("android-client", ["--extractor-args", "youtube:player_client=android"] + cookies_args),
+            ("ios-client", ["--extractor-args", "youtube:player_client=ios"] + cookies_args),
+            ("web-client", ["--extractor-args", "youtube:player_client=web"] + cookies_args),
+        ]
 
-        # Find the downloaded VTT file (yt-dlp names it subs.en.vtt or subs.<lang>.vtt)
-        vtt_files = list(Path(tmp_dir).glob("subs*.vtt"))
-        if not vtt_files:
-            print(f"  [transcript] No .vtt file found after yt-dlp fetch")
-            return []
+        last_error = None
+        for attempt_idx, (strategy_name, extra_args) in enumerate(strategies, start=1):
+            for retry_idx in range(3):  # 3 retries per strategy
+                retry_delay = 2 ** retry_idx if retry_idx > 0 else 0
+                if retry_delay:
+                    print(f"  [transcript] Retry attempt {retry_idx}, waiting {retry_delay}s...")
+                    time.sleep(retry_delay)
 
-        vtt_path = vtt_files[0]
-        segments = _parse_vtt(str(vtt_path))
-        print(f"  [transcript] Parsed {len(segments)} segments from {vtt_path.name}")
-        return segments
+                print(f"  [transcript] Strategy {attempt_idx}/4 ({strategy_name}), attempt {retry_idx + 1}/3")
+
+                returncode, stderr, stdout = _run_yt_dlp_transcript_attempt(youtube_url, tmp_dir, extra_args)
+
+                if returncode == 0:
+                    print(f"  [transcript] Success with {strategy_name}")
+                    vtt_files = list(Path(tmp_dir).glob("subs*.vtt"))
+                    if vtt_files:
+                        vtt_path = vtt_files[0]
+                        segments = _parse_vtt(str(vtt_path))
+                        print(f"  [transcript] Parsed {len(segments)} segments from {vtt_path.name}")
+                        return segments
+                    else:
+                        print(f"  [transcript] No .vtt file found after successful fetch")
+                        last_error = "no_vtt_file"
+                        continue
+
+                # Check for 429 (throttle) vs other errors
+                if "429" in stderr or "Too Many Requests" in stderr:
+                    print(f"  [transcript] HTTP 429 (throttled) on {strategy_name}, will retry with backoff")
+                    last_error = "http_429"
+                    # Continue to retry loop (backoff happens above)
+                elif "No supported JavaScript runtime" in stderr or "impersonate target" in stderr:
+                    print(f"  [transcript] JS runtime error on {strategy_name}, trying next strategy")
+                    last_error = "js_runtime"
+                    break  # Break retry loop, try next strategy
+                else:
+                    print(f"  [transcript] yt-dlp error on {strategy_name}: {stderr[:200]}")
+                    last_error = f"yt_dlp_error: {stderr[:100]}"
+                    break  # Break retry loop, try next strategy
+
+        print(f"  [transcript] All strategies exhausted (last error: {last_error})")
+        return []
+
     except Exception as e:
         print(f"  [transcript] Unexpected error: {e}")
         return []
