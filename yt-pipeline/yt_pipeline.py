@@ -16,6 +16,7 @@
 # ═══════════════════════════════════════════════════════════════
 
 import os
+import sys
 import json
 import subprocess
 import httpx
@@ -359,7 +360,7 @@ def _parse_vtt(vtt_path: str) -> list:
         with open(vtt_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
     except Exception as e:
-        print(f"  [transcript] VTT read failed: {e}")
+        print(f"  [transcript] VTT read failed: {e}", file=sys.stderr)
         return []
 
     i = 0
@@ -397,7 +398,7 @@ def _parse_vtt(vtt_path: str) -> list:
                 if text:
                     segments.append({"start": round(start, 2), "end": round(end, 2), "text": text})
             except Exception as e:
-                print(f"  [transcript] VTT line parse failed: {e}")
+                print(f"  [transcript] VTT line parse failed: {e}", file=sys.stderr)
                 i += 1
         else:
             i += 1
@@ -445,7 +446,7 @@ def get_timecoded_transcript(youtube_url: str) -> list:
     import tempfile
     import shutil
 
-    print(f"\n[Transcript] Fetching auto-generated subtitles: {youtube_url}")
+    print(f"\n[Transcript] Fetching auto-generated subtitles: {youtube_url}", file=sys.stderr)
 
     tmp_dir = tempfile.mkdtemp(prefix="vtt_")
     try:
@@ -459,7 +460,7 @@ def get_timecoded_transcript(youtube_url: str) -> list:
             writable_cookies = Path(tmp_dir) / "cookies_writable.txt"
             shutil.copy(str(original_cookies), str(writable_cookies))
             cookies_args = ["--cookies", str(writable_cookies)]
-            print(f"  [transcript] Using cookies from {cookies_file} (copied to writable temp)")
+            print(f"  [transcript] Using cookies from {cookies_file} (copied to writable temp)", file=sys.stderr)
 
         # Define attempt strategies: impersonate + player_client combos
         # Each tuple is (attempt_name, extra_args_list)
@@ -475,45 +476,45 @@ def get_timecoded_transcript(youtube_url: str) -> list:
             for retry_idx in range(3):  # 3 retries per strategy
                 retry_delay = 2 ** retry_idx if retry_idx > 0 else 0
                 if retry_delay:
-                    print(f"  [transcript] Retry attempt {retry_idx}, waiting {retry_delay}s...")
+                    print(f"  [transcript] Retry attempt {retry_idx}, waiting {retry_delay}s...", file=sys.stderr)
                     time.sleep(retry_delay)
 
-                print(f"  [transcript] Strategy {attempt_idx}/4 ({strategy_name}), attempt {retry_idx + 1}/3")
+                print(f"  [transcript] Strategy {attempt_idx}/4 ({strategy_name}), attempt {retry_idx + 1}/3", file=sys.stderr)
 
                 returncode, stderr, stdout = _run_yt_dlp_transcript_attempt(youtube_url, tmp_dir, extra_args)
 
                 if returncode == 0:
-                    print(f"  [transcript] Success with {strategy_name}")
+                    print(f"  [transcript] Success with {strategy_name}", file=sys.stderr)
                     vtt_files = list(Path(tmp_dir).glob("subs*.vtt"))
                     if vtt_files:
                         vtt_path = vtt_files[0]
                         segments = _parse_vtt(str(vtt_path))
-                        print(f"  [transcript] Parsed {len(segments)} segments from {vtt_path.name}")
+                        print(f"  [transcript] Parsed {len(segments)} segments from {vtt_path.name}", file=sys.stderr)
                         return segments
                     else:
-                        print(f"  [transcript] No .vtt file found after successful fetch")
+                        print(f"  [transcript] No .vtt file found after successful fetch", file=sys.stderr)
                         last_error = "no_vtt_file"
                         continue
 
                 # Check for 429 (throttle) vs other errors
                 if "429" in stderr or "Too Many Requests" in stderr:
-                    print(f"  [transcript] HTTP 429 (throttled) on {strategy_name}, will retry with backoff")
+                    print(f"  [transcript] HTTP 429 (throttled) on {strategy_name}, will retry with backoff", file=sys.stderr)
                     last_error = "http_429"
                     # Continue to retry loop (backoff happens above)
                 elif "No supported JavaScript runtime" in stderr or "impersonate target" in stderr:
-                    print(f"  [transcript] JS runtime error on {strategy_name}, trying next strategy")
+                    print(f"  [transcript] JS runtime error on {strategy_name}, trying next strategy", file=sys.stderr)
                     last_error = "js_runtime"
                     break  # Break retry loop, try next strategy
                 else:
-                    print(f"  [transcript] yt-dlp error on {strategy_name}: {stderr[:200]}")
+                    print(f"  [transcript] yt-dlp error on {strategy_name}: {stderr[:200]}", file=sys.stderr)
                     last_error = f"yt_dlp_error: {stderr[:100]}"
                     break  # Break retry loop, try next strategy
 
-        print(f"  [transcript] All strategies exhausted (last error: {last_error})")
+        print(f"  [transcript] All strategies exhausted (last error: {last_error})", file=sys.stderr)
         return []
 
     except Exception as e:
-        print(f"  [transcript] Unexpected error: {e}")
+        print(f"  [transcript] Unexpected error: {e}", file=sys.stderr)
         return []
     finally:
         try:

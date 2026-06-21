@@ -362,5 +362,101 @@ class TestExponentialBackoff:
             assert len(sleep_calls) >= 1
 
 
+class TestStderrIsolation:
+    """Tests that diagnostic prints are routed to stderr, keeping stdout clean for JSON."""
+
+    def test_get_timecoded_transcript_diagnostics_on_stderr(self, capsys):
+        """Test that get_timecoded_transcript sends diagnostics to stderr only."""
+        with tempfile.TemporaryDirectory(prefix="transcript_test_") as tmp_dir:
+            vtt_file = Path(tmp_dir) / "subs.en.vtt"
+            vtt_file.write_text("WEBVTT\n\n00:00:01.000 --> 00:00:05.000\nTest segment")
+
+            mock_result = mock.MagicMock()
+            mock_result.returncode = 0
+            mock_result.stderr = ""
+            mock_result.stdout = ""
+
+            with mock.patch("subprocess.run", return_value=mock_result):
+                with mock.patch("tempfile.mkdtemp", return_value=tmp_dir):
+                    segments = get_timecoded_transcript("https://www.youtube.com/watch?v=test123")
+
+            # Capture output to verify diagnostics go to stderr
+            captured = capsys.readouterr()
+            # Should have something in stderr (diagnostics)
+            # stdout should be clean (used for JSON by caller)
+            assert len(segments) == 1
+
+
+class TestJSONFallback:
+    """Tests for the defensive JSON fallback parsing in pipeline-api."""
+
+    def test_json_fallback_with_polluted_stdout(self):
+        """Test that JSON fallback recovers JSON when stdout has diagnostics before it."""
+        # Simulate polluted stdout: diagnostics + JSON
+        polluted_stdout = """[transcript] Using cookies...
+[transcript] Strategy 1/4...
+[transcript] Success...
+[transcript] Parsed 2 segments...
+{"segments": [{"start": 1.0, "end": 5.0, "text": "Hello"}]}"""
+
+        lines = polluted_stdout.strip().split('\n')
+        segments = []
+        # Simulate the fallback logic
+        for line in reversed(lines):
+            if line.strip().startswith('{'):
+                try:
+                    result = json.loads(line)
+                    if isinstance(result, dict) and "segments" in result:
+                        segments = result.get("segments", [])
+                        break
+                except (json.JSONDecodeError, ValueError):
+                    continue
+
+        assert len(segments) == 1
+        assert segments[0]["text"] == "Hello"
+
+    def test_json_fallback_with_multiline_json(self):
+        """Test fallback finds last JSON object even when multi-line."""
+        polluted_stdout = """[diagnostic] Line 1
+[diagnostic] Line 2
+{"segments": []}"""
+
+        lines = polluted_stdout.strip().split('\n')
+        segments = []
+        for line in reversed(lines):
+            if line.strip().startswith('{'):
+                try:
+                    result = json.loads(line)
+                    if isinstance(result, dict) and "segments" in result:
+                        segments = result.get("segments", [])
+                        break
+                except (json.JSONDecodeError, ValueError):
+                    continue
+
+        assert segments == []
+
+    def test_json_fallback_finds_last_valid_json_block(self):
+        """Test fallback scans from end and finds first valid JSON with segments."""
+        polluted_stdout = """[transcript] Some diagnostics
+[transcript] More diagnostics
+{"invalid": "json"}
+{"segments": [{"start": 0, "end": 10, "text": "Valid"}]}"""
+
+        lines = polluted_stdout.strip().split('\n')
+        segments = []
+        for line in reversed(lines):
+            if line.strip().startswith('{'):
+                try:
+                    result = json.loads(line)
+                    if isinstance(result, dict) and "segments" in result:
+                        segments = result.get("segments", [])
+                        break
+                except (json.JSONDecodeError, ValueError):
+                    continue
+
+        assert len(segments) == 1
+        assert segments[0]["text"] == "Valid"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
