@@ -1,11 +1,17 @@
 import sys
 from unittest import mock
 import pytest
+import shutil
 
 from yt_pipeline import transcribe_with_whisper, get_transcript_or_fallback
+import yt_pipeline
 
 
 class TestTranscribeWithWhisper:
+    def setup_method(self):
+        """Reset the whisper model cache before each test."""
+        yt_pipeline._whisper_model = None
+
     def test_maps_whisper_segments_to_shape(self):
         fake_model = mock.MagicMock()
         fake_model.transcribe.return_value = {
@@ -28,6 +34,16 @@ class TestTranscribeWithWhisper:
     def test_returns_empty_on_exception(self):
         fake_whisper = mock.MagicMock()
         fake_whisper.load_model.side_effect = RuntimeError("model load failed")
+        with mock.patch.dict(sys.modules, {"whisper": fake_whisper}):
+            segments = transcribe_with_whisper("/tmp/audio.mp3")
+        assert segments == []
+
+    def test_returns_empty_on_transcribe_failure(self):
+        """Fix 3: Test uncovered transcribe() failure path."""
+        fake_model = mock.MagicMock()
+        fake_model.transcribe.side_effect = RuntimeError("decode error")
+        fake_whisper = mock.MagicMock()
+        fake_whisper.load_model.return_value = fake_model
         with mock.patch.dict(sys.modules, {"whisper": fake_whisper}):
             segments = transcribe_with_whisper("/tmp/audio.mp3")
         assert segments == []
@@ -63,13 +79,30 @@ class TestGetTranscriptOrFallback:
         assert out == []
         tw.assert_not_called()
 
+    def test_cleanup_on_download_failure(self):
+        """Fix 4: Verify temp-dir cleanup even when download_audio_only raises."""
+        with mock.patch("yt_pipeline.get_timecoded_transcript", return_value=[]), \
+             mock.patch("yt_pipeline.download_audio_only", side_effect=Exception("dl failed")), \
+             mock.patch("yt_pipeline.transcribe_with_whisper") as tw, \
+             mock.patch("shutil.rmtree") as mock_rmtree:
+            out = get_transcript_or_fallback("https://tiktok.com/v")
+        assert out == []
+        # Verify rmtree was called in the finally block
+        assert mock_rmtree.called
+
 
 class TestTranscriptCliChokepoint:
     def test_cli_transcript_branch_calls_orchestrator(self):
-        """The --transcript CLI branch must route through get_transcript_or_fallback."""
-        import yt_pipeline
-        import inspect
-        src = inspect.getsource(yt_pipeline)
-        marker = src.split('"--transcript"')[1].split("elif")[0]
-        assert "get_transcript_or_fallback(url)" in marker
-        assert "segments = get_timecoded_transcript(url)" not in marker
+        """Fix 2: The --transcript CLI branch must route through get_transcript_or_fallback."""
+        test_url = "https://www.youtube.com/watch?v=test123"
+        with mock.patch("yt_pipeline.get_transcript_or_fallback", return_value=[]) as mock_get_trans, \
+             mock.patch("sys.argv", ["yt_pipeline.py", "--transcript", test_url]):
+            import yt_pipeline
+            # Call main() directly
+            try:
+                yt_pipeline.main()
+            except SystemExit:
+                # main() may call sys.exit, which is OK
+                pass
+        # Verify get_transcript_or_fallback was called with the URL
+        mock_get_trans.assert_called_once_with(test_url)

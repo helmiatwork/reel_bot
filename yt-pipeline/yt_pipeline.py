@@ -45,6 +45,24 @@ OUTPUT_DIR = Path("/output")
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 RUN_ID = os.getenv("RUN_ID", "")
 
+# ── Whisper model singleton ────────────────────────────────────
+# Caches the loaded Whisper model per-process to avoid expensive reloads.
+_whisper_model = None
+
+def _get_whisper_model():
+    """Lazy-load and cache the Whisper 'base' model. Returns None if unavailable."""
+    global _whisper_model
+    if _whisper_model is None:
+        try:
+            import whisper
+            _whisper_model = whisper.load_model("base")
+        except Exception:
+            # If whisper is not available or model fails to load, cache the failure
+            # and return None so transcribe_with_whisper can gracefully handle it.
+            _whisper_model = False
+    # Return the model, or None if loading failed (represented by False in cache)
+    return _whisper_model if _whisper_model is not False else None
+
 
 def _db():
     """psycopg connection or None — DB is optional; we never crash the pipeline over it."""
@@ -525,15 +543,17 @@ def get_timecoded_transcript(youtube_url: str) -> list:
 
 def transcribe_with_whisper(audio_path: str) -> list:
     """
-    Transcribe an audio file locally with the preloaded Whisper 'base' model.
+    Transcribe an audio file locally with the cached Whisper 'base' model.
     Returns timecoded segments in the same shape as get_timecoded_transcript:
       [{"start": float (seconds), "end": float (seconds), "text": str}, ...]
     Returns [] gracefully on any failure (whisper missing, bad audio, etc.).
     """
     print(f"\n[Transcript] Whisper fallback transcribing: {audio_path}", file=sys.stderr)
     try:
-        import whisper  # lazy import — heavy, only needed on fallback
-        model = whisper.load_model("base")
+        model = _get_whisper_model()
+        if model is None:
+            print(f"  [whisper] Model unavailable", file=sys.stderr)
+            return []
         result = model.transcribe(audio_path)
         segments = []
         for seg in result.get("segments", []):
@@ -1522,9 +1542,8 @@ Generated: {output['pipeline_run']}
 # Entry point
 # ══════════════════════════════════════════════════════════════════
 
-if __name__ == "__main__":
-    import sys
-
+def main():
+    """CLI entry point for yt_pipeline.py."""
     if len(sys.argv) < 2:
         print("Usage: python yt_pipeline.py <youtube_url> [topic]")
         print("       python yt_pipeline.py --discover <niche> [topic]")
@@ -1594,3 +1613,7 @@ if __name__ == "__main__":
         url   = sys.argv[1]
         topic = sys.argv[2] if len(sys.argv) > 2 else ""
         result = run_pipeline(url, topic)
+
+
+if __name__ == "__main__":
+    main()

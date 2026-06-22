@@ -349,3 +349,43 @@ class TestDashClipFinds:
         # Verify the limit passed to execute was 200, not 500
         call_args = mock_cursor.execute.call_args
         assert call_args[0][1][-1] == 200  # Last parameter should be limit=200
+
+
+# ── Transcript subprocess timeout tests ─────────────────────────
+
+class TestTranscriptTimeout:
+    def test_get_transcript_uses_600s_timeout(self):
+        """Fix 5: Verify subprocess timeout is 600s for Whisper fallback latency."""
+        import main as m
+        from main import TranscriptRequest
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout='{"segments": []}',
+            )
+            try:
+                m.get_transcript(TranscriptRequest(youtube_url="https://www.youtube.com/watch?v=test"))
+            except Exception:
+                pass
+
+        # Verify subprocess.run was called with timeout=600
+        assert mock_run.called
+        call_kwargs = mock_run.call_args[1]
+        assert call_kwargs.get("timeout") == 600
+
+    def test_fetch_transcript_uses_600s_timeout(self):
+        """Verify _fetch_transcript subprocess timeout is 600s."""
+        import main as m
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout='{"segments": []}',
+            )
+            m._fetch_transcript("https://www.youtube.com/watch?v=test")
+
+        # Verify subprocess.run was called with timeout=600
+        assert mock_run.called
+        call_kwargs = mock_run.call_args[1]
+        assert call_kwargs.get("timeout") == 600
