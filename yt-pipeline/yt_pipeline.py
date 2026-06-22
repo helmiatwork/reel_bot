@@ -523,6 +523,59 @@ def get_timecoded_transcript(youtube_url: str) -> list:
             pass
 
 
+def transcribe_with_whisper(audio_path: str) -> list:
+    """
+    Transcribe an audio file locally with the preloaded Whisper 'base' model.
+    Returns timecoded segments in the same shape as get_timecoded_transcript:
+      [{"start": float (seconds), "end": float (seconds), "text": str}, ...]
+    Returns [] gracefully on any failure (whisper missing, bad audio, etc.).
+    """
+    print(f"\n[Transcript] Whisper fallback transcribing: {audio_path}", file=sys.stderr)
+    try:
+        import whisper  # lazy import — heavy, only needed on fallback
+        model = whisper.load_model("base")
+        result = model.transcribe(audio_path)
+        segments = []
+        for seg in result.get("segments", []):
+            segments.append({
+                "start": float(seg.get("start", 0.0)),
+                "end": float(seg.get("end", 0.0)),
+                "text": str(seg.get("text", "")).strip(),
+            })
+        print(f"  [whisper] Transcribed {len(segments)} segments", file=sys.stderr)
+        return segments
+    except Exception as e:
+        print(f"  [whisper] Transcription failed: {e}", file=sys.stderr)
+        return []
+
+
+def get_transcript_or_fallback(youtube_url: str) -> list:
+    """
+    Fetch a timecoded transcript, falling back to local Whisper transcription
+    when no auto-subtitles are available (non-YouTube sources, or YouTube videos
+    without subtitles). Same return shape as get_timecoded_transcript.
+    """
+    segments = get_timecoded_transcript(youtube_url)
+    if segments:
+        return segments
+
+    print(f"\n[Transcript] No subtitles — falling back to Whisper for: {youtube_url}", file=sys.stderr)
+    import tempfile
+    import shutil
+    tmp_dir = tempfile.mkdtemp(prefix="whisper_")
+    try:
+        audio_path = download_audio_only(youtube_url, tmp_dir)
+        return transcribe_with_whisper(audio_path)
+    except Exception as e:
+        print(f"  [transcript] Whisper fallback failed: {e}", file=sys.stderr)
+        return []
+    finally:
+        try:
+            shutil.rmtree(tmp_dir)
+        except Exception:
+            pass
+
+
 # ══════════════════════════════════════════════════════════════════
 # Frame extraction at explicit timestamps
 # ══════════════════════════════════════════════════════════════════
@@ -1492,7 +1545,7 @@ if __name__ == "__main__":
         if not url:
             print("Usage: python yt_pipeline.py --transcript <youtube_url>")
             sys.exit(1)
-        segments = get_timecoded_transcript(url)
+        segments = get_transcript_or_fallback(url)
         print(json.dumps({"segments": segments}, indent=2, ensure_ascii=False))
     elif sys.argv[1] == "--frames":
         # Extract frames at specific timestamps and describe them
