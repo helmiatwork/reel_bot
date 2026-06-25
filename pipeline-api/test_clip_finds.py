@@ -364,10 +364,7 @@ class TestTranscriptTimeout:
                 returncode=0,
                 stdout='{"segments": []}',
             )
-            try:
-                m.get_transcript(TranscriptRequest(youtube_url="https://www.youtube.com/watch?v=test"))
-            except Exception:
-                pass
+            m.get_transcript(TranscriptRequest(youtube_url="https://www.youtube.com/watch?v=test"))
 
         # Verify subprocess.run was called with timeout=600
         assert mock_run.called
@@ -384,6 +381,48 @@ class TestTranscriptTimeout:
                 stdout='{"segments": []}',
             )
             m._fetch_transcript("https://www.youtube.com/watch?v=test")
+
+        # Verify subprocess.run was called with timeout=600
+        assert mock_run.called
+        call_kwargs = mock_run.call_args[1]
+        assert call_kwargs.get("timeout") == 600
+
+    def test_youtube_search_uses_600s_timeout(self):
+        """Verify youtube_search subprocess timeout is 600s."""
+        import main as m
+        from fastapi.testclient import TestClient
+
+        tc = TestClient(m.app)
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout='[{"id": "test_id"}]',
+            )
+            # youtube_search falls back to yt-dlp when v3 is not available
+            with patch("main.v3_search", side_effect=Exception("v3 not configured")):
+                tc.get("/youtube/search?q=test&max_results=10")
+
+        # Verify subprocess.run was called with timeout=600
+        assert mock_run.called
+        call_kwargs = mock_run.call_args[1]
+        assert call_kwargs.get("timeout") == 600
+
+    def test_youtube_video_uses_600s_timeout(self):
+        """Verify youtube_video subprocess timeout is 600s."""
+        import main as m
+        from fastapi.testclient import TestClient
+
+        tc = TestClient(m.app)
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout='{"id": "test_id", "title": "test"}',
+            )
+            # youtube_video falls back to yt-dlp when v3 is not available
+            with patch("main.v3_video_details", side_effect=Exception("v3 not configured")):
+                tc.get("/youtube/video/test_id")
 
         # Verify subprocess.run was called with timeout=600
         assert mock_run.called

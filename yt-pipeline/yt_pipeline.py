@@ -56,10 +56,12 @@ def _get_whisper_model():
         try:
             import whisper
             _whisper_model = whisper.load_model("base")
-        except Exception:
-            # If whisper is not available or model fails to load, cache the failure
-            # and return None so transcribe_with_whisper can gracefully handle it.
+        except ImportError:
+            # Cache ImportError permanently — the package won't change in-process
             _whisper_model = False
+        except Exception:
+            # For other transient failures, return None without caching so retry is possible
+            return None
     # Return the model, or None if loading failed (represented by False in cache)
     return _whisper_model if _whisper_model is not False else None
 
@@ -592,8 +594,8 @@ def get_transcript_or_fallback(youtube_url: str) -> list:
     finally:
         try:
             shutil.rmtree(tmp_dir)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"  [transcript] Failed to clean up temp dir {tmp_dir}: {e}", file=sys.stderr)
 
 
 # ══════════════════════════════════════════════════════════════════
