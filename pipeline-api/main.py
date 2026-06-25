@@ -79,7 +79,7 @@ def _validate_source_url(url: str) -> str:
             ip = ipaddress.ip_address(ip_str)
 
             # Check if it's an IPv4-mapped IPv6 address (::ffff:x.x.x.x)
-            if ip.ipv4_mapped is not None:
+            if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
                 ip = ip.ipv4_mapped
 
             # Reject if the address is in any forbidden category
