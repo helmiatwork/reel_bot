@@ -45,6 +45,26 @@ OUTPUT_DIR = Path("/output")
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 RUN_ID = os.getenv("RUN_ID", "")
 
+# ── Whisper model singleton ────────────────────────────────────
+# Caches the loaded Whisper model per-process to avoid expensive reloads.
+_whisper_model = None
+
+def _get_whisper_model():
+    """Lazy-load and cache the Whisper 'base' model. Returns None if unavailable."""
+    global _whisper_model
+    if _whisper_model is None:
+        try:
+            import whisper
+            _whisper_model = whisper.load_model("base")
+        except ImportError:
+            # Cache ImportError permanently — the package won't change in-process
+            _whisper_model = False
+        except Exception:
+            # For other transient failures, return None without caching so retry is possible
+            return None
+    # Return the model, or None if loading failed (represented by False in cache)
+    return _whisper_model if _whisper_model is not False else None
+
 
 def _db():
     """psycopg connection or None — DB is optional; we never crash the pipeline over it."""
@@ -521,6 +541,61 @@ def get_timecoded_transcript(youtube_url: str) -> list:
             shutil.rmtree(tmp_dir)
         except Exception:
             pass
+
+
+def transcribe_with_whisper(audio_path: str) -> list:
+    """
+    Transcribe an audio file locally with the cached Whisper 'base' model.
+    Returns timecoded segments in the same shape as get_timecoded_transcript:
+      [{"start": float (seconds), "end": float (seconds), "text": str}, ...]
+    Returns [] gracefully on any failure (whisper missing, bad audio, etc.).
+    """
+    print(f"\n[Transcript] Whisper fallback transcribing: {audio_path}", file=sys.stderr)
+    try:
+        model = _get_whisper_model()
+        if model is None:
+            print(f"  [whisper] Model unavailable", file=sys.stderr)
+            return []
+        result = model.transcribe(audio_path)
+        segments = []
+        for seg in result.get("segments", []):
+            segments.append({
+                "start": float(seg.get("start", 0.0)),
+                "end": float(seg.get("end", 0.0)),
+                "text": str(seg.get("text", "")).strip(),
+            })
+        print(f"  [whisper] Transcribed {len(segments)} segments", file=sys.stderr)
+        return segments
+    except Exception as e:
+        print(f"  [whisper] Transcription failed: {e}", file=sys.stderr)
+        return []
+
+
+def get_transcript_or_fallback(youtube_url: str) -> list:
+    """
+    Fetch a timecoded transcript, falling back to local Whisper transcription
+    when no auto-subtitles are available (non-YouTube sources, or YouTube videos
+    without subtitles). Same return shape as get_timecoded_transcript.
+    """
+    segments = get_timecoded_transcript(youtube_url)
+    if segments:
+        return segments
+
+    print(f"\n[Transcript] No subtitles — falling back to Whisper for: {youtube_url}", file=sys.stderr)
+    import tempfile
+    import shutil
+    tmp_dir = tempfile.mkdtemp(prefix="whisper_")
+    try:
+        audio_path = download_audio_only(youtube_url, tmp_dir)
+        return transcribe_with_whisper(audio_path)
+    except Exception as e:
+        print(f"  [transcript] Whisper fallback failed: {e}", file=sys.stderr)
+        return []
+    finally:
+        try:
+            shutil.rmtree(tmp_dir)
+        except Exception as e:
+            print(f"  [transcript] Failed to clean up temp dir {tmp_dir}: {e}", file=sys.stderr)
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -1469,9 +1544,8 @@ Generated: {output['pipeline_run']}
 # Entry point
 # ══════════════════════════════════════════════════════════════════
 
-if __name__ == "__main__":
-    import sys
-
+def main():
+    """CLI entry point for yt_pipeline.py."""
     if len(sys.argv) < 2:
         print("Usage: python yt_pipeline.py <youtube_url> [topic]")
         print("       python yt_pipeline.py --discover <niche> [topic]")
@@ -1492,7 +1566,7 @@ if __name__ == "__main__":
         if not url:
             print("Usage: python yt_pipeline.py --transcript <youtube_url>")
             sys.exit(1)
-        segments = get_timecoded_transcript(url)
+        segments = get_transcript_or_fallback(url)
         print(json.dumps({"segments": segments}, indent=2, ensure_ascii=False))
     elif sys.argv[1] == "--frames":
         # Extract frames at specific timestamps and describe them
@@ -1541,3 +1615,7 @@ if __name__ == "__main__":
         url   = sys.argv[1]
         topic = sys.argv[2] if len(sys.argv) > 2 else ""
         result = run_pipeline(url, topic)
+
+
+if __name__ == "__main__":
+    main()
