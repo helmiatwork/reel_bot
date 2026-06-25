@@ -1409,7 +1409,7 @@ def youtube_search(q: str, max_results: int = 10):
         import subprocess
         proc = subprocess.run(
             ["python", "/app/yt_pipeline/yt_pipeline.py", "--v3-search", q, str(max_results)],
-            capture_output=True, text=True, timeout=600)
+            capture_output=True, text=True, timeout=60)
         if proc.returncode == 0:
             try:
                 result = json.loads(proc.stdout)
@@ -1454,7 +1454,7 @@ def youtube_video(video_id: str):
         video_url = f"https://www.youtube.com/watch?v={video_id}"
         proc = subprocess.run(
             ["python", "/app/yt_pipeline/yt_pipeline.py", "--v3-video", video_url],
-            capture_output=True, text=True, timeout=600)
+            capture_output=True, text=True, timeout=60)
         if proc.returncode == 0:
             try:
                 result = json.loads(proc.stdout)

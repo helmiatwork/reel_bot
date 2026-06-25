@@ -387,8 +387,8 @@ class TestTranscriptTimeout:
         call_kwargs = mock_run.call_args[1]
         assert call_kwargs.get("timeout") == 600
 
-    def test_youtube_search_uses_600s_timeout(self):
-        """Verify youtube_search subprocess timeout is 600s."""
+    def test_youtube_search_uses_60s_timeout(self):
+        """Verify youtube_search subprocess timeout is 60s (yt-dlp metadata, no transcription)."""
         import main as m
         from fastapi.testclient import TestClient
 
@@ -403,13 +403,13 @@ class TestTranscriptTimeout:
             with patch("main.v3_search", side_effect=Exception("v3 not configured")):
                 tc.get("/youtube/search?q=test&max_results=10")
 
-        # Verify subprocess.run was called with timeout=600
+        # Verify subprocess.run was called with timeout=60
         assert mock_run.called
         call_kwargs = mock_run.call_args[1]
-        assert call_kwargs.get("timeout") == 600
+        assert call_kwargs.get("timeout") == 60
 
-    def test_youtube_video_uses_600s_timeout(self):
-        """Verify youtube_video subprocess timeout is 600s."""
+    def test_youtube_video_uses_60s_timeout(self):
+        """Verify youtube_video subprocess timeout is 60s (yt-dlp metadata, no transcription)."""
         import main as m
         from fastapi.testclient import TestClient
 
@@ -424,7 +424,7 @@ class TestTranscriptTimeout:
             with patch("main.v3_video_details", side_effect=Exception("v3 not configured")):
                 tc.get("/youtube/video/test_id")
 
-        # Verify subprocess.run was called with timeout=600
+        # Verify subprocess.run was called with timeout=60
         assert mock_run.called
         call_kwargs = mock_run.call_args[1]
-        assert call_kwargs.get("timeout") == 600
+        assert call_kwargs.get("timeout") == 60
