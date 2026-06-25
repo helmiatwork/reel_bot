@@ -578,3 +578,142 @@ class TestValidateSourceUrl:
             with pytest.raises(HTTPException) as exc_info:
                 m._validate_source_url("https://169.254.1.1")
             assert exc_info.value.status_code == 400
+
+
+# ── get_frames refactoring tests ──────────────────────────────────────────────
+
+class TestGetFramesHardening:
+    """Test get_frames security hardening: direct yt-dlp call (no python -c), temp cleanup."""
+
+    def test_get_frames_yt_dlp_direct_call_no_python_c(self):
+        """Verify yt-dlp is called directly (discrete argv), not via python -c indirection."""
+        import main as m
+        from pathlib import Path
+        import tempfile
+
+        # Mock socket.getaddrinfo to bypass SSRF validation
+        with patch("socket.getaddrinfo") as mock_getaddrinfo:
+            mock_getaddrinfo.return_value = [
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("142.250.185.46", 443))  # youtube.com
+            ]
+
+            # Mock subprocess.run for both yt-dlp and yt_pipeline calls
+            with patch("subprocess.run") as mock_run:
+                # First call (yt-dlp): simulate successful download
+                mock_yt_dlp = MagicMock()
+                mock_yt_dlp.returncode = 0
+
+                # Second call (yt_pipeline): return valid JSON frames response
+                mock_pipeline = MagicMock()
+                mock_pipeline.returncode = 0
+                mock_pipeline.stdout = json.dumps({"frames": [{"time": 1.0, "visual_description": "test"}]})
+
+                mock_run.side_effect = [mock_yt_dlp, mock_pipeline]
+
+                # Mock Path.glob to return a fake video file
+                with patch("pathlib.Path.glob") as mock_glob:
+                    mock_glob.return_value = [Path("/tmp/frames_xyz/source_video.mp4")]
+
+                    # Mock _json helper
+                    with patch.object(m, "_json", side_effect=lambda x: {"frames": [{"time": 1.0, "visual_description": "test"}]}):
+
+                        # Create a test client and call the endpoint
+                        from fastapi.testclient import TestClient
+                        client = TestClient(m.app)
+
+                        r = client.post("/clips/frames", json={
+                            "youtube_url": "https://www.youtube.com/watch?v=test123",
+                            "timestamps": [1.0]
+                        })
+
+                # Verify yt-dlp was called with direct argv (not python -c)
+                assert mock_run.call_count == 2, f"Expected 2 subprocess calls, got {mock_run.call_count}"
+                yt_dlp_call = mock_run.call_args_list[0]
+                yt_dlp_argv = yt_dlp_call[0][0]
+
+                # Assert the first element is "yt-dlp", NOT "python"
+                assert yt_dlp_argv[0] == "yt-dlp", f"Expected first arg to be 'yt-dlp', got '{yt_dlp_argv[0]}'"
+
+                # Assert URL is a discrete list element, NOT inside a "-c" flag
+                assert "-c" not in yt_dlp_argv, f"Found '-c' flag in yt-dlp call (python -c indirection detected): {yt_dlp_argv}"
+
+                # Assert the YouTube URL appears as a bare element in argv (last element, typically)
+                assert "https://www.youtube.com/watch?v=test123" in yt_dlp_argv, \
+                    f"YouTube URL not found in discrete argv element: {yt_dlp_argv}"
+
+    def test_get_frames_temp_dir_cleanup_on_success(self):
+        """Verify temp directory is cleaned up on successful extraction."""
+        import main as m
+        from pathlib import Path
+
+        with patch("socket.getaddrinfo") as mock_getaddrinfo:
+            mock_getaddrinfo.return_value = [
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("142.250.185.46", 443))
+            ]
+
+            # Track whether shutil.rmtree was called
+            with patch("shutil.rmtree") as mock_rmtree:
+                with patch("subprocess.run") as mock_run:
+                    mock_yt_dlp = MagicMock()
+                    mock_yt_dlp.returncode = 0
+
+                    mock_pipeline = MagicMock()
+                    mock_pipeline.returncode = 0
+                    mock_pipeline.stdout = json.dumps({"frames": [{"time": 1.0, "visual_description": "test"}]})
+
+                    mock_run.side_effect = [mock_yt_dlp, mock_pipeline]
+
+                    with patch("pathlib.Path.glob") as mock_glob:
+                        mock_glob.return_value = [Path("/tmp/frames_xyz/source_video.mp4")]
+
+                        with patch.object(m, "_json", side_effect=lambda x: x):
+                            from fastapi.testclient import TestClient
+                            client = TestClient(m.app)
+
+                            r = client.post("/clips/frames", json={
+                                "youtube_url": "https://www.youtube.com/watch?v=test123",
+                                "timestamps": [1.0]
+                            })
+
+                        # Verify shutil.rmtree was called exactly once (in finally block)
+                        assert mock_rmtree.call_count == 1, \
+                            f"Expected shutil.rmtree called once, got {mock_rmtree.call_count}"
+
+                        # Verify it was called with ignore_errors=True
+                        call_args = mock_rmtree.call_args
+                        assert call_args[1].get("ignore_errors") is True, \
+                            f"Expected ignore_errors=True, got {call_args}"
+
+    def test_get_frames_temp_dir_cleanup_on_error(self):
+        """Verify temp directory is cleaned up even when yt-dlp fails."""
+        import main as m
+
+        with patch("socket.getaddrinfo") as mock_getaddrinfo:
+            mock_getaddrinfo.return_value = [
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("142.250.185.46", 443))
+            ]
+
+            with patch("shutil.rmtree") as mock_rmtree:
+                with patch("subprocess.run") as mock_run:
+                    # yt-dlp fails
+                    mock_yt_dlp = MagicMock()
+                    mock_yt_dlp.returncode = 1
+                    mock_yt_dlp.stderr = "network error"
+
+                    mock_run.return_value = mock_yt_dlp
+
+                    from fastapi.testclient import TestClient
+                    import main
+                    client = TestClient(main.app)
+
+                    r = client.post("/clips/frames", json={
+                        "youtube_url": "https://www.youtube.com/watch?v=test123",
+                        "timestamps": [1.0]
+                    })
+
+                    # Endpoint should return 500
+                    assert r.status_code == 500
+
+                    # Temp dir cleanup must still happen
+                    assert mock_rmtree.call_count == 1, \
+                        f"Expected shutil.rmtree called in finally block on error, got {mock_rmtree.call_count}"

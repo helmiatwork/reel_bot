@@ -4,6 +4,9 @@
 import os, sys, json
 import socket
 import ipaddress
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 from urllib.parse import urlparse
 from fastapi import FastAPI, HTTPException, BackgroundTasks
@@ -1197,7 +1200,6 @@ def get_frames(req: FramesRequest):
     Body: {youtube_url, timestamps: [float, ...]} (max 12 timestamps)
     Returns: {frames: [{time: float, visual_description: str}, ...]}
     Frame extraction is synchronous; may take 30-90s depending on video size + vision calls."""
-    import subprocess
 
     _validate_source_url(req.youtube_url)
 
@@ -1207,47 +1209,35 @@ def get_frames(req: FramesRequest):
     if len(req.timestamps) > 12:
         raise HTTPException(status_code=400, detail="max 12 timestamps per request")
 
+    tmp_dir = tempfile.mkdtemp(prefix="frames_")
     try:
         # First download the video
         print(f"[frames] Downloading video from {req.youtube_url}")
-        import tempfile
-        tmp_dir = tempfile.mkdtemp(prefix="frames_")
 
+        output_template = f"{tmp_dir}/source_video.%(ext)s"
         proc = subprocess.run(
-            ["python", "-c", f"""
-import subprocess
-from pathlib import Path
-
-url = {repr(req.youtube_url)}
-output_path = {repr(tmp_dir)}
-output_template = f"{{output_path}}/source_video.%(ext)s"
-
-result = subprocess.run([
-    "yt-dlp",
-    "-f", "bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/best[ext=mp4][height<=480]/best[height<=480]/best",
-    "--merge-output-format", "mp4",
-    "--retries", "5", "--fragment-retries", "5",
-    "--socket-timeout", "30",
-    "-o", output_template,
-    "--no-playlist",
-    url
-], capture_output=False)
-
-if result.returncode == 0:
-    for f in Path(output_path).glob("source_video.*"):
-        print(str(f))
-        break
-"""],
-            capture_output=True, text=True, timeout=300)
-
+            [
+                "yt-dlp",
+                "-f", "bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/best[ext=mp4][height<=480]/best[height<=480]/best",
+                "--merge-output-format", "mp4",
+                "--retries", "5", "--fragment-retries", "5",
+                "--socket-timeout", "30",
+                "--max-filesize", "500M",
+                "-o", output_template,
+                "--no-playlist",
+                req.youtube_url,
+            ],
+            capture_output=True, text=True, timeout=300,
+        )
         if proc.returncode != 0:
-            print(f"[frames] Video download stderr: {proc.stderr}")
+            print(f"[frames] Video download stderr: {proc.stderr}", file=sys.stderr)
             raise Exception("video download failed")
 
-        video_path = proc.stdout.strip().split('\n')[-1]
-        if not video_path or not Path(video_path).exists():
+        video_files = list(Path(tmp_dir).glob("source_video.*"))
+        if not video_files:
             raise Exception("Downloaded video file not found")
 
+        video_path = str(video_files[0])
         print(f"[frames] Video downloaded to {video_path}")
 
         # Now extract frames at timestamps via yt_pipeline CLI
@@ -1269,6 +1259,8 @@ if result.returncode == 0:
     except Exception as e:
         print(f"  [frames] endpoint error: {e}")
         raise HTTPException(status_code=500, detail="Frame extraction failed")
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
 # ── Research Pipeline endpoints ──────────────────────────────
