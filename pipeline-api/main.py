@@ -96,7 +96,7 @@ def _validate_source_url(url: str) -> str:
             raise
         except ValueError:
             # If IP parsing fails, reject
-            raise HTTPException(status_code=400, detail="SSRF guard: invalid IP address")
+            raise HTTPException(status_code=400, detail="SSRF guard: invalid IP address") from None
 
     return url
 

@@ -439,9 +439,12 @@ class TestValidateSourceUrl:
     def test_accepts_youtube_https_url(self):
         """YouTube URLs should be accepted."""
         import main as m
-        # Should not raise
-        result = m._validate_source_url("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-        assert result == "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        with patch("socket.getaddrinfo") as mock_getaddrinfo:
+            mock_getaddrinfo.return_value = [
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("1.2.3.4", 443))
+            ]
+            result = m._validate_source_url("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+            assert result == "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
     def test_accepts_tiktok_https_url(self):
         """TikTok URLs should be accepted (non-YouTube sources)."""

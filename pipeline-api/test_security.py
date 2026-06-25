@@ -154,10 +154,10 @@ class TestSSRFValidator:
             def mock_ipv6_loopback(hostname, port, family, socktype):
                 return [(socket.AF_INET6, socket.SOCK_STREAM, 6, '', ('::1', port or 443))]
             mock_ga.side_effect = mock_ipv6_loopback
+            # Use a non-special hostname so DNS resolution (mocked to ::1) is exercised
             with pytest.raises(HTTPException) as exc_info:
-                m._validate_source_url("http://localhost/")
-            # Note: localhost is rejected before DNS, but if somehow it reached DNS...
-            # Actually localhost is special-cased, so this test focuses on the IPv6 path if we had a domain resolving to ::1
+                m._validate_source_url("http://ipv6-host.example.com/")
+            assert exc_info.value.status_code == 400
 
     def test_rejects_private_range_10_0_0_0(self):
         """Should reject 10.0.0.0/8 private range (SSRF)."""

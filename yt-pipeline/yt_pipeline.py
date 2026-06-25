@@ -260,7 +260,7 @@ def download_audio_only(youtube_url: str, output_path: str) -> str:
     Download audio only — much faster, used for transcription.
     Returns: path to mp3 file
     """
-    print(f"\n[Step 1c] Downloading audio for transcription...")
+    print(f"\n[Step 1c] Downloading audio for transcription...", file=sys.stderr)
 
     output_template = f"{output_path}/source_audio.%(ext)s"
 
@@ -278,7 +278,7 @@ def download_audio_only(youtube_url: str, output_path: str) -> str:
 
     audio_file = f"{output_path}/source_audio.mp3"
     if Path(audio_file).exists():
-        print(f"Audio saved: {audio_file}")
+        print(f"Audio saved: {audio_file}", file=sys.stderr)
         return audio_file
 
     raise Exception("Audio download failed")
