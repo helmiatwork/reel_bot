@@ -34,3 +34,6 @@ youtube_token.json
 # Claude analysis frame images (written at runtime; gitkeep preserves the dir)
 analyze-frames/*
 !analyze-frames/.gitkeep
+
+# One-time migration markers (scratch, do not commit)
+*.migrated
