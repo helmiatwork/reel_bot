@@ -2,6 +2,8 @@
 # FastAPI service exposing all pipeline gaps as REST endpoints
 
 import os, sys, json
+import socket
+import ipaddress
 from pathlib import Path
 from urllib.parse import urlparse
 from fastapi import FastAPI, HTTPException, BackgroundTasks
@@ -14,21 +16,59 @@ sys.path.insert(0, "/app")
 
 app = FastAPI(title="Content Pipeline API", version="1.0")
 
-# ── YouTube SSRF guard: allowlist known YouTube hosts ────────────────────────
-_YOUTUBE_HOSTS = {
-    "youtube.com", "www.youtube.com", "m.youtube.com",
-    "music.youtube.com", "youtu.be",
-}
+# ── SSRF guard: validate any URL to prevent server-side request forgery ────────
+def _validate_source_url(url: str) -> str:
+    """
+    Validate a source URL (YouTube, TikTok, Instagram, X, etc.) to prevent SSRF attacks.
 
-def _validate_youtube_url(url: str) -> str:
-    """Reject anything that isn't a real YouTube URL (SSRF guard — these endpoints
-    only ever fetch YouTube). Raises HTTPException(400) on failure; returns the url."""
+    Rules:
+    - Scheme must be http or https
+    - Hostname must resolve
+    - Resolved IP must NOT be in private/loopback/reserved ranges:
+      - 127.0.0.0/8, ::1 (loopback)
+      - 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 (private)
+      - 169.254.0.0/16 (link-local)
+      - 224.0.0.0/4 (multicast)
+
+    Raises HTTPException(400) on any rejection; returns the url on success.
+    """
     parsed = urlparse(url)
-    if parsed.scheme not in ("http", "https") or not parsed.netloc:
-        raise HTTPException(status_code=400, detail="youtube_url must be a valid YouTube URL")
-    host = (parsed.hostname or "").lower().rstrip(".")
-    if host not in _YOUTUBE_HOSTS:
-        raise HTTPException(status_code=400, detail="youtube_url must be a valid YouTube URL")
+
+    # Check scheme and host presence
+    if parsed.scheme not in ("http", "https"):
+        raise HTTPException(status_code=400, detail="SSRF guard: scheme must be http or https")
+
+    if not parsed.hostname:
+        raise HTTPException(status_code=400, detail="SSRF guard: URL must have a hostname")
+
+    hostname = parsed.hostname.lower()
+
+    # Special case: reject localhost explicitly (never DNS-resolves)
+    if hostname in ("localhost", "localhost.localdomain"):
+        raise HTTPException(status_code=400, detail="SSRF guard: localhost is not allowed")
+
+    # Resolve hostname to IP(s) and check for private/reserved ranges
+    try:
+        addr_infos = socket.getaddrinfo(hostname, parsed.port or 443, socket.AF_UNSPEC, socket.SOCK_STREAM)
+    except socket.gaierror:
+        # If resolution fails, reject as potentially unroutable
+        raise HTTPException(status_code=400, detail="SSRF guard: hostname could not be resolved")
+
+    # Check the first returned IP address
+    if addr_infos:
+        _, _, _, _, sockaddr = addr_infos[0]
+        ip_str = sockaddr[0]
+        try:
+            ip = ipaddress.ip_address(ip_str)
+
+            # Reject reserved/private/loopback/link-local/multicast ranges
+            if (ip.is_loopback or ip.is_private or ip.is_reserved or
+                ip.is_link_local or ip.is_multicast):
+                raise HTTPException(status_code=400, detail="SSRF guard: target IP is in a reserved or private range")
+        except ValueError:
+            # If IP parsing fails, reject
+            raise HTTPException(status_code=400, detail="SSRF guard: invalid IP address")
+
     return url
 
 DASHBOARD_DIR = Path("/app/dashboard")
@@ -1091,7 +1131,7 @@ def get_transcript(req: TranscriptRequest):
     Returns empty segments [] gracefully if no subs available."""
     import subprocess
 
-    _validate_youtube_url(req.youtube_url)
+    _validate_source_url(req.youtube_url)
 
     try:
         # Call the yt_pipeline CLI to fetch transcript
@@ -1130,7 +1170,7 @@ def get_frames(req: FramesRequest):
     Frame extraction is synchronous; may take 30-90s depending on video size + vision calls."""
     import subprocess
 
-    _validate_youtube_url(req.youtube_url)
+    _validate_source_url(req.youtube_url)
 
     if not req.timestamps:
         raise HTTPException(status_code=400, detail="timestamps list cannot be empty")
@@ -1227,7 +1267,7 @@ def start_research(req: ResearchRequest, bg: BackgroundTasks):
     """Start yt-pipeline research job in background."""
     import uuid, subprocess
 
-    _validate_youtube_url(req.youtube_url)
+    _validate_source_url(req.youtube_url)
     if req.topic.startswith("-"):
         raise HTTPException(status_code=400, detail="Invalid topic")
 
@@ -1839,7 +1879,7 @@ def youtube_clip_this(req: ClipThisRequest, bg: BackgroundTasks):
 
     extracted_video_id = req.video_id
     if req.youtube_url:
-        _validate_youtube_url(req.youtube_url)
+        _validate_source_url(req.youtube_url)
         # Extract video_id from URL
         from urllib.parse import urlparse, parse_qs
         parsed = urlparse(req.youtube_url)
@@ -2085,7 +2125,7 @@ def analyze_claude(req: AnalyzeClaudeRequest):
     import uuid
     import re
 
-    _validate_youtube_url(req.youtube_url)
+    _validate_source_url(req.youtube_url)
 
     model = req.model or "claude-sonnet-4-6"
     intent = (req.intent or "").strip()
@@ -2213,7 +2253,7 @@ def find_clips_claude(req: ClipFindRequest):
     """
     import re
 
-    _validate_youtube_url(req.youtube_url)
+    _validate_source_url(req.youtube_url)
 
     # Clamp max_clips to 1-20
     max_clips = max(1, min(int(req.max_clips or 8), 20))

@@ -4,6 +4,7 @@
 
 import json
 import pytest
+import socket
 from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
 
@@ -428,3 +429,149 @@ class TestTranscriptTimeout:
         assert mock_run.called
         call_kwargs = mock_run.call_args[1]
         assert call_kwargs.get("timeout") == 60
+
+
+# ── SSRF & source URL validation tests (TDD: RED) ──────────────────────────────
+
+class TestValidateSourceUrl:
+    """Tests for _validate_source_url — accepts public URLs, rejects SSRF/private."""
+
+    def test_accepts_youtube_https_url(self):
+        """YouTube URLs should be accepted."""
+        import main as m
+        # Should not raise
+        result = m._validate_source_url("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        assert result == "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+
+    def test_accepts_tiktok_https_url(self):
+        """TikTok URLs should be accepted (non-YouTube sources)."""
+        import main as m
+        with patch("socket.getaddrinfo") as mock_getaddrinfo:
+            mock_getaddrinfo.return_value = [
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("1.2.3.4", 443))
+            ]
+            result = m._validate_source_url("https://www.tiktok.com/@creator/video/123")
+            assert result == "https://www.tiktok.com/@creator/video/123"
+
+    def test_accepts_instagram_https_url(self):
+        """Instagram URLs should be accepted."""
+        import main as m
+        with patch("socket.getaddrinfo") as mock_getaddrinfo:
+            mock_getaddrinfo.return_value = [
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("1.2.3.4", 443))
+            ]
+            result = m._validate_source_url("https://www.instagram.com/p/ABC123/")
+            assert result == "https://www.instagram.com/p/ABC123/"
+
+    def test_accepts_x_https_url(self):
+        """X (formerly Twitter) URLs should be accepted."""
+        import main as m
+        with patch("socket.getaddrinfo") as mock_getaddrinfo:
+            mock_getaddrinfo.return_value = [
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("1.2.3.4", 443))
+            ]
+            result = m._validate_source_url("https://x.com/user/status/123")
+            assert result == "https://x.com/user/status/123"
+
+    def test_rejects_localhost(self):
+        """Reject http://localhost — SSRF guard."""
+        import main as m
+        from fastapi import HTTPException
+        with pytest.raises(HTTPException) as exc_info:
+            m._validate_source_url("http://localhost:8000/video")
+        assert exc_info.value.status_code == 400
+        assert "SSRF" in exc_info.value.detail or "local" in exc_info.value.detail.lower()
+
+    def test_rejects_127_0_0_1(self):
+        """Reject http://127.0.0.1 — loopback."""
+        import main as m
+        from fastapi import HTTPException
+        with patch("socket.getaddrinfo") as mock_getaddrinfo:
+            mock_getaddrinfo.return_value = [
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", 80))
+            ]
+            with pytest.raises(HTTPException) as exc_info:
+                m._validate_source_url("http://127.0.0.1:8000")
+            assert exc_info.value.status_code == 400
+
+    def test_rejects_private_10_0_0_0(self):
+        """Reject 10.0.0.0/8 — private network."""
+        import main as m
+        from fastapi import HTTPException
+        with patch("socket.getaddrinfo") as mock_getaddrinfo:
+            mock_getaddrinfo.return_value = [
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("10.1.2.3", 443))
+            ]
+            with pytest.raises(HTTPException) as exc_info:
+                m._validate_source_url("https://internal.corp:8000")
+            assert exc_info.value.status_code == 400
+
+    def test_rejects_private_192_168(self):
+        """Reject 192.168.0.0/16 — private network."""
+        import main as m
+        from fastapi import HTTPException
+        with patch("socket.getaddrinfo") as mock_getaddrinfo:
+            mock_getaddrinfo.return_value = [
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("192.168.1.1", 443))
+            ]
+            with pytest.raises(HTTPException) as exc_info:
+                m._validate_source_url("https://router.local:8080")
+            assert exc_info.value.status_code == 400
+
+    def test_rejects_file_scheme(self):
+        """Reject file:// scheme."""
+        import main as m
+        from fastapi import HTTPException
+        with pytest.raises(HTTPException) as exc_info:
+            m._validate_source_url("file:///etc/passwd")
+        assert exc_info.value.status_code == 400
+
+    def test_rejects_ftp_scheme(self):
+        """Reject ftp:// scheme."""
+        import main as m
+        from fastapi import HTTPException
+        with pytest.raises(HTTPException) as exc_info:
+            m._validate_source_url("ftp://ftp.example.com/video.mp4")
+        assert exc_info.value.status_code == 400
+
+    def test_rejects_url_no_host(self):
+        """Reject URL with no hostname."""
+        import main as m
+        from fastapi import HTTPException
+        with pytest.raises(HTTPException) as exc_info:
+            m._validate_source_url("https://")
+        assert exc_info.value.status_code == 400
+
+    def test_rejects_dns_resolution_failure_as_invalid(self):
+        """If DNS resolution fails, reject as potentially local/unroutable."""
+        import main as m
+        from fastapi import HTTPException
+        with patch("socket.getaddrinfo") as mock_getaddrinfo:
+            mock_getaddrinfo.side_effect = socket.gaierror("Name or service not known")
+            with pytest.raises(HTTPException) as exc_info:
+                m._validate_source_url("https://nonexistent-domain-that-does-not-resolve-asdfghjkl.com")
+            assert exc_info.value.status_code == 400
+
+    def test_rejects_ipv6_loopback(self):
+        """Reject ::1 — IPv6 loopback."""
+        import main as m
+        from fastapi import HTTPException
+        with patch("socket.getaddrinfo") as mock_getaddrinfo:
+            mock_getaddrinfo.return_value = [
+                (socket.AF_INET6, socket.SOCK_STREAM, 6, "", ("::1", 443))
+            ]
+            with pytest.raises(HTTPException) as exc_info:
+                m._validate_source_url("https://[::1]:8000")
+            assert exc_info.value.status_code == 400
+
+    def test_rejects_link_local(self):
+        """Reject 169.254.x.x — link-local."""
+        import main as m
+        from fastapi import HTTPException
+        with patch("socket.getaddrinfo") as mock_getaddrinfo:
+            mock_getaddrinfo.return_value = [
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("169.254.1.1", 443))
+            ]
+            with pytest.raises(HTTPException) as exc_info:
+                m._validate_source_url("https://169.254.1.1")
+            assert exc_info.value.status_code == 400
