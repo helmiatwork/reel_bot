@@ -51,11 +51,13 @@ class TestTranscribeWithWhisper:
 
 class TestGetTranscriptOrFallback:
     def test_uses_subtitles_when_available_no_whisper(self):
+        """YouTube: when subtitles are available, use them and don't call Whisper."""
         subs = [{"start": 0.0, "end": 1.0, "text": "hi"}]
         with mock.patch("yt_pipeline.get_timecoded_transcript", return_value=subs) as g, \
              mock.patch("yt_pipeline.download_audio_only") as dl, \
              mock.patch("yt_pipeline.transcribe_with_whisper") as tw:
-            out = get_transcript_or_fallback("https://x.com/v")
+            # Use YouTube URL so subtitle fetch is attempted
+            out = get_transcript_or_fallback("https://www.youtube.com/watch?v=abc123")
         assert out == subs
         g.assert_called_once()
         dl.assert_not_called()
@@ -106,3 +108,74 @@ class TestTranscriptCliChokepoint:
                 pass
         # Verify get_transcript_or_fallback was called with the URL
         mock_get_trans.assert_called_once_with(test_url)
+
+
+class TestRouting:
+    """Tests for routing logic — YouTube URLs use subtitles, non-YouTube go straight to Whisper."""
+
+    def test_youtube_url_attempts_subtitles_first(self):
+        """YouTube URLs should call get_timecoded_transcript first."""
+        with mock.patch("yt_pipeline.get_timecoded_transcript", return_value=[]) as gtc, \
+             mock.patch("yt_pipeline.download_audio_only") as dl, \
+             mock.patch("yt_pipeline.transcribe_with_whisper", return_value=[]):
+            get_transcript_or_fallback("https://www.youtube.com/watch?v=abc123")
+        # YouTube should try subtitles first
+        gtc.assert_called_once_with("https://www.youtube.com/watch?v=abc123")
+
+    def test_youtu_be_url_attempts_subtitles_first(self):
+        """youtu.be URLs should call get_timecoded_transcript first."""
+        with mock.patch("yt_pipeline.get_timecoded_transcript", return_value=[]) as gtc, \
+             mock.patch("yt_pipeline.download_audio_only") as dl, \
+             mock.patch("yt_pipeline.transcribe_with_whisper", return_value=[]):
+            get_transcript_or_fallback("https://youtu.be/abc123")
+        gtc.assert_called_once()
+
+    def test_tiktok_url_skips_subtitles(self):
+        """TikTok URLs should NOT call get_timecoded_transcript; go straight to Whisper."""
+        whisper_result = [{"start": 0.0, "end": 5.0, "text": "audio"}]
+        with mock.patch("yt_pipeline.get_timecoded_transcript") as gtc, \
+             mock.patch("yt_pipeline.download_audio_only", return_value="/tmp/audio.mp3") as dl, \
+             mock.patch("yt_pipeline.transcribe_with_whisper", return_value=whisper_result) as tw:
+            result = get_transcript_or_fallback("https://www.tiktok.com/@user/video/123")
+        # TikTok should NOT call get_timecoded_transcript
+        gtc.assert_not_called()
+        # TikTok should call download_audio_only and transcribe_with_whisper
+        dl.assert_called_once()
+        tw.assert_called_once()
+        assert result == whisper_result
+
+    def test_instagram_url_skips_subtitles(self):
+        """Instagram URLs should NOT call get_timecoded_transcript; go straight to Whisper."""
+        whisper_result = [{"start": 0.0, "end": 5.0, "text": "audio"}]
+        with mock.patch("yt_pipeline.get_timecoded_transcript") as gtc, \
+             mock.patch("yt_pipeline.download_audio_only", return_value="/tmp/audio.mp3") as dl, \
+             mock.patch("yt_pipeline.transcribe_with_whisper", return_value=whisper_result) as tw:
+            result = get_transcript_or_fallback("https://www.instagram.com/p/ABC123/")
+        gtc.assert_not_called()
+        dl.assert_called_once()
+        tw.assert_called_once()
+        assert result == whisper_result
+
+    def test_x_url_skips_subtitles(self):
+        """X URLs should NOT call get_timecoded_transcript; go straight to Whisper."""
+        whisper_result = [{"start": 0.0, "end": 5.0, "text": "audio"}]
+        with mock.patch("yt_pipeline.get_timecoded_transcript") as gtc, \
+             mock.patch("yt_pipeline.download_audio_only", return_value="/tmp/audio.mp3") as dl, \
+             mock.patch("yt_pipeline.transcribe_with_whisper", return_value=whisper_result) as tw:
+            result = get_transcript_or_fallback("https://x.com/user/status/123")
+        gtc.assert_not_called()
+        dl.assert_called_once()
+        tw.assert_called_once()
+        assert result == whisper_result
+
+    def test_twitter_url_skips_subtitles(self):
+        """Twitter URLs should NOT call get_timecoded_transcript; go straight to Whisper."""
+        whisper_result = [{"start": 0.0, "end": 5.0, "text": "audio"}]
+        with mock.patch("yt_pipeline.get_timecoded_transcript") as gtc, \
+             mock.patch("yt_pipeline.download_audio_only", return_value="/tmp/audio.mp3") as dl, \
+             mock.patch("yt_pipeline.transcribe_with_whisper", return_value=whisper_result) as tw:
+            result = get_transcript_or_fallback("https://twitter.com/user/status/123")
+        gtc.assert_not_called()
+        dl.assert_called_once()
+        tw.assert_called_once()
+        assert result == whisper_result
