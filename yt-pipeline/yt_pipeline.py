@@ -260,7 +260,7 @@ def download_audio_only(youtube_url: str, output_path: str) -> str:
     Download audio only — much faster, used for transcription.
     Returns: path to mp3 file
     """
-    print(f"\n[Step 1c] Downloading audio for transcription...")
+    print(f"\n[Step 1c] Downloading audio for transcription...", file=sys.stderr)
 
     output_template = f"{output_path}/source_audio.%(ext)s"
 
@@ -269,6 +269,8 @@ def download_audio_only(youtube_url: str, output_path: str) -> str:
         "-x",                        # extract audio only
         "--audio-format", "mp3",
         "--audio-quality", "5",      # medium quality, smaller file
+        "--max-filesize", "200M",    # cap file size to prevent DoS on /tmp
+        "--max-downloads", "1",      # only download one file per invocation
         "-o", output_template,
         "--no-playlist",
         youtube_url
@@ -276,7 +278,7 @@ def download_audio_only(youtube_url: str, output_path: str) -> str:
 
     audio_file = f"{output_path}/source_audio.mp3"
     if Path(audio_file).exists():
-        print(f"Audio saved: {audio_file}")
+        print(f"Audio saved: {audio_file}", file=sys.stderr)
         return audio_file
 
     raise Exception("Audio download failed")
@@ -353,8 +355,8 @@ def search_youtube(query: str, max_results: int = 5) -> list:
                         "channel":  info.get("uploader") or info.get("channel"),
                         "id":       info.get("id"),
                     })
-                except:
-                    pass
+                except (json.JSONDecodeError, ValueError, KeyError):
+                    print(f"  [yt-dlp] Skipped malformed entry: {line[:100]}", file=sys.stderr)
 
         if videos:
             print(f"  Found {len(videos)} videos (yt-dlp)")
@@ -543,6 +545,21 @@ def get_timecoded_transcript(youtube_url: str) -> list:
             pass
 
 
+def _is_youtube_url(url: str) -> bool:
+    """
+    Check if a URL is a YouTube URL.
+    Returns True for youtube.com, youtu.be, music.youtube.com, etc.
+    """
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    hostname = (parsed.hostname or "").lower()
+    youtube_hosts = {
+        "youtube.com", "www.youtube.com", "m.youtube.com",
+        "music.youtube.com", "youtu.be"
+    }
+    return hostname in youtube_hosts
+
+
 def transcribe_with_whisper(audio_path: str) -> list:
     """
     Transcribe an audio file locally with the cached Whisper 'base' model.
@@ -571,22 +588,16 @@ def transcribe_with_whisper(audio_path: str) -> list:
         return []
 
 
-def get_transcript_or_fallback(youtube_url: str) -> list:
+def _whisper_fallback_from_audio(url: str) -> list:
     """
-    Fetch a timecoded transcript, falling back to local Whisper transcription
-    when no auto-subtitles are available (non-YouTube sources, or YouTube videos
-    without subtitles). Same return shape as get_timecoded_transcript.
+    Fallback to Whisper for URLs that don't have YouTube subtitles available.
+    Downloads audio and transcribes locally. Cleans up temp files.
     """
-    segments = get_timecoded_transcript(youtube_url)
-    if segments:
-        return segments
-
-    print(f"\n[Transcript] No subtitles — falling back to Whisper for: {youtube_url}", file=sys.stderr)
     import tempfile
     import shutil
     tmp_dir = tempfile.mkdtemp(prefix="whisper_")
     try:
-        audio_path = download_audio_only(youtube_url, tmp_dir)
+        audio_path = download_audio_only(url, tmp_dir)
         return transcribe_with_whisper(audio_path)
     except Exception as e:
         print(f"  [transcript] Whisper fallback failed: {e}", file=sys.stderr)
@@ -596,6 +607,31 @@ def get_transcript_or_fallback(youtube_url: str) -> list:
             shutil.rmtree(tmp_dir)
         except Exception as e:
             print(f"  [transcript] Failed to clean up temp dir {tmp_dir}: {e}", file=sys.stderr)
+
+
+def get_transcript_or_fallback(url: str) -> list:
+    """
+    Fetch a timecoded transcript with source-specific routing.
+
+    - YouTube URLs: try get_timecoded_transcript first (auto-generated subtitles),
+                    then fall back to Whisper if no subtitles available.
+    - Non-YouTube URLs: skip subtitle fetch; go straight to download_audio_only + Whisper.
+
+    Same return shape as get_timecoded_transcript:
+      [{"start": float (seconds), "end": float (seconds), "text": str}, ...]
+    """
+    if _is_youtube_url(url):
+        # YouTube: try subtitles first, then Whisper fallback
+        segments = get_timecoded_transcript(url)
+        if segments:
+            return segments
+
+        print(f"\n[Transcript] No subtitles — falling back to Whisper for: {url}", file=sys.stderr)
+        return _whisper_fallback_from_audio(url)
+    else:
+        # Non-YouTube: skip subtitles, go straight to Whisper
+        print(f"\n[Transcript] Non-YouTube source detected — using Whisper for: {url}", file=sys.stderr)
+        return _whisper_fallback_from_audio(url)
 
 
 # ══════════════════════════════════════════════════════════════════
