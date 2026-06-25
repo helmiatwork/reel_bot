@@ -16,6 +16,15 @@ sys.path.insert(0, "/app")
 
 app = FastAPI(title="Content Pipeline API", version="1.0")
 
+# ── SSRF guard: blocked networks (module-level constant) ────────────────────
+# Extra ranges beyond ipaddress.ip_address check (0.0.0.0/8, CGNAT, etc)
+_SSRF_BLOCKED_NETS = [
+    ipaddress.ip_network("0.0.0.0/8"),           # This Host
+    ipaddress.ip_network("100.64.0.0/10"),       # RFC 6598 Carrier-Grade NAT
+    ipaddress.ip_network("::/128"),              # IPv6 unspecified
+    ipaddress.ip_network("::ffff:0:0/96"),       # IPv4-mapped IPv6 prefix
+]
+
 # ── SSRF guard: validate any URL to prevent server-side request forgery ────────
 def _validate_source_url(url: str) -> str:
     """
@@ -23,12 +32,16 @@ def _validate_source_url(url: str) -> str:
 
     Rules:
     - Scheme must be http or https
-    - Hostname must resolve
-    - Resolved IP must NOT be in private/loopback/reserved ranges:
+    - Hostname must resolve to at least one IP
+    - EVERY resolved IP must NOT be in forbidden ranges:
       - 127.0.0.0/8, ::1 (loopback)
       - 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 (private)
       - 169.254.0.0/16 (link-local)
       - 224.0.0.0/4 (multicast)
+      - 0.0.0.0/8 (this host)
+      - 100.64.0.0/10 (CGNAT)
+      - ::/128, ::ffff:0:0/96 (IPv6 special)
+    - IPv4-mapped IPv6 addresses checked against their mapped IPv4 form
 
     Raises HTTPException(400) on any rejection; returns the url on success.
     """
@@ -54,17 +67,33 @@ def _validate_source_url(url: str) -> str:
         # If resolution fails, reject as potentially unroutable
         raise HTTPException(status_code=400, detail="SSRF guard: hostname could not be resolved")
 
-    # Check the first returned IP address
-    if addr_infos:
-        _, _, _, _, sockaddr = addr_infos[0]
+    # Check that we got at least one address and validate EVERY one
+    if not addr_infos:
+        raise HTTPException(status_code=400, detail="SSRF guard: hostname resolved to no addresses")
+
+    # Iterate over ALL resolved addresses and reject if ANY is forbidden
+    for addr_info in addr_infos:
+        _, _, _, _, sockaddr = addr_info
         ip_str = sockaddr[0]
         try:
             ip = ipaddress.ip_address(ip_str)
 
-            # Reject reserved/private/loopback/link-local/multicast ranges
+            # Check if it's an IPv4-mapped IPv6 address (::ffff:x.x.x.x)
+            if ip.ipv4_mapped is not None:
+                ip = ip.ipv4_mapped
+
+            # Reject if the address is in any forbidden category
             if (ip.is_loopback or ip.is_private or ip.is_reserved or
-                ip.is_link_local or ip.is_multicast):
+                ip.is_link_local or ip.is_multicast or ip.is_unspecified):
                 raise HTTPException(status_code=400, detail="SSRF guard: target IP is in a reserved or private range")
+
+            # Check explicit blocked networks
+            for blocked_net in _SSRF_BLOCKED_NETS:
+                if ip in blocked_net:
+                    raise HTTPException(status_code=400, detail="SSRF guard: target IP is in a reserved or private range")
+        except HTTPException:
+            # Re-raise our own exceptions
+            raise
         except ValueError:
             # If IP parsing fails, reject
             raise HTTPException(status_code=400, detail="SSRF guard: invalid IP address")

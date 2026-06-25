@@ -269,6 +269,8 @@ def download_audio_only(youtube_url: str, output_path: str) -> str:
         "-x",                        # extract audio only
         "--audio-format", "mp3",
         "--audio-quality", "5",      # medium quality, smaller file
+        "--max-filesize", "200M",    # cap file size to prevent DoS on /tmp
+        "--max-downloads", "1",      # only download one file per invocation
         "-o", output_template,
         "--no-playlist",
         youtube_url

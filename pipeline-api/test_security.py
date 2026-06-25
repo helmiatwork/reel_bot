@@ -215,6 +215,64 @@ class TestSSRFValidator:
                 m._validate_source_url("http://example.com/")
             assert exc_info.value.status_code == 400
 
+    # ── NEW: Multi-address bypass attacks (FIX #1: check ALL addresses) ────────
+
+    def test_rejects_multi_address_public_then_private(self):
+        """Should reject when getaddrinfo returns public IP first + private IP second.
+        Attack: attacker puts public IP first to bypass single-check validator,
+        then yt-dlp uses the second private IP for SSRF."""
+        with patch("socket.getaddrinfo") as mock_ga:
+            def mock_multi_address(hostname, port, family, socktype):
+                return [
+                    (socket.AF_INET, socket.SOCK_STREAM, 6, '', ('93.184.216.34', port or 443)),  # public first
+                    (socket.AF_INET, socket.SOCK_STREAM, 6, '', ('10.0.0.5', port or 443))         # private second (ATTACK)
+                ]
+            mock_ga.side_effect = mock_multi_address
+            with pytest.raises(HTTPException) as exc_info:
+                m._validate_source_url("http://attacker.example.com/")
+            assert exc_info.value.status_code == 400
+
+    # ── NEW: Empty resolution result (FIX #2: check that we got at least one IP) ──
+
+    def test_rejects_empty_address_list(self):
+        """Should reject when getaddrinfo returns empty list."""
+        with patch("socket.getaddrinfo") as mock_ga:
+            mock_ga.return_value = []
+            with pytest.raises(HTTPException) as exc_info:
+                m._validate_source_url("http://example.com/")
+            assert exc_info.value.status_code == 400
+
+    # ── NEW: CGNAT and other ranges (FIX #3: extra blocked networks) ──────────
+
+    def test_rejects_0_0_0_0_this_host(self):
+        """Should reject 0.0.0.0/8 (This Host special range)."""
+        with patch("socket.getaddrinfo") as mock_ga:
+            mock_ga.side_effect = _mock_getaddrinfo(None, None, None, None, private_ip="0.0.0.5")
+            with pytest.raises(HTTPException) as exc_info:
+                m._validate_source_url("http://example.com/")
+            assert exc_info.value.status_code == 400
+
+    def test_rejects_cgnat_100_64(self):
+        """Should reject 100.64.0.0/10 (Carrier-Grade NAT, RFC 6598)."""
+        with patch("socket.getaddrinfo") as mock_ga:
+            mock_ga.side_effect = _mock_getaddrinfo(None, None, None, None, private_ip="100.64.1.1")
+            with pytest.raises(HTTPException) as exc_info:
+                m._validate_source_url("http://example.com/")
+            assert exc_info.value.status_code == 400
+
+    # ── NEW: IPv4-mapped IPv6 loopback (FIX #3: check ipv4_mapped) ─────────────
+
+    def test_rejects_ipv4_mapped_loopback(self):
+        """Should reject IPv4-mapped loopback ::ffff:127.0.0.1."""
+        with patch("socket.getaddrinfo") as mock_ga:
+            def mock_ipv4_mapped_loopback(hostname, port, family, socktype):
+                # getaddrinfo returns the mapped form in sockaddr
+                return [(socket.AF_INET6, socket.SOCK_STREAM, 6, '', ('::ffff:127.0.0.1', port or 443))]
+            mock_ga.side_effect = mock_ipv4_mapped_loopback
+            with pytest.raises(HTTPException) as exc_info:
+                m._validate_source_url("http://example.com/")
+            assert exc_info.value.status_code == 400
+
 
 if __name__ == "__main__":
     # Support running with pytest
