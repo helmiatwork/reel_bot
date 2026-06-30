@@ -57,6 +57,20 @@ export function nativeEnv(text) {
   }).join('\n')
 }
 
+const PROC = [
+  ['postgres',     'postgres -D ./data/pg'],
+  ['cliproxy',     './data/bin/cli-proxy-api --port 8317'],
+  ['openclaw',     'npm --prefix openclaw start'],
+  ['pipeline-api', 'uv run --project pipeline-api uvicorn main:app --host 0.0.0.0 --port 8000'],
+  ['trends',       'uv run --project trends uvicorn app:app --host 0.0.0.0 --port 8200'],
+  ['arcreel',      'uv run --project data/arcreel uvicorn app.main:app --host 0.0.0.0 --port 1241'],
+  ['n8n',          'n8n start']
+]
+
+export function buildProcfile(platform) {
+  return PROC.map(([name, cmd]) => `${name}: ${cmd}`).join('\n') + '\n'
+}
+
 function run(cmd, args, opts = {}) {
   const r = spawnSync(cmd, args, { stdio: 'inherit', ...opts })
   return r.status === 0
