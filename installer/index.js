@@ -58,12 +58,11 @@ export function nativeEnv(text) {
 }
 
 const PROC = [
-  ['postgres',     'postgres -D ./data/pg'],
-  ['cliproxy',     './data/bin/cli-proxy-api --port 8317'],
-  ['openclaw',     'npm --prefix openclaw start'],
+  ['postgres',     'pg_ctl -D ./data/pg -o "-p 5432" -l ./data/pg/server.log start'],
+  ['cliproxy',     './data/bin/cli-proxy-api -config ./cliproxy/config.yaml'],
+  ['openclaw',     'openclaw gateway --port 18789'],
   ['pipeline-api', 'uv run --project pipeline-api uvicorn main:app --host 0.0.0.0 --port 8000'],
-  ['trends',       'uv run --project trends uvicorn app:app --host 0.0.0.0 --port 8200'],
-  ['arcreel',      'uv run --project data/arcreel uvicorn app.main:app --host 0.0.0.0 --port 1241'],
+  ['arcreel',      'uv run --project data/arcreel uvicorn server.main:app --host 0.0.0.0 --port 1241'],
   ['n8n',          'n8n start']
 ]
 
@@ -101,7 +100,33 @@ function ensurePrereqs(os, { dryRun }) {
 
 function provisionPostgres({ dryRun }) {
   const steps = [
-    ['initdb', () => existsSync('./data/pg') || run('initdb', ['-D', './data/pg', '-U', 'admin'])],
+    ['initdb', () => {
+      if (existsSync('./data/pg')) return true
+      if (!run('initdb', ['-D', './data/pg', '-U', 'admin'])) return false
+      return true
+    }],
+    ['start-cluster', () => {
+      if (dryRun) return true
+      // Start postgres cluster (pg_ctl -w waits for server to start)
+      if (!run('pg_ctl', ['-D', './data/pg', '-o', '-p 5432', '-l', './data/pg/server.log', '-w', 'start'])) {
+        console.error('  pg_ctl start failed')
+        return false
+      }
+      // Verify connection (use postgres default database, which always exists)
+      let ready = false
+      for (let i = 0; i < 10; i++) {
+        const r = spawnSync('psql', ['-h', 'localhost', '-U', 'admin', '-d', 'postgres', '-c', 'SELECT 1'], { stdio: 'pipe' })
+        if (r.status === 0) {
+          ready = true
+          break
+        }
+        spawnSync('sleep', ['0.5'], { stdio: 'ignore' })
+      }
+      return ready
+    }],
+    ['create-role', () => {
+      run('psql', ['-h', 'localhost', '-U', 'admin', '-c', "ALTER ROLE admin PASSWORD 'admin'"], { allowFail: true })
+    }],
     ['createdbs', () => {
       for (const db of ['arcreel', 'n8n', 'content_automation']) {
         run('createdb', ['-h', 'localhost', '-U', 'admin', db], { allowFail: true })
@@ -110,18 +135,23 @@ function provisionPostgres({ dryRun }) {
   ]
   for (const [name, fn] of steps) {
     if (dryRun) { console.log(`[dry-run] postgres: ${name}`); continue }
-    fn()
+    const ok = fn()
+    if (!ok && name !== 'createdbs' && name !== 'create-role') {
+      console.error(`✗ postgres ${name} failed`)
+      exit(1)
+    }
   }
 }
 
-const NODE_SVCS = ['openclaw']
-const PY_SVCS = ['pipeline-api', 'trends', 'video-analyzer', 'video-splitter', 'yt-pipeline']
+// Services to provision for native run (Docker images + CLI tools are skipped)
+// - openclaw: Docker image, installed globally via npm (no local provisioning)
+// - video-analyzer, video-splitter: Docker images, git clone in container (no local provisioning)
+// - yt-pipeline: Docker image, has yt_pipeline.py but runs in container (no local provisioning)
+// - trends: doesn't exist in repo (was removed/never added)
+// Only provision: pipeline-api (local Python project), arcreel (local Python + pnpm frontend)
+const PY_SVCS = ['pipeline-api']
 
 function provisionServices({ dryRun }) {
-  for (const s of NODE_SVCS) {
-    if (dryRun) { console.log(`[dry-run] npm ci --prefix ${s}`); continue }
-    run('npm', ['ci', '--prefix', s])
-  }
   for (const s of PY_SVCS) {
     if (dryRun) { console.log(`[dry-run] uv sync --project ${s}`); continue }
     run('uv', ['sync', '--project', s])
@@ -133,18 +163,36 @@ const ARCREEL_REF = 'main' // ponytail: pin to a release tag once chosen
 
 function provisionArcreel({ dryRun, os }) {
   if (os === 'windows') console.log('NOTE: ArcReel native on Windows is partial (POSIX isolation degrades). WSL2 recommended.')
-  if (dryRun) { console.log(`[dry-run] clone ${ARCREEL_REPO}@${ARCREEL_REF} → data/arcreel; uv sync; build frontend`); return }
-  if (!existsSync('./data/arcreel')) run('git', ['clone', '--depth', '1', '--branch', ARCREEL_REF, ARCREEL_REPO, 'data/arcreel'])
-  run('uv', ['sync', '--project', 'data/arcreel'])
-  run('npm', ['ci', '--prefix', 'data/arcreel/frontend'], { allowFail: true })
-  run('npm', ['run', 'build', '--prefix', 'data/arcreel/frontend'], { allowFail: true })
+  if (dryRun) { console.log(`[dry-run] clone ${ARCREEL_REPO}@${ARCREEL_REF} → data/arcreel; uv sync; pnpm install + build`); return }
+  if (!existsSync('./data/arcreel')) {
+    if (!run('git', ['clone', '--depth', '1', '--branch', ARCREEL_REF, ARCREEL_REPO, 'data/arcreel'])) {
+      console.error('✗ arcreel clone failed')
+      exit(1)
+    }
+  }
+  if (!run('uv', ['sync', '--project', 'data/arcreel'])) {
+    console.error('✗ arcreel uv sync failed')
+    exit(1)
+  }
+  // Frontend uses pnpm (pnpm-lock.yaml exists)
+  if (!has('pnpm')) {
+    console.log('• Installing pnpm via npm...')
+    run('npm', ['install', '-g', 'pnpm'])
+  }
+  run('pnpm', ['install', '-C', 'data/arcreel/frontend'], { allowFail: true })
+  run('pnpm', ['build', '-C', 'data/arcreel/frontend'], { allowFail: true })
 }
 
 function provisionCliproxy({ dryRun, os }) {
-  if (dryRun) { console.log('[dry-run] download cli-proxy-api prebuilt binary → data/bin/'); return }
+  if (dryRun) { console.log('[dry-run] ensure cli-proxy-api binary exists at data/bin/cli-proxy-api'); return }
   if (existsSync('./data/bin/cli-proxy-api')) return
-  if (has('go', ['version'])) run('go', ['build', '-o', 'data/bin/cli-proxy-api', './cliproxy/...'])
-  else { console.error('cliproxy: no prebuilt binary and Go not installed. Install Go or add the binary to data/bin/.'); exit(1) }
+  // cliproxy is a Go binary from a separate repo (not included in this codebase)
+  // Without the source or prebuilt binary, we cannot provision it natively
+  console.error(`✗ cliproxy: no prebuilt binary at ./data/bin/cli-proxy-api`)
+  console.error(`  The cliproxy source is not in this repo. Options:`)
+  console.error(`  1. Download a prebuilt darwin binary and place it at ./data/bin/cli-proxy-api`)
+  console.error(`  2. Or skip cliproxy and use Docker: docker compose up cliproxy`)
+  console.error(`  Proceeding without cliproxy — other services may fail if they depend on it.`)
 }
 
 export function conflictingPorts(ports, isBusy) {
@@ -341,4 +389,6 @@ function selfcheck() {
   console.log('selfcheck OK')
 }
 
-main().catch((e) => { console.error(e.message); exit(1) })
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((e) => { console.error(e.message); exit(1) })
+}
