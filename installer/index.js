@@ -114,6 +114,20 @@ function provisionPostgres({ dryRun }) {
   }
 }
 
+const NODE_SVCS = ['openclaw']
+const PY_SVCS = ['pipeline-api', 'trends', 'video-analyzer', 'video-splitter', 'yt-pipeline']
+
+function provisionServices({ dryRun }) {
+  for (const s of NODE_SVCS) {
+    if (dryRun) { console.log(`[dry-run] npm ci --prefix ${s}`); continue }
+    run('npm', ['ci', '--prefix', s])
+  }
+  for (const s of PY_SVCS) {
+    if (dryRun) { console.log(`[dry-run] uv sync --project ${s}`); continue }
+    run('uv', ['sync', '--project', s])
+  }
+}
+
 function run(cmd, args, opts = {}) {
   const { allowFail, ...spawnOpts } = opts
   const r = spawnSync(cmd, args, { stdio: 'inherit', ...spawnOpts })
@@ -148,6 +162,7 @@ async function main() {
     ensurePrereqs(os, { dryRun })
     // Provision postgres, services, arcreel, cliproxy (Tasks 5-8)
     provisionPostgres({ dryRun })
+    provisionServices({ dryRun })
     // Task 9: write Procfile
     const procfile = buildProcfile(os)
     if (dryRun) {
