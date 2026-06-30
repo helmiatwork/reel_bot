@@ -99,6 +99,21 @@ function ensurePrereqs(os, { dryRun }) {
   }
 }
 
+function provisionPostgres({ dryRun }) {
+  const steps = [
+    ['initdb', () => existsSync('./data/pg') || run('initdb', ['-D', './data/pg', '-U', 'admin'])],
+    ['createdbs', () => {
+      for (const db of ['arcreel', 'n8n', 'content_automation']) {
+        run('createdb', ['-h', 'localhost', '-U', 'admin', db], { allowFail: true })
+      }
+    }]
+  ]
+  for (const [name, fn] of steps) {
+    if (dryRun) { console.log(`[dry-run] postgres: ${name}`); continue }
+    fn()
+  }
+}
+
 function run(cmd, args, opts = {}) {
   const { allowFail, ...spawnOpts } = opts
   const r = spawnSync(cmd, args, { stdio: 'inherit', ...spawnOpts })
@@ -131,7 +146,8 @@ async function main() {
     const os = detectOS()
     if (dryRun) console.log('[dry-run] Mode: native installer')
     ensurePrereqs(os, { dryRun })
-    // Provision postgres, services, arcreel, cliproxy (Tasks 5-8 — simplified in dry-run)
+    // Provision postgres, services, arcreel, cliproxy (Tasks 5-8)
+    provisionPostgres({ dryRun })
     // Task 9: write Procfile
     const procfile = buildProcfile(os)
     if (dryRun) {
