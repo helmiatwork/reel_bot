@@ -147,6 +147,10 @@ function provisionCliproxy({ dryRun, os }) {
   else { console.error('cliproxy: no prebuilt binary and Go not installed. Install Go or add the binary to data/bin/.'); exit(1) }
 }
 
+export function conflictingPorts(ports, isBusy) {
+  return ports.filter((p) => isBusy(p))
+}
+
 function run(cmd, args, opts = {}) {
   const { allowFail, ...spawnOpts } = opts
   const r = spawnSync(cmd, args, { stdio: 'inherit', ...spawnOpts })
