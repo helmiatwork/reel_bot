@@ -71,6 +71,18 @@ export function buildProcfile(platform) {
   return PROC.map(([name, cmd]) => `${name}: ${cmd}`).join('\n') + '\n'
 }
 
+export function detectOS(p = process.platform) {
+  if (p === 'darwin') return 'mac'
+  if (p === 'win32') return 'windows'
+  return 'linux'
+}
+
+export const PREREQS = {
+  mac:     { manager: 'brew',   packages: ['postgresql@16', 'node', 'python@3.12', 'uv', 'ffmpeg'] },
+  linux:   { manager: 'apt',    packages: ['postgresql-16', 'nodejs', 'python3.12', 'ffmpeg'] }, // uv via curl
+  windows: { manager: 'winget', packages: ['PostgreSQL.PostgreSQL', 'OpenJS.NodeJS', 'Python.Python.3.12', 'Gyan.FFmpeg'] }
+}
+
 function run(cmd, args, opts = {}) {
   const r = spawnSync(cmd, args, { stdio: 'inherit', ...opts })
   return r.status === 0
