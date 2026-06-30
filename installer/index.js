@@ -188,6 +188,32 @@ async function main() {
     provisionServices({ dryRun })
     provisionArcreel({ dryRun, os })
     provisionCliproxy({ dryRun, os })
+    // Task 8a: seed and rewrite .env to localhost
+    if (existsSync('./.env')) {
+      const envText = readFileSync('./.env', 'utf8')
+      const rewritten = nativeEnv(envText)
+      if (dryRun) {
+        console.log('[dry-run] .env → rewrite docker hosts to localhost')
+      } else {
+        writeFileSync('./.env', rewritten)
+        console.log('• .env rewired for native (localhost)')
+      }
+    } else if (existsSync('./.env.example')) {
+      const exampleText = readFileSync('./.env.example', 'utf8')
+      const { text, stillEmpty } = seedEnv(exampleText)
+      const rewritten = nativeEnv(text)
+      if (dryRun) {
+        console.log('[dry-run] .env → seed secrets + rewrite docker hosts to localhost')
+      } else {
+        writeFileSync('./.env', rewritten)
+        console.log('• Wrote .env (auto-generated secrets: ' + AUTOGEN.join(', ') + ')')
+        if (stillEmpty.length) {
+          console.log('\n⚠  Fill these in ./.env before features work:')
+          stillEmpty.forEach((k) => console.log('     ' + k))
+        }
+        console.log('• .env rewired for native (localhost)')
+      }
+    }
     // Task 9: write Procfile
     const procfile = buildProcfile(os)
     if (dryRun) {
