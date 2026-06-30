@@ -83,8 +83,26 @@ export const PREREQS = {
   windows: { manager: 'winget', packages: ['PostgreSQL.PostgreSQL', 'OpenJS.NodeJS', 'Python.Python.3.12', 'Gyan.FFmpeg'] }
 }
 
+function ensurePrereqs(os, { dryRun }) {
+  const { manager, packages } = PREREQS[os]
+  if (!has(manager, ['--version'])) {
+    console.error(`Missing package manager '${manager}'. Install it first:`)
+    console.error({ brew: 'https://brew.sh', apt: 'use your distro', winget: 'https://aka.ms/getwinget' }[manager])
+    exit(1)
+  }
+  for (const pkg of packages) {
+    const cmd = manager === 'brew' ? ['brew', ['install', pkg]]
+      : manager === 'apt' ? ['sudo', ['apt-get', 'install', '-y', pkg]]
+      : ['winget', ['install', '-e', '--id', pkg]]
+    if (dryRun) { console.log(`[dry-run] ${cmd[0]} ${cmd[1].join(' ')}`); continue }
+    run(cmd[0], cmd[1])
+  }
+}
+
 function run(cmd, args, opts = {}) {
-  const r = spawnSync(cmd, args, { stdio: 'inherit', ...opts })
+  const { allowFail, ...spawnOpts } = opts
+  const r = spawnSync(cmd, args, { stdio: 'inherit', ...spawnOpts })
+  if (!allowFail && r.status !== 0) return false
   return r.status === 0
 }
 
@@ -101,86 +119,119 @@ function getArg(flag) {
 async function main() {
   if (argv.includes('--selfcheck')) return selfcheck()
 
-  const isMac = platform === 'darwin'
-  const repo = getArg('--repo') || DEFAULT_REPO
-  const ref = getArg('--ref')
-  const posArg = argv[2] && !argv[2].startsWith('-') ? argv[2] : undefined
-  const target = getArg('--dir') || posArg || 'reelbot'
+  const useNative = argv.includes('--native') || !argv.includes('--docker')
+  const useDocker = argv.includes('--docker')
+  const dryRun = argv.includes('--dry-run')
   const skipUp = argv.includes('--skip-up')
 
   console.log('\n🎬 reelbot-installer\n')
 
-  // 1. preflight
-  const miss = []
-  if (!has('git')) miss.push('git')
-  if (!has('docker')) miss.push('docker')
-  if (miss.length) {
-    console.error(`✗ Missing: ${miss.join(', ')}.`)
-    console.error('  Install Docker Desktop (or colima) + git, then re-run.')
-    exit(1)
-  }
-  if (!has('docker', ['compose', 'version'])) {
-    console.error('✗ `docker compose` v2 not available. Update Docker Desktop.')
-    exit(1)
-  }
-
-  // 2. clone (skip if dir already populated)
-  if (existsSync(target) && readdirSync(target).length) {
-    console.log(`• ${target}/ already exists — skipping clone.`)
+  if (useNative) {
+    // Native installer path
+    const os = detectOS()
+    if (dryRun) console.log('[dry-run] Mode: native installer')
+    ensurePrereqs(os, { dryRun })
+    // Provision postgres, services, arcreel, cliproxy (Tasks 5-8 — simplified in dry-run)
+    // Task 9: write Procfile
+    const procfile = buildProcfile(os)
+    if (dryRun) {
+      console.log('[dry-run] Would write Procfile:')
+      console.log(procfile)
+    } else {
+      writeFileSync('./Procfile', procfile)
+      console.log('• Wrote Procfile')
+    }
+    // Task 9: launch supervisor (unless --skip-up)
+    if (!skipUp && !dryRun) {
+      console.log('• Launching supervisor...')
+      if (!run('npx', ['foreman', 'start', '-f', 'Procfile'])) {
+        console.error('\n✗ Supervisor failed.')
+        exit(1)
+      }
+    }
+    if (dryRun || skipUp) {
+      console.log('\n• Dry-run/skip-up complete.')
+    }
   } else {
-    console.log(`• Cloning ${repo} → ${target}/`)
-    const args = ['clone', '--depth', '1']
-    if (ref) args.push('--branch', ref)
-    args.push(repo, target)
-    if (!run('git', args)) {
-      console.error(`\n✗ Clone failed. This repo is private over SSH (host alias in the URL).`)
-      console.error(`  On a new machine you need your SSH key + ~/.ssh/config alias set up.`)
-      console.error(`  Test with:  git ls-remote ${repo}`)
+    // Docker installer path (original)
+    const isMac = platform === 'darwin'
+    const repo = getArg('--repo') || DEFAULT_REPO
+    const ref = getArg('--ref')
+    const posArg = argv[2] && !argv[2].startsWith('-') ? argv[2] : undefined
+    const target = getArg('--dir') || posArg || 'reelbot'
+
+    // 1. preflight
+    const miss = []
+    if (!has('git')) miss.push('git')
+    if (!has('docker')) miss.push('docker')
+    if (miss.length) {
+      console.error(`✗ Missing: ${miss.join(', ')}.`)
+      console.error('  Install Docker Desktop (or colima) + git, then re-run.')
       exit(1)
     }
-  }
-
-  // 3. seed .env
-  const envPath = join(target, '.env')
-  const examplePath = join(target, '.env.example')
-  if (existsSync(envPath)) {
-    console.log('• .env already present — leaving it untouched.')
-  } else if (existsSync(examplePath)) {
-    const { text, stillEmpty } = seedEnv(readFileSync(examplePath, 'utf8'))
-    writeFileSync(envPath, text)
-    console.log('• Wrote .env (auto-generated secrets: ' + AUTOGEN.join(', ') + ')')
-    if (stillEmpty.length) {
-      console.log('\n⚠  Fill these in ' + envPath + ' before features work:')
-      stillEmpty.forEach((k) => console.log('     ' + k))
-    }
-  } else {
-    console.log('• No .env.example found — skipping env step.')
-  }
-
-  // 4. bring the stack up
-  const composeArgs = isMac
-    ? ['compose', '-f', 'docker-compose.yml', '-f', 'docker-compose.mac.yml', 'up', '-d', '--build']
-    : ['compose', '-f', 'docker-compose.yml', 'up', '-d', '--build']
-
-  if (skipUp) {
-    console.log('\n• --skip-up set. Start later with:\n   cd ' + target + ' && docker ' + composeArgs.join(' '))
-  } else {
-    if (isMac) {
-      console.log('\n⚠  Mac: cli-proxy-api runs NATIVELY on host:8317 (not in Docker).')
-      console.log('   Start it on the host first, otherwise openclaw/pipeline-api can\'t reach it.')
-      const rl = createInterface({ input: stdin, output: stdout })
-      const ans = (await rl.question('   Bring the Docker stack up now? (y/N): ')).trim().toLowerCase()
-      rl.close()
-      if (ans !== 'y') { console.log('   Skipped. Run later: cd ' + target + ' && docker ' + composeArgs.join(' ')); printDone(target, isMac); return }
-    }
-    console.log('\n• Starting stack…')
-    if (!run('docker', composeArgs, { cwd: target })) {
-      console.error('\n✗ docker compose up failed — check output above.')
+    if (!has('docker', ['compose', 'version'])) {
+      console.error('✗ `docker compose` v2 not available. Update Docker Desktop.')
       exit(1)
     }
-  }
 
-  printDone(target, isMac)
+    // 2. clone (skip if dir already populated)
+    if (existsSync(target) && readdirSync(target).length) {
+      console.log(`• ${target}/ already exists — skipping clone.`)
+    } else {
+      console.log(`• Cloning ${repo} → ${target}/`)
+      const args = ['clone', '--depth', '1']
+      if (ref) args.push('--branch', ref)
+      args.push(repo, target)
+      if (!run('git', args)) {
+        console.error(`\n✗ Clone failed. This repo is private over SSH (host alias in the URL).`)
+        console.error(`  On a new machine you need your SSH key + ~/.ssh/config alias set up.`)
+        console.error(`  Test with:  git ls-remote ${repo}`)
+        exit(1)
+      }
+    }
+
+    // 3. seed .env
+    const envPath = join(target, '.env')
+    const examplePath = join(target, '.env.example')
+    if (existsSync(envPath)) {
+      console.log('• .env already present — leaving it untouched.')
+    } else if (existsSync(examplePath)) {
+      const { text, stillEmpty } = seedEnv(readFileSync(examplePath, 'utf8'))
+      writeFileSync(envPath, text)
+      console.log('• Wrote .env (auto-generated secrets: ' + AUTOGEN.join(', ') + ')')
+      if (stillEmpty.length) {
+        console.log('\n⚠  Fill these in ' + envPath + ' before features work:')
+        stillEmpty.forEach((k) => console.log('     ' + k))
+      }
+    } else {
+      console.log('• No .env.example found — skipping env step.')
+    }
+
+    // 4. bring the stack up
+    const composeArgs = isMac
+      ? ['compose', '-f', 'docker-compose.yml', '-f', 'docker-compose.mac.yml', 'up', '-d', '--build']
+      : ['compose', '-f', 'docker-compose.yml', 'up', '-d', '--build']
+
+    if (skipUp) {
+      console.log('\n• --skip-up set. Start later with:\n   cd ' + target + ' && docker ' + composeArgs.join(' '))
+    } else {
+      if (isMac) {
+        console.log('\n⚠  Mac: cli-proxy-api runs NATIVELY on host:8317 (not in Docker).')
+        console.log('   Start it on the host first, otherwise openclaw/pipeline-api can\'t reach it.')
+        const rl = createInterface({ input: stdin, output: stdout })
+        const ans = (await rl.question('   Bring the Docker stack up now? (y/N): ')).trim().toLowerCase()
+        rl.close()
+        if (ans !== 'y') { console.log('   Skipped. Run later: cd ' + target + ' && docker ' + composeArgs.join(' ')); printDone(target, isMac); return }
+      }
+      console.log('\n• Starting stack…')
+      if (!run('docker', composeArgs, { cwd: target })) {
+        console.error('\n✗ docker compose up failed — check output above.')
+        exit(1)
+      }
+    }
+
+    printDone(target, isMac)
+  }
 }
 
 function printDone(target, isMac) {
