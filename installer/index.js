@@ -140,6 +140,13 @@ function provisionArcreel({ dryRun, os }) {
   run('npm', ['run', 'build', '--prefix', 'data/arcreel/frontend'], { allowFail: true })
 }
 
+function provisionCliproxy({ dryRun, os }) {
+  if (dryRun) { console.log('[dry-run] download cli-proxy-api prebuilt binary → data/bin/'); return }
+  if (existsSync('./data/bin/cli-proxy-api')) return
+  if (has('go', ['version'])) run('go', ['build', '-o', 'data/bin/cli-proxy-api', './cliproxy/...'])
+  else { console.error('cliproxy: no prebuilt binary and Go not installed. Install Go or add the binary to data/bin/.'); exit(1) }
+}
+
 function run(cmd, args, opts = {}) {
   const { allowFail, ...spawnOpts } = opts
   const r = spawnSync(cmd, args, { stdio: 'inherit', ...spawnOpts })
@@ -176,6 +183,7 @@ async function main() {
     provisionPostgres({ dryRun })
     provisionServices({ dryRun })
     provisionArcreel({ dryRun, os })
+    provisionCliproxy({ dryRun, os })
     // Task 9: write Procfile
     const procfile = buildProcfile(os)
     if (dryRun) {
