@@ -128,6 +128,18 @@ function provisionServices({ dryRun }) {
   }
 }
 
+const ARCREEL_REPO = 'https://github.com/ArcReel/ArcReel.git'
+const ARCREEL_REF = 'main' // ponytail: pin to a release tag once chosen
+
+function provisionArcreel({ dryRun, os }) {
+  if (os === 'windows') console.log('NOTE: ArcReel native on Windows is partial (POSIX isolation degrades). WSL2 recommended.')
+  if (dryRun) { console.log(`[dry-run] clone ${ARCREEL_REPO}@${ARCREEL_REF} → data/arcreel; uv sync; build frontend`); return }
+  if (!existsSync('./data/arcreel')) run('git', ['clone', '--depth', '1', '--branch', ARCREEL_REF, ARCREEL_REPO, 'data/arcreel'])
+  run('uv', ['sync', '--project', 'data/arcreel'])
+  run('npm', ['ci', '--prefix', 'data/arcreel/frontend'], { allowFail: true })
+  run('npm', ['run', 'build', '--prefix', 'data/arcreel/frontend'], { allowFail: true })
+}
+
 function run(cmd, args, opts = {}) {
   const { allowFail, ...spawnOpts } = opts
   const r = spawnSync(cmd, args, { stdio: 'inherit', ...spawnOpts })
@@ -163,6 +175,7 @@ async function main() {
     // Provision postgres, services, arcreel, cliproxy (Tasks 5-8)
     provisionPostgres({ dryRun })
     provisionServices({ dryRun })
+    provisionArcreel({ dryRun, os })
     // Task 9: write Procfile
     const procfile = buildProcfile(os)
     if (dryRun) {
