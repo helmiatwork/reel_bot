@@ -1231,16 +1231,18 @@ def get_transcript(req: TranscriptRequest):
             result = json.loads(proc.stdout)
             return _json(result)
         except (json.JSONDecodeError, ValueError) as e:
-            # Fallback: if stdout has diagnostics before JSON, scan for the last valid JSON block
-            lines = proc.stdout.strip().split('\n')
-            for line in reversed(lines):
-                if line.strip().startswith('{'):
+            # Fallback: if stdout has diagnostics before JSON, find and parse the JSON block
+            # JSON object spans multiple lines, so find where it starts and parse from there
+            text = proc.stdout.strip()
+            # Find the first '{' character
+            for idx, char in enumerate(text):
+                if char == '{':
                     try:
-                        result = json.loads(line)
+                        result = json.loads(text[idx:])
                         if isinstance(result, dict) and "segments" in result:
                             return _json(result)
                     except (json.JSONDecodeError, ValueError):
-                        continue
+                        pass
             print(f"  [transcript] JSON parse failed: {e}")
             return _json({"segments": []})
     except Exception as e:
