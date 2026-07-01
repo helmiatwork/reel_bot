@@ -4,8 +4,9 @@
 
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
-import { existsSync, readdirSync, readFileSync, writeFileSync, copyFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, readdirSync, readFileSync, writeFileSync, copyFileSync, mkdirSync } from 'node:fs'
+import { join, dirname } from 'node:path'
+import { homedir } from 'node:os'
 import { createInterface } from 'node:readline/promises'
 import { stdin, stdout, platform, argv, exit } from 'node:process'
 
@@ -19,7 +20,7 @@ const AUTOGEN = ['POSTGRES_PASSWORD', 'DASHBOARD_PASSWORD', 'N8N_ENCRYPTION_KEY'
 // Keys the user must fill for features to actually work (warned, never invented).
 const NEEDED = [
   'TELEGRAM_BOT_TOKEN', 'OPENCLAW_TELEGRAM_BOT_TOKEN_FOR_REELBOT',
-  'ARCREEL_TOKEN', 'GEMINI_API_KEY'
+  'ARCREEL_TOKEN', 'GEMINI_API_KEY', 'CLIPROXY_KEY', 'SUMOPOD_API_KEY'
 ]
 const PLACEHOLDER = /^(|change_this.*|your_.*|change_this_to_.*)$/i
 
@@ -62,7 +63,8 @@ const PROC = [
   ['cliproxy',     './data/bin/cli-proxy-api -config ./cliproxy/config.yaml'],
   ['openclaw',     'openclaw gateway --port 18789'],
   ['pipeline-api', 'bash -c "cd pipeline-api && source .venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port 8000"'],
-  ['arcreel',      'bash -c "cd data/arcreel && source .venv/bin/activate && uvicorn server.app:app --host 0.0.0.0 --port 1241"']
+  ['arcreel',      'bash -c "cd data/arcreel && source .venv/bin/activate && uvicorn server.app:app --host 0.0.0.0 --port 1241"'],
+  ['n8n',          'bash -c "export DB_TYPE=postgresdb DB_POSTGRESDB_HOST=localhost DB_POSTGRESDB_PORT=5432 DB_POSTGRESDB_DATABASE=n8n DB_POSTGRESDB_USER=admin DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD} && n8n"']
 ]
 
 export function buildProcfile(platform) {
@@ -228,6 +230,162 @@ function provisionCliproxy({ dryRun, os }) {
   console.error(`  Proceeding without cliproxy — other services may fail if they depend on it.`)
 }
 
+function provisionOpenclawConfig({ dryRun, env }) {
+  const home = homedir()
+  const opencawConfigPath = join(home, '.openclaw', 'openclaw.json')
+
+  if (dryRun) {
+    console.log('[dry-run] patch openclaw.json: workspace → HOME, providers.cliproxy.baseUrl → localhost:8317, reelbot model → cliproxy/deepseek-v4-pro')
+    return
+  }
+
+  // Read or create config
+  let config = {}
+  if (existsSync(opencawConfigPath)) {
+    try {
+      config = JSON.parse(readFileSync(opencawConfigPath, 'utf8'))
+    } catch (e) {
+      console.error(`  Warning: failed to parse ${opencawConfigPath}, will overwrite`)
+    }
+  }
+
+  // Ensure workspace directory exists and patch path
+  const workspaceDir = join(home, '.openclaw', 'workspace')
+  mkdirSync(workspaceDir, { recursive: true })
+  config.workspace = workspaceDir
+
+  // Patch cliproxy baseUrl to localhost
+  if (!config.providers) config.providers = {}
+  if (!config.providers.cliproxy) config.providers.cliproxy = {}
+  config.providers.cliproxy.baseUrl = 'http://localhost:8317/v1'
+
+  // Set reelbot model (overridable via env)
+  if (!config.agents) config.agents = {}
+  if (!config.agents.reelbot) config.agents.reelbot = {}
+  const defaultModel = process.env.OPENCLAW_DEFAULT_MODEL || 'cliproxy/deepseek-v4-pro'
+  config.agents.reelbot.model = defaultModel
+
+  // Ensure config dir exists
+  mkdirSync(dirname(opencawConfigPath), { recursive: true })
+  writeFileSync(opencawConfigPath, JSON.stringify(config, null, 2))
+  console.log(`• Patched ${opencawConfigPath}`)
+}
+
+function provisionCliproxyConfig({ dryRun, env }) {
+  const cliproxyConfigPath = './cliproxy/config.yaml'
+
+  if (dryRun) {
+    console.log('[dry-run] patch cliproxy/config.yaml: api-key from CLIPROXY_KEY env, sumopod base-url and api-key from SUMOPOD_API_KEY env')
+    return
+  }
+
+  if (!existsSync(cliproxyConfigPath)) {
+    console.log('  Warning: cliproxy/config.yaml not found, skipping config patch')
+    return
+  }
+
+  let configText = readFileSync(cliproxyConfigPath, 'utf8')
+  const cliproxyKey = process.env.CLIPROXY_KEY
+  const sumopodKey = process.env.SUMOPOD_API_KEY
+
+  // Patch first api-key under api-keys: (idempotent: only if placeholder or missing)
+  if (cliproxyKey) {
+    const apiKeysMatch = configText.match(/(api-keys:\s*\n\s*-\s*)"[^"]*"/)
+    if (apiKeysMatch) {
+      configText = configText.replace(apiKeysMatch[0], `${apiKeysMatch[1]}"${cliproxyKey}"`)
+    }
+  }
+
+  // Patch sumopod base-url and api-key (idempotent, regex-based)
+  if (sumopodKey) {
+    // Patch base-url (should already be https://ai.sumopod.com/v1, but ensure it)
+    configText = configText.replace(
+      /(\s+base-url:\s*)"[^"]*"/,
+      `$1"https://ai.sumopod.com/v1"`
+    )
+    // Patch api-key: under sumopod provider
+    configText = configText.replace(
+      /(sumopod[\s\S]*?api-key-entries:\s*\n\s*-\s*api-key:\s*)"[^"]*"/,
+      `$1"${sumopodKey}"`
+    )
+  }
+
+  writeFileSync(cliproxyConfigPath, configText)
+  console.log('• Patched cliproxy/config.yaml')
+}
+
+function provisionN8n({ dryRun }) {
+  if (dryRun) {
+    console.log('[dry-run] detect/install node@22, install n8n globally with node@22')
+    return
+  }
+
+  // Detect or install node@22
+  let node22Path = null
+  // Check common Homebrew locations
+  if (existsSync('/opt/homebrew/opt/node@22/bin/node')) {
+    node22Path = '/opt/homebrew/opt/node@22/bin/node'
+  } else if (existsSync('/usr/local/opt/node@22/bin/node')) {
+    node22Path = '/usr/local/opt/node@22/bin/node'
+  }
+
+  if (!node22Path) {
+    console.log('• Installing node@22 via brew...')
+    if (!run('brew', ['install', 'node@22'])) {
+      console.error('✗ Failed to install node@22')
+      return false
+    }
+    // Re-check after install
+    if (existsSync('/opt/homebrew/opt/node@22/bin/node')) {
+      node22Path = '/opt/homebrew/opt/node@22/bin/node'
+    } else if (existsSync('/usr/local/opt/node@22/bin/node')) {
+      node22Path = '/usr/local/opt/node@22/bin/node'
+    }
+  }
+
+  if (!node22Path) {
+    console.error('✗ node@22 not found after install attempt')
+    return false
+  }
+
+  // Determine npm path (sibling to node)
+  const npm22Path = node22Path.replace('/node', '/npm')
+
+  // Check if n8n is already installed
+  if (!has('n8n')) {
+    console.log('• Installing n8n globally with node@22...')
+    if (!run(npm22Path, ['install', '-g', 'n8n'])) {
+      console.error('✗ Failed to install n8n (non-fatal, continuing)')
+      return false
+    }
+  }
+
+  // Handle N8N_ENCRYPTION_KEY idempotently
+  const n8nConfigDir = join(homedir(), '.n8n')
+  const n8nConfigPath = join(n8nConfigDir, 'config')
+  let encryptionKey = null
+
+  if (existsSync(n8nConfigPath)) {
+    try {
+      const configData = JSON.parse(readFileSync(n8nConfigPath, 'utf8'))
+      encryptionKey = configData.encryptionKey
+    } catch (e) {
+      // Config file exists but is not valid JSON, will set a new key
+    }
+  }
+
+  if (!encryptionKey) {
+    encryptionKey = process.env.N8N_ENCRYPTION_KEY || rnd().slice(0, 32)
+  }
+
+  // Write n8n config with encryption key
+  mkdirSync(n8nConfigDir, { recursive: true })
+  const n8nConfig = { encryptionKey }
+  writeFileSync(n8nConfigPath, JSON.stringify(n8nConfig))
+
+  return true
+}
+
 export function conflictingPorts(ports, isBusy) {
   return ports.filter((p) => isBusy(p))
 }
@@ -269,6 +427,10 @@ async function main() {
     provisionServices({ dryRun })
     provisionArcreel({ dryRun, os })
     provisionCliproxy({ dryRun, os })
+    // Provision configs and n8n (Tasks 1-4)
+    provisionOpenclawConfig({ dryRun, env: process.env })
+    provisionCliproxyConfig({ dryRun, env: process.env })
+    provisionN8n({ dryRun })
     // Task 8a: seed and rewrite .env to localhost
     if (existsSync('./.env')) {
       const envText = readFileSync('./.env', 'utf8')

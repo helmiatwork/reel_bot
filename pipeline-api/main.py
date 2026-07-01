@@ -142,17 +142,16 @@ def _scalar(cur, sql, default=None):
 
 @app.get("/dash/services")
 def dash_services():
-    """Live up/down + port for each stack service (pinged from inside the network)."""
+    """Live up/down + port for each stack service (pinged from localhost in native mode)."""
     import httpx
-    # cliproxy runs natively on the host (macOS binary can't run in Docker), so
-    # it is reached via host.docker.internal, not a container DNS name.
+    # All services now use localhost for native execution (no Docker hostnames).
     checks = [
         ("postgres", 5432, None),
-        ("openclaw", 18789, "http://openclaw:18789"),
-        ("n8n", 5678, "http://n8n:5678/healthz"),
-        ("cliproxy", 8317, "http://host.docker.internal:8317/v1/models"),
+        ("openclaw", 18789, "http://localhost:18789"),
+        ("n8n", 5678, "http://localhost:5678/healthz"),
+        ("cliproxy", 8317, "http://localhost:8317/v1/models"),
         ("pipeline-api", 8000, "http://localhost:8000/health"),
-        ("arcreel", 1241, "http://arcreel:1241"),
+        ("arcreel", 1241, "http://localhost:1241"),
     ]
     out = []
     for name, port, url in checks:
@@ -174,14 +173,26 @@ def dash_services():
     return _json({"services": out, "live": sum(1 for s in out if s["up"]), "total": len(out)})
 
 
-# ── Service restart endpoints (docker SDK via mounted socket) ─────────────────
-# Allowlist of restartable containers (deliberately excludes pipeline-api itself).
+# ── Service restart endpoints (native process restart) ─────────────────────────
+# Allowlist of restartable services (deliberately excludes pipeline-api itself).
 _RESTARTABLE_SERVICES = {"postgres", "openclaw", "cliproxy", "n8n", "arcreel"}
+
+# Map service name → (pkill pattern, restart command)
+# Used to find and restart the native process.
+# ponytail: postgres & n8n require complex stateful setup (DB dirs, env vars);
+# returning unsupported_native rather than breaking them on restart attempt.
+_SERVICE_RESTART_MAP = {
+    "postgres": None,  # unsupported_native: complex FS/env setup
+    "openclaw": ("openclaw gateway", "openclaw gateway --port 18789"),
+    "cliproxy": ("cli-proxy-api", "cd {} && exec ./data/bin/cli-proxy-api -config ./cliproxy/config.yaml"),
+    "arcreel": ("uvicorn server.app:app.*1241", "cd {} && cd data/arcreel && source .venv/bin/activate && exec uvicorn server.app:app --host 0.0.0.0 --port 1241"),
+    "n8n": None,  # unsupported_native: requires Docker or complex Node env
+}
 
 
 @app.post("/dash/restart/{service}")
 def restart_service(service: str):
-    """Restart a specific service container. Gated by dashboard auth (nginx DASHBOARD_PASSWORD)."""
+    """Restart a specific native service process. Gated by dashboard auth (nginx DASHBOARD_PASSWORD)."""
     # Special case: explicitly reject pipeline-api to avoid killing the in-flight request
     if service == "pipeline-api":
         raise HTTPException(status_code=400, detail="cannot restart pipeline-api from itself")
@@ -189,14 +200,35 @@ def restart_service(service: str):
     if service not in _RESTARTABLE_SERVICES:
         raise HTTPException(status_code=400, detail="unknown service")
 
+    # Native restart: kill the process, then relaunch it
+    restart_entry = _SERVICE_RESTART_MAP.get(service)
+    if restart_entry is None:
+        # Service marked as unsupported_native (e.g., postgres, n8n)
+        return _json({"service": service, "status": "unsupported_native"})
+
+    pkill_pattern, restart_cmd = restart_entry
     try:
-        import docker
-        client = docker.from_env()
-        container = client.containers.get(service)
-        container.restart(timeout=10)
+        # Kill the existing process (broad pattern match, but specific to the service)
+        subprocess.run(
+            f"pkill -f '{pkill_pattern}'",
+            shell=True,
+            timeout=5,
+            capture_output=True
+        )
+        # Give it a moment to terminate
+        import time
+        time.sleep(0.5)
+
+        # Relaunch with nohup so it survives detach
+        # Get the reelbot repo root (parent of pipeline-api)
+        repo_root = Path(__file__).parent.parent
+        final_cmd = restart_cmd.format(str(repo_root))
+        subprocess.Popen(
+            f"cd {repo_root} && nohup {final_cmd} > /dev/null 2>&1 &",
+            shell=True,
+            start_new_session=True
+        )
         return _json({"service": service, "status": "restarted"})
-    except docker.errors.NotFound:
-        return _json({"service": service, "status": "not_running"})
     except Exception as e:
         # Log server-side, don't expose internals to client
         print(f"[restart/{service}] error: {type(e).__name__}: {e}")
@@ -205,24 +237,40 @@ def restart_service(service: str):
 
 @app.post("/dash/restart-all")
 def restart_all():
-    """Restart all restartable services. Returns aggregated status per service."""
-    try:
-        import docker
-        client = docker.from_env()
-    except Exception as e:
-        print(f"[restart-all] docker unavailable: {type(e).__name__}: {e}")
-        return _json({"status": "error", "detail": "docker unavailable"})
-
+    """Restart all restartable services natively. Returns aggregated status per service."""
     results = []
     restarted_count = 0
+
     for service in _RESTARTABLE_SERVICES:
+        restart_entry = _SERVICE_RESTART_MAP.get(service)
+        if restart_entry is None:
+            # Service marked as unsupported_native (e.g., postgres, n8n)
+            results.append({"service": service, "status": "unsupported_native"})
+            continue
+
+        pkill_pattern, restart_cmd = restart_entry
         try:
-            container = client.containers.get(service)
-            container.restart(timeout=10)
+            # Kill the existing process
+            subprocess.run(
+                f"pkill -f '{pkill_pattern}'",
+                shell=True,
+                timeout=5,
+                capture_output=True
+            )
+            # Give it a moment to terminate
+            import time
+            time.sleep(0.5)
+
+            # Relaunch with nohup
+            repo_root = Path(__file__).parent.parent
+            final_cmd = restart_cmd.format(str(repo_root))
+            subprocess.Popen(
+                f"cd {repo_root} && nohup {final_cmd} > /dev/null 2>&1 &",
+                shell=True,
+                start_new_session=True
+            )
             results.append({"service": service, "status": "restarted"})
             restarted_count += 1
-        except docker.errors.NotFound:
-            results.append({"service": service, "status": "not_running"})
         except Exception as e:
             # Log error but don't fail the whole call
             print(f"[restart-all/{service}] error: {type(e).__name__}: {e}")
