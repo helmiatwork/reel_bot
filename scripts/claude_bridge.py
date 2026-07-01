@@ -163,7 +163,6 @@ def _run_claude(prompt: str, frame_paths: list, model: str, timeout_s: int) -> d
         # works (unlike --bare, which breaks auth). exclude-dynamic trims the
         # per-machine cwd/env/memory/git sections to cut token overhead.
         "--settings", '{"disableAllHooks":true}',
-        "--exclude-dynamic-system-prompt-sections",
         "--output-format", "json",
     ]
 
