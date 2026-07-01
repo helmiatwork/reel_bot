@@ -109,15 +109,20 @@
 </div>
 
 <div class="card">
-  {#if error && !loading}
+  {#if loading}
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <div class="loading-text">Menganalisa transkrip &amp; nyari momen viral…</div>
+      <div class="loading-sub">Bisa 10–60 detik. Sabar ya.</div>
+    </div>
+  {:else if error}
     <div class="error-msg">{error}</div>
-  {/if}
-  {#if rows.length === 0 && !error}
+  {:else if rows.length === 0}
     <div class="empty">
       <div class="empty-icon">📹</div>
       <div class="empty-text">Belum ada klip. Masukin URL di atas.</div>
     </div>
-  {:else if rows.length > 0}
+  {:else}
     <table>
       <thead>
         <tr>
@@ -390,5 +395,39 @@
     border: 1px solid #fcd34d;
     font-size: 14px;
     margin-bottom: 12px;
+  }
+
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 16px;
+    gap: 12px;
+  }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(37, 99, 235, 0.15);
+    border-top-color: #2563eb;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .loading-text {
+    font-weight: 600;
+    color: #333;
+  }
+
+  .loading-sub {
+    font-size: 12px;
+    color: #999;
   }
 </style>
