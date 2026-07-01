@@ -36,8 +36,15 @@ ANALYZER_MODEL = os.getenv("ANALYZER_MODEL", "gemini-2.5-flash-lite")  # vision 
 WRITER_MODEL   = os.getenv("WRITER_MODEL", "gemini-2.5-flash")          # best writing quality
 CHEAP_MODEL    = os.getenv("CHEAP_MODEL", "deepseek-v4-flash")          # text-only, cheap
 
-VIDEOS_DIR = Path("/videos")
-OUTPUT_DIR = Path("/output")
+# ── Config: output + video directories (native defaults, docker env override) ─
+# Native defaults use repo/data/{output,videos}; docker env can override to /output, /videos
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+VIDEOS_DIR = Path(os.getenv("VIDEOS_DIR", str(_REPO_ROOT / "data" / "videos")))
+OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", str(_REPO_ROOT / "data" / "output")))
+
+# Ensure directories exist (no-op if already present)
+VIDEOS_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # ── Pipeline progress persistence (postgres — optional, never fatal) ──
 # pipeline-api sets RUN_ID + DATABASE_URL; standalone CLI runs leave them blank
