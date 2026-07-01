@@ -5,6 +5,7 @@
   let rows = $state([])
   let url = $state('')
   let loading = $state(false)
+  let error = $state(null)
   let expanded = $state({}) // { [rowId]: true/false }
 
   // Format cost as currency with 4 decimals
@@ -52,22 +53,31 @@
   async function handleFindClips() {
     if (!url.trim()) return
     loading = true
-    const result = await api.findClips(url)
-    loading = false
-    if (result && result.clips) {
-      // Prepend new find to list
-      rows = [
-        {
-          id: Math.random(),
-          youtube_url: result.youtube_url,
-          clips: result.clips,
-          model: result.model,
-          cost_usd: result.cost_usd,
-          created_at: new Date().toISOString(),
-        },
-        ...rows,
-      ]
-      url = ''
+    error = null
+    try {
+      const result = await api.findClips(url)
+      if (!result) {
+        error = 'Request gagal — cek koneksi / service.'
+      } else if (result.detail) {
+        error = result.detail
+      } else if (result.clips && result.clips.length === 0) {
+        error = 'Gak ada klip yang cukup kuat dari video ini.'
+      } else if (result.clips) {
+        rows = [
+          {
+            id: Math.random(),
+            youtube_url: result.youtube_url,
+            clips: result.clips,
+            model: result.model,
+            cost_usd: result.cost_usd,
+            created_at: new Date().toISOString(),
+          },
+          ...rows,
+        ]
+        url = ''
+      }
+    } finally {
+      loading = false
     }
   }
 
@@ -99,12 +109,15 @@
 </div>
 
 <div class="card">
-  {#if rows.length === 0}
+  {#if error && !loading}
+    <div class="error-msg">{error}</div>
+  {/if}
+  {#if rows.length === 0 && !error}
     <div class="empty">
       <div class="empty-icon">📹</div>
       <div class="empty-text">Belum ada klip. Masukin URL di atas.</div>
     </div>
-  {:else}
+  {:else if rows.length > 0}
     <table>
       <thead>
         <tr>
@@ -367,5 +380,15 @@
   .empty-text {
     font-size: 16px;
     font-weight: 500;
+  }
+
+  .error-msg {
+    padding: 12px 16px;
+    border-radius: 6px;
+    background: #fff3cd;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+    font-size: 14px;
+    margin-bottom: 12px;
   }
 </style>
