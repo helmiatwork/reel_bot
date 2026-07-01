@@ -1647,6 +1647,161 @@ def youtube_channel_uploads(channel_id: str, max_results: int = 10):
     return _json({"items": [], "source": "unavailable", "error": "channel uploads unavailable (v3 API key or quota issue)"})
 
 
+# ── Snoop: watch target channels → auto-clip new uploads ──────────────────────
+def _snoop_init_db():
+    conn = _db_conn()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""CREATE TABLE IF NOT EXISTS snoop_targets (
+                id serial PRIMARY KEY, channel_id text UNIQUE NOT NULL, handle text,
+                title text, last_seen_video_id text, added_at timestamptz DEFAULT now())""")
+            cur.execute("""CREATE TABLE IF NOT EXISTS snoop_results (
+                id serial PRIMARY KEY, channel_id text NOT NULL, video_id text NOT NULL,
+                video_title text, clips jsonb, created_at timestamptz DEFAULT now())""")
+        conn.commit()
+    except Exception as e:
+        print(f"[snoop] init db error: {e}")
+    finally:
+        conn.close()
+
+
+_snoop_init_db()
+
+
+def _resolve_channel_id(channel: str):
+    """Return (channel_id, handle) from a raw UC id, /channel/ URL, @handle, or channel URL (yt-dlp for handles)."""
+    import re as _re
+    import subprocess as _sp
+    c = (channel or "").strip()
+    if not c:
+        raise HTTPException(status_code=400, detail="channel is required")
+    if c.startswith("UC") and len(c) >= 20 and "/" not in c:
+        return c, None
+    m = _re.search(r"/channel/(UC[0-9A-Za-z_-]{20,})", c)
+    if m:
+        return m.group(1), None
+    if c.startswith("@"):
+        handle, url = c, f"https://www.youtube.com/{c}"
+    elif c.startswith("http"):
+        url = c
+        hm = _re.search(r"/(@[\w.-]+)", c)
+        handle = hm.group(1) if hm else None
+    else:
+        handle, url = "@" + c, f"https://www.youtube.com/@{c}"
+    try:
+        probe_url = url if url.rstrip("/").endswith("/videos") else url.rstrip("/") + "/videos"
+        r = _sp.run([sys.executable, "-m", "yt_dlp", "--skip-download",
+                     "--playlist-items", "1", "--print", "channel_id", probe_url],
+                    capture_output=True, text=True, timeout=90)
+        cid = (r.stdout or "").strip().splitlines()[0].strip() if r.stdout.strip() else ""
+        if cid.startswith("UC"):
+            return cid, handle
+        raise HTTPException(status_code=400, detail=f"could not resolve channel: {(r.stderr or '').strip()[:200] or 'no channel_id'}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"channel resolution failed: {e}")
+
+
+class SnoopTargetRequest(BaseModel):
+    channel: str
+
+
+class SnoopResultRequest(BaseModel):
+    channel_id: str
+    video_id: str
+    video_title: str = ""
+    clips: list = []
+
+
+@app.get("/snoop/targets")
+def snoop_targets():
+    conn = _db_conn()
+    if not conn:
+        return _json({"targets": []})
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""SELECT t.channel_id, t.handle, t.title, t.last_seen_video_id, t.added_at,
+                (SELECT count(*) FROM snoop_results r WHERE r.channel_id=t.channel_id) AS runs
+                FROM snoop_targets t ORDER BY t.added_at DESC""")
+            rows = cur.fetchall()
+        return _json({"targets": [{"channel_id": r[0], "handle": r[1], "title": r[2],
+                                   "last_seen_video_id": r[3], "added_at": r[4], "runs": r[5]} for r in rows]})
+    finally:
+        conn.close()
+
+
+@app.post("/snoop/targets")
+def snoop_add_target(req: SnoopTargetRequest):
+    channel_id, handle = _resolve_channel_id(req.channel)
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=503, detail="db unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""INSERT INTO snoop_targets (channel_id, handle) VALUES (%s, %s)
+                ON CONFLICT (channel_id) DO UPDATE SET handle=EXCLUDED.handle
+                RETURNING channel_id, handle, title, last_seen_video_id, added_at""", (channel_id, handle))
+            r = cur.fetchone()
+        conn.commit()
+        return _json({"channel_id": r[0], "handle": r[1], "title": r[2], "last_seen_video_id": r[3], "added_at": r[4]})
+    finally:
+        conn.close()
+
+
+@app.delete("/snoop/targets/{channel_id}")
+def snoop_delete_target(channel_id: str):
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=503, detail="db unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM snoop_targets WHERE channel_id=%s", (channel_id,))
+        conn.commit()
+        return _json({"deleted": channel_id})
+    finally:
+        conn.close()
+
+
+@app.post("/snoop/results")
+def snoop_add_result(req: SnoopResultRequest):
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=503, detail="db unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute("INSERT INTO snoop_results (channel_id, video_id, video_title, clips) VALUES (%s, %s, %s, %s)",
+                        (req.channel_id, req.video_id, req.video_title, json.dumps(req.clips)))
+            cur.execute("UPDATE snoop_targets SET last_seen_video_id=%s WHERE channel_id=%s", (req.video_id, req.channel_id))
+        conn.commit()
+        return _json({"stored": req.video_id})
+    finally:
+        conn.close()
+
+
+@app.get("/snoop/results")
+def snoop_results(channel_id: str = "", limit: int = 50):
+    conn = _db_conn()
+    if not conn:
+        return _json({"results": []})
+    try:
+        limit = max(1, min(int(limit), 200))
+        with conn.cursor() as cur:
+            if channel_id:
+                cur.execute("""SELECT channel_id, video_id, video_title, clips, created_at FROM snoop_results
+                    WHERE channel_id=%s ORDER BY created_at DESC LIMIT %s""", (channel_id, limit))
+            else:
+                cur.execute("""SELECT channel_id, video_id, video_title, clips, created_at FROM snoop_results
+                    ORDER BY created_at DESC LIMIT %s""", (limit,))
+            rows = cur.fetchall()
+        return _json({"results": [{"channel_id": r[0], "video_id": r[1], "video_title": r[2],
+                                   "clips": r[3], "created_at": r[4]} for r in rows]})
+    finally:
+        conn.close()
+
+
 @app.get("/youtube/captions")
 def youtube_captions(video_id: str):
     """
