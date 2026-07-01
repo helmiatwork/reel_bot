@@ -4,7 +4,6 @@
 
   let rows = $state([])
   let url = $state('')
-  let maxClips = $state(8)
   let loading = $state(false)
   let expanded = $state({}) // { [rowId]: true/false }
 
@@ -53,7 +52,7 @@
   async function handleFindClips() {
     if (!url.trim()) return
     loading = true
-    const result = await api.findClips(url, maxClips)
+    const result = await api.findClips(url)
     loading = false
     if (result && result.clips) {
       // Prepend new find to list
@@ -92,15 +91,6 @@
       bind:value={url}
       disabled={loading}
       onkeydown={(e) => e.key === 'Enter' && handleFindClips()}
-    />
-    <input
-      type="number"
-      placeholder="Max clips"
-      bind:value={maxClips}
-      min="1"
-      max="20"
-      disabled={loading}
-      style="width: 100px"
     />
     <button onclick={handleFindClips} disabled={loading || !url.trim()}>
       {loading ? 'menganalisa…' : 'Cari klip'}

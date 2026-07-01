@@ -34,7 +34,7 @@ export const api = {
   tokenUsage: () => getJSON('/dash/token-usage'),
   analysis: (limit = 50) => getJSON('/dash/analysis?limit=' + limit),
   clipFinds: (limit = 50) => getJSON('/dash/clip-finds?limit=' + limit),
-  findClips: (youtube_url, max_clips = 8) => postJSON('/clips/find-claude', { youtube_url, max_clips }),
+  findClips: (youtube_url) => postJSON('/clips/find-claude', { youtube_url }),
   runs: (limit = 20) => getJSON(`/pipeline/runs?limit=${limit}`),
   run: (id) => getJSON(`/pipeline/run/${id}`),
   artifact: (id) => getJSON(`/pipeline/run/${id}/artifact`),
