@@ -15,7 +15,11 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional, List
 
-sys.path.insert(0, "/app")
+# ── Repo-relative paths (native + docker compatible) ──────────────────────────
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+_YT_PIPELINE = str(_REPO_ROOT / "yt-pipeline" / "yt_pipeline.py")
+
+sys.path.insert(0, str(_REPO_ROOT))
 
 app = FastAPI(title="Content Pipeline API", version="1.0")
 
@@ -103,7 +107,9 @@ def _validate_source_url(url: str) -> str:
 
     return url
 
-DASHBOARD_DIR = Path("/app/dashboard")
+DASHBOARD_DIR = Path(os.getenv("DASHBOARD_DIR", str(_REPO_ROOT / "dashboard-svelte" / "dist")))
+if not DASHBOARD_DIR.exists():
+    DASHBOARD_DIR = Path("/app/dashboard")
 DASHBOARD = DASHBOARD_DIR / "index.html"
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 
@@ -1216,7 +1222,7 @@ def get_transcript(req: TranscriptRequest):
     try:
         # Call the yt_pipeline CLI to fetch transcript
         proc = subprocess.run(
-            ["python", "/app/yt_pipeline/yt_pipeline.py", "--transcript", req.youtube_url],
+            [sys.executable, _YT_PIPELINE, "--transcript", req.youtube_url],
             capture_output=True, text=True, timeout=600)
         if proc.returncode != 0:
             # Gracefully return empty segments on failure
@@ -1291,7 +1297,7 @@ def get_frames(req: FramesRequest):
         # Now extract frames at timestamps via yt_pipeline CLI
         timestamps_csv = ','.join(str(t) for t in req.timestamps)
         proc = subprocess.run(
-            ["python", "/app/yt_pipeline/yt_pipeline.py", "--frames", video_path, timestamps_csv],
+            [sys.executable, _YT_PIPELINE, "--frames", video_path, timestamps_csv],
             capture_output=True, text=True, timeout=120)
 
         if proc.returncode != 0:
@@ -1345,7 +1351,7 @@ def start_research(req: ResearchRequest, bg: BackgroundTasks):
 
     def _run():
         try:
-            cmd = ["python", "/app/yt_pipeline/yt_pipeline.py", req.youtube_url]
+            cmd = [sys.executable, _YT_PIPELINE, req.youtube_url]
             if req.topic:
                 cmd.append(req.topic)
             # pass the run_id so yt_pipeline persists per-step progress to postgres
@@ -1392,7 +1398,7 @@ def start_discover(req: DiscoverRequest, bg: BackgroundTasks):
 
     def _run():
         try:
-            cmd = ["python", "/app/yt_pipeline/yt_pipeline.py", "--discover", req.niche, req.topic]
+            cmd = [sys.executable, _YT_PIPELINE, "--discover", req.niche, req.topic]
             sub_env = {**os.environ, "RUN_ID": run_id}
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=900, env=sub_env)
             run_data = _load_run(run_id) or {}
@@ -1517,7 +1523,7 @@ def youtube_search(q: str, max_results: int = 10):
     try:
         import subprocess
         proc = subprocess.run(
-            ["python", "/app/yt_pipeline/yt_pipeline.py", "--v3-search", q, str(max_results)],
+            [sys.executable, _YT_PIPELINE, "--v3-search", q, str(max_results)],
             capture_output=True, text=True, timeout=60)
         if proc.returncode == 0:
             try:
@@ -1562,7 +1568,7 @@ def youtube_video(video_id: str):
         import subprocess
         video_url = f"https://www.youtube.com/watch?v={video_id}"
         proc = subprocess.run(
-            ["python", "/app/yt_pipeline/yt_pipeline.py", "--v3-video", video_url],
+            [sys.executable, _YT_PIPELINE, "--v3-video", video_url],
             capture_output=True, text=True, timeout=60)
         if proc.returncode == 0:
             try:
@@ -1972,7 +1978,7 @@ def youtube_clip_this(req: ClipThisRequest, bg: BackgroundTasks):
     def _run():
         try:
             # Call the existing research pipeline (--discover mode)
-            cmd = ["python", "/app/yt_pipeline/yt_pipeline.py", "--discover", "auto", video_url]
+            cmd = [sys.executable, _YT_PIPELINE, "--discover", "auto", video_url]
             sub_env = {**os.environ, "RUN_ID": run_id}
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=900, env=sub_env)
             # Log result server-side; client tracks via /pipeline/research/status/{run_id}
@@ -1987,7 +1993,7 @@ def youtube_clip_this(req: ClipThisRequest, bg: BackgroundTasks):
 
 # ── Claude video analysis endpoint ───────────────────────────────────────────
 
-ANALYZE_FRAME_DIR = os.getenv("ANALYZE_FRAME_DIR", "/app/analyze-frames")
+ANALYZE_FRAME_DIR = os.getenv("ANALYZE_FRAME_DIR", str(_REPO_ROOT / "analyze-frames"))
 CLAUDE_BRIDGE_URL = os.getenv("CLAUDE_BRIDGE_URL", "http://host.docker.internal:9999")
 
 _CLAUDE_RE_PROMPT_TEMPLATE = """\
@@ -2072,7 +2078,7 @@ def _fetch_transcript(youtube_url: str) -> list:
     import subprocess
     try:
         proc = subprocess.run(
-            ["python", "/app/yt_pipeline/yt_pipeline.py", "--transcript", youtube_url],
+            [sys.executable, _YT_PIPELINE, "--transcript", youtube_url],
             capture_output=True, text=True, timeout=600)
         if proc.returncode != 0:
             return []
