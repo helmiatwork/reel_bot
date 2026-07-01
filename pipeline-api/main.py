@@ -1200,7 +1200,7 @@ class FramesRequest(BaseModel):
 
 class ClipFindRequest(BaseModel):
     youtube_url: str           # YouTube video URL
-    max_clips: Optional[int] = 8  # Number of clips to find (1-20, default 8)
+    max_clips: Optional[int] = None  # Number of clips to find (1-20, optional for auto-detection)
     model: Optional[str] = None   # Claude model, default "claude-sonnet-4-6"
 
 
@@ -2014,7 +2014,9 @@ Anda adalah asisten ahli dalam mengidentifikasi momen-momen viral dari video pan
 Transkripsi dengan timecode (format [mm:ss] text):
 {transcript}
 
-Tugas: Identifikasi {max_clips} momen TERBAIK dari transkrip yang akan menjadi viral di TikTok/Reels/Shorts.
+Tugas: Identifikasi setiap momen GENUINELY VIRAL dari transkrip yang akan menjadi viral di TikTok/Reels/Shorts.
+TIDAK ada quota tetap — kembalikan semua momen yang layak (biasanya 3-12 untuk video normal).
+Batas MAKSIMAL: 20 clip untuk mencegah list yang terlalu panjang.
 Setiap clip harus:
 - Durasi 15-60 detik
 - Self-contained (dapat dipahami tanpa konteks luar)
@@ -2317,15 +2319,14 @@ def find_clips_claude(req: ClipFindRequest):
     Transcript-driven clip finder: analyzes a timecoded transcript and returns
     the top clip-worthy moments for short-form content (TikTok/Reels/Shorts).
 
-    Body: {youtube_url, max_clips?: int (default 8, clamped 1-20), model?: str}
+    Body: {youtube_url, max_clips?: int (clamped 1-20 if provided), model?: str}
+    When max_clips is omitted, the model auto-detects clip count (typically 3-12, max 20).
     Returns: {youtube_url, clips: [{start_sec, end_sec, title, hook, why, caption}, ...], model, cost_usd}
     """
     import re
 
     _validate_source_url(req.youtube_url)
 
-    # Clamp max_clips to 1-20
-    max_clips = max(1, min(int(req.max_clips or 8), 20))
     model = req.model or "claude-sonnet-4-6"
 
     # Step 1: Fetch timecoded transcript
@@ -2354,7 +2355,6 @@ def find_clips_claude(req: ClipFindRequest):
 
     # Step 3: Build prompt
     prompt = _CLAUDE_CLIPPER_PROMPT_TEMPLATE.format(
-        max_clips=max_clips,
         transcript=transcript_text
     )
 
