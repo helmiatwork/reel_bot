@@ -58,12 +58,11 @@ export function nativeEnv(text) {
 }
 
 const PROC = [
-  ['postgres',     'pg_ctl -D ./data/pg -o "-p 5432" -l ./data/pg/server.log start'],
+  ['postgres',     'pg_ctl -D ./data/pg -o "-p 5432" -l ./data/pg/server.log -w start'],
   ['cliproxy',     './data/bin/cli-proxy-api -config ./cliproxy/config.yaml'],
   ['openclaw',     'openclaw gateway --port 18789'],
-  ['pipeline-api', 'uv run --project pipeline-api uvicorn main:app --host 0.0.0.0 --port 8000'],
-  ['arcreel',      'uv run --project data/arcreel uvicorn server.main:app --host 0.0.0.0 --port 1241'],
-  ['n8n',          'n8n start']
+  ['pipeline-api', 'bash -c "cd pipeline-api && source .venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port 8000"'],
+  ['arcreel',      'bash -c "cd data/arcreel && source .venv/bin/activate && uvicorn server.app:app --host 0.0.0.0 --port 1241"']
 ]
 
 export function buildProcfile(platform) {
@@ -101,7 +100,10 @@ function ensurePrereqs(os, { dryRun }) {
 function provisionPostgres({ dryRun }) {
   const steps = [
     ['initdb', () => {
-      if (existsSync('./data/pg')) return true
+      if (existsSync('./data/pg')) {
+        console.log('  data/pg already exists, skipping initdb')
+        return true
+      }
       if (!run('initdb', ['-D', './data/pg', '-U', 'admin'])) return false
       return true
     }],
@@ -114,23 +116,30 @@ function provisionPostgres({ dryRun }) {
       }
       // Verify connection (use postgres default database, which always exists)
       let ready = false
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 20; i++) {
         const r = spawnSync('psql', ['-h', 'localhost', '-U', 'admin', '-d', 'postgres', '-c', 'SELECT 1'], { stdio: 'pipe' })
         if (r.status === 0) {
+          console.log('  postgres is ready')
           ready = true
           break
         }
+        if (i === 0) console.log('  waiting for postgres to be ready...')
         spawnSync('sleep', ['0.5'], { stdio: 'ignore' })
       }
       return ready
     }],
     ['create-role', () => {
-      run('psql', ['-h', 'localhost', '-U', 'admin', '-c', "ALTER ROLE admin PASSWORD 'admin'"], { allowFail: true })
+      if (dryRun) return true
+      // Set admin password (idempotent, fails are allowed)
+      run('psql', ['-h', 'localhost', '-U', 'admin', '-d', 'postgres', '-c', "ALTER ROLE admin WITH PASSWORD 'admin'"], { allowFail: true })
+      return true
     }],
     ['createdbs', () => {
+      if (dryRun) return true
       for (const db of ['arcreel', 'n8n', 'content_automation']) {
         run('createdb', ['-h', 'localhost', '-U', 'admin', db], { allowFail: true })
       }
+      return true
     }]
   ]
   for (const [name, fn] of steps) {
@@ -153,8 +162,30 @@ const PY_SVCS = ['pipeline-api']
 
 function provisionServices({ dryRun }) {
   for (const s of PY_SVCS) {
-    if (dryRun) { console.log(`[dry-run] uv sync --project ${s}`); continue }
-    run('uv', ['sync', '--project', s])
+    if (dryRun) { console.log(`[dry-run] python3.12 -m venv ${s}/.venv && source ${s}/.venv/bin/activate && pip install [deps]`); continue }
+    // Create venv and install deps from Dockerfile's pip install list
+    const deps = [
+      'fastapi', 'uvicorn', 'elevenlabs', 'gtts', 'yt-dlp[default]', 'curl_cffi',
+      'httpx', 'psycopg[binary]', 'google-api-python-client', 'google-auth-oauthlib',
+      'google-auth-httplib2', 'boto3', 'docker'
+    ]
+    if (!run('python3.12', ['-m', 'venv', `${s}/.venv`])) {
+      console.error(`✗ venv creation for ${s} failed`)
+      exit(1)
+    }
+    const activateCmd = `source ${s}/.venv/bin/activate && pip install ${deps.join(' ')}`
+    if (!run('bash', ['-c', activateCmd])) {
+      console.error(`✗ pip install for ${s} failed`)
+      exit(1)
+    }
+  }
+  // pipeline-api also needs deno (per Dockerfile)
+  if (dryRun) { console.log('[dry-run] ensure deno is installed'); return }
+  if (!has('deno')) {
+    console.log('• Installing deno...')
+    if (!run('brew', ['install', 'deno'])) {
+      console.error('✗ deno installation failed (non-fatal, continuing)')
+    }
   }
 }
 
@@ -170,7 +201,9 @@ function provisionArcreel({ dryRun, os }) {
       exit(1)
     }
   }
-  if (!run('uv', ['sync', '--project', 'data/arcreel'])) {
+  // Use uv sync to create and install venv
+  const syncResult = spawnSync('uv', ['sync', '--project', 'data/arcreel'], { stdio: 'inherit' })
+  if (syncResult.status !== 0) {
     console.error('✗ arcreel uv sync failed')
     exit(1)
   }
@@ -273,11 +306,28 @@ async function main() {
     }
     // Task 9: launch supervisor (unless --skip-up)
     if (!skipUp && !dryRun) {
-      console.log('• Launching supervisor...')
-      if (!run('npx', ['foreman', 'start', '-f', 'Procfile'])) {
-        console.error('\n✗ Supervisor failed.')
-        exit(1)
+      console.log('• Launching supervisor with pm2 (per-process management)...')
+      // Ensure pm2 is installed
+      if (!has('pm2')) {
+        console.log('  Installing pm2 globally...')
+        if (!run('npm', ['install', '-g', 'pm2'])) {
+          console.error('✗ Failed to install pm2')
+          exit(1)
+        }
       }
+      // Start each service via pm2 (one service failure doesn't kill others)
+      const procLines = buildProcfile(os).split('\n').filter(l => l.trim())
+      for (const line of procLines) {
+        const [name, cmd] = line.split(': ')
+        if (!name || !cmd) continue
+        console.log(`  Starting ${name}...`)
+        if (!run('pm2', ['start', '--name', name, cmd])) {
+          console.error(`✗ Failed to start ${name} (non-fatal, continuing)`)
+        }
+      }
+      console.log('\n• All services launched. Monitor with: pm2 monit')
+      console.log('  Stop all:     pm2 kill')
+      console.log('  View logs:    pm2 logs')
     }
     if (dryRun || skipUp) {
       console.log('\n• Dry-run/skip-up complete.')
