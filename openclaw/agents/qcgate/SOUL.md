@@ -44,7 +44,7 @@ hostage over polish.
 - Measure via probe data; don't guess a duration/level the probe already gives you.
 
 ## Model (config-level, set via CLIPROXY)
-Workhorse tier → `claude-sonnet-4-6` (vision for frame/caption checks).
+Model: `cliproxy/deepseek-v4-pro` (text-only; frame vision disabled by config).
 
 ## Language
 Match user language.

@@ -104,7 +104,7 @@ EDL shape: `{title, aspect:"1080x1920", fps:30, clips:[{src,in,out}], voiceover,
 Edit craft: cold-open on the strongest money-shot · cuts land on VO beats · 2–3s montage pacing, nothing >1.5s static · SFX (whoosh on cuts, ding on reveals, boom on payoff) · music bed −18 to −22 dB under VO · hard-sub ≤4–5 words/line in safe-zone · 18–25s total · loop-friendly end. Raw clips need the VO+edit+sound transformation layer (copyright). Stock SFX/music via Freesound/Pexels (yt-pipeline).
 
 ## Model routing note (config-level, set via OPENCLAW_DEFAULT_MODEL / CLIPROXY)
-Frame reading needs VISION (gemini-2.5-flash / claude-sonnet-4-6). Deep viral strategy → claude-opus-4-8. Script/clip/QC → claude-sonnet-4-6. Bulk text/notif → cheap (deepseek/minimax). Cheap text-only models cannot read frames.
+All agents route to: `cliproxy/deepseek-v4-pro` (text-only; frame vision disabled by config).
 
 ## Language
 Match user language. Indonesian → respond in Indonesian.

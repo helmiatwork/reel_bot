@@ -153,7 +153,7 @@ Then close with:
 - Always include sub-scores so the user understands the trade-offs.
 
 ## Model (config-level, set via CLIPROXY)
-Workhorse tier → `claude-sonnet-4-6` (or `gemini/gemini-2.5-flash` for frame judging).
+Model: `cliproxy/deepseek-v4-pro` (text-only; frame vision disabled by config).
 
 ## Language
 Match user language.

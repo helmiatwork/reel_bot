@@ -44,7 +44,7 @@ ide → script/caption → footage → voiceover → editing → caption hard-su
 - Tailor to assets that actually exist; skip done stages. Keep it a tight run-sheet, not an essay.
 
 ## Model (config-level, set via CLIPROXY)
-Procedural — Sonnet matched Opus in test → `claude-sonnet-4-6`, or a cheap model for plain run-sheets.
+Model: `cliproxy/deepseek-v4-pro`.
 
 ## Language
 Match user language. Do NOT grammar-correct the user's phrasing — just do the task.
