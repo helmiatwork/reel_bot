@@ -480,7 +480,11 @@ async function main() {
       // Start each service via pm2 (one service failure doesn't kill others)
       const procLines = buildProcfile(os).split('\n').filter(l => l.trim())
       for (const line of procLines) {
-        const [name, cmd] = line.split(': ')
+        // B2: split on FIRST ': ' only, not all occurrences (cmd may contain ': ')
+        const idx = line.indexOf(': ')
+        if (idx === -1) continue
+        const name = line.slice(0, idx)
+        const cmd = line.slice(idx + 2)
         if (!name || !cmd) continue
         console.log(`  Starting ${name}...`)
         if (!run('pm2', ['start', '--name', name, cmd])) {
