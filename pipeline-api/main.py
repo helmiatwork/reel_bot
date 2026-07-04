@@ -7,9 +7,12 @@ import ipaddress
 import shutil
 import subprocess
 import tempfile
+import time
+import shlex
+import asyncio
 from pathlib import Path
 from urllib.parse import urlparse
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Header, Depends
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -147,9 +150,32 @@ def _scalar(cur, sql, default=None):
 
 
 @app.get("/dash/services")
-def dash_services():
-    """Live up/down + port for each stack service (pinged from localhost in native mode)."""
-    import httpx
+async def _probe_service(name: str, port: int, url: Optional[str]) -> dict:
+    """P1c: Probe a single service concurrently."""
+    if name == "postgres":
+        c = _db_conn()
+        up = c is not None
+        if c:
+            c.close()
+        return {"name": name, "port": port, "up": up}
+
+    if not url:
+        return {"name": name, "port": port, "up": False}
+
+    try:
+        import httpx
+        # Use AsyncClient for concurrent probes
+        async with httpx.AsyncClient() as client:
+            r = await client.get(url, timeout=6)
+            up = r.status_code < 500
+    except Exception:
+        up = False
+    return {"name": name, "port": port, "up": up}
+
+
+@app.get("/dash/services")
+async def dash_services():
+    """P1c: Live up/down + port for each stack service (concurrent probes)."""
     # All services now use localhost for native execution (no Docker hostnames).
     checks = [
         ("postgres", 5432, None),
@@ -159,23 +185,8 @@ def dash_services():
         ("pipeline-api", 8000, "http://localhost:8000/health"),
         ("arcreel", 1241, "http://localhost:1241"),
     ]
-    out = []
-    for name, port, url in checks:
-        up = False
-        if name == "postgres":
-            c = _db_conn()
-            up = c is not None
-            if c:
-                c.close()
-        else:
-            try:
-                # treat any HTTP reply (incl. 401/404) as "up" — a response on
-                # the port means the service is listening; only 5xx/no-reply is down.
-                r = httpx.get(url, timeout=6)
-                up = r.status_code < 500
-            except Exception:
-                up = False
-        out.append({"name": name, "port": port, "up": up})
+    # Concurrent probes instead of sequential
+    out = await asyncio.gather(*[_probe_service(name, port, url) for name, port, url in checks])
     return _json({"services": out, "live": sum(1 for s in out if s["up"]), "total": len(out)})
 
 
@@ -196,21 +207,32 @@ _SERVICE_RESTART_MAP = {
 }
 
 
-@app.post("/dash/restart/{service}")
-def restart_service(service: str):
-    """Restart a specific native service process. Gated by dashboard auth (nginx DASHBOARD_PASSWORD)."""
-    # Special case: explicitly reject pipeline-api to avoid killing the in-flight request
-    if service == "pipeline-api":
-        raise HTTPException(status_code=400, detail="cannot restart pipeline-api from itself")
+def verify_admin_key(x_api_key: str = None) -> None:
+    """P1a: Verify PIPELINE_API_KEY header if env var is set.
 
-    if service not in _RESTARTABLE_SERVICES:
-        raise HTTPException(status_code=400, detail="unknown service")
+    If PIPELINE_API_KEY env var is unset/empty, allow all (localhost dev mode).
+    If set, require matching X-API-Key header, else 401.
+    """
+    env_key = os.getenv("PIPELINE_API_KEY", "").strip()
+    if not env_key:
+        # Env unset → allow
+        return None
 
-    # Native restart: kill the process, then relaunch it
+    # Env is set → require matching header
+    if not x_api_key or x_api_key != env_key:
+        raise HTTPException(status_code=401, detail="invalid API key")
+    return None
+
+
+def _restart_one(service: str) -> dict:
+    """B1: Restart a single native service (shell-safe, no injection).
+
+    Returns {'status': 'restarted'|'unsupported_native'|'error'}.
+    Used by both /dash/restart/{service} and /dash/restart-all.
+    """
     restart_entry = _SERVICE_RESTART_MAP.get(service)
     if restart_entry is None:
-        # Service marked as unsupported_native (e.g., postgres, n8n)
-        return _json({"service": service, "status": "unsupported_native"})
+        return {"status": "unsupported_native"}
 
     pkill_pattern, restart_cmd = restart_entry
     try:
@@ -222,65 +244,65 @@ def restart_service(service: str):
             capture_output=True
         )
         # Give it a moment to terminate
-        import time
         time.sleep(0.5)
 
-        # Relaunch with nohup so it survives detach
-        # Get the reelbot repo root (parent of pipeline-api)
-        repo_root = Path(__file__).parent.parent
-        final_cmd = restart_cmd.format(str(repo_root))
+        # Relaunch without shell=True to prevent injection.
+        # Parse the restart_cmd (static, safe to split) and format repo_root.
+        repo_root = _REPO_ROOT
+        # Expand the placeholder {0} or {1} if the command has one
+        formatted_cmd = restart_cmd.format(str(repo_root))
+
+        # Split the command into argv. The formatted_cmd now contains the repo path inline.
+        # For commands like "cd {} && exec ./data/bin/...", we need to run them via bash.
+        # To avoid shell injection, we use bash -c with the command as a single argument.
+        # This keeps repo_root safe even if it contains spaces (it's a single arg to bash -c).
+        argv = ["/bin/bash", "-c", formatted_cmd]
+
         subprocess.Popen(
-            f"cd {repo_root} && nohup {final_cmd} > /dev/null 2>&1 &",
-            shell=True,
-            start_new_session=True
+            argv,
+            cwd=str(repo_root),
+            start_new_session=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
         )
-        return _json({"service": service, "status": "restarted"})
+        return {"status": "restarted"}
     except Exception as e:
-        # Log server-side, don't expose internals to client
         print(f"[restart/{service}] error: {type(e).__name__}: {e}")
-        return _json({"service": service, "status": "error"})
+        return {"status": "error"}
+
+
+@app.post("/dash/restart/{service}")
+def restart_service(
+    service: str,
+    _admin: None = Depends(lambda x_api_key: verify_admin_key(x_api_key)),
+    x_api_key: str = Header(None)
+):
+    """Restart a specific native service process. P1a: gated by optional PIPELINE_API_KEY."""
+    # Special case: explicitly reject pipeline-api to avoid killing the in-flight request
+    if service == "pipeline-api":
+        raise HTTPException(status_code=400, detail="cannot restart pipeline-api from itself")
+
+    if service not in _RESTARTABLE_SERVICES:
+        raise HTTPException(status_code=400, detail="unknown service")
+
+    result = _restart_one(service)
+    return _json({"service": service, **result})
 
 
 @app.post("/dash/restart-all")
-def restart_all():
-    """Restart all restartable services natively. Returns aggregated status per service."""
+def restart_all(
+    _admin: None = Depends(lambda x_api_key: verify_admin_key(x_api_key)),
+    x_api_key: str = Header(None)
+):
+    """Restart all restartable services natively. P1a: gated by optional PIPELINE_API_KEY."""
     results = []
     restarted_count = 0
 
     for service in _RESTARTABLE_SERVICES:
-        restart_entry = _SERVICE_RESTART_MAP.get(service)
-        if restart_entry is None:
-            # Service marked as unsupported_native (e.g., postgres, n8n)
-            results.append({"service": service, "status": "unsupported_native"})
-            continue
-
-        pkill_pattern, restart_cmd = restart_entry
-        try:
-            # Kill the existing process
-            subprocess.run(
-                f"pkill -f '{pkill_pattern}'",
-                shell=True,
-                timeout=5,
-                capture_output=True
-            )
-            # Give it a moment to terminate
-            import time
-            time.sleep(0.5)
-
-            # Relaunch with nohup
-            repo_root = Path(__file__).parent.parent
-            final_cmd = restart_cmd.format(str(repo_root))
-            subprocess.Popen(
-                f"cd {repo_root} && nohup {final_cmd} > /dev/null 2>&1 &",
-                shell=True,
-                start_new_session=True
-            )
-            results.append({"service": service, "status": "restarted"})
+        result = _restart_one(service)
+        results.append({"service": service, **result})
+        if result["status"] == "restarted":
             restarted_count += 1
-        except Exception as e:
-            # Log error but don't fail the whole call
-            print(f"[restart-all/{service}] error: {type(e).__name__}: {e}")
-            results.append({"service": service, "status": "error"})
 
     return _json({"results": results, "restarted": restarted_count})
 
@@ -1151,7 +1173,8 @@ def run_pipeline(req: PipelineRequest, bg: BackgroundTasks):
 
 # ── Analytics dashboard endpoints ────────────────────────────
 
-ANALYTICS_DB_PATH = os.getenv("ANALYTICS_DB", "/output/analytics.json")
+# P1b: default to repo-relative output/ instead of Docker /output/
+ANALYTICS_DB_PATH = os.getenv("ANALYTICS_DB", str(_REPO_ROOT / "output" / "analytics.json"))
 
 @app.get("/analytics/data")
 def analytics_data():
@@ -1327,7 +1350,8 @@ class ResearchRequest(BaseModel):
 
 
 def _runs_path(run_id: str) -> Path:
-    return Path(f"/output/research_runs/{run_id}.json")
+    # P1b: default to repo-relative output/ instead of Docker /output/
+    return _REPO_ROOT / "output" / "research_runs" / f"{run_id}.json"
 
 def _save_run(run_id: str, data: dict):
     p = _runs_path(run_id)
@@ -1649,6 +1673,7 @@ def youtube_channel_uploads(channel_id: str, max_results: int = 10):
 
 # ── Snoop: watch target channels → auto-clip new uploads ──────────────────────
 def _snoop_init_db():
+    """P1d: Initialize snoop tables (moved to startup event)."""
     conn = _db_conn()
     if not conn:
         return
@@ -1667,7 +1692,13 @@ def _snoop_init_db():
         conn.close()
 
 
-_snoop_init_db()
+@app.on_event("startup")
+def startup_event():
+    """P1d: Initialize snoop DB at startup instead of at import."""
+    try:
+        _snoop_init_db()
+    except Exception as e:
+        print(f"[startup] snoop db init failed (non-fatal): {e}")
 
 
 def _resolve_channel_id(channel: str):
@@ -2151,7 +2182,8 @@ def youtube_clip_this(req: ClipThisRequest, bg: BackgroundTasks):
 # ── Claude video analysis endpoint ───────────────────────────────────────────
 
 ANALYZE_FRAME_DIR = os.getenv("ANALYZE_FRAME_DIR", str(_REPO_ROOT / "analyze-frames"))
-CLAUDE_BRIDGE_URL = os.getenv("CLAUDE_BRIDGE_URL", "http://host.docker.internal:9999")
+# P1b: default to localhost instead of Docker internal host
+CLAUDE_BRIDGE_URL = os.getenv("CLAUDE_BRIDGE_URL", "http://localhost:9999")
 
 _CLAUDE_RE_PROMPT_TEMPLATE = """\
 Analisa video YouTube berikut berdasarkan frame-frame gambar yang disediakan.
