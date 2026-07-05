@@ -3014,6 +3014,205 @@ def find_clips_claude(req: ClipFindRequest):
     })
 
 
+class ClipAutoRequest(BaseModel):
+    youtube_url: str
+    intent: Optional[str] = None
+    clip_index: Optional[int] = None
+    model: Optional[str] = None
+    max_clips: Optional[int] = None
+
+
+@app.post("/clips/auto")
+def auto_clips(req: ClipAutoRequest):
+    """
+    Unified endpoint: find clips from a YouTube URL, then render the recommended one.
+    One call that returns both the clip-find results and a ready-to-use rendered video.
+
+    Body: {youtube_url, intent?: str, clip_index?: int, model?: str, max_clips?: int}
+    Returns: {status, clip_find_id, render_id, video_path, clip, cached_find}
+    """
+    import uuid
+
+    _validate_source_url(req.youtube_url)
+
+    model = req.model or "claude-sonnet-4-6"
+    max_clips = max(1, min(int(req.max_clips or 8), 20))
+
+    # ── STEP 1: Find clips via claude (inline, reusing find_clips_claude logic) ──
+    segments = _fetch_transcript(req.youtube_url)
+    if not segments:
+        raise HTTPException(
+            status_code=422,
+            detail="No transcript/subtitles available for this video — clip-finder needs a transcript"
+        )
+
+    # Build compact transcript text
+    transcript_lines = []
+    for seg in segments:
+        start_sec = float(seg.get("start", 0))
+        text = seg.get("text", "").strip()
+        if text:
+            mins = int(start_sec // 60)
+            secs = int(start_sec % 60)
+            transcript_lines.append(f"[{mins:02d}:{secs:02d}] {text}")
+
+    transcript_text = "\n".join(transcript_lines)
+    if len(transcript_text) > 45000:
+        transcript_text = transcript_text[:45000] + "\n[... transcript truncated ...]"
+
+    # Call claude bridge
+    prompt = _CLAUDE_CLIPPER_PROMPT_TEMPLATE.format(
+        max_clips=max_clips,
+        transcript=transcript_text
+    )
+
+    import httpx as _httpx
+    bridge_timeout = _httpx.Timeout(connect=10.0, read=200.0, write=10.0, pool=5.0)
+    try:
+        bridge_resp = _httpx.post(
+            f"{CLAUDE_BRIDGE_URL}/run",
+            json={"prompt": prompt, "frames": [], "model": model, "timeout_s": 200},
+            timeout=bridge_timeout,
+        )
+    except Exception as exc:
+        print(f"[clips/auto] bridge unreachable: {exc}")
+        raise HTTPException(status_code=502, detail=f"Bridge unreachable: {exc}")
+
+    bridge_data = bridge_resp.json()
+
+    if bridge_data.get("error_type") == "rate_limit":
+        raise HTTPException(
+            status_code=429,
+            detail="Claude usage/rate limit reached — please retry later",
+        )
+
+    if not bridge_data.get("ok"):
+        raise HTTPException(
+            status_code=502,
+            detail=f"Bridge error: {bridge_data.get('error', 'unknown')}",
+        )
+
+    raw_result = bridge_data.get("result", "")
+    cost_usd = bridge_data.get("cost_usd")
+
+    try:
+        cleaned = _strip_json_fences(raw_result)
+        parsed = json.loads(cleaned)
+    except Exception as exc:
+        print(f"[clips/auto] JSON parse of claude result failed: {exc}")
+        raise HTTPException(status_code=502, detail=f"Could not parse claude result as JSON: {exc}")
+
+    clips = parsed.get("clips", [])
+    if not isinstance(clips, list):
+        clips = []
+
+    for clip in clips:
+        if isinstance(clip, dict):
+            clip["start_sec"] = int(clip.get("start_sec", 0))
+            clip["end_sec"] = int(clip.get("end_sec", 0))
+
+    if not clips:
+        raise HTTPException(status_code=422, detail="no_clips")
+
+    # Rank and mark recommended
+    clips = [c for c in clips if isinstance(c, dict)]
+    for i, clip in enumerate(clips):
+        try:
+            clip["rank"] = int(clip["rank"]) if clip.get("rank") is not None else i + 1
+        except (TypeError, ValueError):
+            clip["rank"] = i + 1
+    clips.sort(key=lambda c: c.get("rank", 999))
+    for c in clips:
+        c["recommended"] = False
+    if clips:
+        clips[0]["rank"] = 1
+        clips[0]["recommended"] = True
+
+    # Persist to DB and get the inserted ID
+    clip_find_id = None
+    conn = _db_conn()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO clip_finds
+                        (youtube_url, clips, model, cost_usd)
+                    VALUES (%s, %s, %s, %s)
+                    RETURNING id
+                    """,
+                    (req.youtube_url, json.dumps(clips), model, cost_usd),
+                )
+                row = cur.fetchone()
+                if row:
+                    clip_find_id = row[0]
+            conn.commit()
+        except Exception as exc:
+            print(f"[clips/auto] DB insert failed (non-fatal): {exc}")
+        finally:
+            conn.close()
+
+    # ── STEP 2: Render the chosen clip ──
+    try:
+        print(f"[clips/auto] Downloading video from {req.youtube_url}")
+        src_path = _download_source_video(req.youtube_url)
+        print(f"[clips/auto] Video cached at {src_path}")
+
+        edl = _build_clip_edl(clips, src_path, chosen_index=req.clip_index)
+        print(f"[clips/auto] Built EDL with clip in={edl['clips'][0]['in']}, out={edl['clips'][0]['out']}")
+
+        render_id = str(uuid.uuid4())
+        render_dir = _REPO_ROOT / "data" / "renders" / render_id
+        render_dir.mkdir(parents=True, exist_ok=True)
+        edl_path = render_dir / "edl.json"
+        edl_path.write_text(json.dumps(edl))
+        print(f"[clips/auto] Wrote EDL to {edl_path}")
+
+        out_mp4 = render_dir / "output.mp4"
+        assemble_sh = _REPO_ROOT / "scripts" / "assemble.sh"
+
+        print(f"[clips/auto] Running assemble.sh...")
+        result = subprocess.run(
+            ["bash", str(assemble_sh), str(edl_path), str(out_mp4)],
+            capture_output=True, text=True, timeout=600
+        )
+
+        if result.returncode != 0:
+            stderr_tail = result.stderr[-500:] if result.stderr else "no stderr"
+            print(f"[clips/auto] assemble.sh failed: {stderr_tail}")
+            raise HTTPException(status_code=500, detail=f"Render failed: {stderr_tail}")
+
+        if not out_mp4.exists():
+            raise HTTPException(status_code=500, detail="Output MP4 not created")
+
+        print(f"[clips/auto] Success! Output at {out_mp4}")
+
+        # Return chosen clip (respects clip_index override or picks recommended)
+        chosen_clip = clips[req.clip_index] if req.clip_index is not None and req.clip_index < len(clips) else None
+        if not chosen_clip:
+            for clip in clips:
+                if clip.get("recommended"):
+                    chosen_clip = clip
+                    break
+        if not chosen_clip and clips:
+            chosen_clip = clips[0]
+
+        return _json({
+            "status": "ok",
+            "clip_find_id": clip_find_id,
+            "render_id": render_id,
+            "video_path": str(out_mp4.absolute()),
+            "clip": chosen_clip,
+            "cached_find": False,
+        })
+
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"[clips/auto] endpoint error: {exc}")
+        raise HTTPException(status_code=500, detail=f"Render failed: {str(exc)[:200]}")
+
+
 @app.get("/dash/clip-finds")
 def dash_clip_finds(limit: int = 50):
     """
