@@ -3216,8 +3216,11 @@ def analyze_claude(req: AnalyzeClaudeRequest):
                         (req.youtube_url,)
                     )
                     cached_row = cur.fetchone()
-                    if cached_row:
-                        # Return cached result immediately
+                    cached_score = (cached_row[9] if cached_row and len(cached_row) > 9 else None)
+                    # Only serve from cache if it's a COMPLETE analysis (has a
+                    # retention_score). Old rows predating the score are re-analyzed
+                    # so the score gets backfilled.
+                    if cached_row and cached_score is not None:
                         cached_tags = cached_row[5]  # tags column
                         if isinstance(cached_tags, str):
                             try:
@@ -3237,7 +3240,7 @@ def analyze_claude(req: AnalyzeClaudeRequest):
                             "hook": cached_row[2],
                             "structure": cached_row[3],
                             "retention": cached_row[4],
-                            "retention_score": cached_row[9] if len(cached_row) > 9 else None,
+                            "retention_score": cached_score,
                             "tags": cached_tags,
                             "model": cached_row[6],
                             "cost_usd": cached_cost,
