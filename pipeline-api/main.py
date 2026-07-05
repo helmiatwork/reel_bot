@@ -32,6 +32,15 @@ sys.path.insert(0, str(_REPO_ROOT))
 
 app = FastAPI(title="Content Pipeline API", version="1.0")
 
+
+@app.on_event("startup")
+def startup_event():
+    """Initialize DB tables at startup (non-fatal on failure)."""
+    try:
+        _creators_init_db()
+    except Exception as e:
+        print(f"[startup] creators db init failed (non-fatal): {e}")
+
 # ── SSRF guard: blocked networks (module-level constant) ────────────────────
 # Extra ranges beyond ipaddress.ip_address check (0.0.0.0/8, CGNAT, etc)
 _SSRF_BLOCKED_NETS = [
@@ -2724,6 +2733,140 @@ def _extract_keyframes(youtube_url: str, out_dir: str, n: int = 20) -> list:
     return frame_paths
 
 
+def _creators_init_db():
+    """Initialize creators table at startup (non-fatal on failure)."""
+    conn = _db_conn()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""CREATE TABLE IF NOT EXISTS creators (
+                id              BIGSERIAL PRIMARY KEY,
+                channel_id      TEXT UNIQUE,
+                channel         TEXT,
+                creator_name    TEXT,
+                total_followers BIGINT,
+                gender          TEXT,
+                created_at      TIMESTAMPTZ DEFAULT now(),
+                last_updated    TIMESTAMPTZ DEFAULT now()
+            )""")
+            cur.execute("""CREATE INDEX IF NOT EXISTS creators_last_updated_idx
+                ON creators (last_updated DESC)""")
+        conn.commit()
+    except Exception as e:
+        print(f"[creators] init db error: {e}")
+    finally:
+        conn.close()
+
+
+def _fetch_channel_meta(youtube_url: str) -> dict:
+    """
+    Fetch channel metadata from a YouTube URL using yt-dlp.
+    Returns dict with channel_id, channel, creator_name, total_followers (may be null).
+    Non-fatal: on error returns empty dict.
+    """
+    try:
+        cmd = [
+            "yt-dlp",
+            "--dump-single-json",
+            "--skip-download",
+            "--no-playlist",
+        ]
+        # Add player_client args from _ytdlp_source_args
+        cmd.extend(["--extractor-args", "youtube:player_client=android,web_safari,ios"])
+        cmd.append(youtube_url)
+
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        if proc.returncode != 0:
+            print(f"[creators] yt-dlp failed: {proc.stderr[:200]}")
+            return {}
+
+        info = json.loads(proc.stdout)
+        return {
+            "channel_id": info.get("channel_id") or info.get("uploader_id"),
+            "channel": info.get("channel") or info.get("uploader"),
+            "creator_name": info.get("uploader") or info.get("channel"),
+            "total_followers": info.get("channel_follower_count"),
+        }
+    except Exception as e:
+        print(f"[creators] _fetch_channel_meta error: {e}")
+        return {}
+
+
+def _infer_gender(creator_name: str, channel: str) -> str:
+    """
+    Call claude bridge to infer gender from creator name and channel.
+    Returns 'male', 'female', or 'unknown'. Non-fatal: defaults to 'unknown' on error.
+    """
+    try:
+        import httpx as _httpx
+        prompt = (
+            f"Berdasarkan nama kreator '{creator_name}' (channel '{channel}'), "
+            f"tebak gender kemungkinan besar. Jawab SATU kata saja: male, female, atau unknown."
+        )
+        bridge_timeout = _httpx.Timeout(connect=10.0, read=30.0, write=10.0, pool=5.0)
+        resp = _httpx.post(
+            f"{CLAUDE_BRIDGE_URL}/run",
+            json={"prompt": prompt, "frames": [], "model": "claude-haiku-4"},
+            timeout=bridge_timeout,
+        )
+        data = resp.json()
+        if not data.get("ok"):
+            return "unknown"
+        result = data.get("result", "").strip().lower()
+        if result in ("male", "female"):
+            return result
+        return "unknown"
+    except Exception as e:
+        print(f"[creators] _infer_gender error: {e}")
+        return "unknown"
+
+
+def _save_creator(youtube_url: str) -> None:
+    """
+    Save creator to DB if not already exists (check by channel_id).
+    Non-fatal: any error is logged but doesn't break analyze.
+    """
+    try:
+        meta = _fetch_channel_meta(youtube_url)
+        if not meta.get("channel_id"):
+            return  # Skip silently
+
+        conn = _db_conn()
+        if not conn:
+            return
+
+        try:
+            with conn.cursor() as cur:
+                # Check if creator already exists
+                cur.execute(
+                    "SELECT 1 FROM creators WHERE channel_id = %s",
+                    (meta["channel_id"],)
+                )
+                if cur.fetchone():
+                    return  # Creator already exists, skip
+
+                # New creator: infer gender and insert
+                gender = _infer_gender(meta.get("creator_name", ""), meta.get("channel", ""))
+                cur.execute(
+                    """INSERT INTO creators
+                    (channel_id, channel, creator_name, total_followers, gender)
+                    VALUES (%s, %s, %s, %s, %s)""",
+                    (
+                        meta["channel_id"],
+                        meta.get("channel"),
+                        meta.get("creator_name"),
+                        meta.get("total_followers"),
+                        gender,
+                    )
+                )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception as e:
+        print(f"[creators] _save_creator error (non-fatal): {e}")
+
+
 class AnalyzeClaudeRequest(BaseModel):
     youtube_url: str
     intent: Optional[str] = None
@@ -2892,6 +3035,9 @@ def analyze_claude(req: AnalyzeClaudeRequest):
         finally:
             conn.close()
 
+    # Step 6: Save creator if new (non-fatal)
+    _save_creator(req.youtube_url)
+
     return _json({
         "youtube_url": req.youtube_url,
         "hook": hook,
@@ -2902,6 +3048,48 @@ def analyze_claude(req: AnalyzeClaudeRequest):
         "cost_usd": cost_usd,
         "cached": False,
     })
+
+
+@app.get("/creators")
+def list_creators():
+    """
+    List all creators stored in the database.
+    Returns paginated list ordered by last_updated DESC (most recent first).
+    On DB error, returns empty list gracefully.
+    """
+    conn = _db_conn()
+    if not conn:
+        return _json({"creators": []})
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT channel_id, channel, creator_name, total_followers, gender, created_at, last_updated
+                FROM creators
+                ORDER BY last_updated DESC
+                LIMIT 500
+                """
+            )
+            rows = cur.fetchall()
+            creators = [
+                {
+                    "channel_id": row[0],
+                    "channel": row[1],
+                    "creator_name": row[2],
+                    "total_followers": row[3],
+                    "gender": row[4],
+                    "created_at": row[5],
+                    "last_updated": row[6],
+                }
+                for row in rows
+            ]
+            return _json({"creators": creators})
+    except Exception as e:
+        print(f"[creators] GET /creators failed: {e}")
+        return _json({"creators": []})
+    finally:
+        conn.close()
 
 
 @app.post("/clips/find-claude")
