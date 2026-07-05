@@ -3,8 +3,12 @@
   import { api, fmtViews } from '../lib/api.js'
   import { SOURCE_DETAIL } from '../lib/data.js'
   import { openDrawer } from '../lib/stores.js'
+  import Pagination from '../lib/Pagination.svelte'
 
   let rows = $state([])
+  let total = $state(0)
+  let offset = $state(0)
+  const limit = 25
   let q = $state('')
   let niche = $state('')
 
@@ -17,7 +21,9 @@
       status: r.status,
       views: r.views,
       viewsLabel: fmtViews(r.views),
-      niche: d.niche || r.platform || '-',
+      // AI-inferred category from DB; fall back to SOURCE_DETAIL, then platform
+      niche: r.niche && r.niche !== '-' ? r.niche : (d.niche || r.platform || '-'),
+      platform: r.platform || '-',
       formula: d.formula || '-',
       tags: d.tags || [],
       dur: d.dur || '-',
@@ -26,7 +32,17 @@
       hook: d.hook || '-',
       clip: d.clip ?? false,
       face: d.face ?? false,
-      sum: d.sum || ''
+      sum: d.sum || '',
+      // ponytail: youtube_url carried for frames drawer; absent from /dash/table/sources SELECT (blocker noted)
+      youtube_url: r.youtube_url || null
+    }
+  }
+
+  async function load() {
+    const t = await api.table('sources', limit, offset)
+    if (t && t.rows) {
+      rows = t.rows.map(enrich)
+      total = t.total ?? 0
     }
   }
 
@@ -39,15 +55,15 @@
   )
   let niches = $derived([...new Set(rows.map((r) => r.niche))].filter((n) => n && n !== '-'))
 
-  onMount(async () => {
-    const t = await api.table('sources')
-    if (t && t.rows) rows = t.rows.map(enrich)
-  })
+  onMount(load)
+
+  function prev() { offset = Math.max(0, offset - limit); load() }
+  function next() { offset = offset + limit; load() }
 </script>
 
 <div class="top">
   <div><h1>Sources</h1><div class="sub">Library riset — klik baris buat detail</div></div>
-  <div class="pill">{rows.length} source</div>
+  <div class="pill">{total || rows.length} source</div>
 </div>
 
 <div class="filters">
@@ -61,14 +77,14 @@
 <div class="card">
   <table>
     <thead>
-      <tr><th>Judul</th><th>Niche</th><th>Formula</th><th>Tags</th><th style="text-align:right">Views</th><th>Status</th></tr>
+      <tr><th>Judul</th><th>Niche</th><th>Platform</th><th>Tags</th><th style="text-align:right">Views</th><th>Status</th></tr>
     </thead>
     <tbody>
       {#each filtered as s}
         <tr onclick={() => openDrawer('source', s)}>
           <td>{s.title}</td>
           <td>{s.niche}</td>
-          <td>{s.formula}</td>
+          <td>{s.platform}</td>
           <td>{#each s.tags.slice(0, 3) as t}<span class="tag">{t}</span>{/each}</td>
           <td class="num" style="text-align:right">{s.viewsLabel}</td>
           <td><span class="chip {s.status === 'used' ? 'c-used' : 'c-analyzed'}">{s.status}</span></td>
@@ -80,3 +96,5 @@
     </tbody>
   </table>
 </div>
+
+<Pagination {offset} {limit} {total} onprev={prev} onnext={next} />

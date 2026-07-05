@@ -1,8 +1,12 @@
 <script>
   import { onMount } from 'svelte'
   import { api } from '../lib/api.js'
+  import Pagination from '../lib/Pagination.svelte'
 
   let rows = $state([])
+  let total = $state(0)
+  let offset = $state(0)
+  const limit = 25
   let loading = $state(true)
 
   function fmtDuration(sec) {
@@ -31,16 +35,25 @@
     }
   }
 
-  onMount(async () => {
-    const data = await api.getSongs()
-    if (data && data.songs) rows = data.songs
+  async function load() {
+    loading = true
+    const data = await api.getSongs(limit, offset)
+    if (data && data.songs) {
+      rows = data.songs
+      total = data.total ?? rows.length
+    }
     loading = false
-  })
+  }
+
+  onMount(load)
+
+  function prev() { offset = Math.max(0, offset - limit); load() }
+  function next() { offset = offset + limit; load() }
 </script>
 
 <div class="top">
   <div><h1>Songs</h1><div class="sub">Audio files extracted from analyzed videos</div></div>
-  <div class="pill">{rows.length} song</div>
+  <div class="pill">{total || rows.length} song</div>
 </div>
 
 <div class="card">
@@ -81,3 +94,5 @@
     </tbody>
   </table>
 </div>
+
+<Pagination {offset} {limit} {total} onprev={prev} onnext={next} />

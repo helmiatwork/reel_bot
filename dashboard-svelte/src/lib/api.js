@@ -27,13 +27,13 @@ export const api = {
   restartService: (name) => postJSON(`/dash/restart/${name}`, {}),
   restartAll: () => postJSON('/dash/restart-all', {}),
   overview: () => getJSON('/dash/overview'),
-  table: (name) => getJSON(`/dash/table/${name}`),
+  table: (name, limit = 25, offset = 0) => getJSON(`/dash/table/${name}?limit=${limit}&offset=${offset}`),
   agents: () => getJSON('/dash/agents'),
   formulaPerformance: () => getJSON('/dash/formula-performance'),
   cost: () => getJSON('/dash/cost'),
   tokenUsage: () => getJSON('/dash/token-usage'),
-  analysis: (limit = 50) => getJSON('/dash/analysis?limit=' + limit),
-  clipFinds: (limit = 50) => getJSON('/dash/clip-finds?limit=' + limit),
+  analysis: (limit = 25, offset = 0) => getJSON('/dash/analysis?limit=' + limit + '&offset=' + offset),
+  clipFinds: (limit = 25, offset = 0) => getJSON('/dash/clip-finds?limit=' + limit + '&offset=' + offset),
   findClips: (youtube_url, max_clips = 8) => postJSON('/clips/find-claude', { youtube_url, max_clips }),
   runs: (limit = 20) => getJSON(`/pipeline/runs?limit=${limit}`),
   run: (id) => getJSON(`/pipeline/run/${id}`),
@@ -43,7 +43,11 @@ export const api = {
   research: (youtube_url, topic = '') => postJSON('/pipeline/research', { youtube_url, topic }),
 
   // Songs — audio extracted from analyzed videos
-  getSongs: () => getJSON('/songs'),
+  getSongs: (limit = 25, offset = 0) => getJSON(`/songs?limit=${limit}&offset=${offset}`),
+  getCreators: (limit = 25, offset = 0) => getJSON(`/creators?limit=${limit}&offset=${offset}`),
+
+  // Frames persisted from analysis
+  sourceFrames: (youtube_url) => getJSON('/sources/frames?youtube_url=' + encodeURIComponent(youtube_url)),
 
   // YouTube Data API v3 endpoints
   youtubeSearch: (q, max_results = 20, order = '', videoDuration = '') => {
