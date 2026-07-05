@@ -3071,7 +3071,6 @@ def _extract_audio(youtube_url: str) -> dict:
             meta = _fetch_channel_meta(youtube_url)
             duration_sec = None
             try:
-                import subprocess
                 proc = subprocess.run(
                     ["ffprobe", "-v", "error", "-show_entries", "format=duration",
                      "-of", "default=noprint_wrappers=1:nokey=1:noprint_wrappers=1",
@@ -3112,7 +3111,6 @@ def _extract_audio(youtube_url: str) -> dict:
         meta = _fetch_channel_meta(youtube_url)
         duration_sec = None
         try:
-            import subprocess
             proc = subprocess.run(
                 ["ffprobe", "-v", "error", "-show_entries", "format=duration",
                  "-of", "default=noprint_wrappers=1:nokey=1:noprint_wrappers=1",
