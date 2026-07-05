@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import tempfile
 import time
-import shlex
+
 import asyncio
 from pathlib import Path
 from urllib.parse import urlparse
@@ -201,8 +201,8 @@ _RESTARTABLE_SERVICES = {"postgres", "openclaw", "cliproxy", "n8n", "arcreel"}
 _SERVICE_RESTART_MAP = {
     "postgres": None,  # unsupported_native: complex FS/env setup
     "openclaw": ("openclaw gateway", "openclaw gateway --port 18789"),
-    "cliproxy": ("cli-proxy-api", "cd {} && exec ./data/bin/cli-proxy-api -config ./cliproxy/config.yaml"),
-    "arcreel": ("uvicorn server.app:app.*1241", "cd {} && cd data/arcreel && source .venv/bin/activate && exec uvicorn server.app:app --host 0.0.0.0 --port 1241"),
+    "cliproxy": ("cli-proxy-api", "exec ./data/bin/cli-proxy-api -config ./cliproxy/config.yaml"),
+    "arcreel": ("uvicorn server.app:app.*1241", "cd data/arcreel && source .venv/bin/activate && exec uvicorn server.app:app --host 0.0.0.0 --port 1241"),
     "n8n": None,  # unsupported_native: requires Docker or complex Node env
 }
 
@@ -246,21 +246,14 @@ def _restart_one(service: str) -> dict:
         # Give it a moment to terminate
         time.sleep(0.5)
 
-        # Relaunch without shell=True to prevent injection.
-        # Parse the restart_cmd (static, safe to split) and format repo_root.
-        repo_root = _REPO_ROOT
-        # Expand the placeholder {0} or {1} if the command has one
-        formatted_cmd = restart_cmd.format(str(repo_root))
-
-        # Split the command into argv. The formatted_cmd now contains the repo path inline.
-        # For commands like "cd {} && exec ./data/bin/...", we need to run them via bash.
-        # To avoid shell injection, we use bash -c with the command as a single argument.
-        # This keeps repo_root safe even if it contains spaces (it's a single arg to bash -c).
-        argv = ["/bin/bash", "-c", formatted_cmd]
+        # Relaunch via bash -c with a fully static command string.
+        # cwd=_REPO_ROOT handles the repo root; no path interpolation needed.
+        # ponytail: static cmd + cwd eliminates the injection surface entirely.
+        argv = ["/bin/bash", "-c", restart_cmd]
 
         subprocess.Popen(
             argv,
-            cwd=str(repo_root),
+            cwd=str(_REPO_ROOT),
             start_new_session=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
