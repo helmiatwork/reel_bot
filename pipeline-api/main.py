@@ -481,30 +481,51 @@ def dash_overview():
 
 
 @app.get("/dash/table/{name}")
-def dash_table(name: str):
-    """Generic table read for the Sources/Posts/Formulas pages."""
+def dash_table(name: str, limit: int = 25, offset: int = 0):
+    """Generic table read for the Sources/Posts/Formulas pages with pagination."""
+    # Clamp limit to [1, 100]
+    limit = max(1, min(int(limit), 100))
+    offset = max(0, int(offset))
+
     allowed = {
-        "sources": "SELECT id, COALESCE(title,'-') title, COALESCE(platform,'-') platform, "
-                   "COALESCE(channel,'-') channel, COALESCE(views_at_analysis,0) views, status "
-                   "FROM sources ORDER BY id DESC LIMIT 100",
-        "formulas": "SELECT id, slug, name, COALESCE(best_for,'-') best_for FROM formulas ORDER BY id LIMIT 100",
-        "posts": "SELECT id, platform, COALESCE(status,'-') status, COALESCE(external_url,'-') url, "
-                 "scheduled_at, posted_at FROM posts ORDER BY id DESC LIMIT 100",
-        "clips": "SELECT id, source_id, start_sec, end_sec, COALESCE(presenter_gender,'-') gender, "
-                 "COALESCE(age_bracket,'-') age, COALESCE(activity,'-') activity, COALESCE(hook_score,0) hook "
-                 "FROM clips ORDER BY id DESC LIMIT 100",
+        "sources": {
+            "select": "SELECT id, COALESCE(title,'-') title, COALESCE(niche,'-') niche, COALESCE(platform,'-') platform, "
+                      "COALESCE(channel,'-') channel, COALESCE(views_at_analysis,0) views, status "
+                      "FROM sources ORDER BY id DESC",
+            "table": "sources",
+        },
+        "formulas": {
+            "select": "SELECT id, slug, name, COALESCE(best_for,'-') best_for FROM formulas ORDER BY id",
+            "table": "formulas",
+        },
+        "posts": {
+            "select": "SELECT id, platform, COALESCE(status,'-') status, COALESCE(external_url,'-') url, "
+                      "scheduled_at, posted_at FROM posts ORDER BY id DESC",
+            "table": "posts",
+        },
+        "clips": {
+            "select": "SELECT id, source_id, start_sec, end_sec, COALESCE(presenter_gender,'-') gender, "
+                      "COALESCE(age_bracket,'-') age, COALESCE(activity,'-') activity, COALESCE(hook_score,0) hook "
+                      "FROM clips ORDER BY id DESC",
+            "table": "clips",
+        },
     }
     if name not in allowed:
         raise HTTPException(status_code=404, detail="unknown table")
     conn = _db_conn()
     if not conn:
-        return _json({"rows": [], "error": "db unavailable"})
+        return _json({"columns": [], "rows": [], "total": 0, "limit": limit, "offset": offset, "error": "db unavailable"})
     try:
         with conn.cursor() as cur:
-            cur.execute(allowed[name])
+            # Get total count from the table
+            cur.execute(f"SELECT count(*) FROM {allowed[name]['table']}")
+            total = cur.fetchone()[0]
+
+            # Get paginated rows
+            cur.execute(allowed[name]["select"] + " LIMIT %s OFFSET %s", (limit, offset))
             cols = [c.name for c in cur.description]
             rows = [dict(zip(cols, r)) for r in cur.fetchall()]
-        return _json({"columns": cols, "rows": rows})
+        return _json({"columns": cols, "rows": rows, "total": total, "limit": limit, "offset": offset})
     finally:
         conn.close()
 
@@ -646,23 +667,28 @@ def dash_token_usage():
 
 
 @app.get("/dash/analysis")
-def dash_analysis(limit: int = 50):
-    """Video analysis results (from video_analysis table).
+def dash_analysis(limit: int = 25, offset: int = 0):
+    """Video analysis results (from video_analysis table) with pagination.
 
     Returns rows with columns: id, youtube_url, intent, hook, structure, retention,
     tags (as array), model, cost_usd (float), created_at (ISO string).
     Clamps limit to 1..200.
     """
     limit = max(1, min(int(limit), 200))
+    offset = max(0, int(offset))
     conn = _db_conn()
     if not conn:
-        return _json({"rows": []})
+        return _json({"rows": [], "total": 0, "limit": limit, "offset": offset})
     try:
         with conn.cursor() as cur:
+            # Get total count
+            cur.execute("SELECT count(*) FROM video_analysis")
+            total = cur.fetchone()[0]
+
             cur.execute(
                 "SELECT id, youtube_url, intent, hook, structure, retention, tags, model, "
-                "cost_usd, created_at FROM video_analysis ORDER BY id DESC LIMIT %s",
-                (limit,)
+                "cost_usd, created_at FROM video_analysis ORDER BY id DESC LIMIT %s OFFSET %s",
+                (limit, offset)
             )
             cols = [c.name for c in cur.description]
             rows = []
@@ -684,7 +710,7 @@ def dash_analysis(limit: int = 50):
                 if row_dict.get("created_at"):
                     row_dict["created_at"] = row_dict["created_at"].isoformat()
                 rows.append(row_dict)
-        return _json({"rows": rows})
+        return _json({"rows": rows, "total": total, "limit": limit, "offset": offset})
     finally:
         conn.close()
 
@@ -2798,10 +2824,12 @@ def _sources_init_db():
                 channel           TEXT,
                 views_at_analysis BIGINT,
                 status            TEXT DEFAULT 'analyzed',
+                niche             TEXT,
                 created_at        TIMESTAMPTZ DEFAULT now()
             )""")
             cur.execute("""CREATE INDEX IF NOT EXISTS sources_created_at_idx
                 ON sources (created_at DESC)""")
+            cur.execute("ALTER TABLE sources ADD COLUMN IF NOT EXISTS niche TEXT")
         conn.commit()
     except Exception as e:
         print(f"[sources] init db error: {e}")
@@ -2971,6 +2999,45 @@ def _infer_gender(creator_name: str, channel: str) -> str:
         return "unknown"
 
 
+def _infer_niche(title: str, tags: str, channel: str) -> str:
+    """
+    Call claude bridge to infer a short, free-form niche label (2-4 words, e.g., 'couples prank').
+    Accepts title, tags, and channel; returns cleaned string (max ~40 chars, lowercase-ish).
+    Non-fatal: returns "" on error. Logs API usage on success.
+    """
+    try:
+        import httpx as _httpx
+        # Build a minimal prompt in Indonesian
+        prompt = (
+            f"Berdasarkan judul video '{title}' dan channel '{channel}', "
+            f"tentukan niche atau kategori konten singkat (2-4 kata, contoh: 'couples prank', 'marriage comedy'). "
+            f"Jawab HANYA label singkat tanpa penjelasan."
+        )
+        bridge_timeout = _httpx.Timeout(connect=10.0, read=30.0, write=10.0, pool=5.0)
+        resp = _httpx.post(
+            f"{CLAUDE_BRIDGE_URL}/run",
+            json={"prompt": prompt, "frames": [], "model": "claude-haiku-4"},
+            timeout=bridge_timeout,
+        )
+        data = resp.json()
+        if not data.get("ok"):
+            return ""
+        # Log API usage on successful response
+        _log_api_usage(
+            agent="niche",
+            model=data.get("model", "claude-haiku-4"),
+            raw_usage=data.get("raw_usage", {}),
+            cost_usd=data.get("cost_usd")
+        )
+        result = data.get("result", "").strip()
+        # Clean: max 40 chars, lowercase
+        niche = result[:40].lower() if result else ""
+        return niche
+    except Exception as e:
+        print(f"[sources] _infer_niche error: {e}")
+        return ""
+
+
 def _save_creator(youtube_url: str) -> None:
     """
     Save creator to DB if not already exists (check by channel_id).
@@ -3019,7 +3086,8 @@ def _save_creator(youtube_url: str) -> None:
 def _save_source(youtube_url: str) -> None:
     """
     Save the analyzed video to the sources library if not already stored
-    (check by youtube_url). Non-fatal: any error is logged but doesn't break analyze.
+    (check by youtube_url). For new sources, infer niche. For existing sources
+    with NULL niche, backfill niche. Non-fatal: any error is logged but doesn't break analyze.
     """
     try:
         meta = _fetch_channel_meta(youtube_url)
@@ -3031,13 +3099,27 @@ def _save_source(youtube_url: str) -> None:
             return
         try:
             with conn.cursor() as cur:
-                cur.execute("SELECT 1 FROM sources WHERE youtube_url = %s", (youtube_url,))
-                if cur.fetchone():
-                    return  # already saved, skip
+                cur.execute("SELECT niche FROM sources WHERE youtube_url = %s", (youtube_url,))
+                existing = cur.fetchone()
+
+                if existing:
+                    # Source exists; backfill niche if NULL
+                    existing_niche = existing[0]
+                    if existing_niche is None:
+                        niche = _infer_niche(meta.get("title", ""), "", meta.get("channel", ""))
+                        cur.execute(
+                            "UPDATE sources SET niche = %s WHERE youtube_url = %s",
+                            (niche, youtube_url)
+                        )
+                        conn.commit()
+                    return  # already saved, skip further processing
+
+                # New source: infer niche and insert
+                niche = _infer_niche(meta.get("title", ""), "", meta.get("channel", ""))
                 cur.execute(
                     """INSERT INTO sources
-                    (youtube_url, title, platform, channel, views_at_analysis, status)
-                    VALUES (%s, %s, %s, %s, %s, %s)""",
+                    (youtube_url, title, platform, channel, views_at_analysis, status, niche)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)""",
                     (
                         youtube_url,
                         meta.get("title"),
@@ -3045,6 +3127,7 @@ def _save_source(youtube_url: str) -> None:
                         meta.get("channel"),
                         meta.get("view_count"),
                         "analyzed",
+                        niche,
                     )
                 )
             conn.commit()
@@ -3395,25 +3478,32 @@ def analyze_claude(req: AnalyzeClaudeRequest):
 
 
 @app.get("/creators")
-def list_creators():
+def list_creators(limit: int = 25, offset: int = 0):
     """
-    List all creators stored in the database.
+    List creators with pagination.
     Returns paginated list ordered by last_updated DESC (most recent first).
     On DB error, returns empty list gracefully.
     """
+    limit = max(1, min(int(limit), 100))
+    offset = max(0, int(offset))
     conn = _db_conn()
     if not conn:
-        return _json({"creators": []})
+        return _json({"creators": [], "total": 0, "limit": limit, "offset": offset})
 
     try:
         with conn.cursor() as cur:
+            # Get total count
+            cur.execute("SELECT count(*) FROM creators")
+            total = cur.fetchone()[0]
+
             cur.execute(
                 """
                 SELECT channel_id, channel, creator_name, total_followers, gender, created_at, last_updated
                 FROM creators
                 ORDER BY last_updated DESC
-                LIMIT 500
-                """
+                LIMIT %s OFFSET %s
+                """,
+                (limit, offset)
             )
             rows = cur.fetchall()
             creators = [
@@ -3428,34 +3518,41 @@ def list_creators():
                 }
                 for row in rows
             ]
-            return _json({"creators": creators})
+            return _json({"creators": creators, "total": total, "limit": limit, "offset": offset})
     except Exception as e:
         print(f"[creators] GET /creators failed: {e}")
-        return _json({"creators": []})
+        return _json({"creators": [], "total": 0, "limit": limit, "offset": offset})
     finally:
         conn.close()
 
 
 @app.get("/songs")
-def list_songs():
+def list_songs(limit: int = 25, offset: int = 0):
     """
-    List all songs stored in the database.
+    List songs with pagination.
     Returns list ordered by created_at DESC (most recent first).
     On DB error, returns empty list gracefully.
     """
+    limit = max(1, min(int(limit), 100))
+    offset = max(0, int(offset))
     conn = _db_conn()
     if not conn:
-        return _json({"songs": []})
+        return _json({"songs": [], "total": 0, "limit": limit, "offset": offset})
 
     try:
         with conn.cursor() as cur:
+            # Get total count
+            cur.execute("SELECT count(*) FROM songs")
+            total = cur.fetchone()[0]
+
             cur.execute(
                 """
                 SELECT id, youtube_url, title, audio_path, duration_sec, created_at
                 FROM songs
                 ORDER BY created_at DESC
-                LIMIT 500
-                """
+                LIMIT %s OFFSET %s
+                """,
+                (limit, offset)
             )
             rows = cur.fetchall()
             songs = [
@@ -3469,10 +3566,10 @@ def list_songs():
                 }
                 for row in rows
             ]
-            return _json({"songs": songs})
+            return _json({"songs": songs, "total": total, "limit": limit, "offset": offset})
     except Exception as e:
         print(f"[songs] GET /songs failed: {e}")
-        return _json({"songs": []})
+        return _json({"songs": [], "total": 0, "limit": limit, "offset": offset})
     finally:
         conn.close()
 
@@ -3945,22 +4042,27 @@ def auto_clips(req: ClipAutoRequest):
 
 
 @app.get("/dash/clip-finds")
-def dash_clip_finds(limit: int = 50):
+def dash_clip_finds(limit: int = 25, offset: int = 0):
     """
-    Clip-finder results (from clip_finds table).
+    Clip-finder results (from clip_finds table) with pagination.
     Returns rows with columns: id, youtube_url, clips (as list), model, cost_usd, created_at.
     Clamps limit to 1..200.
     """
     limit = max(1, min(int(limit), 200))
+    offset = max(0, int(offset))
     conn = _db_conn()
     if not conn:
-        return _json({"rows": []})
+        return _json({"rows": [], "total": 0, "limit": limit, "offset": offset})
     try:
         with conn.cursor() as cur:
+            # Get total count
+            cur.execute("SELECT count(*) FROM clip_finds")
+            total = cur.fetchone()[0]
+
             cur.execute(
                 "SELECT id, youtube_url, clips, model, cost_usd, created_at "
-                "FROM clip_finds ORDER BY id DESC LIMIT %s",
-                (limit,)
+                "FROM clip_finds ORDER BY id DESC LIMIT %s OFFSET %s",
+                (limit, offset)
             )
             cols = [c.name for c in cur.description]
             rows = []
@@ -3979,7 +4081,7 @@ def dash_clip_finds(limit: int = 50):
                 if row_dict.get("cost_usd") is not None:
                     row_dict["cost_usd"] = float(row_dict["cost_usd"])
                 rows.append(row_dict)
-            return _json({"rows": rows})
+            return _json({"rows": rows, "total": total, "limit": limit, "offset": offset})
     except Exception as exc:
         print(f"[dash/clip-finds] query failed: {exc}")
-        return _json({"rows": []})
+        return _json({"rows": [], "total": 0, "limit": limit, "offset": offset})
