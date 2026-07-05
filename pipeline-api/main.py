@@ -2322,6 +2322,33 @@ def _extract_video_id_from_youtube_url(url: str) -> str:
     return video_id
 
 
+def _ytdlp_source_args() -> list:
+    """
+    Build yt-dlp argv fragments for YouTube downloads.
+    Returns a list of args that includes:
+      - extractor-args for youtube:player_client (android,web_safari,ios)
+      - cookies args if YTDLP_COOKIES_FILE env is set and file exists (copied to writable temp)
+
+    Caller must pass result to yt-dlp command via subprocess.run([...] + _ytdlp_source_args() + [...]).
+    """
+    args = []
+
+    # Add extractor-args for player_client fallback chain
+    # android bypasses the n-challenge; web_safari + ios as fallbacks
+    args.extend(["--extractor-args", "youtube:player_client=android,web_safari,ios"])
+
+    # Check for cookies env var and copy to writable temp location if needed
+    cookies_file = os.getenv("YTDLP_COOKIES_FILE", "")
+    if cookies_file and Path(cookies_file).exists():
+        # Copy cookies to a writable temp file (yt-dlp writes refreshed cookies)
+        original_cookies = Path(cookies_file)
+        writable_cookies = Path(tempfile.gettempdir()) / f"cookies_{os.getpid()}.txt"
+        shutil.copy(str(original_cookies), str(writable_cookies))
+        args.extend(["--cookies", str(writable_cookies)])
+
+    return args
+
+
 def _download_source_video(youtube_url: str) -> Path:
     """
     Download a YouTube video to data/videos/<video_id>/source.mp4.
@@ -2387,6 +2414,7 @@ def _download_source_video(youtube_url: str) -> Path:
             "--socket-timeout", "30",
             "-o", output_template,
             "--no-playlist",
+        ] + _ytdlp_source_args() + [
             youtube_url,
         ],
         capture_output=True, text=True, timeout=300,
@@ -2638,6 +2666,7 @@ def _extract_keyframes(youtube_url: str, out_dir: str, n: int = 20) -> list:
             "--socket-timeout", "30",
             "-o", output_template,
             "--no-playlist",
+        ] + _ytdlp_source_args() + [
             youtube_url,
         ],
         capture_output=True, text=True, timeout=300,
