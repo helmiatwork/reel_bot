@@ -2,12 +2,16 @@
   import { onMount } from 'svelte'
   import { api } from '../lib/api.js'
   import { POSTS } from '../lib/data.js'
+  import Pagination from '../lib/Pagination.svelte'
 
   let rows = $state([])
+  let total = $state(0)
+  let offset = $state(0)
+  const limit = 25
   let mock = $state(false)
 
-  onMount(async () => {
-    const t = await api.table('posts')
+  async function load() {
+    const t = await api.table('posts', limit, offset)
     if (t && t.rows && t.rows.length) {
       rows = t.rows.map((r) => ({
         konten: r.url && r.url !== '-' ? r.url : `post ${r.id}`,
@@ -15,11 +19,19 @@
         jadwal: r.scheduled_at || r.posted_at || '—',
         status: r.status
       }))
+      total = t.total ?? 0
+      mock = false
     } else {
       rows = POSTS.map((p) => ({ konten: p.konten, platform: p.platform, jadwal: p.jadwal, status: p.status }))
+      total = rows.length
       mock = true
     }
-  })
+  }
+
+  onMount(load)
+
+  function prev() { offset = Math.max(0, offset - limit); load() }
+  function next() { offset = offset + limit; load() }
 
   // group by day label (string before time)
   function dayOf(j) {
@@ -37,7 +49,6 @@
     }))
   )
   const PRIME = ['12:00', '19:00']
-  const chipClass = (s) => (s === 'posted' ? 'c-used' : s === 'scheduled' ? 'c-analyzed' : '')
 </script>
 
 <div class="top">
@@ -64,5 +75,7 @@
     </div>
   {/each}
 </div>
+
+<Pagination {offset} {limit} {total} onprev={prev} onnext={next} />
 
 {#if mock}<div class="note">⚠️ Tabel posts kosong — kalender menampilkan contoh mock. Begitu ada post terjadwal di DB, kalender ngisi otomatis.</div>{/if}

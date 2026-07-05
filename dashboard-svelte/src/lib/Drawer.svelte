@@ -1,8 +1,21 @@
 <script>
   import { drawer, closeDrawer } from './stores.js'
+  import { api } from './api.js'
 
   let d = $state(null)
-  drawer.subscribe((v) => (d = v))
+  let frames = $state([])
+  let framesLoading = $state(false)
+
+  drawer.subscribe(async (v) => {
+    d = v
+    frames = []
+    if (v?.type === 'source' && v.data?.youtube_url) {
+      framesLoading = true
+      const res = await api.sourceFrames(v.data.youtube_url)
+      frames = res?.frames ?? []
+      framesLoading = false
+    }
+  })
 </script>
 
 {#if d}
@@ -15,7 +28,17 @@
       <h2>{s.title}</h2>
       <div class="mut" style="font-size:12px;margin-bottom:8px">{s.channel || '-'} · {s.id}</div>
       <div class="frames">
-        {#each Array(6) as _, i}<div>frame {i + 1}</div>{/each}
+        {#if framesLoading}
+          <div class="mut" style="font-size:12px;padding:8px 0">Memuat frames…</div>
+        {:else if frames.length}
+          {#each frames as src}
+            <img {src} alt="frame" loading="lazy" style="width:100%;border-radius:4px;object-fit:cover" />
+          {/each}
+        {:else if s.youtube_url}
+          <div class="mut" style="font-size:12px;padding:8px 0">No frames tersimpan untuk video ini.</div>
+        {:else}
+          <div class="mut" style="font-size:12px;padding:8px 0">youtube_url tidak tersedia di baris ini — frames tidak dapat dimuat. (Lihat blocker note di kode.)</div>
+        {/if}
       </div>
       <div class="kv"><span>Views</span><span class="num">{s.viewsLabel}</span></div>
       <div class="kv"><span>Niche</span><span>{s.niche}</span></div>

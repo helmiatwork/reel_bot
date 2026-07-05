@@ -24,7 +24,9 @@ export default defineConfig({
       '/analytics': 'http://localhost:8000',
       '/creators': 'http://localhost:8000',
       '/songs': 'http://localhost:8000',
-      '/health': 'http://localhost:8000'
+      '/health': 'http://localhost:8000',
+      '/sources': 'http://localhost:8000',
+      '/frames': 'http://localhost:8000'
     }
   }
 })
