@@ -1662,6 +1662,223 @@ def _build_video_segment_insert_tuples(shots: list, source_id: int) -> list:
     return tuples
 
 
+
+def _frame_at(video_path: str, t_sec: float, out_path: str) -> bool:
+    """
+    Extract a single frame from video_path at timestamp t_sec to out_path using ffmpeg.
+
+    Args:
+        video_path: absolute path to video file
+        t_sec: timestamp in seconds (float)
+        out_path: where to write the JPEG frame
+
+    Returns:
+        True if extraction succeeded and file exists, False on any error (non-fatal).
+    """
+    try:
+        proc = subprocess.run(
+            [
+                "ffmpeg", "-ss", str(t_sec), "-i", str(video_path),
+                "-frames:v", "1", "-q:v", "3", "-y", str(out_path),
+            ],
+            capture_output=True, text=True, timeout=30,
+        )
+        return proc.returncode == 0 and Path(out_path).exists()
+    except Exception as e:
+        print(f"[_frame_at] error at {t_sec}s: {e}")
+        return False
+
+
+def _parse_grouping_json(raw_text: str, shots: list) -> list:
+    """
+    Parse claude-vision grouping output and convert shot_indices to clip_index, start_sec, end_sec.
+
+    Args:
+        raw_text: raw output from claude (may contain ```json fences)
+        shots: original shots list with start_sec, end_sec
+
+    Returns:
+        list of dicts: [{clip_index, start_sec, end_sec, credit_handle, shot_indices}, ...]
+        Returns [] on parse error (non-fatal fallback).
+    """
+    import re
+    try:
+        # Strip ```json fences if present
+        cleaned = re.sub(r"```(?:json)?\s*", "", raw_text).strip()
+        parsed = json.loads(cleaned)
+    except Exception as e:
+        print(f"[_parse_grouping_json] parse error: {e}")
+        return []
+
+    # Extract clips array; must be a list
+    clips_raw = parsed.get("clips")
+    if not isinstance(clips_raw, list):
+        print(f"[_parse_grouping_json] 'clips' is not a list")
+        return []
+
+    # Convert shot_indices → start/end from the shots list
+    clips = []
+    for clip_idx, clip_raw in enumerate(clips_raw, start=1):
+        shot_indices = clip_raw.get("shot_indices", [])
+        if not isinstance(shot_indices, list) or not shot_indices:
+            continue
+
+        # Find min/max timecodes from the shot_indices
+        try:
+            indices = [int(i) for i in shot_indices if 0 <= int(i) < len(shots)]
+            if not indices:
+                continue
+
+            start_sec = shots[min(indices)]["start_sec"]
+            end_sec = shots[max(indices)]["end_sec"]
+            credit_handle = clip_raw.get("credit_handle")
+
+            clips.append({
+                "clip_index": clip_idx,
+                "start_sec": start_sec,
+                "end_sec": end_sec,
+                "credit_handle": credit_handle,
+                "shot_indices": indices,
+            })
+        except (ValueError, KeyError, IndexError) as e:
+            print(f"[_parse_grouping_json] clip conversion error: {e}")
+            continue
+
+    return clips
+
+
+def _group_shots_claude(video_id: str, shots: list, frame_dir: str, video_path: str = None) -> list:
+    """
+    Sample frames from shots, call claude-vision to group consecutive shots
+    into distinct source clips, and parse the response.
+
+    Args:
+        video_id: video ID for logging
+        shots: list of shot dicts with start_sec, end_sec
+        frame_dir: directory to store sampled frames
+        video_path: absolute path to source video (optional, for frame extraction)
+
+    Returns:
+        list of grouped clips (or [] on failure, non-fatal).
+    """
+    import re
+    import httpx as _httpx
+
+    if not shots or not video_path:
+        return []
+
+    # Sample one frame per shot (mid-point)
+    frame_paths = []
+    frame_names = []
+    try:
+        Path(frame_dir).mkdir(parents=True, exist_ok=True)
+        for shot in shots:
+            mid_sec = (shot["start_sec"] + shot["end_sec"]) / 2.0
+            shot_idx = shot["index"]
+            frame_path = f"{frame_dir}/shot_{shot_idx:03d}.jpg"
+
+            if _frame_at(video_path, mid_sec, frame_path):
+                frame_paths.append(frame_path)
+                frame_names.append(Path(frame_path).name)
+    except Exception as e:
+        print(f"[_group_shots_claude] frame sampling error: {e}")
+        return []
+
+    if not frame_paths:
+        print(f"[_group_shots_claude] no frames sampled for {video_id}")
+        return []
+
+    # Build prompt with shot indices + timecodes
+    prompt_lines = [
+        "These are ordered frames from a compilation Short, one per shot. "
+        "Group consecutive shots that belong to the SAME source video.",
+        "Mark where a NEW distinct video begins.",
+        "Boundary signals: subject/location/people change, quality/aspect/resolution change, "
+        "@handle/@username/@watermark change (strongest), transition cards.",
+        "",
+        "For each resulting clip, return: shot_indices (list), start_sec, end_sec, "
+        "credit_handle (the @handle shown on-screen, or null), boundary_reason.",
+        "",
+        "Strict JSON format: {\"clips\":[{\"shot_indices\":[...],\"start_sec\":...,\"end_sec\":...,"
+        "\"credit_handle\":...,\"boundary_reason\":...}, ...]}",
+        "",
+        "Frames with shot indices + timecodes:",
+    ]
+
+    for i, shot in enumerate(shots):
+        prompt_lines.append(f"  Shot {i}: {shot['start_sec']:.2f}s → {shot['end_sec']:.2f}s")
+
+    prompt = "\n".join(prompt_lines)
+
+    # Call claude bridge with frames
+    try:
+        # Reuse run_id from decompose job (passed via _group_shots_claude context)
+        # For now, use a temp run_id for frame resolution
+        temp_run_id = re.sub(r"[^A-Za-z0-9_-]", "", str(video_id)[:8])
+
+        bridge_timeout = _httpx.Timeout(connect=10.0, read=200.0, write=10.0, pool=5.0)
+        bridge_resp = _httpx.post(
+            f"{CLAUDE_BRIDGE_URL}/run",
+            json={"prompt": prompt, "frames": frame_names, "model": "claude-sonnet-4-6", "subdir": temp_run_id},
+            timeout=bridge_timeout,
+        )
+    except Exception as exc:
+        print(f"[_group_shots_claude] bridge error: {exc}")
+        return []
+
+    try:
+        bridge_data = bridge_resp.json()
+    except Exception as exc:
+        print(f"[_group_shots_claude] response parse error: {exc}")
+        return []
+
+    if not bridge_data.get("ok"):
+        print(f"[_group_shots_claude] bridge failed: {bridge_data.get('error', 'unknown')}")
+        return []
+
+    # Log API usage
+    _log_api_usage(
+        agent="decompose_grouping",
+        model=bridge_data.get("model", "claude-sonnet-4-6"),
+        raw_usage=bridge_data.get("raw_usage", {}),
+        cost_usd=bridge_data.get("cost_usd")
+    )
+
+    # Parse the result
+    raw_result = bridge_data.get("result", "")
+    clips = _parse_grouping_json(raw_result, shots)
+    return clips
+
+
+def _grouped_clips_to_segment_rows(clips: list, source_id: int) -> list:
+    """
+    Convert grouped clips to video_segment insert tuples.
+
+    Args:
+        clips: list of grouped clips with clip_index, start_sec, end_sec, credit_handle
+        source_id: sources.id FK
+
+    Returns:
+        list of tuples: (source_id, clip_index, start_sec, end_sec, credit_handle,
+                         original_url, origin_status, confidence, segment_path)
+    """
+    tuples = []
+    for clip in clips:
+        tup = (
+            source_id,
+            clip["clip_index"],
+            clip["start_sec"],
+            clip["end_sec"],
+            clip.get("credit_handle"),
+            None,  # original_url
+            "not_found",  # origin_status (no credit or reverse-search done yet)
+            None,  # confidence
+            None,  # segment_path
+        )
+        tuples.append(tup)
+    return tuples
+
+
 class DecomposeRequest(BaseModel):
     youtube_url: str
     split_files: bool = True
