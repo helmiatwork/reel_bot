@@ -12,7 +12,6 @@ Tests cover:
 4. Video ID path safety guard
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
 
 from main import _scenes_to_shots, _build_video_segment_insert_tuples
