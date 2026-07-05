@@ -2230,6 +2230,7 @@ Format JSON yang harus dikembalikan:
   "hook": "<string: bagaimana video membuka/menarik penonton dalam 3 detik pertama>",
   "structure": "<string: struktur naratif/penyampaian konten video secara keseluruhan>",
   "retention": "<string: teknik yang digunakan untuk mempertahankan penonton sampai akhir>",
+  "retention_score": <integer 1-10: seberapa kuat video ini menahan penonton sampai akhir; 1=lemah, 10=sangat kuat>,
   "tags": ["<tag1>", "<tag2>", "<tag3>", ...]
 }}
 """
@@ -3206,7 +3207,7 @@ def analyze_claude(req: AnalyzeClaudeRequest):
                 with conn.cursor() as cur:
                     cur.execute(
                         """
-                        SELECT youtube_url, intent, hook, structure, retention, tags, model, cost_usd, created_at
+                        SELECT youtube_url, intent, hook, structure, retention, tags, model, cost_usd, created_at, retention_score
                         FROM video_analysis
                         WHERE youtube_url = %s
                         ORDER BY id DESC
@@ -3231,6 +3232,7 @@ def analyze_claude(req: AnalyzeClaudeRequest):
                             "hook": cached_row[2],
                             "structure": cached_row[3],
                             "retention": cached_row[4],
+                            "retention_score": cached_row[9] if len(cached_row) > 9 else None,
                             "tags": cached_tags,
                             "model": cached_row[6],
                             "cost_usd": cached_cost,
@@ -3314,6 +3316,11 @@ def analyze_claude(req: AnalyzeClaudeRequest):
     hook = parsed.get("hook", "")
     structure = parsed.get("structure", "")
     retention = parsed.get("retention", "")
+    retention_score = parsed.get("retention_score")
+    try:
+        retention_score = max(1, min(10, int(retention_score))) if retention_score is not None else None
+    except (TypeError, ValueError):
+        retention_score = None
     tags = parsed.get("tags", [])
     if not isinstance(tags, list):
         tags = []
@@ -3326,8 +3333,8 @@ def analyze_claude(req: AnalyzeClaudeRequest):
                 cur.execute(
                     """
                     INSERT INTO video_analysis
-                        (youtube_url, intent, hook, structure, retention, tags, raw_result, model, cost_usd)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        (youtube_url, intent, hook, structure, retention, tags, raw_result, model, cost_usd, retention_score)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
                         req.youtube_url,
@@ -3339,6 +3346,7 @@ def analyze_claude(req: AnalyzeClaudeRequest):
                         raw_result,
                         model,
                         cost_usd,
+                        retention_score,
                     ),
                 )
             conn.commit()
@@ -3357,6 +3365,7 @@ def analyze_claude(req: AnalyzeClaudeRequest):
         "hook": hook,
         "structure": structure,
         "retention": retention,
+        "retention_score": retention_score,
         "tags": tags,
         "model": model,
         "cost_usd": cost_usd,
