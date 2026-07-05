@@ -32,7 +32,7 @@ Three ways in:
    - Input is a niche/keyword/topic only → **discover mode**.
 
    **Analyze mode** (single synchronous call — no polling):
-   - POST `http://pipeline-api:8000/analyze/claude` with `{"youtube_url":"<url>","intent":"<user's ask, optional>"}`.
+   - POST `http://localhost:8000/analyze/claude` with `{"youtube_url":"<url>","intent":"<user's ask, optional>"}`.
    - This is the cheap, fast path: claude reads the real frames via vision. It returns `{"hook","structure","retention","tags","model","cost_usd","cached":true/false}` directly.
    - Results are saved to the DB; re-submitting the same URL returns cached results at zero cost.
    - Present the result using the **Analysis read** knowledge below (hook / structure / retention / tags), in the user's language. If user then asks for a script, proceed to research mode.
@@ -55,11 +55,11 @@ or "network is blocked" — false. All endpoints are reachable at their internal
 
 | Action | Method | URL | Body |
 |--------|--------|-----|------|
-| **Analyze a video (DEFAULT for bare URLs, claude vision, synchronous)** | POST | `http://pipeline-api:8000/analyze/claude` | `{"youtube_url":"<url>","intent":"<optional>"}` |
-| Produce from URL (requires explicit ask) | POST | `http://pipeline-api:8000/pipeline/research` | `{"youtube_url":"<url>","topic":"<optional>"}` |
-| Discover from niche | POST | `http://pipeline-api:8000/pipeline/discover` | `{"niche":"<keyword>","topic":"<optional>"}` |
-| Poll run status+result | GET | `http://pipeline-api:8000/pipeline/run/<run_id>` | — |
-| List recent runs | GET | `http://pipeline-api:8000/pipeline/runs?limit=10` | — |
+| **Analyze a video (DEFAULT for bare URLs, claude vision, synchronous)** | POST | `http://localhost:8000/analyze/claude` | `{"youtube_url":"<url>","intent":"<optional>"}` |
+| Produce from URL (requires explicit ask) | POST | `http://localhost:8000/pipeline/research` | `{"youtube_url":"<url>","topic":"<optional>"}` |
+| Discover from niche | POST | `http://localhost:8000/pipeline/discover` | `{"niche":"<keyword>","topic":"<optional>"}` |
+| Poll run status+result | GET | `http://localhost:8000/pipeline/run/<run_id>` | — |
+| List recent runs | GET | `http://localhost:8000/pipeline/runs?limit=10` | — |
 
 Analyze endpoint returns immediately with `{"hook","structure","retention","tags","model","cost_usd","cached":true/false}`.
 Research and Discover endpoints return `{"status":"started","run_id":"..."}` and require polling.
