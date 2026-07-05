@@ -28,31 +28,14 @@ W="${ASPECT%x*}"; H="${ASPECT#*x}"
 echo "[1/5] cutting clips → 9:16 ${ASPECT}@${FPS}"
 n=$(jq '.clips | length' "$EDL")
 : > "$WORK/list.txt"
-
-# Locate face_crop.py and the python venv (with cv2).
-SDIR="$(cd "$(dirname "$0")" && pwd)"
-PY="${SDIR}/../pipeline-api/.venv/bin/python"
-[ -x "$PY" ] || PY="python3"
-
 for i in $(seq 0 $((n-1))); do
   src=$(jq -r ".clips[$i].src" "$EDL")
   in=$(jq -r ".clips[$i].in"  "$EDL")
   out=$(jq -r ".clips[$i].out" "$EDL")
   dur=$(awk "BEGIN{print $out-$in}")
   part="$WORK/part_$(printf %03d $i).mp4"
-
-  # Compute face-centered crop offsets; face_crop prints "-1 -1" when it
-  # cannot compute, so we fall back to ffmpeg's default center crop. Valid
-  # offsets are always >= 0 (incl. a legit "0 0" top-left face).
-  read CX CY < <("$PY" "$SDIR/face_crop.py" "$src" "$in" "$out" "$W" "$H" 2>/dev/null || echo "-1 -1")
-  if [ "$CX" = "-1" ]; then
-    CROP="crop=${W}:${H}"
-  else
-    CROP="crop=${W}:${H}:${CX}:${CY}"
-  fi
-
   ffmpeg -nostdin -y -loglevel error -ss "$in" -t "$dur" -i "$src" \
-    -vf "scale=${W}:${H}:force_original_aspect_ratio=increase,${CROP},setsar=1,fps=${FPS}" \
+    -vf "scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1,fps=${FPS}" \
     -an -c:v libx264 -preset veryfast -pix_fmt yuv420p "$part"
   echo "file '$part'" >> "$WORK/list.txt"
 done
