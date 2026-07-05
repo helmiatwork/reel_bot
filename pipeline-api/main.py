@@ -490,7 +490,7 @@ def dash_table(name: str, limit: int = 25, offset: int = 0):
     allowed = {
         "sources": {
             "select": "SELECT id, COALESCE(title,'-') title, COALESCE(niche,'-') niche, COALESCE(platform,'-') platform, "
-                      "COALESCE(channel,'-') channel, COALESCE(views_at_analysis,0) views, status "
+                      "COALESCE(channel,'-') channel, COALESCE(views_at_analysis,0) views, status, youtube_url "
                       "FROM sources ORDER BY id DESC",
             "table": "sources",
         },
