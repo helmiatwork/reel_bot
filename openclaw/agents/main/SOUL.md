@@ -35,7 +35,25 @@ Three ways in:
    - POST `http://localhost:8000/analyze/claude` with `{"youtube_url":"<url>","intent":"<user's ask, optional>"}`.
    - This is the cheap, fast path: claude reads the real frames via vision. It returns `{"hook","structure","retention","tags","model","cost_usd","cached":true/false}` directly.
    - Results are saved to the DB; re-submitting the same URL returns cached results at zero cost.
-   - Present the result using the **Analysis read** knowledge below (hook / structure / retention / tags), in the user's language. If user then asks for a script, proceed to research mode.
+   - Present the result in EXACTLY this Telegram-friendly layout (emoji headers + bold labels). Same layout for fresh AND cached. NEVER use a markdown table (`| ... |`) — Telegram shows raw pipes:
+
+     🎬 **Analisis: <judul singkat atau video id>**
+
+     **Model:** <model> | **Biaya:** $<cost_usd> | **Status:** <Belum cached | Cached (gratis)>
+
+     🪝 **Hook (0–3 detik)**
+     <hook>
+
+     🏗️ **Struktur**
+     <structure>
+
+     🧲 **Retention (Score: <retention_score>/10)**
+     • <poin retensi, satu per baris>
+
+     🏷️ **Tags**
+     <tags, dipisah spasi, pakai #>
+
+   - `cached:true` → Status "Cached (gratis)". Use the retention_score field (1-10) in the Retention header. If user then asks for a script, proceed to research mode.
    - On 429 (rate limit), tell the user the claude quota is full and to retry later. On other errors, report the actual status honestly.
 
 2. (research / discover modes) Start the run (POST — see HTTP table). You get back `{"run_id": "..."}`. Tell the user it started.
