@@ -2376,6 +2376,7 @@ class AnalyzeClaudeRequest(BaseModel):
     youtube_url: str
     intent: Optional[str] = None
     model: Optional[str] = None
+    force: bool = False
 
 
 @app.post("/analyze/claude")
@@ -2397,6 +2398,49 @@ def analyze_claude(req: AnalyzeClaudeRequest):
 
     # Sanitize intent — only use as data, never as instructions
     safe_intent = re.sub(r"[^\w\s\-.,!?()]", "", intent)[:500] if intent else "tidak ada instruksi khusus"
+
+    # Dedupe guard: if not force, check for cached analysis on this URL
+    if not req.force:
+        conn = _db_conn()
+        if conn:
+            try:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        SELECT youtube_url, intent, hook, structure, retention, tags, model, cost_usd, created_at
+                        FROM video_analysis
+                        WHERE youtube_url = %s
+                        ORDER BY id DESC
+                        LIMIT 1
+                        """,
+                        (req.youtube_url,)
+                    )
+                    cached_row = cur.fetchone()
+                    if cached_row:
+                        # Return cached result immediately
+                        cached_tags = cached_row[5]  # tags column
+                        if isinstance(cached_tags, str):
+                            try:
+                                cached_tags = json.loads(cached_tags)
+                            except Exception:
+                                cached_tags = []
+                        cached_cost = cached_row[7]  # cost_usd column
+                        if cached_cost is not None:
+                            cached_cost = float(cached_cost)
+                        return _json({
+                            "youtube_url": cached_row[0],
+                            "hook": cached_row[2],
+                            "structure": cached_row[3],
+                            "retention": cached_row[4],
+                            "tags": cached_tags,
+                            "model": cached_row[6],
+                            "cost_usd": cached_cost,
+                            "cached": True,
+                        })
+            except Exception as exc:
+                print(f"[analyze/claude] DB cache check failed (non-fatal): {exc}")
+            finally:
+                conn.close()
 
     # Step 1: Extract keyframes into the shared bind-mount dir
     # run_id is a safe 8-char hex slug from uuid4 — [0-9a-f-] — valid as a subdir component.
@@ -2504,6 +2548,7 @@ def analyze_claude(req: AnalyzeClaudeRequest):
         "tags": tags,
         "model": model,
         "cost_usd": cost_usd,
+        "cached": False,
     })
 
 
