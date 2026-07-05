@@ -3330,8 +3330,21 @@ def analyze_claude(req: AnalyzeClaudeRequest):
     if not isinstance(tags, list):
         tags = []
 
-    # Step 5: Persist to DB
-    conn = _db_conn()
+    # Validity gate: only CACHE a real analysis. If claude refused / got no usable
+    # frames (empty or refusal text), do NOT persist — so the next attempt retries
+    # instead of returning a cached failure.
+    _blob = f"{hook} {structure} {retention}".lower()
+    _refusal = any(p in _blob for p in (
+        "tidak dapat dianalisis", "tidak ada frame", "tidak bisa dianalisis",
+        "cannot be analyzed", "cannot analyze", "unable to analyze", "no frame",
+        "no image", "tidak ada gambar",
+    ))
+    analysis_ok = bool(hook.strip()) and bool(structure.strip()) and not _refusal
+    if not analysis_ok:
+        print(f"[analyze/claude] analysis invalid (refusal/empty) — NOT caching: {req.youtube_url}")
+
+    # Step 5: Persist to DB (only when the analysis is valid)
+    conn = _db_conn() if analysis_ok else None
     if conn:
         try:
             with conn.cursor() as cur:
