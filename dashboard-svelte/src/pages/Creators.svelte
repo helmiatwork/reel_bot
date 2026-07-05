@@ -1,8 +1,12 @@
 <script>
   import { onMount } from 'svelte'
   import { api } from '../lib/api.js'
+  import Pagination from '../lib/Pagination.svelte'
 
   let rows = $state([])
+  let total = $state(0)
+  let offset = $state(0)
+  const limit = 25
   let loading = $state(true)
 
   function fmtFollowers(n) {
@@ -19,16 +23,25 @@
     return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
   }
 
-  onMount(async () => {
-    const data = await api.getCreators()
-    if (data && data.creators) rows = data.creators
+  async function load() {
+    loading = true
+    const data = await api.getCreators(limit, offset)
+    if (data && data.creators) {
+      rows = data.creators
+      total = data.total ?? rows.length
+    }
     loading = false
-  })
+  }
+
+  onMount(load)
+
+  function prev() { offset = Math.max(0, offset - limit); load() }
+  function next() { offset = offset + limit; load() }
 </script>
 
 <div class="top">
   <div><h1>Creators</h1><div class="sub">Daftar creator yang dipantau</div></div>
-  <div class="pill">{rows.length} creator</div>
+  <div class="pill">{total || rows.length} creator</div>
 </div>
 
 <div class="card">
@@ -63,3 +76,5 @@
     </tbody>
   </table>
 </div>
+
+<Pagination {offset} {limit} {total} onprev={prev} onnext={next} />

@@ -1,8 +1,12 @@
 <script>
   import { onMount } from 'svelte'
   import { api } from '../lib/api.js'
+  import Pagination from '../lib/Pagination.svelte'
 
   let rows = $state([])
+  let total = $state(0)
+  let offset = $state(0)
+  const limit = 25
   let loaded = $state(false)
 
   // filters — mirror the retrieval-engine columns
@@ -32,16 +36,24 @@
     return `${mm(s)}–${mm(e)}`
   }
 
-  onMount(async () => {
-    const t = await api.table('clips')
-    if (t && t.rows) rows = t.rows
+  async function load() {
+    const t = await api.table('clips', limit, offset)
+    if (t && t.rows) {
+      rows = t.rows
+      total = t.total ?? 0
+    }
     loaded = true
-  })
+  }
+
+  onMount(load)
+
+  function prev() { offset = Math.max(0, offset - limit); load() }
+  function next() { offset = offset + limit; load() }
 </script>
 
 <div class="top">
   <div><h1>Clips</h1><div class="sub">Engine retrieval — filter atribut → timecode buat dirakit</div></div>
-  <div class="pill">{rows.length} clip</div>
+  <div class="pill">{total || rows.length} clip</div>
 </div>
 
 <div class="filters">
@@ -93,5 +105,7 @@
     </tbody>
   </table>
 </div>
+
+<Pagination {offset} {limit} {total} onprev={prev} onnext={next} />
 
 <div class="note">ℹ️ Atribut netral aja (gender-presentation, age-bracket, aktivitas, hair, setting, hook score) — sesuai desain engine. Begitu pipeline analyze ngisi <code>clips</code>, baris muncul + filter live.</div>
