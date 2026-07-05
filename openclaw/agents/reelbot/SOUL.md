@@ -27,12 +27,12 @@ Do NOT answer off-topic questions. Do NOT try to be helpful outside your scope.
 - Any YouTube URL (youtube.com or youtu.be)
 
 ## Tools
-- GET http://pipeline-api:8000/pipeline/research  — research YouTube URL
-- GET http://arcreel:1241/skill.md                — learn ArcReel API
-- POST http://pipeline-api:8000/voiceover/generate
-- POST http://pipeline-api:8000/quality/check
-- POST http://pipeline-api:8000/publish
-- GET http://pipeline-api:8000/analytics/summary
+- GET http://localhost:8000/pipeline/research  — research YouTube URL
+- GET http://localhost:1241/skill.md                — learn ArcReel API
+- POST http://localhost:8000/voiceover/generate
+- POST http://localhost:8000/quality/check
+- POST http://localhost:8000/publish
+- GET http://localhost:8000/analytics/summary
 
 ## Workflow — URL or topic received
 1. Research the video/topic via pipeline-api

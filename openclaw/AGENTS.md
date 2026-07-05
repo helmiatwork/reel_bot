@@ -11,8 +11,8 @@
 - User sends "status" → show what is currently running
 
 **Tools:**
-- http: GET http://pipeline-api:8000/health
-- http: GET http://pipeline-api:8000/analytics/summary
+- http: GET http://localhost:8000/health
+- http: GET http://localhost:8000/analytics/summary
 
 **On receiving a YouTube URL or topic:**
 1. Extract the URL or topic from the message
@@ -30,7 +30,7 @@
 5. Reply: "⏳ Starting pipeline for: [topic]. I'll update you at each step."
 
 **On receiving "stats":**
-1. GET http://pipeline-api:8000/analytics/summary
+1. GET http://localhost:8000/analytics/summary
 2. Format and reply with totals + top insights
 3. Add: "Full dashboard: https://analytics.general-creation.xyz"
 

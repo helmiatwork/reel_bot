@@ -17,7 +17,13 @@ export default defineConfig({
       // dev convenience: hit the live API on :8000 while running `npm run dev`
       '/dash': 'http://localhost:8000',
       '/pipeline': 'http://localhost:8000',
+      '/clips': 'http://localhost:8000',
+      '/snoop': 'http://localhost:8000',
+      '/youtube': 'http://localhost:8000',
+      '/analyze': 'http://localhost:8000',
       '/analytics': 'http://localhost:8000',
+      '/creators': 'http://localhost:8000',
+      '/songs': 'http://localhost:8000',
       '/health': 'http://localhost:8000'
     }
   }

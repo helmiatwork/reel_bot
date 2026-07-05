@@ -199,7 +199,8 @@ def publish_instagram(
     caption: str,
     ig_user_id: str = None,
     access_token: str = None,
-    share_to_feed: bool = True
+    share_to_feed: bool = True,
+    allow_publish: bool = None  # opt-in explicit public publishing
 ) -> dict:
     """
     Publish video as Instagram Reel via Graph API.
@@ -207,6 +208,9 @@ def publish_instagram(
     IMPORTANT: Instagram requires a PUBLIC video URL.
     Upload your video to S3/Cloudflare R2/Supabase Storage first,
     then pass the public URL here.
+
+    SAFETY: By default, only creates the media container (not published).
+    Set allow_publish=True or env INSTAGRAM_ALLOW_PUBLISH=1 to publish to feed.
 
     Setup:
       1. Create Meta developer account
@@ -220,6 +224,11 @@ def publish_instagram(
 
     if not user_id or not token:
         raise Exception("IG_USER_ID and IG_ACCESS_TOKEN required")
+
+    # Guard: only publish if explicitly enabled
+    allow_pub = allow_publish if allow_publish is not None else os.getenv("INSTAGRAM_ALLOW_PUBLISH", "").lower() in ("1", "true")
+    if not allow_pub:
+        share_to_feed = False
 
     base = f"https://graph.facebook.com/v19.0/{user_id}"
     params_base = {"access_token": token}
@@ -255,6 +264,11 @@ def publish_instagram(
             break
         elif sc == "ERROR":
             raise Exception(f"Instagram container error: {status_r.json()}")
+
+    # If not allowed to publish, return prepared status
+    if not allow_pub:
+        print(f"[Instagram] Container prepared but NOT published (INSTAGRAM_ALLOW_PUBLISH not set)")
+        return {"platform": "instagram", "media_id": container_id, "status": "prepared_not_published", "reason": "INSTAGRAM_ALLOW_PUBLISH not set"}
 
     # Step 3: Publish
     print(f"[Instagram] Publishing...")

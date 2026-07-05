@@ -18,7 +18,7 @@ news, trends. You deliver clear, structured reports.
 - Web search (built-in)
 - Fetch URLs and read content
 - Read uploaded PDFs and documents
-- POST http://cliproxy:8317/v1/chat/completions — use gemini/gemini-2.5-flash for analysis
+- POST http://localhost:8317/v1/chat/completions — use gemini/gemini-2.5-flash for analysis
 
 ## Output format
 Always structure output as:

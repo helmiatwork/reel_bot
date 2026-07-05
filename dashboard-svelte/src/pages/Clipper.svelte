@@ -4,8 +4,8 @@
 
   let rows = $state([])
   let url = $state('')
-  let maxClips = $state(8)
   let loading = $state(false)
+  let error = $state(null)
   let expanded = $state({}) // { [rowId]: true/false }
 
   // Format cost as currency with 4 decimals
@@ -53,22 +53,31 @@
   async function handleFindClips() {
     if (!url.trim()) return
     loading = true
-    const result = await api.findClips(url, maxClips)
-    loading = false
-    if (result && result.clips) {
-      // Prepend new find to list
-      rows = [
-        {
-          id: Math.random(),
-          youtube_url: result.youtube_url,
-          clips: result.clips,
-          model: result.model,
-          cost_usd: result.cost_usd,
-          created_at: new Date().toISOString(),
-        },
-        ...rows,
-      ]
-      url = ''
+    error = null
+    try {
+      const result = await api.findClips(url)
+      if (!result) {
+        error = 'Request gagal — cek koneksi / service.'
+      } else if (result.detail) {
+        error = result.detail
+      } else if (result.clips && result.clips.length === 0) {
+        error = 'Gak ada klip yang cukup kuat dari video ini.'
+      } else if (result.clips) {
+        rows = [
+          {
+            id: Math.random(),
+            youtube_url: result.youtube_url,
+            clips: result.clips,
+            model: result.model,
+            cost_usd: result.cost_usd,
+            created_at: new Date().toISOString(),
+          },
+          ...rows,
+        ]
+        url = ''
+      }
+    } finally {
+      loading = false
     }
   }
 
@@ -93,15 +102,6 @@
       disabled={loading}
       onkeydown={(e) => e.key === 'Enter' && handleFindClips()}
     />
-    <input
-      type="number"
-      placeholder="Max clips"
-      bind:value={maxClips}
-      min="1"
-      max="20"
-      disabled={loading}
-      style="width: 100px"
-    />
     <button onclick={handleFindClips} disabled={loading || !url.trim()}>
       {loading ? 'menganalisa…' : 'Cari klip'}
     </button>
@@ -109,7 +109,15 @@
 </div>
 
 <div class="card">
-  {#if rows.length === 0}
+  {#if loading}
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <div class="loading-text">Menganalisa transkrip &amp; nyari momen viral…</div>
+      <div class="loading-sub">Bisa 10–60 detik. Sabar ya.</div>
+    </div>
+  {:else if error}
+    <div class="error-msg">{error}</div>
+  {:else if rows.length === 0}
     <div class="empty">
       <div class="empty-icon">📹</div>
       <div class="empty-text">Belum ada klip. Masukin URL di atas.</div>
@@ -377,5 +385,49 @@
   .empty-text {
     font-size: 16px;
     font-weight: 500;
+  }
+
+  .error-msg {
+    padding: 12px 16px;
+    border-radius: 6px;
+    background: #fff3cd;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 16px;
+    gap: 12px;
+  }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(37, 99, 235, 0.15);
+    border-top-color: #2563eb;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .loading-text {
+    font-weight: 600;
+    color: #333;
+  }
+
+  .loading-sub {
+    font-size: 12px;
+    color: #999;
   }
 </style>
