@@ -77,7 +77,7 @@ def test_save_source_new_source_inserts():
     _save_source with a new source should:
     1. Fetch channel meta
     2. Check if exists in DB (does not)
-    3. Insert the source with title, channel, view_count
+    3. Infer niche and insert the source with title, channel, view_count, niche
     """
     mock_meta = {
         "channel_id": "UCnew123",
@@ -94,15 +94,16 @@ def test_save_source_new_source_inserts():
     mock_cur.fetchone.return_value = None  # Source does not exist
 
     with patch("main._fetch_channel_meta", return_value=mock_meta), \
+         patch("main._infer_niche", return_value="test niche"), \
          patch("main._db_conn", return_value=mock_conn):
         _save_source("https://youtube.com/watch?v=test")
 
-        # Assert insert was called with the right values
+        # Assert insert was called with the right values (now including niche)
         mock_conn.cursor.return_value.__enter__.return_value.execute.assert_any_call(
             """INSERT INTO sources
-                    (youtube_url, title, platform, channel, views_at_analysis, status)
-                    VALUES (%s, %s, %s, %s, %s, %s)""",
-            ("https://youtube.com/watch?v=test", "New Video Title", "youtube", "New Channel", 50000, "analyzed"),
+                    (youtube_url, title, platform, channel, views_at_analysis, status, niche)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+            ("https://youtube.com/watch?v=test", "New Video Title", "youtube", "New Channel", 50000, "analyzed", "test niche"),
         )
 
 
@@ -173,15 +174,16 @@ def test_save_source_with_title_only_inserts():
     mock_cur.fetchone.return_value = None  # Source does not exist
 
     with patch("main._fetch_channel_meta", return_value=mock_meta), \
+         patch("main._infer_niche", return_value="test niche"), \
          patch("main._db_conn", return_value=mock_conn):
         _save_source("https://youtube.com/watch?v=test")
 
-        # Assert insert was called
+        # Assert insert was called (now including niche)
         mock_conn.cursor.return_value.__enter__.return_value.execute.assert_any_call(
             """INSERT INTO sources
-                    (youtube_url, title, platform, channel, views_at_analysis, status)
-                    VALUES (%s, %s, %s, %s, %s, %s)""",
-            ("https://youtube.com/watch?v=test", "Video With Title Only", "youtube", None, 50000, "analyzed"),
+                    (youtube_url, title, platform, channel, views_at_analysis, status, niche)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+            ("https://youtube.com/watch?v=test", "Video With Title Only", "youtube", None, 50000, "analyzed", "test niche"),
         )
 
 
@@ -202,15 +204,16 @@ def test_save_source_with_channel_only_inserts():
     mock_cur.fetchone.return_value = None  # Source does not exist
 
     with patch("main._fetch_channel_meta", return_value=mock_meta), \
+         patch("main._infer_niche", return_value="test niche"), \
          patch("main._db_conn", return_value=mock_conn):
         _save_source("https://youtube.com/watch?v=test")
 
-        # Assert insert was called
+        # Assert insert was called (now including niche)
         mock_conn.cursor.return_value.__enter__.return_value.execute.assert_any_call(
             """INSERT INTO sources
-                    (youtube_url, title, platform, channel, views_at_analysis, status)
-                    VALUES (%s, %s, %s, %s, %s, %s)""",
-            ("https://youtube.com/watch?v=test", None, "youtube", "Channel Only", 50000, "analyzed"),
+                    (youtube_url, title, platform, channel, views_at_analysis, status, niche)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+            ("https://youtube.com/watch?v=test", None, "youtube", "Channel Only", 50000, "analyzed", "test niche"),
         )
 
 

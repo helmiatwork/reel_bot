@@ -13,7 +13,9 @@ CREATE TABLE IF NOT EXISTS sources (
     channel           TEXT,
     views_at_analysis BIGINT,
     status            TEXT DEFAULT 'analyzed',
+    niche             TEXT,
     created_at        TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS sources_created_at_idx ON sources (created_at DESC);
+ALTER TABLE sources ADD COLUMN IF NOT EXISTS niche TEXT;
