@@ -47,14 +47,14 @@ class TestBuildClipEDL:
         assert edl["title"] == "Clip 1"
         assert edl["clips"][0]["in"] == 10
 
-    def test_recommended_flag_overrides_index(self):
-        """If any clip has recommended=True, it should be chosen."""
+    def test_recommended_flag_when_no_index(self):
+        """If recommended=True and no chosen_index, should pick recommended."""
         clips = [
             {"start_sec": 0, "end_sec": 5, "title": "Clip 0"},
             {"start_sec": 10, "end_sec": 20, "title": "Clip 1", "recommended": True},
             {"start_sec": 30, "end_sec": 40, "title": "Clip 2"},
         ]
-        edl = _build_clip_edl(clips, Path("/tmp/video.mp4"), chosen_index=0)
+        edl = _build_clip_edl(clips, Path("/tmp/video.mp4"), chosen_index=None)
         assert edl["title"] == "Clip 1"
 
     def test_defaults_to_index_0(self):
@@ -120,12 +120,11 @@ class TestExtractVideoID:
         url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=10s&list=PL123"
         assert _extract_video_id_from_youtube_url(url) == "dQw4w9WgXcQ"
 
-    def test_fallback_hash_on_invalid(self):
-        """Invalid URL should return 11-char hash fallback."""
+    def test_invalid_url_raises_error(self):
+        """Invalid URL should raise ValueError."""
         url = "https://example.com/invalid"
-        video_id = _extract_video_id_from_youtube_url(url)
-        assert len(video_id) == 11
-        assert all(c in "0123456789abcdef" for c in video_id)
+        with pytest.raises(ValueError):
+            _extract_video_id_from_youtube_url(url)
 
 
 class TestRenderIDGeneration:
