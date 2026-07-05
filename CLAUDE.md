@@ -1,3 +1,13 @@
+# Reelbot
+
+This stack runs **natively** (no Docker) on localhost. Before operating it, read
+[`docs/NATIVE_SETUP.md`](docs/NATIVE_SETUP.md) — it has the service table + start
+commands, the Docker→native config gotchas (localhost discovery, DATABASE_URL,
+n8n on Node 22 + encryption key, CLAUDE_BRIDGE_URL, deepseek-v4-pro models,
+`claude -p` bridge), the Telegram/Clipper/Snoop flows, and a ready operator prompt.
+
+Docker (`docker-compose*.yml`) is kept only as a rollback path.
+
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 

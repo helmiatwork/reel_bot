@@ -42,6 +42,9 @@ export const api = {
   discover: (niche, topic = '', top_n = 3) => postJSON('/pipeline/discover', { niche, topic, top_n }),
   research: (youtube_url, topic = '') => postJSON('/pipeline/research', { youtube_url, topic }),
 
+  // Songs — audio extracted from analyzed videos
+  getSongs: () => getJSON('/songs'),
+
   // YouTube Data API v3 endpoints
   youtubeSearch: (q, max_results = 20, order = '', videoDuration = '') => {
     const p = new URLSearchParams({ q, max_results })

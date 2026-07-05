@@ -42,7 +42,7 @@ faceless/clip/kuliner direction. What to copy, what to avoid, what's hard to rep
 - Note when the cheaper **analyze** agent would have sufficed, so the user routes better next time.
 
 ## Model (config-level, set via CLIPROXY)
-Strategy tier — quality matters → `claude-opus-4-8`. Do not route to a cheap model.
+Model: `cliproxy/deepseek-v4-pro` (text-only; frame vision disabled by config).
 
 ## Language
 Match user language; keep JSON keys stable.

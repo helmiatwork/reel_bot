@@ -4,7 +4,7 @@
   import Chart from 'chart.js/auto'
 
   // real token spend (primary)
-  let tk = $state({ rows: [], series: [], totals: { cost_usd: 0, total_tokens: 0, calls: 0 } })
+  let tk = $state({ rows: [], series: [], by_agent: [], totals: { cost_usd: 0, total_tokens: 0, calls: 0 } })
   // cliproxy request volume (secondary / liveness)
   let cx = $state({ providers: [], totals: { requests: 0, success: 0, failed: 0 } })
   let err = $state('')
@@ -83,6 +83,24 @@
       </tbody>
     </table>
   </div>
+</div>
+
+<div class="card" style="margin-top:14px">
+  <h3>Biaya per agent <span class="mut">— claude -p per flow</span></h3>
+  <table>
+    <thead><tr><th>Agent</th><th class="num" style="text-align:right">Call</th><th class="num" style="text-align:right">Token</th><th class="num" style="text-align:right">Biaya</th></tr></thead>
+    <tbody>
+      {#each tk.by_agent as a}
+        <tr>
+          <td>{a.agent || '—'}</td>
+          <td class="num mut" style="text-align:right">{a.calls}</td>
+          <td class="num" style="text-align:right">{fmtTok(a.total_tokens)}</td>
+          <td class="num" style="text-align:right">{usd(a.cost_usd)}</td>
+        </tr>
+      {/each}
+      {#if !tk.by_agent.length}<tr><td colspan="4" class="mut">Belum ada call agent tercatat.</td></tr>{/if}
+    </tbody>
+  </table>
 </div>
 
 <div class="card" style="margin-top:14px">

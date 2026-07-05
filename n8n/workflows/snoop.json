@@ -1,0 +1,41 @@
+{
+  "name": "Snoop — daily channel watch → auto-clip",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "days", "daysInterval": 1, "triggerAtHour": 8 }
+          ]
+        }
+      },
+      "id": "snoop-schedule",
+      "name": "Daily 08:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [260, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Snoop: for each watched target, detect new upload and auto-clip it.\n// Talks to the native pipeline-api on localhost:8000.\nconst BASE = 'http://localhost:8000';\nconst req = (opts) => this.helpers.httpRequest({ json: true, ...opts });\n\nconst targetsResp = await req({ url: `${BASE}/snoop/targets` });\nconst targets = (targetsResp && targetsResp.targets) || [];\nconst out = [];\n\nfor (const t of targets) {\n  let latest;\n  try {\n    const up = await req({ url: `${BASE}/youtube/channel/${encodeURIComponent(t.channel_id)}/uploads?max_results=1` });\n    latest = (up.items || [])[0];\n  } catch (e) {\n    out.push({ channel_id: t.channel_id, error: `uploads: ${e.message}` });\n    continue;\n  }\n  if (!latest) continue;\n  const videoId = latest.video_id || latest.id;\n  if (!videoId || videoId === t.last_seen_video_id) continue; // nothing new\n\n  const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;\n  let clips = [];\n  let clipSuccess = false;\n  try {\n    const clipResp = await req({ method: 'POST', url: `${BASE}/clips/find-claude`, body: { youtube_url: youtubeUrl } });\n    clips = (clipResp && clipResp.clips) || [];\n    clipSuccess = true;\n  } catch (e) {\n    out.push({ channel_id: t.channel_id, video_id: videoId, error: `clip: ${e.message}` });\n    // B3: do NOT advance last_seen on clip failure; skip the results update\n    continue;\n  }\n  try {\n    await req({ method: 'POST', url: `${BASE}/snoop/results`, body: { channel_id: t.channel_id, video_id: videoId, video_title: latest.title || '', clips } });\n  } catch (e) {\n    out.push({ channel_id: t.channel_id, video_id: videoId, error: `store: ${e.message}` });\n    continue;\n  }\n  out.push({ channel_id: t.channel_id, handle: t.handle, video_id: videoId, title: latest.title || '', clips: clips.length });\n}\n\nreturn out.length ? out.map((o) => ({ json: o })) : [{ json: { checked: targets.length, new: 0 } }];"
+      },
+      "id": "snoop-run",
+      "name": "Check targets & auto-clip",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [520, 300]
+    }
+  ],
+  "connections": {
+    "Daily 08:00": {
+      "main": [
+        [
+          { "node": "Check targets & auto-clip", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "meta": { "note": "Import via n8n UI (localhost:5678) → activate. Runs daily 08:00: for each /snoop/targets, checks the latest upload, and if it's new, calls /clips/find-claude and stores via /snoop/results (which also advances last_seen_video_id)." }
+}

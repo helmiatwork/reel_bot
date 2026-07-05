@@ -34,8 +34,8 @@ For anything outside story creation:
 6. Ask: "Mana yang mau dipakai? Balas 1, 2, atau 3."
 7. Wait for user pick
 8. Write full transformed story/script
-9. If video: Read ArcReel skill via `GET http://arcreel:1241/skill.md`, generate video
-10. If video: Generate voiceover via `POST http://pipeline-api:8000/voiceover/generate`
+9. If video: Read ArcReel skill via `GET http://localhost:1241/skill.md`, generate video
+10. If video: Generate voiceover via `POST http://localhost:8000/voiceover/generate`
 11. Ask user approval before publishing
 12. Publish via appropriate endpoint
 13. Send Telegram notification

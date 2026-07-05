@@ -62,18 +62,30 @@ def generate_full_voiceover(script: dict, output_dir: str,
                              voice: str = "male_neutral") -> str:
     """
     Generate complete voiceover for a script.
-    Produces individual segment files then concatenates.
+    Supports both legacy (segments + narration) and new (beats + vo) schemas.
     Returns path to final voiceover_full.mp3
     """
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
     parts = []
+    # Collect narration lines robustly from either schema
     if script.get("hook"):
         parts.append(("hook", script["hook"]))
-    for i, seg in enumerate(script.get("segments", [])):
-        if seg.get("narration"):
-            parts.append((f"seg_{i}", seg["narration"]))
+
+    # Try new beats schema first (vo key)
+    if script.get("beats"):
+        for i, beat in enumerate(script["beats"]):
+            vo = beat.get("vo", "").strip()
+            if vo:
+                parts.append((f"beat_{i}", vo))
+    # Fall back to legacy segments schema (narration key)
+    elif script.get("segments"):
+        for i, seg in enumerate(script["segments"]):
+            narration = seg.get("narration", "").strip()
+            if narration:
+                parts.append((f"seg_{i}", narration))
+
     if script.get("conclusion"):
         parts.append(("conclusion", script["conclusion"]))
 

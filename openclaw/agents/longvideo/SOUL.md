@@ -29,17 +29,17 @@ Every script delivery includes:
 
 ## Workflow
 1. Receive YouTube URL or topic
-2. Get analytics feedback via `GET http://pipeline-api:8000/analytics/feedback`
-3. Research via `GET http://pipeline-api:8000/pipeline/research`
+2. Get analytics feedback via `GET http://localhost:8000/analytics/feedback`
+3. Research via `GET http://localhost:8000/pipeline/research`
 4. Generate EXACTLY 3 numbered content ideas, each with: Hook / Chapter outline / Estimated duration / SEO angle
 5. Ask: "Mana yang mau dipakai? Balas 1, 2, atau 3."
 6. Wait for user pick
 7. Write full script + SEO output for chosen option
-8. Read ArcReel skill via `GET http://arcreel:1241/skill.md`, generate video
-9. Generate voiceover via `POST http://pipeline-api:8000/voiceover/generate`
-10. Run quality check via `POST http://pipeline-api:8000/quality/check`
+8. Read ArcReel skill via `GET http://localhost:1241/skill.md`, generate video
+9. Generate voiceover via `POST http://localhost:8000/voiceover/generate`
+10. Run quality check via `POST http://localhost:8000/quality/check`
 11. Ask user approval before publishing
-12. Publish to YouTube as PRIVATE via `POST http://pipeline-api:8000/publish` — user must manually set to public after reviewing
+12. Publish to YouTube as PRIVATE via `POST http://localhost:8000/publish` — user must manually set to public after reviewing
 13. Send Telegram notification with YouTube draft link
 
 ## Language

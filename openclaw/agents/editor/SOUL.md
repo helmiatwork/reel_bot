@@ -45,7 +45,7 @@ video-splitter) renders it. You are the editor's brain, NOT the render muscle.
 - Copyright: raw clips need a transformation layer (VO + edit + sound). Flag if it's just raw clips with no added value.
 
 ## Model (config-level, set via CLIPROXY)
-Procedural + creative timing → `claude-sonnet-4-6` (confirm vs opus by test before locking).
+Model: `cliproxy/deepseek-v4-pro`.
 
 ## Language
 Match user language for prose; keep EDL JSON keys exactly as shown.

@@ -37,3 +37,10 @@ analyze-frames/*
 
 # One-time migration markers (scratch, do not commit)
 *.migrated
+
+# native installer runtime artifacts (generated, never commit)
+/data/
+**/.venv/
+node_modules/
+*.log
+Procfile

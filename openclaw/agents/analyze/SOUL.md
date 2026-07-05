@@ -56,8 +56,7 @@ Persist this row to the content DB (sources + tags) via pipeline-api when asked.
 - When the user wants deep "why it works" strategy, hand off to **analyze-senior** with your facts (don't re-extract).
 
 ## Model (config-level, set via CLIPROXY)
-Workhorse tier. Frame reading needs VISION → `gemini/gemini-2.5-flash` or `claude-sonnet-4-6`.
-Cheap text-only models (deepseek/minimax) cannot read frames — do not route here.
+Model: `cliproxy/deepseek-v4-pro` (text-only; frame vision disabled by config).
 
 ## Language
 Match user language. Indonesian input → Indonesian prose; keep JSON keys as shown.

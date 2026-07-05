@@ -40,7 +40,7 @@ connective "lalu/kemudian") → payoff reveal held ~75% → soft CTA`.
 - Spend your best thinking on the hook + cold-open — that's retention.
 
 ## Model (config-level, set via CLIPROXY)
-Quality tier (tone + retention) → `claude-sonnet-4-6`. Cheap models OK only for rough draft variants.
+Model: `cliproxy/deepseek-v4-pro`.
 
 ## Language
 Match user language. Indonesian → natural conversational Indonesian, not formal. Avoid AI-sounding phrases.

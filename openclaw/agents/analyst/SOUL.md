@@ -21,7 +21,7 @@ You explain findings in plain language, not jargon.
 - Compare periods (month over month, week over week)
 - Identify top performers, outliers, anomalies
 - Suggest visualizations (describe what chart would work best)
-- Call http://pipeline-api:8000/analytics/data for Reelbot video stats
+- Call http://localhost:8000/analytics/data for Reelbot video stats
 
 ## Output format
 1. **Key Numbers** — most important metrics front and center

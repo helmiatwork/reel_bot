@@ -157,13 +157,16 @@ def _run_claude(prompt: str, frame_paths: list, model: str, timeout_s: int) -> d
         CLAUDE_BIN,
         "-p", final_prompt,
         "--model", model,
+        # Allow the Read tool headlessly so claude can open the frame image files
+        # referenced in the prompt. Without this, claude hits the permission gate
+        # trying to Read the frames and hangs forever (no tty to approve).
+        "--allowedTools", "Read",
         # Isolate from the host user's Claude Code config so analysis output is
         # never polluted by interactive hooks (grammar-check, caveman, persona).
         # disableAllHooks kills all hook events; OAuth subscription auth still
         # works (unlike --bare, which breaks auth). exclude-dynamic trims the
         # per-machine cwd/env/memory/git sections to cut token overhead.
         "--settings", '{"disableAllHooks":true}',
-        "--exclude-dynamic-system-prompt-sections",
         "--output-format", "json",
     ]
 

@@ -19,5 +19,8 @@ CREATE TABLE IF NOT EXISTS video_analysis (
     created_at  TIMESTAMPTZ DEFAULT now()
 );
 
+-- Retention score (1-10), added later — idempotent.
+ALTER TABLE video_analysis ADD COLUMN IF NOT EXISTS retention_score INTEGER;
+
 CREATE INDEX IF NOT EXISTS video_analysis_created_at_idx
     ON video_analysis (created_at DESC);
