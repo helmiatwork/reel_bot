@@ -2295,6 +2295,33 @@ def _fetch_transcript(youtube_url: str) -> list:
         return []
 
 
+def _extract_video_id_from_youtube_url(url: str) -> str:
+    """Extract video ID from YouTube URL."""
+    import re
+    parsed = urlparse(url)
+    video_id = None
+
+    if "youtube.com" in parsed.netloc or "youtu.be" in parsed.netloc:
+        if "youtu.be" in parsed.netloc:
+            video_id = parsed.path.strip("/").split("?")[0]
+        elif "v=" in parsed.query:
+            video_id = parsed.query.split("v=")[1].split("&")[0]
+
+    if not video_id:
+        try:
+            proc = subprocess.run(["yt-dlp", "--get-id", url], capture_output=True, text=True, timeout=30)
+            if proc.returncode == 0:
+                video_id = proc.stdout.strip()
+        except Exception:
+            pass
+
+    if not video_id:
+        raise ValueError(f"Could not extract video ID from URL: {url}")
+
+    video_id = re.sub(r"[^a-zA-Z0-9_-]", "", video_id)
+    return video_id
+
+
 def _download_source_video(youtube_url: str) -> Path:
     """
     Download a YouTube video to data/videos/<video_id>/source.mp4.
