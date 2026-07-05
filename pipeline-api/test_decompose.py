@@ -8,13 +8,18 @@ Runnable two ways:
 Tests cover:
 1. _scenes_to_shots: pure logic, converts scene list to shot dicts
 2. _build_video_segment_insert_tuples: pure logic, builds DB insert tuples
-3. Empty and edge cases
-4. Video ID path safety guard
+3. _parse_grouping_json: parse claude-vision grouping output
+4. _grouped_clips_to_segment_rows: convert clips to DB insert tuples
+5. Empty and edge cases
+6. Video ID path safety guard
 """
 
 from unittest.mock import MagicMock, patch
 
-from main import _scenes_to_shots, _build_video_segment_insert_tuples
+from main import (
+    _scenes_to_shots, _build_video_segment_insert_tuples,
+    _parse_grouping_json, _grouped_clips_to_segment_rows
+)
 
 
 # ── Tests ──────────────────────────────────────────────────────────────────────
@@ -134,6 +139,109 @@ def test_video_id_path_safety_regex():
         assert not re.match(r"^[A-Za-z0-9_-]+$", vid), f"Invalid ID {vid} accepted"
 
 
+
+# New test functions for Step 2a
+
+def test_parse_grouping_json_well_formed():
+    """_parse_grouping_json should parse well-formed JSON with clips array."""
+    raw_text = '{"clips":[{"shot_indices":[0,1],"credit_handle":"@alice"}]}'
+    shots = [
+        {"index": 0, "start_sec": 0.0, "end_sec": 2.5},
+        {"index": 1, "start_sec": 2.5, "end_sec": 5.0},
+        {"index": 2, "start_sec": 5.0, "end_sec": 9.0},
+    ]
+    
+    clips = _parse_grouping_json(raw_text, shots)
+    
+    assert len(clips) == 1
+    assert clips[0]["clip_index"] == 1
+    assert clips[0]["start_sec"] == 0.0
+    assert clips[0]["end_sec"] == 5.0
+    assert clips[0]["credit_handle"] == "@alice"
+    assert clips[0]["shot_indices"] == [0, 1]
+
+
+def test_parse_grouping_json_multiple_clips():
+    """_parse_grouping_json should handle multiple clips."""
+    raw_text = '{"clips":[{"shot_indices":[0,1],"credit_handle":"@a"},{"shot_indices":[2],"credit_handle":"@b"}]}'
+    shots = [
+        {"index": 0, "start_sec": 0.0, "end_sec": 2.5},
+        {"index": 1, "start_sec": 2.5, "end_sec": 5.0},
+        {"index": 2, "start_sec": 5.0, "end_sec": 9.0},
+    ]
+    
+    clips = _parse_grouping_json(raw_text, shots)
+    
+    assert len(clips) == 2
+    assert clips[0]["clip_index"] == 1
+    assert clips[0]["start_sec"] == 0.0
+    assert clips[0]["end_sec"] == 5.0
+    assert clips[1]["clip_index"] == 2
+    assert clips[1]["start_sec"] == 5.0
+    assert clips[1]["end_sec"] == 9.0
+
+
+def test_parse_grouping_json_with_markdown_fences():
+    """_parse_grouping_json should strip ```json fences."""
+    raw_text = '```json\n{"clips":[{"shot_indices":[0],"credit_handle":null}]}\n```'
+    shots = [
+        {"index": 0, "start_sec": 0.0, "end_sec": 2.5},
+    ]
+    
+    clips = _parse_grouping_json(raw_text, shots)
+    
+    assert len(clips) == 1
+    assert clips[0]["clip_index"] == 1
+    assert clips[0]["credit_handle"] is None
+
+
+def test_parse_grouping_json_empty_text():
+    """_parse_grouping_json should return [] on parse error."""
+    clips = _parse_grouping_json("garbage", [])
+    assert clips == []
+
+
+def test_parse_grouping_json_no_clips_key():
+    """_parse_grouping_json should return [] if 'clips' is missing."""
+    raw_text = '{"error":"no clips"}'
+    clips = _parse_grouping_json(raw_text, [])
+    assert clips == []
+
+
+def test_grouped_clips_to_segment_rows_basic():
+    """_grouped_clips_to_segment_rows should convert clips to insert tuples."""
+    clips = [
+        {"clip_index": 1, "start_sec": 0.0, "end_sec": 5.0, "credit_handle": "@alice"},
+        {"clip_index": 2, "start_sec": 5.0, "end_sec": 9.0, "credit_handle": None},
+    ]
+    source_id = 42
+    
+    tuples = _grouped_clips_to_segment_rows(clips, source_id)
+    
+    assert len(tuples) == 2
+    # (source_id, clip_index, start_sec, end_sec, credit_handle, original_url, origin_status, confidence, segment_path)
+    assert tuples[0] == (42, 1, 0.0, 5.0, "@alice", None, "not_found", None, None)
+    assert tuples[1] == (42, 2, 5.0, 9.0, None, None, "not_found", None, None)
+
+
+def test_grouped_clips_to_segment_rows_empty():
+    """_grouped_clips_to_segment_rows should handle empty clips list."""
+    tuples = _grouped_clips_to_segment_rows([], 42)
+    assert tuples == []
+
+
+def test_grouped_clips_to_segment_rows_origin_status_not_found():
+    """_grouped_clips_to_segment_rows should set origin_status='not_found' (Step 2a)."""
+    clips = [
+        {"clip_index": 1, "start_sec": 0.0, "end_sec": 5.0, "credit_handle": "@bob"},
+    ]
+    
+    tuples = _grouped_clips_to_segment_rows(clips, 1)
+    
+    # origin_status is at index 6
+    assert tuples[0][6] == "not_found"
+
+
 # ── Main runner (fallback for no pytest) ────────────────────────────────────────
 
 def __main__():
@@ -148,6 +256,14 @@ def __main__():
         test_build_video_segment_insert_tuples_empty,
         test_build_video_segment_insert_tuples_origin_status_pending,
         test_video_id_path_safety_regex,
+        test_parse_grouping_json_well_formed,
+        test_parse_grouping_json_multiple_clips,
+        test_parse_grouping_json_with_markdown_fences,
+        test_parse_grouping_json_empty_text,
+        test_parse_grouping_json_no_clips_key,
+        test_grouped_clips_to_segment_rows_basic,
+        test_grouped_clips_to_segment_rows_empty,
+        test_grouped_clips_to_segment_rows_origin_status_not_found,
     ]
 
     passed = 0
