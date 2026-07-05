@@ -21,4 +21,11 @@ if [ -z "$ANALYZE_FRAME_DIR" ]; then
 fi
 export ANALYZE_FRAME_DIR
 
+# Dashboard: vite builds to analytics-dashboard/ (not dashboard-svelte/dist),
+# so point the server there for native mode.
+if [ -z "$DASHBOARD_DIR" ] && [ -d "$REPO_ROOT/analytics-dashboard" ]; then
+  DASHBOARD_DIR="$REPO_ROOT/analytics-dashboard"
+fi
+export DASHBOARD_DIR
+
 cd "$REPO_ROOT/pipeline-api" && source .venv/bin/activate && exec uvicorn main:app --host 0.0.0.0 --port 8000
