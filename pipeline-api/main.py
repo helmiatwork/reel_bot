@@ -41,6 +41,10 @@ def startup_event():
     except Exception as e:
         print(f"[startup] creators db init failed (non-fatal): {e}")
     try:
+        _sources_init_db()
+    except Exception as e:
+        print(f"[startup] sources db init failed (non-fatal): {e}")
+    try:
         _api_usage_init_db()
     except Exception as e:
         print(f"[startup] api_usage db init failed (non-fatal): {e}")
@@ -2774,6 +2778,32 @@ def _creators_init_db():
         conn.close()
 
 
+def _sources_init_db():
+    """Initialize sources table at startup (non-fatal on failure)."""
+    conn = _db_conn()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""CREATE TABLE IF NOT EXISTS sources (
+                id                BIGSERIAL PRIMARY KEY,
+                youtube_url       TEXT UNIQUE,
+                title             TEXT,
+                platform          TEXT DEFAULT 'youtube',
+                channel           TEXT,
+                views_at_analysis BIGINT,
+                status            TEXT DEFAULT 'analyzed',
+                created_at        TIMESTAMPTZ DEFAULT now()
+            )""")
+            cur.execute("""CREATE INDEX IF NOT EXISTS sources_created_at_idx
+                ON sources (created_at DESC)""")
+        conn.commit()
+    except Exception as e:
+        print(f"[sources] init db error: {e}")
+    finally:
+        conn.close()
+
+
 def _api_usage_init_db():
     """Initialize api_usage table at startup (non-fatal on failure)."""
     conn = _db_conn()
@@ -2868,6 +2898,8 @@ def _fetch_channel_meta(youtube_url: str) -> dict:
             "channel": info.get("channel") or info.get("uploader"),
             "creator_name": info.get("uploader") or info.get("channel"),
             "total_followers": info.get("channel_follower_count"),
+            "title": info.get("title"),
+            "view_count": info.get("view_count"),
         }
     except Exception as e:
         print(f"[creators] _fetch_channel_meta error: {e}")
@@ -2953,6 +2985,44 @@ def _save_creator(youtube_url: str) -> None:
             conn.close()
     except Exception as e:
         print(f"[creators] _save_creator error (non-fatal): {e}")
+
+
+def _save_source(youtube_url: str) -> None:
+    """
+    Save the analyzed video to the sources library if not already stored
+    (check by youtube_url). Non-fatal: any error is logged but doesn't break analyze.
+    """
+    try:
+        meta = _fetch_channel_meta(youtube_url)
+        if not meta.get("title") and not meta.get("channel"):
+            return  # nothing useful to save
+
+        conn = _db_conn()
+        if not conn:
+            return
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT 1 FROM sources WHERE youtube_url = %s", (youtube_url,))
+                if cur.fetchone():
+                    return  # already saved, skip
+                cur.execute(
+                    """INSERT INTO sources
+                    (youtube_url, title, platform, channel, views_at_analysis, status)
+                    VALUES (%s, %s, %s, %s, %s, %s)""",
+                    (
+                        youtube_url,
+                        meta.get("title"),
+                        "youtube",
+                        meta.get("channel"),
+                        meta.get("view_count"),
+                        "analyzed",
+                    )
+                )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception as e:
+        print(f"[sources] _save_source error (non-fatal): {e}")
 
 
 class AnalyzeClaudeRequest(BaseModel):
@@ -3131,8 +3201,9 @@ def analyze_claude(req: AnalyzeClaudeRequest):
         finally:
             conn.close()
 
-    # Step 6: Save creator if new (non-fatal)
+    # Step 6: Save creator + source if new (non-fatal)
     _save_creator(req.youtube_url)
+    _save_source(req.youtube_url)
 
     return _json({
         "youtube_url": req.youtube_url,
