@@ -28,7 +28,7 @@ Dashboard health widget: `GET localhost:8000/dash/services` → `{live, total, s
 
 - Homebrew packages: `postgresql@16`, `node`, **`node@22`** (n8n only — see §3), `python@3.12`, `uv`, `ffmpeg`, `go` (optional, cliproxy build).
 - `claude` CLI (`/opt/homebrew/bin/claude`) **logged in** (`claude` → `/login`) — required for the Clipper/analysis paths that use `claude -p`.
-- Per-service deps: `npm ci`/`install` (openclaw, dashboard, arcreel frontend via **pnpm**), `uv sync` (python services), cliproxy prebuilt binary at `./data/bin/cli-proxy-api`.
+- Per-service deps: `npm ci`/`install` (openclaw, dashboard, arcreel frontend via **pnpm**), `uv sync` (python services), cliproxy prebuilt binary at `./data/bin/cli-proxy-api`. **pipeline-api venv**: `pip install scenedetect` for video decompose scene-cut detection.
 
 ## 3. Config gotchas (Docker→native — the non-obvious parts)
 

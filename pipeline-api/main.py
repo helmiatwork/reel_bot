@@ -1517,6 +1517,294 @@ def research_result(run_id: str):
     return {"run_id": run_id, "result": run["result"]}
 
 
+# ── Video Decompose: scene-cut detection + segment split (Step 1 foundation) ──
+
+def _detect_scene_cuts(video_path: str, threshold: float = 27.0) -> list:
+    """
+    Detect scene cuts in a video using PySceneDetect ContentDetector.
+
+    Args:
+        video_path: absolute path to video file
+        threshold: ContentDetector threshold (0-100, default 27.0)
+
+    Returns:
+        list of dicts: [{"index": i, "start_sec": float, "end_sec": float}, ...]
+        Returns [] on error (non-fatal).
+    """
+    try:
+        from scenedetect import detect, ContentDetector
+        scenes = detect(video_path, ContentDetector(threshold=threshold))
+
+        shots = []
+        for i, scene in enumerate(scenes):
+            start_sec = float(scene[0].get_seconds()) if hasattr(scene[0], 'get_seconds') else float(scene[0]) / 1000.0
+            end_sec = float(scene[1].get_seconds()) if hasattr(scene[1], 'get_seconds') else float(scene[1]) / 1000.0
+            shots.append({
+                "index": i,
+                "start_sec": start_sec,
+                "end_sec": end_sec,
+            })
+        return shots
+    except Exception as e:
+        print(f"[_detect_scene_cuts] error: {e}")
+        return []
+
+
+def _scenes_to_shots(scene_list: list) -> list:
+    """
+    Pure helper: convert raw (start_sec, end_sec) tuples/objects to shot dicts.
+
+    Args:
+        scene_list: list of tuples (start_sec, end_sec) or scene objects with get_seconds()
+
+    Returns:
+        list of dicts: [{"index": i, "start_sec": float, "end_sec": float}, ...]
+    """
+    shots = []
+    for i, scene in enumerate(scene_list):
+        # Handle both (start, end) tuples and objects with get_seconds()
+        if hasattr(scene, '__len__') and len(scene) >= 2:
+            start_sec = float(scene[0]) if isinstance(scene[0], (int, float)) else float(scene[0].get_seconds())
+            end_sec = float(scene[1]) if isinstance(scene[1], (int, float)) else float(scene[1].get_seconds())
+        else:
+            continue
+
+        shots.append({
+            "index": i,
+            "start_sec": start_sec,
+            "end_sec": end_sec,
+        })
+    return shots
+
+
+def _split_segments(video_path: str, video_id: str, shots: list) -> list:
+    """
+    Split video into segment mp4s using ffmpeg stream-copy (fast).
+
+    Args:
+        video_path: absolute path to source video
+        video_id: sanitized video_id for directory path
+        shots: list of shot dicts with start_sec, end_sec
+
+    Returns:
+        list of shot dicts augmented with "segment_path" field
+        Non-fatal: skips failed segments, continues with others.
+    """
+    seg_dir = _REPO_ROOT / "data" / "segments" / video_id
+    seg_dir.mkdir(parents=True, exist_ok=True)
+
+    result_shots = []
+    for shot in shots:
+        index = shot["index"]
+        start = shot["start_sec"]
+        end = shot["end_sec"]
+
+        seg_path = seg_dir / f"seg_{index:02d}.mp4"
+
+        try:
+            # ffmpeg: stream-copy (fastest), re-encode fallback if copy fails
+            cmd = [
+                "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+                "-ss", str(start), "-to", str(end),
+                "-i", str(video_path),
+                "-c", "copy",  # stream-copy: no re-encode
+                "-avoid_negative_ts", "make_zero",
+                str(seg_path),
+            ]
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+
+            # If stream-copy fails, fallback to re-encode
+            if proc.returncode != 0 and "copy" in cmd:
+                cmd[cmd.index("copy")] = "libx264"
+                cmd.insert(cmd.index("libx264") + 1, "-preset")
+                cmd.insert(cmd.index("libx264") + 2, "ultrafast")
+                proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+
+            if proc.returncode == 0 and seg_path.exists():
+                aug_shot = dict(shot)
+                aug_shot["segment_path"] = str(seg_path.absolute())
+                result_shots.append(aug_shot)
+            else:
+                print(f"[_split_segments] failed for seg_{index}: {proc.stderr[:200]}")
+        except Exception as e:
+            print(f"[_split_segments] exception for seg_{index}: {e}")
+
+    return result_shots
+
+
+def _build_video_segment_insert_tuples(shots: list, source_id: int) -> list:
+    """
+    Pure helper: build (source_id, clip_index, start_sec, end_sec, origin_status, ...) tuples
+    from shots for DB insert.
+
+    Args:
+        shots: list of shot dicts (possibly with segment_path)
+        source_id: sources.id FK
+
+    Returns:
+        list of tuples ready for INSERT
+    """
+    tuples = []
+    for shot in shots:
+        segment_path = shot.get("segment_path", None)
+        tup = (
+            source_id,
+            shot["index"],
+            shot["start_sec"],
+            shot["end_sec"],
+            None,  # credit_handle
+            None,  # original_url
+            "pending",  # origin_status
+            None,  # confidence
+            segment_path,
+        )
+        tuples.append(tup)
+    return tuples
+
+
+class DecomposeRequest(BaseModel):
+    youtube_url: str
+    split_files: bool = True
+
+
+@app.post("/decompose")
+def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
+    """
+    Start on-demand video decomposition (scene-cut detection + segment split).
+    Returns immediately with run_id for polling.
+
+    Request body:
+      youtube_url: URL to compilation video
+      split_files: whether to save segment mp4s (default true)
+
+    Response:
+      {run_id, status: "started"}
+    """
+    import uuid
+
+    _validate_source_url(req.youtube_url)
+
+    run_id = str(uuid.uuid4())
+    _save_run(run_id, {
+        "status": "downloading",
+        "current_stage": "downloading",
+        "source_id": None,
+        "segments": [],
+        "error": None,
+    })
+
+    def _decompose_job():
+        try:
+            # Download
+            _save_run(run_id, _update_run(run_id, status="downloading"))
+            video_path = _download_source_video(req.youtube_url)
+            video_id = _extract_video_id_from_youtube_url(req.youtube_url)
+
+            # Detect cuts
+            _save_run(run_id, _update_run(run_id, status="detecting"))
+            shots = _detect_scene_cuts(str(video_path), threshold=27.0)
+            if not shots:
+                shots = [{"index": 0, "start_sec": 0.0, "end_sec": 999999.0}]  # fallback: whole video
+
+            # Split (if requested)
+            if req.split_files:
+                _save_run(run_id, _update_run(run_id, status="splitting"))
+                shots = _split_segments(str(video_path), video_id, shots)
+
+            # Save to DB
+            _save_run(run_id, _update_run(run_id, status="saving"))
+            conn = _db_conn()
+            if conn:
+                try:
+                    with conn.cursor() as cur:
+                        # Upsert source (compilation)
+                        cur.execute("""
+                            INSERT INTO sources (youtube_url, platform, status)
+                            VALUES (%s, %s, %s)
+                            ON CONFLICT (youtube_url) DO UPDATE
+                            SET status = 'analyzed'
+                            RETURNING id
+                        """, (req.youtube_url, "youtube", "analyzed"))
+                        source_id = cur.fetchone()[0]
+
+                        # Insert segments
+                        insert_tuples = _build_video_segment_insert_tuples(shots, source_id)
+                        if insert_tuples:
+                            cur.executemany("""
+                                INSERT INTO video_segments
+                                (source_id, clip_index, start_sec, end_sec, credit_handle, original_url, origin_status, confidence, segment_path)
+                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            """, insert_tuples)
+
+                        conn.commit()
+
+                        # Return final state
+                        run_data = _load_run(run_id) or {}
+                        run_data.update({
+                            "status": "done",
+                            "current_stage": "done",
+                            "source_id": source_id,
+                            "segments": shots,
+                        })
+                        _save_run(run_id, run_data)
+                except Exception as e:
+                    print(f"[decompose] db error: {e}")
+                    conn.rollback()
+                    raise
+                finally:
+                    conn.close()
+            else:
+                # No DB, still mark as done
+                run_data = _load_run(run_id) or {}
+                run_data.update({
+                    "status": "done",
+                    "current_stage": "done",
+                    "segments": shots,
+                })
+                _save_run(run_id, run_data)
+
+        except Exception as e:
+            print(f"[decompose] job error: {e}")
+            run_data = _load_run(run_id) or {}
+            run_data.update({
+                "status": "error",
+                "error": str(e)[:500],
+            })
+            _save_run(run_id, run_data)
+
+    bg.add_task(_decompose_job)
+    return {"status": "started", "run_id": run_id}
+
+
+def _update_run(run_id: str, status: str) -> dict:
+    """Helper: load existing run data, update status, return merged dict."""
+    run_data = _load_run(run_id) or {}
+    run_data["status"] = status
+    run_data["current_stage"] = status
+    return run_data
+
+
+@app.get("/decompose/status/{run_id}")
+def decompose_status(run_id: str):
+    """
+    Poll decomposition job status.
+
+    Returns:
+      {
+        run_id,
+        status: "downloading" | "detecting" | "splitting" | "saving" | "done" | "error",
+        current_stage: <same>,
+        source_id: <int or null>,
+        segments: [{"index": i, "start_sec": float, "end_sec": float, "segment_path": "..."?}],
+        error: <string or null>
+      }
+    """
+    run = _load_run(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+    return run
+
+
 # ── YouTube Data API v3 endpoints (with yt-dlp fallback) ──────────────────────
 
 from youtube_v3 import (
