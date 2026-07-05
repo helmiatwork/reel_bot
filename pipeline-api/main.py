@@ -3227,6 +3227,11 @@ def analyze_claude(req: AnalyzeClaudeRequest):
                         cached_cost = cached_row[7]  # cost_usd column
                         if cached_cost is not None:
                             cached_cost = float(cached_cost)
+                        # Backfill creator/source/song for previously-analyzed URLs
+                        # (these are check-and-skip, so they no-op if already saved).
+                        _save_creator(req.youtube_url)
+                        _save_source(req.youtube_url)
+                        _save_song(req.youtube_url)
                         return _json({
                             "youtube_url": cached_row[0],
                             "hook": cached_row[2],
