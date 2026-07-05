@@ -34,7 +34,7 @@ export const api = {
   tokenUsage: () => getJSON('/dash/token-usage'),
   analysis: (limit = 50) => getJSON('/dash/analysis?limit=' + limit),
   clipFinds: (limit = 50) => getJSON('/dash/clip-finds?limit=' + limit),
-  findClips: (youtube_url) => postJSON('/clips/find-claude', { youtube_url }),
+  findClips: (youtube_url, max_clips = 8) => postJSON('/clips/find-claude', { youtube_url, max_clips }),
   runs: (limit = 20) => getJSON(`/pipeline/runs?limit=${limit}`),
   run: (id) => getJSON(`/pipeline/run/${id}`),
   artifact: (id) => getJSON(`/pipeline/run/${id}/artifact`),
@@ -42,17 +42,8 @@ export const api = {
   discover: (niche, topic = '', top_n = 3) => postJSON('/pipeline/discover', { niche, topic, top_n }),
   research: (youtube_url, topic = '') => postJSON('/pipeline/research', { youtube_url, topic }),
 
-  // Snoop — watch target channels, auto-clip new uploads
-  snoopTargets: () => getJSON('/snoop/targets'),
-  addSnoopTarget: (channel) => postJSON('/snoop/targets', { channel }),
-  removeSnoopTarget: (channel_id) =>
-    fetch(`/snoop/targets/${encodeURIComponent(channel_id)}`, { method: 'DELETE' })
-      .then((r) => r.json()).catch(() => null),
-  snoopResults: (channel_id = '') =>
-    getJSON('/snoop/results' + (channel_id ? `?channel_id=${encodeURIComponent(channel_id)}` : '')),
-
-  // Creators — saved automatically when a URL is analyzed
-  getCreators: () => getJSON('/creators'),
+  // Songs — audio extracted from analyzed videos
+  getSongs: () => getJSON('/songs'),
 
   // YouTube Data API v3 endpoints
   youtubeSearch: (q, max_results = 20, order = '', videoDuration = '') => {

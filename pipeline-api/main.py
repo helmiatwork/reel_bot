@@ -48,6 +48,10 @@ def startup_event():
         _api_usage_init_db()
     except Exception as e:
         print(f"[startup] api_usage db init failed (non-fatal): {e}")
+    try:
+        _songs_init_db()
+    except Exception as e:
+        print(f"[startup] songs db init failed (non-fatal): {e}")
 
 # ── SSRF guard: blocked networks (module-level constant) ────────────────────
 # Extra ranges beyond ipaddress.ip_address check (0.0.0.0/8, CGNAT, etc)
@@ -2832,6 +2836,30 @@ def _api_usage_init_db():
         conn.close()
 
 
+def _songs_init_db():
+    """Initialize songs table at startup (non-fatal on failure)."""
+    conn = _db_conn()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""CREATE TABLE IF NOT EXISTS songs (
+                id           BIGSERIAL PRIMARY KEY,
+                youtube_url  TEXT UNIQUE,
+                title        TEXT,
+                audio_path   TEXT,
+                duration_sec INTEGER,
+                created_at   TIMESTAMPTZ DEFAULT now()
+            )""")
+            cur.execute("""CREATE INDEX IF NOT EXISTS songs_created_at_idx
+                ON songs (created_at DESC)""")
+        conn.commit()
+    except Exception as e:
+        print(f"[songs] init db error: {e}")
+    finally:
+        conn.close()
+
+
 def _log_api_usage(agent: str, model: str, raw_usage: dict, cost_usd) -> None:
     """
     Log an API/LLM call to api_usage table.
@@ -3025,6 +3053,126 @@ def _save_source(youtube_url: str) -> None:
         print(f"[sources] _save_source error (non-fatal): {e}")
 
 
+def _extract_audio(youtube_url: str) -> dict:
+    """
+    Extract audio from YouTube video to data/songs/<video_id>.mp3.
+    Returns {audio_path, title, duration_sec} on success, {} on error.
+    Non-fatal: any error is logged but doesn't break analyze.
+    Caches by video_id — if mp3 already exists, reuses it.
+    """
+    try:
+        video_id = _extract_video_id_from_youtube_url(youtube_url)
+        songs_dir = Path(_REPO_ROOT) / "data" / "songs"
+        songs_dir.mkdir(parents=True, exist_ok=True)
+        audio_path = songs_dir / f"{video_id}.mp3"
+
+        # If audio already exists, fetch meta and return
+        if audio_path.exists():
+            meta = _fetch_channel_meta(youtube_url)
+            duration_sec = None
+            try:
+                import subprocess
+                proc = subprocess.run(
+                    ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                     "-of", "default=noprint_wrappers=1:nokey=1:noprint_wrappers=1",
+                     str(audio_path)],
+                    capture_output=True, text=True, timeout=30
+                )
+                if proc.returncode == 0:
+                    duration_sec = int(float(proc.stdout.strip() or 0))
+            except Exception:
+                pass
+            return {
+                "audio_path": str(audio_path),
+                "title": meta.get("title", ""),
+                "duration_sec": duration_sec,
+            }
+
+        # Download audio
+        cmd = [
+            "yt-dlp",
+            "-x",
+            "--audio-format", "mp3",
+            "--no-playlist",
+        ]
+        cmd.extend(_ytdlp_source_args())
+        cmd.extend(["-o", str(songs_dir / f"{video_id}.%(ext)s")])
+        cmd.append(youtube_url)
+
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        if proc.returncode != 0:
+            print(f"[songs] yt-dlp audio extraction failed: {proc.stderr[:200]}")
+            return {}
+
+        if not audio_path.exists():
+            print(f"[songs] audio file not created at {audio_path}")
+            return {}
+
+        # Get duration and title
+        meta = _fetch_channel_meta(youtube_url)
+        duration_sec = None
+        try:
+            import subprocess
+            proc = subprocess.run(
+                ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                 "-of", "default=noprint_wrappers=1:nokey=1:noprint_wrappers=1",
+                 str(audio_path)],
+                capture_output=True, text=True, timeout=30
+            )
+            if proc.returncode == 0:
+                duration_sec = int(float(proc.stdout.strip() or 0))
+        except Exception:
+            pass
+
+        return {
+            "audio_path": str(audio_path),
+            "title": meta.get("title", ""),
+            "duration_sec": duration_sec,
+        }
+    except Exception as e:
+        print(f"[songs] _extract_audio error: {e}")
+        return {}
+
+
+def _save_song(youtube_url: str) -> None:
+    """
+    Save the song audio to the songs library if not already stored
+    (check by youtube_url). Non-fatal: any error is logged but doesn't break analyze.
+    """
+    try:
+        conn = _db_conn()
+        if not conn:
+            return
+
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT 1 FROM songs WHERE youtube_url = %s", (youtube_url,))
+                if cur.fetchone():
+                    return  # already saved, skip
+
+                # Extract audio
+                result = _extract_audio(youtube_url)
+                if not result.get("audio_path"):
+                    return  # extraction failed
+
+                cur.execute(
+                    """INSERT INTO songs
+                    (youtube_url, title, audio_path, duration_sec)
+                    VALUES (%s, %s, %s, %s)""",
+                    (
+                        youtube_url,
+                        result.get("title"),
+                        result.get("audio_path"),
+                        result.get("duration_sec"),
+                    )
+                )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception as e:
+        print(f"[songs] _save_song error (non-fatal): {e}")
+
+
 class AnalyzeClaudeRequest(BaseModel):
     youtube_url: str
     intent: Optional[str] = None
@@ -3201,9 +3349,10 @@ def analyze_claude(req: AnalyzeClaudeRequest):
         finally:
             conn.close()
 
-    # Step 6: Save creator + source if new (non-fatal)
+    # Step 6: Save creator + source + song if new (non-fatal)
     _save_creator(req.youtube_url)
     _save_source(req.youtube_url)
+    _save_song(req.youtube_url)
 
     return _json({
         "youtube_url": req.youtube_url,
@@ -3255,6 +3404,90 @@ def list_creators():
     except Exception as e:
         print(f"[creators] GET /creators failed: {e}")
         return _json({"creators": []})
+    finally:
+        conn.close()
+
+
+@app.get("/songs")
+def list_songs():
+    """
+    List all songs stored in the database.
+    Returns list ordered by created_at DESC (most recent first).
+    On DB error, returns empty list gracefully.
+    """
+    conn = _db_conn()
+    if not conn:
+        return _json({"songs": []})
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, youtube_url, title, audio_path, duration_sec, created_at
+                FROM songs
+                ORDER BY created_at DESC
+                LIMIT 500
+                """
+            )
+            rows = cur.fetchall()
+            songs = [
+                {
+                    "id": row[0],
+                    "youtube_url": row[1],
+                    "title": row[2],
+                    "audio_path": row[3],
+                    "duration_sec": row[4],
+                    "created_at": row[5],
+                }
+                for row in rows
+            ]
+            return _json({"songs": songs})
+    except Exception as e:
+        print(f"[songs] GET /songs failed: {e}")
+        return _json({"songs": []})
+    finally:
+        conn.close()
+
+
+@app.get("/songs/{song_id}/download")
+def download_song(song_id: int):
+    """
+    Download a song's audio file by ID.
+    Protects against path traversal: only serves files under data/songs/.
+    Returns 404 if song not found or audio_path is missing.
+    """
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database unavailable")
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT audio_path FROM songs WHERE id = %s", (song_id,))
+            row = cur.fetchone()
+            if not row or not row[0]:
+                raise HTTPException(status_code=404, detail="Song not found")
+
+            audio_path_str = row[0]
+            audio_path = Path(audio_path_str).resolve()
+            songs_dir = (Path(_REPO_ROOT) / "data" / "songs").resolve()
+
+            # Guard: only serve files under data/songs/
+            if not str(audio_path).startswith(str(songs_dir)):
+                raise HTTPException(status_code=403, detail="Invalid file path")
+
+            if not audio_path.exists():
+                raise HTTPException(status_code=404, detail="Audio file not found")
+
+            return FileResponse(
+                path=audio_path,
+                media_type="audio/mpeg",
+                filename=audio_path.name
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[songs] GET /songs/{{song_id}}/download failed: {e}")
+        raise HTTPException(status_code=500, detail="Download failed")
     finally:
         conn.close()
 
