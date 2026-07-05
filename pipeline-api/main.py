@@ -24,6 +24,12 @@ _YT_PIPELINE = str(_REPO_ROOT / "yt-pipeline" / "yt_pipeline.py")
 
 sys.path.insert(0, str(_REPO_ROOT))
 
+# ── Repo-relative paths (native + docker compatible) ──────────────────────────
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+_YT_PIPELINE = str(_REPO_ROOT / "yt-pipeline" / "yt_pipeline.py")
+
+sys.path.insert(0, str(_REPO_ROOT))
+
 app = FastAPI(title="Content Pipeline API", version="1.0")
 
 # ── SSRF guard: blocked networks (module-level constant) ────────────────────
@@ -2287,6 +2293,296 @@ def _fetch_transcript(youtube_url: str) -> list:
             return []
     except Exception:
         return []
+
+
+def _download_source_video(youtube_url: str) -> Path:
+    """
+    Download a YouTube video to data/videos/<video_id>/source.mp4.
+    Reuses existing yt-dlp pattern from _extract_keyframes.
+    Returns absolute Path to the downloaded video.
+    Caches by video_id — if already exists, returns it without re-downloading.
+    """
+    import re
+
+    # Extract video_id from YouTube URL (handle multiple URL formats)
+    # Formats: youtube.com/watch?v=<id>, youtu.be/<id>, etc.
+    parsed = urlparse(youtube_url)
+    video_id = None
+
+    if "youtube.com" in parsed.netloc or "youtu.be" in parsed.netloc:
+        if "youtu.be" in parsed.netloc:
+            video_id = parsed.path.strip("/").split("?")[0]
+        else:
+            # youtube.com/watch?v=<id> or youtube.com/embed/<id>
+            if "v=" in parsed.query:
+                video_id = parsed.query.split("v=")[1].split("&")[0]
+            else:
+                # Try path-based ID (embed or watch)
+                path_parts = parsed.path.strip("/").split("/")
+                if len(path_parts) >= 2:
+                    video_id = path_parts[1]
+
+    # Fallback: use yt-dlp to extract the ID
+    if not video_id:
+        try:
+            proc = subprocess.run(
+                ["yt-dlp", "--get-id", youtube_url],
+                capture_output=True, text=True, timeout=30
+            )
+            if proc.returncode == 0:
+                video_id = proc.stdout.strip()
+        except Exception:
+            pass
+
+    # Sanitize video_id to avoid directory traversal
+    if video_id:
+        video_id = re.sub(r"[^a-zA-Z0-9_-]", "", video_id)
+    if not video_id:
+        raise RuntimeError(f"Could not extract video_id from URL: {youtube_url}")
+
+    # Check cache
+    cache_dir = _REPO_ROOT / "data" / "videos" / video_id
+    cached_video = cache_dir / "source.mp4"
+    if cached_video.exists():
+        return cached_video.absolute()
+
+    # Download with yt-dlp
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    output_template = str(cache_dir / "source.%(ext)s")
+
+    dl_proc = subprocess.run(
+        [
+            "yt-dlp",
+            "-f", "bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/best[ext=mp4][height<=480]/best[height<=480]/best",
+            "--merge-output-format", "mp4",
+            "--retries", "5",
+            "--fragment-retries", "5",
+            "--socket-timeout", "30",
+            "-o", output_template,
+            "--no-playlist",
+            youtube_url,
+        ],
+        capture_output=True, text=True, timeout=300,
+    )
+    if dl_proc.returncode != 0:
+        raise RuntimeError(f"yt-dlp download failed: {dl_proc.stderr[:300]}")
+
+    # Locate downloaded file
+    video_files = list(cache_dir.glob("source.*"))
+    if not video_files:
+        raise RuntimeError("Downloaded video file not found after yt-dlp")
+
+    return video_files[0].absolute()
+
+
+def _build_clip_edl(clips: list, src_path: Path, chosen_index: Optional[int] = None) -> dict:
+    """
+    Build an EDL (Edit Decision List) dict from a clips array.
+    Pure function (no I/O).
+
+    Args:
+        clips: list of clip dicts with start_sec, end_sec, title, caption (optional), recommended (optional)
+        src_path: absolute Path to source video
+        chosen_index: if provided, use this clip index; else pick recommended clip (fallback to 0)
+
+    Returns:
+        dict with keys: aspect, fps, clips, captions, title
+        - clips: single-element list with {src, in, out}
+        - captions: list of {start, end, text} (one per clip if caption exists)
+    """
+    # Pick which clip to use
+    chosen_clip = None
+    if chosen_index is not None and 0 <= chosen_index < len(clips):
+        chosen_clip = clips[chosen_index]
+    else:
+        # Find recommended clip, fallback to index 0
+        for clip in clips:
+            if clip.get("recommended"):
+                chosen_clip = clip
+                break
+        if not chosen_clip and clips:
+            chosen_clip = clips[0]
+
+    if not chosen_clip:
+        raise ValueError("No clips provided")
+
+    # Build EDL
+    edl = {
+        "aspect": "1080x1920",
+        "fps": 30,
+        "title": chosen_clip.get("title", ""),
+        "clips": [
+            {
+                "src": str(src_path.absolute()),
+                "in": int(chosen_clip.get("start_sec", 0)),
+                "out": int(chosen_clip.get("end_sec", 0)),
+            }
+        ],
+        "captions": [],
+    }
+
+    # Add caption if present
+    if chosen_clip.get("caption"):
+        edl["captions"].append({
+            "start": int(chosen_clip.get("start_sec", 0)),
+            "end": int(chosen_clip.get("end_sec", 0)),
+            "text": chosen_clip["caption"],
+        })
+
+    return edl
+
+
+class ClipRenderRequest(BaseModel):
+    youtube_url: Optional[str] = None
+    clips: Optional[list] = None
+    clip_find_id: Optional[int] = None
+    clip_index: Optional[int] = None
+
+
+@app.post("/clips/render")
+def render_clip(req: ClipRenderRequest):
+    """
+    Download video, build EDL, run assemble.sh, return rendered MP4.
+
+    Request:
+    - clip_find_id: load clips from clip_finds table by id
+    - OR youtube_url + clips (inline clips array)
+    - clip_index: optional, which clip to render (default: recommended)
+
+    Returns: {status: "ok", video_path: str, clip: dict, edl: dict}
+    """
+    import uuid
+
+    # Load clips and youtube_url
+    youtube_url = req.youtube_url
+    clips = req.clips or []
+    clip_index = req.clip_index
+
+    if req.clip_find_id:
+        # Load from DB
+        conn = _db_conn()
+        if not conn:
+            raise HTTPException(status_code=500, detail="Database not available")
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT id, youtube_url, clips FROM clip_finds WHERE id = %s",
+                    (req.clip_find_id,)
+                )
+                row = cur.fetchone()
+                if not row:
+                    raise HTTPException(status_code=404, detail="clip_find_id not found")
+                youtube_url = row[1]
+                clips_data = row[2]
+                if isinstance(clips_data, str):
+                    clips = json.loads(clips_data)
+                else:
+                    clips = clips_data or []
+        except Exception as exc:
+            print(f"[render] DB fetch failed: {exc}")
+            raise HTTPException(status_code=500, detail=f"Failed to load clip_find: {exc}")
+        finally:
+            conn.close()
+
+    if not youtube_url:
+        raise HTTPException(status_code=400, detail="youtube_url required")
+    if not clips:
+        raise HTTPException(status_code=400, detail="no clips provided")
+
+    # Validate URL
+    _validate_source_url(youtube_url)
+
+    try:
+        # Download source video
+        print(f"[render] Downloading video from {youtube_url}")
+        src_path = _download_source_video(youtube_url)
+        print(f"[render] Video cached at {src_path}")
+
+        # Build EDL
+        edl = _build_clip_edl(clips, src_path, chosen_index=clip_index)
+        print(f"[render] Built EDL with clip in={edl['clips'][0]['in']}, out={edl['clips'][0]['out']}")
+
+        # Write EDL to temp file
+        render_id = str(uuid.uuid4())
+        render_dir = _REPO_ROOT / "data" / "renders" / render_id
+        render_dir.mkdir(parents=True, exist_ok=True)
+        edl_path = render_dir / "edl.json"
+        edl_path.write_text(json.dumps(edl))
+        print(f"[render] Wrote EDL to {edl_path}")
+
+        # Run assemble.sh
+        out_mp4 = render_dir / "output.mp4"
+        assemble_sh = _REPO_ROOT / "scripts" / "assemble.sh"
+
+        print(f"[render] Running assemble.sh...")
+        result = subprocess.run(
+            ["bash", str(assemble_sh), str(edl_path), str(out_mp4)],
+            capture_output=True, text=True, timeout=600
+        )
+
+        if result.returncode != 0:
+            stderr_tail = result.stderr[-500:] if result.stderr else "no stderr"
+            print(f"[render] assemble.sh failed: {stderr_tail}")
+            raise HTTPException(status_code=500, detail=f"Render failed: {stderr_tail}")
+
+        if not out_mp4.exists():
+            raise HTTPException(status_code=500, detail="Output MP4 not created")
+
+        print(f"[render] Success! Output at {out_mp4}")
+
+        # Return response
+        chosen_clip = clips[clip_index] if clip_index is not None and clip_index < len(clips) else None
+        if not chosen_clip:
+            for clip in clips:
+                if clip.get("recommended"):
+                    chosen_clip = clip
+                    break
+        if not chosen_clip and clips:
+            chosen_clip = clips[0]
+
+        return _json({
+            "status": "ok",
+            "video_path": str(out_mp4.absolute()),
+            "render_id": render_id,
+            "clip": chosen_clip,
+            "edl": edl,
+        })
+
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"[render] endpoint error: {exc}")
+        raise HTTPException(status_code=500, detail=f"Render failed: {str(exc)[:200]}")
+
+
+@app.get("/clips/renders/{render_id}/download")
+def download_render(render_id: str):
+    """
+    Download rendered MP4 video.
+    Guard against path traversal.
+    """
+    import re
+
+    # Validate render_id format (UUID-like)
+    if not re.match(r"^[a-f0-9\-]{36}$", render_id):
+        raise HTTPException(status_code=400, detail="Invalid render_id")
+
+    render_dir = _REPO_ROOT / "data" / "renders" / render_id
+    mp4_file = render_dir / "output.mp4"
+
+    # Verify the resolved path is under data/renders/ to prevent traversal
+    try:
+        mp4_resolved = mp4_file.resolve()
+        renders_base = (_REPO_ROOT / "data" / "renders").resolve()
+        if not str(mp4_resolved).startswith(str(renders_base)):
+            raise HTTPException(status_code=400, detail="Path traversal not allowed")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid path")
+
+    if not mp4_file.exists():
+        raise HTTPException(status_code=404, detail="Render not found")
+
+    return FileResponse(path=str(mp4_file), media_type="video/mp4", filename=f"{render_id}.mp4")
 
 
 def _extract_keyframes(youtube_url: str, out_dir: str, n: int = 20) -> list:
