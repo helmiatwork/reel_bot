@@ -41,9 +41,11 @@ for i in $(seq 0 $((n-1))); do
   dur=$(awk "BEGIN{print $out-$in}")
   part="$WORK/part_$(printf %03d $i).mp4"
 
-  # Compute face-centered crop offsets; degrade to center crop on any error.
-  read CX CY < <("$PY" "$SDIR/face_crop.py" "$src" "$in" "$out" "$W" "$H" 2>/dev/null || echo "0 0")
-  if [ "$CX" = "0" ] && [ "$CY" = "0" ]; then
+  # Compute face-centered crop offsets; face_crop prints "-1 -1" when it
+  # cannot compute, so we fall back to ffmpeg's default center crop. Valid
+  # offsets are always >= 0 (incl. a legit "0 0" top-left face).
+  read CX CY < <("$PY" "$SDIR/face_crop.py" "$src" "$in" "$out" "$W" "$H" 2>/dev/null || echo "-1 -1")
+  if [ "$CX" = "-1" ]; then
     CROP="crop=${W}:${H}"
   else
     CROP="crop=${W}:${H}:${CX}:${CY}"
