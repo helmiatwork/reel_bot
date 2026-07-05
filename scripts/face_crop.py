@@ -3,7 +3,10 @@
 Face-centered crop offset calculator for landscape→portrait render.
 
 CLI: python face_crop.py <video_path> <in_sec> <out_sec> <W> <H>
-     Prints "X Y" (two integers) to stdout, or "0 0" on any error.
+     Prints "X Y" (two integers) to stdout, or "-1 -1" when it cannot
+     compute (bad args / unreadable video) so the caller falls back to a
+     center crop. Valid offsets are always >= 0, so -1 never collides with
+     a legitimate top-left face (which computes to "0 0").
      Exit code always 0 (never fail the render).
 
 Usage:
@@ -116,7 +119,7 @@ def main():
     """CLI: read args, detect faces, compute crop, print result."""
     if len(sys.argv) != 6:
         # Silently degrade: print centered crop.
-        print("0 0")
+        print("-1 -1")
         sys.exit(0)
 
     video_path = sys.argv[1]
@@ -127,14 +130,14 @@ def main():
         H = int(sys.argv[5])
     except (ValueError, TypeError):
         # Silently degrade.
-        print("0 0")
+        print("-1 -1")
         sys.exit(0)
 
     src_w, src_h, face_centers = detect_faces_in_range(video_path, in_sec, out_sec)
 
     # If we failed to open/read the video, degrade to centered crop.
     if src_w is None or src_h is None:
-        print("0 0")
+        print("-1 -1")
         sys.exit(0)
 
     x, y = compute_crop_xy(src_w, src_h, face_centers, W, H)

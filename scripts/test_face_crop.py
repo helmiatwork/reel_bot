@@ -97,6 +97,19 @@ def test_square_to_portrait():
     assert 0 <= y <= 1920 - 1920, f"y={y} out of bounds [0, {1920-1920}]"
 
 
+def test_far_left_top_face_is_valid_zero_zero():
+    """A face at the far top-left legitimately computes to (0,0).
+
+    This is a VALID offset, not an error — the assemble.sh caller must only
+    treat the "-1 -1" sentinel as "cannot compute / center". If (0,0) were the
+    sentinel, every left-edge face on a landscape→portrait clip (where y is
+    always 0) would wrongly fall back to a center crop and cut the person off.
+    """
+    # landscape 1920x1080 → 1080x1920: sw=3413, sh=1920, so y is always 0.
+    x, y = compute_crop_xy(1920, 1080, [(0.0, 0.0)], 1080, 1920)
+    assert (x, y) == (0, 0), f"far top-left face should compute to (0,0), got ({x},{y})"
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     failed = 0
