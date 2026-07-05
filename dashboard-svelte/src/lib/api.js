@@ -51,6 +51,9 @@ export const api = {
   snoopResults: (channel_id = '') =>
     getJSON('/snoop/results' + (channel_id ? `?channel_id=${encodeURIComponent(channel_id)}` : '')),
 
+  // Creators — saved automatically when a URL is analyzed
+  getCreators: () => getJSON('/creators'),
+
   // YouTube Data API v3 endpoints
   youtubeSearch: (q, max_results = 20, order = '', videoDuration = '') => {
     const p = new URLSearchParams({ q, max_results })

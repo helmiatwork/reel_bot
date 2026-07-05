@@ -3,7 +3,7 @@ import { writable } from 'svelte/store'
 // Valid page ids — must stay in sync with App.svelte's {#if} chain and NAV n.p values.
 const VALID_PAGES = new Set([
   'openclaw', 'dashboard', 'sources', 'analysis', 'clips', 'clipper', 'snoop',
-  'performance', 'pipeline', 'posts', 'agents', 'formulas', 'cost', 'discover'
+  'performance', 'pipeline', 'posts', 'agents', 'formulas', 'cost', 'discover', 'creators'
 ])
 
 function hashPage() {
