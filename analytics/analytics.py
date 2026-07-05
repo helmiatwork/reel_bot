@@ -12,6 +12,9 @@ CLIPROXY_URL = os.getenv("CLIPROXY_URL", "http://cliproxy:8317/v1")
 CLIPROXY_KEY = os.getenv("CLIPROXY_KEY", "local-proxy-key")
 ANALYTICS_DB = Path(os.getenv("ANALYTICS_DB", "/output/analytics.json"))
 
+# Resolve repo-relative paths for credentials
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+
 
 # ── Fetch YouTube analytics ───────────────────────────────────
 
@@ -26,7 +29,7 @@ def fetch_youtube_analytics(video_id: str, credentials_file: str = None) -> dict
     except ImportError:
         raise Exception("Install: pip install google-api-python-client")
 
-    token_file = credentials_file or "/app/credentials/youtube_token.json"
+    token_file = credentials_file or str(_REPO_ROOT / "youtube_token.json")
     if not Path(token_file).exists():
         return {"error": "No YouTube credentials found"}
 

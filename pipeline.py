@@ -28,8 +28,8 @@ from analytics.analytics import (
 
 CLIPROXY_URL = os.getenv("CLIPROXY_URL", "http://cliproxy:8317/v1")
 CLIPROXY_KEY = os.getenv("CLIPROXY_KEY", "local-proxy-key")
-OPENCLAW_URL = os.getenv("OPENCLAW_URL", "http://openclaw:18789")
-ARCREEL_URL  = os.getenv("ARCREEL_URL", "http://arcreel:1241")
+OPENCLAW_URL = os.getenv("OPENCLAW_URL", "http://localhost:18789")
+ARCREEL_URL  = os.getenv("ARCREEL_URL", "http://localhost:1241")
 ARCREEL_TOKEN = os.getenv("ARCREEL_TOKEN", "")
 
 

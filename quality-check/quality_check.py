@@ -9,7 +9,7 @@ from pathlib import Path
 
 CLIPROXY_URL = os.getenv("CLIPROXY_URL", "http://cliproxy:8317/v1")
 CLIPROXY_KEY = os.getenv("CLIPROXY_KEY", "local-proxy-key")
-VISION_MODEL = "gemini/gemini-2.5-flash-lite"
+VISION_MODEL = "gemini-2.5-flash-lite"
 
 QUALITY_SYSTEM_PROMPT = """
 You are a video quality reviewer for a social media content automation system.

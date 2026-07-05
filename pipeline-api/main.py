@@ -657,7 +657,7 @@ def dash_analysis(limit: int = 50):
 # endpoint so the reelbot agent processes the message exactly as it would a
 # Telegram message (validate intent → trigger pipeline → reply). The gateway
 # token stays server-side and is never exposed to the browser.
-OPENCLAW_URL = os.getenv("OPENCLAW_URL", "http://openclaw:18789").rstrip("/")
+OPENCLAW_URL = os.getenv("OPENCLAW_URL", "http://localhost:18789").rstrip("/")
 OPENCLAW_MODEL = os.getenv("OPENCLAW_MODEL", "openclaw/reelbot")
 
 # NOTE on session storage: OpenClaw generates its own UUID for every session
