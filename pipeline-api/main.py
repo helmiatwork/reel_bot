@@ -2428,3 +2428,289 @@ def dash_clip_finds(limit: int = 50):
     except Exception as exc:
         print(f"[dash/clip-finds] query failed: {exc}")
         return _json({"rows": []})
+
+
+# ── Render pipeline: download → EDL → assemble ──────────────────────────────
+
+def _extract_video_id_from_youtube_url(url: str) -> str:
+    """Extract video ID from a YouTube URL. Returns first 11 chars as fallback."""
+    import re
+    # Standard forms: youtube.com/watch?v=<id>, youtu.be/<id>, youtube.com/embed/<id>
+    patterns = [
+        r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})',
+        r'(?:youtube\.com\/shorts\/)([A-Za-z0-9_-]{11})',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    # Fallback: use first 11 alphanumeric chars from URL
+    fallback = re.sub(r'[^A-Za-z0-9_-]', '', url)[:11]
+    return fallback or "unknown"
+
+
+def _download_source_video(youtube_url: str) -> Path:
+    """
+    Download a YouTube video and cache it by video ID.
+    Cache location: data/videos/<video_id>/source.mp4
+    Returns absolute Path to the cached mp4.
+    Raises RuntimeError if download fails.
+    """
+    video_id = _extract_video_id_from_youtube_url(youtube_url)
+    cache_dir = _REPO_ROOT / "data" / "videos" / video_id
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    cached_mp4 = cache_dir / "source.mp4"
+    if cached_mp4.exists():
+        return cached_mp4.resolve()
+
+    # Download to temp dir, then move to cache
+    tmp_dir = tempfile.mkdtemp(prefix="dl_vid_")
+    output_template = f"{tmp_dir}/source.%(ext)s"
+
+    try:
+        dl_proc = subprocess.run(
+            [
+                "yt-dlp",
+                "-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+                "--merge-output-format", "mp4",
+                "--retries", "5",
+                "--fragment-retries", "5",
+                "--socket-timeout", "30",
+                "-o", output_template,
+                "--no-playlist",
+                youtube_url,
+            ],
+            capture_output=True, text=True, timeout=600,
+        )
+        if dl_proc.returncode != 0:
+            raise RuntimeError(f"yt-dlp download failed: {dl_proc.stderr[:300]}")
+
+        # Locate downloaded file
+        video_files = list(Path(tmp_dir).glob("source.*"))
+        if not video_files:
+            raise RuntimeError("Downloaded video file not found after yt-dlp")
+
+        downloaded = video_files[0]
+        shutil.move(str(downloaded), str(cached_mp4))
+        return cached_mp4.resolve()
+    finally:
+        # Cleanup temp dir
+        try:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+        except Exception:
+            pass
+
+
+def _build_clip_edl(clips: list, src_path: Path, chosen_index: Optional[int] = None) -> dict:
+    """
+    Build an EDL dict suitable for scripts/assemble.sh from a clips array.
+    Pure function (no I/O).
+
+    If chosen_index is None, picks the clip marked with recommended=True (fallback: index 0).
+    Returns an EDL dict with: title, aspect, fps, clips, captions (optional).
+    """
+    if not clips:
+        raise ValueError("No clips provided")
+
+    # Pick the clip to render
+    if chosen_index is not None:
+        chosen_clip = clips[min(chosen_index, len(clips) - 1)]
+    else:
+        # Find the one marked recommended
+        chosen_clip = None
+        for c in clips:
+            if c.get("recommended"):
+                chosen_clip = c
+                break
+        if not chosen_clip:
+            chosen_clip = clips[0]
+
+    # Normalize times
+    start_sec = float(chosen_clip.get("start_sec", 0))
+    end_sec = float(chosen_clip.get("end_sec", start_sec + 10))
+    title = str(chosen_clip.get("title", "Clip"))
+    caption = chosen_clip.get("caption", "")
+
+    # Build EDL
+    edl = {
+        "title": title,
+        "aspect": "1080x1920",
+        "fps": 30,
+        "clips": [
+            {
+                "src": str(src_path.resolve()),
+                "in": start_sec,
+                "out": end_sec,
+            }
+        ],
+    }
+
+    # Add captions if present
+    if caption:
+        edl["captions"] = [
+            {
+                "start": start_sec,
+                "end": end_sec,
+                "text": caption,
+            }
+        ]
+
+    return edl
+
+
+class RenderRequest(BaseModel):
+    clip_find_id: Optional[int] = None
+    youtube_url: Optional[str] = None
+    clips: Optional[List[dict]] = None
+    clip_index: Optional[int] = None
+
+
+@app.post("/clips/render")
+def render_clip(req: RenderRequest):
+    """
+    Render a selected clip from a clip-find result.
+    Accepts either clip_find_id (load from DB) or inline clips + youtube_url.
+    Returns {status, video_path, clip, edl}.
+    """
+    import uuid
+
+    # Step 1: Load clips and URL
+    clips = None
+    youtube_url = None
+
+    if req.clip_find_id:
+        conn = _db_conn()
+        if not conn:
+            raise HTTPException(status_code=500, detail="DB unavailable")
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT youtube_url, clips FROM clip_finds WHERE id = %s",
+                    (req.clip_find_id,)
+                )
+                row = cur.fetchone()
+                if not row:
+                    raise HTTPException(status_code=404, detail="clip_find_id not found")
+                youtube_url, clips_data = row
+                # Parse clips from JSON
+                if isinstance(clips_data, str):
+                    clips = json.loads(clips_data)
+                else:
+                    clips = clips_data
+        finally:
+            conn.close()
+    else:
+        youtube_url = req.youtube_url
+        clips = req.clips
+
+    if not youtube_url or not clips:
+        raise HTTPException(status_code=400, detail="clip_find_id or (youtube_url + clips) required")
+
+    # Step 2: Validate YouTube URL
+    _validate_source_url(youtube_url)
+
+    # Step 3: Download source video
+    try:
+        src_path = _download_source_video(youtube_url)
+    except Exception as exc:
+        print(f"[clips/render] download failed: {exc}")
+        raise HTTPException(status_code=502, detail=f"Download failed: {exc}")
+
+    # Step 4: Build EDL
+    try:
+        edl = _build_clip_edl(clips, src_path, chosen_index=req.clip_index)
+    except Exception as exc:
+        print(f"[clips/render] EDL build failed: {exc}")
+        raise HTTPException(status_code=400, detail=f"EDL build failed: {exc}")
+
+    # Step 5: Create render directory and write EDL
+    render_id = str(uuid.uuid4())
+    render_dir = _REPO_ROOT / "data" / "renders" / render_id
+    render_dir.mkdir(parents=True, exist_ok=True)
+
+    edl_path = render_dir / "edl.json"
+    out_mp4 = render_dir / "final.mp4"
+
+    try:
+        with open(edl_path, "w") as f:
+            json.dump(edl, f, indent=2)
+    except Exception as exc:
+        print(f"[clips/render] EDL write failed: {exc}")
+        raise HTTPException(status_code=500, detail=f"Could not write EDL: {exc}")
+
+    # Step 6: Run assemble.sh
+    assemble_script = _REPO_ROOT / "scripts" / "assemble.sh"
+    try:
+        result = subprocess.run(
+            ["bash", str(assemble_script), str(edl_path), str(out_mp4)],
+            capture_output=True, text=True, timeout=600,
+        )
+        if result.returncode != 0:
+            stderr_tail = result.stderr[-500:] if result.stderr else "no stderr"
+            print(f"[clips/render] assemble.sh failed: {stderr_tail}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Video render failed: {stderr_tail}",
+            )
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=504, detail="Video render timed out (>10 min)")
+    except Exception as exc:
+        if isinstance(exc, HTTPException):
+            raise
+        print(f"[clips/render] subprocess error: {exc}")
+        raise HTTPException(status_code=500, detail=f"Render subprocess failed: {exc}")
+
+    # Step 7: Return result
+    # Pick the chosen clip for the response
+    chosen_clip = None
+    if req.clip_index is not None:
+        chosen_clip = clips[min(req.clip_index, len(clips) - 1)]
+    else:
+        for c in clips:
+            if c.get("recommended"):
+                chosen_clip = c
+                break
+        if not chosen_clip:
+            chosen_clip = clips[0]
+
+    return _json({
+        "status": "ok",
+        "video_path": str(out_mp4.resolve()),
+        "render_id": render_id,
+        "clip": chosen_clip,
+        "edl": edl,
+    })
+
+
+@app.get("/clips/renders/{render_id}/download")
+def download_render(render_id: str):
+    """
+    Download a rendered video file by render_id.
+    Guards against path traversal.
+    """
+    # Validate render_id format (UUID-like)
+    import re
+    if not re.match(r'^[a-f0-9-]{36}$', render_id):
+        raise HTTPException(status_code=400, detail="Invalid render_id format")
+
+    render_dir = _REPO_ROOT / "data" / "renders" / render_id
+    mp4_path = render_dir / "final.mp4"
+
+    # Guard: ensure the resolved path is still under data/renders/
+    try:
+        resolved = mp4_path.resolve()
+        renders_base = (_REPO_ROOT / "data" / "renders").resolve()
+        if not str(resolved).startswith(str(renders_base)):
+            raise HTTPException(status_code=400, detail="Path traversal attempt blocked")
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid path: {exc}")
+
+    if not mp4_path.exists():
+        raise HTTPException(status_code=404, detail="Render video not found")
+
+    return FileResponse(
+        path=str(mp4_path),
+        media_type="video/mp4",
+        filename=f"clip_{render_id[:8]}.mp4",
+    )
