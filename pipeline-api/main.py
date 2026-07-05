@@ -40,6 +40,10 @@ def startup_event():
         _creators_init_db()
     except Exception as e:
         print(f"[startup] creators db init failed (non-fatal): {e}")
+    try:
+        _api_usage_init_db()
+    except Exception as e:
+        print(f"[startup] api_usage db init failed (non-fatal): {e}")
 
 # ── SSRF guard: blocked networks (module-level constant) ────────────────────
 # Extra ranges beyond ipaddress.ip_address check (0.0.0.0/8, CGNAT, etc)
@@ -595,7 +599,7 @@ def dash_token_usage():
     """Real token spend from api_usage (logged per LLM call), priced at read time."""
     conn = _db_conn()
     if not conn:
-        return _json({"rows": [], "series": [], "totals": {}, "error": "db unavailable"})
+        return _json({"rows": [], "series": [], "by_agent": [], "totals": {}, "error": "db unavailable"})
     try:
         with conn.cursor() as cur:
             cur.execute("SELECT model, COALESCE(sum(prompt_tokens),0), COALESCE(sum(completion_tokens),0), "
@@ -615,7 +619,18 @@ def dash_token_usage():
             cur.execute("SELECT to_char(created_at,'MM-DD') d, COALESCE(sum(total_tokens),0) "
                         "FROM api_usage GROUP BY d ORDER BY d")
             series = [{"d": d, "tokens": int(t)} for d, t in cur.fetchall()]
-        return _json({"rows": rows, "series": series,
+            # Get per-agent breakdown
+            cur.execute("SELECT agent, count(*), COALESCE(sum(total_tokens),0), COALESCE(sum(cost_usd),0) "
+                        "FROM api_usage GROUP BY agent ORDER BY COALESCE(sum(cost_usd),0) DESC")
+            by_agent = []
+            for agent, calls, tokens, cost in cur.fetchall():
+                by_agent.append({
+                    "agent": agent,
+                    "calls": int(calls),
+                    "total_tokens": int(tokens),
+                    "cost_usd": round(float(cost or 0), 4)
+                })
+        return _json({"rows": rows, "series": series, "by_agent": by_agent,
                       "totals": {"cost_usd": round(tot_cost, 4), "total_tokens": int(tot_tok),
                                  "calls": int(tot_calls)}})
     finally:
@@ -2759,6 +2774,72 @@ def _creators_init_db():
         conn.close()
 
 
+def _api_usage_init_db():
+    """Initialize api_usage table at startup (non-fatal on failure)."""
+    conn = _db_conn()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""CREATE TABLE IF NOT EXISTS api_usage (
+                id               BIGSERIAL PRIMARY KEY,
+                agent            TEXT,
+                model            TEXT,
+                prompt_tokens    BIGINT DEFAULT 0,
+                completion_tokens BIGINT DEFAULT 0,
+                total_tokens     BIGINT DEFAULT 0,
+                cost_usd         NUMERIC(12,6) DEFAULT 0,
+                created_at       TIMESTAMPTZ DEFAULT now()
+            )""")
+            cur.execute("""CREATE INDEX IF NOT EXISTS api_usage_created_at_idx
+                ON api_usage (created_at DESC)""")
+            cur.execute("""CREATE INDEX IF NOT EXISTS api_usage_agent_idx
+                ON api_usage (agent)""")
+        conn.commit()
+    except Exception as e:
+        print(f"[api_usage] init db error: {e}")
+    finally:
+        conn.close()
+
+
+def _log_api_usage(agent: str, model: str, raw_usage: dict, cost_usd) -> None:
+    """
+    Log an API/LLM call to api_usage table.
+    Non-fatal: logs error on failure but does not raise.
+
+    Args:
+        agent: which flow (analyze, clipper, gender, etc.)
+        model: model name (e.g., claude-sonnet-4-6)
+        raw_usage: dict with optional keys: input_tokens, cache_creation_input_tokens, cache_read_input_tokens, output_tokens
+        cost_usd: total cost from bridge (may be None)
+    """
+    if not raw_usage:
+        raw_usage = {}
+
+    prompt_tokens = int((raw_usage.get("input_tokens", 0) or 0) +
+                       (raw_usage.get("cache_creation_input_tokens", 0) or 0) +
+                       (raw_usage.get("cache_read_input_tokens", 0) or 0))
+    completion_tokens = int(raw_usage.get("output_tokens", 0) or 0)
+    total_tokens = prompt_tokens + completion_tokens
+    cost = float(cost_usd or 0)
+
+    conn = _db_conn()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO api_usage (agent, model, prompt_tokens, completion_tokens, total_tokens, cost_usd)
+                   VALUES (%s, %s, %s, %s, %s, %s)""",
+                (agent, model, prompt_tokens, completion_tokens, total_tokens, cost)
+            )
+        conn.commit()
+    except Exception as e:
+        print(f"[api_usage] log error: {e}")
+    finally:
+        conn.close()
+
+
 def _fetch_channel_meta(youtube_url: str) -> dict:
     """
     Fetch channel metadata from a YouTube URL using yt-dlp.
@@ -2813,6 +2894,13 @@ def _infer_gender(creator_name: str, channel: str) -> str:
         data = resp.json()
         if not data.get("ok"):
             return "unknown"
+        # Log API usage on successful response
+        _log_api_usage(
+            agent="gender",
+            model=data.get("model", "claude-haiku-4"),
+            raw_usage=data.get("raw_usage", {}),
+            cost_usd=data.get("cost_usd")
+        )
         result = data.get("result", "").strip().lower()
         if result in ("male", "female"):
             return result
@@ -2986,6 +3074,14 @@ def analyze_claude(req: AnalyzeClaudeRequest):
             status_code=502,
             detail=f"Bridge error: {bridge_data.get('error', 'unknown')}",
         )
+
+    # Log API usage
+    _log_api_usage(
+        agent="analyze",
+        model=bridge_data.get("model", model),
+        raw_usage=bridge_data.get("raw_usage", {}),
+        cost_usd=bridge_data.get("cost_usd")
+    )
 
     # Step 4: Parse claude's JSON result (may be fenced or pure)
     raw_result = bridge_data.get("result", "")
@@ -3201,6 +3297,14 @@ def find_clips_claude(req: ClipFindRequest):
             detail=f"Bridge error: {bridge_data.get('error', 'unknown')}",
         )
 
+    # Log API usage
+    _log_api_usage(
+        agent="clipper",
+        model=bridge_data.get("model", model),
+        raw_usage=bridge_data.get("raw_usage", {}),
+        cost_usd=bridge_data.get("cost_usd")
+    )
+
     # Step 5: Parse claude's JSON result
     raw_result = bridge_data.get("result", "")
     cost_usd = bridge_data.get("cost_usd")
@@ -3376,6 +3480,14 @@ def auto_clips(req: ClipAutoRequest):
                 status_code=502,
                 detail=f"Bridge error: {bridge_data.get('error', 'unknown')}",
             )
+
+        # Log API usage
+        _log_api_usage(
+            agent="clipper",
+            model=bridge_data.get("model", model),
+            raw_usage=bridge_data.get("raw_usage", {}),
+            cost_usd=bridge_data.get("cost_usd")
+        )
 
         raw_result = bridge_data.get("result", "")
         cost_usd = bridge_data.get("cost_usd")
