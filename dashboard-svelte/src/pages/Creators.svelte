@@ -1,0 +1,65 @@
+<script>
+  import { onMount } from 'svelte'
+  import { api } from '../lib/api.js'
+
+  let rows = $state([])
+  let loading = $state(true)
+
+  function fmtFollowers(n) {
+    if (n == null || n === '') return '—'
+    const num = Number(n)
+    if (isNaN(num)) return '—'
+    return num.toLocaleString('id-ID')
+  }
+
+  function fmtDate(s) {
+    if (!s) return '—'
+    const d = new Date(s)
+    if (isNaN(d.getTime())) return '—'
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+  }
+
+  onMount(async () => {
+    const data = await api.getCreators()
+    if (data && data.creators) rows = data.creators
+    loading = false
+  })
+</script>
+
+<div class="top">
+  <div><h1>Creators</h1><div class="sub">Daftar creator yang dipantau</div></div>
+  <div class="pill">{rows.length} creator</div>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>Channel</th>
+        <th>Creator Name</th>
+        <th class="num" style="text-align:right">Total Followers</th>
+        <th>Gender</th>
+        <th>Created</th>
+        <th>Last Updated</th>
+      </tr>
+    </thead>
+    <tbody>
+      {#each rows as r}
+        <tr>
+          <td>{r.channel || r.channel_id || '—'}</td>
+          <td>{r.creator_name || '—'}</td>
+          <td class="num" style="text-align:right">{fmtFollowers(r.total_followers)}</td>
+          <td>{r.gender || '—'}</td>
+          <td>{fmtDate(r.created_at)}</td>
+          <td>{fmtDate(r.last_updated)}</td>
+        </tr>
+      {/each}
+      {#if !loading && !rows.length}
+        <tr><td colspan="6" class="mut">Belum ada creator.</td></tr>
+      {/if}
+      {#if loading}
+        <tr><td colspan="6" class="mut">Memuat…</td></tr>
+      {/if}
+    </tbody>
+  </table>
+</div>

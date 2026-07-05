@@ -22,6 +22,7 @@ export default defineConfig({
       '/youtube': 'http://localhost:8000',
       '/analyze': 'http://localhost:8000',
       '/analytics': 'http://localhost:8000',
+      '/creators': 'http://localhost:8000',
       '/health': 'http://localhost:8000'
     }
   }
