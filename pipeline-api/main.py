@@ -3347,6 +3347,19 @@ def analyze_claude(req: AnalyzeClaudeRequest):
     if not frame_paths:
         raise HTTPException(status_code=502, detail="No frames could be extracted from the video")
 
+    # Step 1b: Persist frames per video for later serving in Sources detail drawer
+    try:
+        video_id = _extract_video_id_from_youtube_url(req.youtube_url)
+        persist_dir = _REPO_ROOT / "data" / "frames" / video_id
+        persist_dir.mkdir(parents=True, exist_ok=True)
+        for src_path in frame_paths:
+            dst_name = Path(src_path).name
+            dst_path = persist_dir / dst_name
+            shutil.copy(src_path, dst_path)
+    except Exception as exc:
+        # Non-fatal: frame persistence failure should not break analyze
+        print(f"[analyze/claude] frame persistence failed (non-fatal): {exc}")
+
     # Step 2: Build prompt — intent as DATA, wrapped safely
     prompt = _CLAUDE_RE_PROMPT_TEMPLATE.format(intent=safe_intent)
 
@@ -3475,6 +3488,73 @@ def analyze_claude(req: AnalyzeClaudeRequest):
         "cost_usd": cost_usd,
         "cached": False,
     })
+
+
+@app.get("/sources/frames")
+def list_source_frames(youtube_url: str):
+    """List persisted analysis frames for a video.
+
+    Query param: youtube_url
+    Returns: {video_id: str, frames: ["/frames/<video_id>/frame_00.jpg", ...]}
+    If frames dir doesn't exist, returns empty frames list (no crash).
+    """
+    try:
+        video_id = _extract_video_id_from_youtube_url(youtube_url)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid YouTube URL: {exc}")
+
+    frames_dir = _REPO_ROOT / "data" / "frames" / video_id
+    frames = []
+
+    if frames_dir.is_dir():
+        try:
+            frame_files = sorted([f.name for f in frames_dir.glob("frame_*.jpg")])
+            frames = [f"/frames/{video_id}/{name}" for name in frame_files]
+        except Exception as exc:
+            print(f"[list_source_frames] failed to list frames for {video_id}: {exc}")
+
+    return _json({"video_id": video_id, "frames": frames})
+
+
+@app.get("/frames/{video_id}/{name}")
+def serve_frame(video_id: str, name: str):
+    """Serve a persisted analysis frame with path-traversal guard.
+
+    Path params: video_id (alnum + dash/underscore), name (frame_NNN.jpg)
+    Guard: rejects if video_id or name don't match safe patterns; checks final path
+           is under data/frames/ before returning FileResponse.
+    Returns: 400 if validation fails, 404 if file missing, 200 + JPEG otherwise.
+    """
+    import re as _re_guard
+
+    # Validate video_id: alphanumeric, dash, underscore only
+    if not _re_guard.match(r"^[A-Za-z0-9_-]+$", video_id):
+        raise HTTPException(status_code=400, detail="invalid video_id")
+
+    # Validate name: frame_\d+.jpg pattern only
+    if not _re_guard.match(r"^frame_\d+\.jpg$", name):
+        raise HTTPException(status_code=400, detail="invalid frame name")
+
+    frame_path = _REPO_ROOT / "data" / "frames" / video_id / name
+    base_dir = _REPO_ROOT / "data" / "frames"
+
+    try:
+        # Resolve and check the final path stays under data/frames/
+        real_path = frame_path.resolve()
+        real_base = base_dir.resolve()
+        # Check that real_path is under real_base (with proper separator)
+        if not str(real_path).startswith(str(real_base) + os.sep):
+            raise HTTPException(status_code=400, detail="path traversal rejected")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail="invalid path")
+
+    # Check file exists
+    if not frame_path.exists():
+        raise HTTPException(status_code=404, detail="frame not found")
+
+    return FileResponse(str(frame_path), media_type="image/jpeg")
 
 
 @app.get("/creators")
