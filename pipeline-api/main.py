@@ -1850,9 +1850,139 @@ def _group_shots_claude(video_id: str, shots: list, frame_dir: str, video_path: 
     return clips
 
 
+def _build_handle_search_query(credit_handle: str) -> str:
+    """
+    Normalize a @handle/username into a YouTube search query.
+    Strip leading @, trim whitespace.
+
+    Args:
+        credit_handle: e.g. "@alice" or " @bob smith " or "charlie"
+
+    Returns:
+        normalized query string (empty if input is falsy)
+    """
+    if not credit_handle:
+        return ""
+    query = credit_handle.strip()
+    if query.startswith("@"):
+        query = query[1:]
+    return query.strip()
+
+
+def _rank_candidates(candidates: list, credit_handle: str) -> tuple:
+    """
+    Rank search candidates by how well they match the credit handle.
+
+    Args:
+        candidates: list of search result dicts (each with channel_title, title, video_id, etc)
+        credit_handle: the @handle we're looking for (e.g. "@alice")
+
+    Returns:
+        tuple: (best_candidate_dict or None, confidence_score 0.0-1.0)
+
+    Score: exact channel name match = 1.0, fuzzy match = 0.5-0.9, no match = 0.0.
+    Returns (None, 0.0) if candidates is empty.
+    """
+    if not candidates:
+        return (None, 0.0)
+
+    search_handle = _build_handle_search_query(credit_handle).lower()
+    if not search_handle:
+        return (None, 0.0)
+
+    best = None
+    best_score = 0.0
+
+    for candidate in candidates:
+        channel = (candidate.get("channel_title") or "").lower()
+        title = (candidate.get("title") or "").lower()
+
+        # Exact match on channel name is strongest
+        if channel and channel == search_handle:
+            return (candidate, 1.0)
+
+        # Partial substring match
+        if channel and search_handle in channel:
+            score = 0.85
+        elif title and search_handle in title:
+            score = 0.5
+        else:
+            score = 0.0
+
+        if score > best_score:
+            best_score = score
+            best = candidate
+
+    return (best, best_score) if best_score > 0.0 else (None, 0.0)
+
+
+def _find_original_tier_a(credit_handle: str, clip_hint: str = None) -> dict:
+    """
+    Tier A original finder: search YouTube by credit handle.
+
+    Args:
+        credit_handle: the @handle read from the clip (e.g. "@alice")
+        clip_hint: optional hint (unused for now, reserved for future matching)
+
+    Returns:
+        dict: {
+            "original_url": <YouTube URL or None>,
+            "origin_status": "found" | "not_found",
+            "confidence": <0.0-1.0>,
+            "method": "credit_search" | "no_credit"
+        }
+    """
+    # No credit → not_found (pure, no network)
+    if not credit_handle or not credit_handle.strip():
+        return {
+            "original_url": None,
+            "origin_status": "not_found",
+            "confidence": 0.0,
+            "method": "no_credit"
+        }
+
+    search_query = _build_handle_search_query(credit_handle)
+    if not search_query:
+        return {
+            "original_url": None,
+            "origin_status": "not_found",
+            "confidence": 0.0,
+            "method": "no_credit"
+        }
+
+    try:
+        # Search for the creator's channel (returns a list of videos)
+        candidates = v3_search(search_query, max_results=10)
+        best_candidate, confidence = _rank_candidates(candidates, credit_handle)
+
+        if best_candidate and confidence > 0.0:
+            video_id = best_candidate.get("video_id")
+            if video_id:
+                original_url = f"https://www.youtube.com/watch?v={video_id}"
+                return {
+                    "original_url": original_url,
+                    "origin_status": "found",
+                    "confidence": float(confidence),
+                    "method": "credit_search"
+                }
+    except (YouTubeNotConfigured, YouTubeQuotaError) as e:
+        print(f"[_find_original_tier_a] YouTube API unavailable for '{credit_handle}': {e}")
+    except Exception as e:
+        print(f"[_find_original_tier_a] error searching for '{credit_handle}': {e}")
+
+    # Fallback: not found
+    return {
+        "original_url": None,
+        "origin_status": "not_found",
+        "confidence": 0.0,
+        "method": "credit_search"
+    }
+
+
 def _grouped_clips_to_segment_rows(clips: list, source_id: int) -> list:
     """
     Convert grouped clips to video_segment insert tuples.
+    For each clip with a credit_handle, attempt to find the original video.
 
     Args:
         clips: list of grouped clips with clip_index, start_sec, end_sec, credit_handle
@@ -1864,16 +1994,21 @@ def _grouped_clips_to_segment_rows(clips: list, source_id: int) -> list:
     """
     tuples = []
     for clip in clips:
+        credit_handle = clip.get("credit_handle")
+
+        # Find original via Tier A (credit → search)
+        original_info = _find_original_tier_a(credit_handle)
+
         tup = (
             source_id,
             clip["clip_index"],
             clip["start_sec"],
             clip["end_sec"],
-            clip.get("credit_handle"),
-            None,  # original_url
-            "not_found",  # origin_status (no credit or reverse-search done yet)
-            None,  # confidence
-            None,  # segment_path
+            credit_handle,
+            original_info.get("original_url"),
+            original_info.get("origin_status"),
+            original_info.get("confidence"),
+            clip.get("segment_path"),  # from split (if any)
         )
         tuples.append(tup)
     return tuples
@@ -1923,10 +2058,36 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
             if not shots:
                 shots = [{"index": 0, "start_sec": 0.0, "end_sec": 999999.0}]  # fallback: whole video
 
+            # Group shots into distinct source clips (Step 2a)
+            _save_run(run_id, _update_run(run_id, status="grouping"))
+            frame_dir = f"/tmp/decompose_frames_{video_id}"
+            clips = _group_shots_claude(video_id, shots, frame_dir, str(video_path))
+            if not clips:
+                # Fallback: treat each shot as a clip (no grouping)
+                clips = [
+                    {
+                        "clip_index": i + 1,
+                        "start_sec": shot["start_sec"],
+                        "end_sec": shot["end_sec"],
+                        "credit_handle": None,
+                        "shot_indices": [shot["index"]]
+                    }
+                    for i, shot in enumerate(shots)
+                ]
+
             # Split (if requested)
             if req.split_files:
                 _save_run(run_id, _update_run(run_id, status="splitting"))
                 shots = _split_segments(str(video_path), video_id, shots)
+                # Propagate segment_path to clips
+                shot_to_segment = {shot["index"]: shot.get("segment_path") for shot in shots}
+                for clip in clips:
+                    if clip.get("shot_indices") and clip["shot_indices"]:
+                        first_shot_idx = clip["shot_indices"][0]
+                        clip["segment_path"] = shot_to_segment.get(first_shot_idx)
+
+            # Find originals (Step 2b: Tier A credit → search)
+            _save_run(run_id, _update_run(run_id, status="finding"))
 
             # Save to DB
             _save_run(run_id, _update_run(run_id, status="saving"))
@@ -1944,14 +2105,26 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
                         """, (req.youtube_url, "youtube", "analyzed"))
                         source_id = cur.fetchone()[0]
 
-                        # Insert segments
-                        insert_tuples = _build_video_segment_insert_tuples(shots, source_id)
+                        # Insert segments with resolved originals (Step 2b)
+                        insert_tuples = _grouped_clips_to_segment_rows(clips, source_id)
                         if insert_tuples:
                             cur.executemany("""
                                 INSERT INTO video_segments
                                 (source_id, clip_index, start_sec, end_sec, credit_handle, original_url, origin_status, confidence, segment_path)
                                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                             """, insert_tuples)
+                            # Upsert found originals into sources (dedup on youtube_url)
+                            for tup in insert_tuples:
+                                original_url = tup[5]  # index 5 = original_url
+                                if original_url:
+                                    try:
+                                        cur.execute("""
+                                            INSERT INTO sources (youtube_url, platform, status)
+                                            VALUES (%s, %s, %s)
+                                            ON CONFLICT (youtube_url) DO NOTHING
+                                        """, (original_url, "youtube", "discovered"))
+                                    except Exception as e:
+                                        print(f"[decompose] upsert original source error: {e}")
 
                         conn.commit()
 
@@ -4060,6 +4233,75 @@ def serve_frame(video_id: str, name: str):
         raise HTTPException(status_code=404, detail="frame not found")
 
     return FileResponse(str(frame_path), media_type="image/jpeg")
+
+
+@app.get("/sources/{source_id}/segments")
+def get_source_segments(source_id: int):
+    """
+    Get segments (clips) for a compilation source, ordered by clip_index.
+
+    Path param:
+      source_id: sources.id
+
+    Returns:
+      {
+        source_id: int,
+        segments: [
+          {
+            clip_index: int,
+            start_sec: float,
+            end_sec: float,
+            credit_handle: str or null,
+            original_url: str or null,
+            origin_status: "found" | "not_found",
+            confidence: float or null,
+            segment_path: str or null
+          },
+          ...
+        ]
+      }
+
+    On DB error, returns empty segments list (no crash). Validates source_id is int.
+    """
+    try:
+        source_id = int(source_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="source_id must be an integer")
+
+    conn = _db_conn()
+    if not conn:
+        return _json({"source_id": source_id, "segments": []})
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT clip_index, start_sec, end_sec, credit_handle, original_url,
+                       origin_status, confidence, segment_path
+                FROM video_segments
+                WHERE source_id = %s
+                ORDER BY clip_index ASC
+            """, (source_id,))
+
+            rows = cur.fetchall()
+            segments = []
+            for row in rows:
+                segments.append({
+                    "clip_index": row[0],
+                    "start_sec": float(row[1]) if row[1] is not None else None,
+                    "end_sec": float(row[2]) if row[2] is not None else None,
+                    "credit_handle": row[3],
+                    "original_url": row[4],
+                    "origin_status": row[5],
+                    "confidence": float(row[6]) if row[6] is not None else None,
+                    "segment_path": row[7],
+                })
+
+            return _json({"source_id": source_id, "segments": segments})
+    except Exception as e:
+        print(f"[get_source_segments] error for source_id {source_id}: {e}")
+        return _json({"source_id": source_id, "segments": []})
+    finally:
+        conn.close()
 
 
 @app.get("/creators")
