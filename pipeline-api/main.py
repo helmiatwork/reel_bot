@@ -3657,7 +3657,7 @@ def _infer_gender(creator_name: str, channel: str) -> str:
         bridge_timeout = _httpx.Timeout(connect=10.0, read=30.0, write=10.0, pool=5.0)
         resp = _httpx.post(
             f"{CLAUDE_BRIDGE_URL}/run",
-            json={"prompt": prompt, "frames": [], "model": "claude-haiku-4"},
+            json={"prompt": prompt, "frames": [], "model": "claude-haiku-4-5"},
             timeout=bridge_timeout,
         )
         data = resp.json()
@@ -3666,7 +3666,7 @@ def _infer_gender(creator_name: str, channel: str) -> str:
         # Log API usage on successful response
         _log_api_usage(
             agent="gender",
-            model=data.get("model", "claude-haiku-4"),
+            model=data.get("model", "claude-haiku-4-5"),
             raw_usage=data.get("raw_usage", {}),
             cost_usd=data.get("cost_usd")
         )
@@ -3696,7 +3696,7 @@ def _infer_niche(title: str, tags: str, channel: str) -> str:
         bridge_timeout = _httpx.Timeout(connect=10.0, read=30.0, write=10.0, pool=5.0)
         resp = _httpx.post(
             f"{CLAUDE_BRIDGE_URL}/run",
-            json={"prompt": prompt, "frames": [], "model": "claude-haiku-4"},
+            json={"prompt": prompt, "frames": [], "model": "claude-haiku-4-5"},
             timeout=bridge_timeout,
         )
         data = resp.json()
@@ -3705,7 +3705,7 @@ def _infer_niche(title: str, tags: str, channel: str) -> str:
         # Log API usage on successful response
         _log_api_usage(
             agent="niche",
-            model=data.get("model", "claude-haiku-4"),
+            model=data.get("model", "claude-haiku-4-5"),
             raw_usage=data.get("raw_usage", {}),
             cost_usd=data.get("cost_usd")
         )
@@ -3783,9 +3783,9 @@ def _save_source(youtube_url: str) -> None:
                 existing = cur.fetchone()
 
                 if existing:
-                    # Source exists; backfill niche if NULL
+                    # Source exists; backfill niche if NULL or empty
                     existing_niche = existing[0]
-                    if existing_niche is None:
+                    if not existing_niche:
                         niche = _infer_niche(meta.get("title", ""), "", meta.get("channel", ""))
                         cur.execute(
                             "UPDATE sources SET niche = %s WHERE youtube_url = %s",
