@@ -3935,6 +3935,37 @@ def _save_song(youtube_url: str) -> None:
         print(f"[songs] _save_song error (non-fatal): {e}")
 
 
+def _build_analyze_steps(cached: bool, video_id: str = "", model: str = "", niche_done: bool = False) -> list[str]:
+    """
+    Build a list of human-readable process steps for analyze/claude response.
+
+    Args:
+        cached: True if served from cache, False if fresh analysis
+        video_id: extracted video ID (used only for fresh path)
+        model: Claude model name (used only for fresh path)
+        niche_done: True if niche inference ran (used only for fresh path)
+
+    Returns:
+        list[str]: ordered step descriptions
+    """
+    steps = []
+
+    if cached:
+        # Cached path
+        steps.append("⚡ Ambil dari cache DB (video_analysis) — tanpa download, tanpa biaya")
+        steps.append("🗄️ Backfill creator/source/song (dedup)")
+    else:
+        # Fresh path
+        steps.append("📥 Download video + ekstrak 20 keyframe (yt-dlp + ffmpeg)")
+        steps.append("💾 Simpan frame ke data/frames/" + video_id)
+        steps.append(f"👁️ Analisa visual frame (Claude vision — {model})")
+        if niche_done:
+            steps.append("🏷️ Infer niche konten (Claude)")
+        steps.append("🗄️ Simpan hasil ke DB (video_analysis) + creator/source/song")
+
+    return steps
+
+
 class AnalyzeClaudeRequest(BaseModel):
     youtube_url: str
     intent: Optional[str] = None
@@ -3998,6 +4029,7 @@ def analyze_claude(req: AnalyzeClaudeRequest):
                         _save_creator(req.youtube_url)
                         _save_source(req.youtube_url)
                         _save_song(req.youtube_url)
+                        steps = _build_analyze_steps(cached=True)
                         return _json({
                             "youtube_url": cached_row[0],
                             "hook": cached_row[2],
@@ -4008,6 +4040,7 @@ def analyze_claude(req: AnalyzeClaudeRequest):
                             "model": cached_row[6],
                             "cost_usd": cached_cost,
                             "cached": True,
+                            "steps": steps,
                         })
             except Exception as exc:
                 print(f"[analyze/claude] DB cache check failed (non-fatal): {exc}")
@@ -4157,6 +4190,13 @@ def analyze_claude(req: AnalyzeClaudeRequest):
     _save_source(req.youtube_url)
     _save_song(req.youtube_url)
 
+    # Build steps trace for fresh analysis path (niche inference included)
+    try:
+        video_id_for_steps = _extract_video_id_from_youtube_url(req.youtube_url)
+    except Exception:
+        video_id_for_steps = ""
+    steps = _build_analyze_steps(cached=False, video_id=video_id_for_steps, model=model, niche_done=True)
+
     return _json({
         "youtube_url": req.youtube_url,
         "hook": hook,
@@ -4167,6 +4207,7 @@ def analyze_claude(req: AnalyzeClaudeRequest):
         "model": model,
         "cost_usd": cost_usd,
         "cached": False,
+        "steps": steps,
     })
 
 
