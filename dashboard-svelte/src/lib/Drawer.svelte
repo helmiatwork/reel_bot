@@ -5,15 +5,24 @@
   let d = $state(null)
   let frames = $state([])
   let framesLoading = $state(false)
+  let segments = $state([])
 
   drawer.subscribe(async (v) => {
     d = v
     frames = []
-    if (v?.type === 'source' && v.data?.youtube_url) {
-      framesLoading = true
-      const res = await api.sourceFrames(v.data.youtube_url)
-      frames = res?.frames ?? []
-      framesLoading = false
+    segments = []
+    if (v?.type === 'source') {
+      if (v.data?.youtube_url) {
+        framesLoading = true
+        const res = await api.sourceFrames(v.data.youtube_url)
+        frames = res?.frames ?? []
+        framesLoading = false
+      }
+      // ponytail: non-fatal — segments missing = silently empty
+      if (v.data?.id) {
+        const res = await api.sourceSegments(v.data.id)
+        segments = res?.segments ?? []
+      }
     }
   })
 </script>
@@ -52,6 +61,25 @@
         <div class="kv"><span>Tags</span><span style="text-align:right;max-width:60%">{#each s.tags as t}<span class="tag">{t}</span>{/each}</span></div>
       {/if}
       {#if s.sum}<p class="mut" style="font-size:12.5px;margin-top:12px">{s.sum}</p>{/if}
+
+      {#if segments.length}
+        <h3 style="margin:16px 0 8px;font-size:13px;font-weight:600">Segmen</h3>
+        <div class="seg-list">
+          {#each segments as seg}
+            <div class="seg-row">
+              <span class="seg-idx">Klip {seg.clip_index}</span>
+              <span class="seg-time">{seg.start_sec?.toFixed(1)}–{seg.end_sec?.toFixed(1)} dtk</span>
+              <span class="badge-sm {seg.origin_status === 'found' ? 'b-found' : 'b-grey'}">{seg.origin_status}</span>
+              <span class="seg-credit">{seg.credit_handle || '—'}</span>
+              {#if seg.original_url}
+                <a href={seg.original_url} target="_blank" rel="noopener noreferrer" style="font-size:12px">asli</a>
+              {:else}
+                <span class="mut" style="font-size:12px">belum ketemu</span>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      {/if}
 
     {:else if d.type === 'agent'}
       {@const a = d.data}
@@ -92,3 +120,21 @@
     {/if}
   </aside>
 {/if}
+
+<style>
+  .seg-list { display: flex; flex-direction: column; gap: 6px; }
+  .seg-row {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    font-size: 12px; padding: 6px 8px;
+    background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;
+  }
+  .seg-idx { font-weight: 600; color: #333; }
+  .seg-time { color: #666; }
+  .seg-credit { color: #444; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .badge-sm {
+    font-size: 10px; font-weight: 600; padding: 1px 6px;
+    border-radius: 8px; text-transform: lowercase; white-space: nowrap;
+  }
+  .b-found { background: #dcfce7; color: #166534; }
+  .b-grey { background: #f0f0f0; color: #666; }
+</style>

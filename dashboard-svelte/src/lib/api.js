@@ -64,6 +64,10 @@ export const api = {
   youtubeQuota: () => getJSON('/youtube/quota'),
   clipThis: (video_id) => postJSON('/youtube/clip-this', { video_id }),
 
+  decompose: (youtube_url) => postJSON('/decompose', { youtube_url }),
+  decomposeStatus: (run_id) => getJSON('/decompose/status/' + encodeURIComponent(run_id)),
+  sourceSegments: (source_id) => getJSON('/sources/' + source_id + '/segments'),
+
   chatSessions: () => getJSON('/dash/chat/sessions'),
   chatSession: (sid) => getJSON(`/dash/chat/session/${encodeURIComponent(sid)}`),
   chatSessionDelete: async (sid) => {
