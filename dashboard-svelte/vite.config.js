@@ -26,6 +26,7 @@ export default defineConfig({
       '/songs': 'http://localhost:8000',
       '/health': 'http://localhost:8000',
       '/sources': 'http://localhost:8000',
+      '/decompose': 'http://localhost:8000',
       '/frames': 'http://localhost:8000'
     }
   }

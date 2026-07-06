@@ -19,6 +19,7 @@
   import Discover from './pages/Discover.svelte'
   import Creators from './pages/Creators.svelte'
   import Songs from './pages/Songs.svelte'
+  import Decompose from './pages/Decompose.svelte'
 
   // Standard line icons (Lucide), monochrome, inherit text color.
   const I = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`
@@ -36,7 +37,8 @@
       { p: 'creators', ico: I('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'), label: 'Creators' },
       { p: 'songs', ico: I('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'), label: 'Songs' },
       { p: 'analysis', ico: I('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><circle cx="11.5" cy="14.5" r="2.5"/><path d="M13.3 16.3 15 18"/>'), label: 'Analysis' },
-      { p: 'formulas', ico: I('<path d="M10 2v7.31"/><path d="M14 9.3V2"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>'), label: 'Formulas' }
+      { p: 'formulas', ico: I('<path d="M10 2v7.31"/><path d="M14 9.3V2"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>'), label: 'Formulas' },
+      { p: 'decompose', ico: I('<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>'), label: 'Pecah Kompilasi' }
     ]},
     { title: 'Produce', items: [
       { p: 'clipper', ico: I('<path d="M7 4v16"/><path d="M17 4v16"/><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h4"/><path d="M17 9h4"/><path d="M3 15h4"/><path d="M17 15h4"/>'), label: 'Clipper' },
@@ -176,6 +178,7 @@
     {:else if current === 'discover'}<Discover />
     {:else if current === 'creators'}<Creators />
     {:else if current === 'songs'}<Songs />
+    {:else if current === 'decompose'}<Decompose />
     {/if}
   </main>
 </div>
