@@ -53,6 +53,10 @@ Three ways in:
      🏷️ **Tags**
      <tags, dipisah spasi, pakai #>
 
+     ⚙️ **Proses**
+     • <tiap item dari field `steps` respons, satu per baris — langkah + tool yang dijalankan>
+
+   - Render `steps` APA ADANYA dari respons (jangan mengarang langkah). Cached dan fresh punya langkah berbeda; kalau `steps` kosong/absen, lewati section ini.
    - `cached:true` → Status "Cached (gratis)". Use the retention_score field (1-10) in the Retention header. If user then asks for a script, proceed to research mode.
    - On 429 (rate limit), tell the user the claude quota is full and to retry later. On other errors, report the actual status honestly.
 
