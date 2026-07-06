@@ -24,12 +24,6 @@ _YT_PIPELINE = str(_REPO_ROOT / "yt-pipeline" / "yt_pipeline.py")
 
 sys.path.insert(0, str(_REPO_ROOT))
 
-# ── Repo-relative paths (native + docker compatible) ──────────────────────────
-_REPO_ROOT = Path(__file__).resolve().parent.parent
-_YT_PIPELINE = str(_REPO_ROOT / "yt-pipeline" / "yt_pipeline.py")
-
-sys.path.insert(0, str(_REPO_ROOT))
-
 app = FastAPI(title="Content Pipeline API", version="1.0")
 
 
@@ -2088,6 +2082,8 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
 
             # Find originals (Step 2b: Tier A credit → search)
             _save_run(run_id, _update_run(run_id, status="finding"))
+            # Build insert tuples BEFORE opening DB connection (all YouTube calls happen here)
+            insert_tuples = _grouped_clips_to_segment_rows(clips, 0)  # source_id will be filled in below
 
             # Save to DB
             _save_run(run_id, _update_run(run_id, status="saving"))
@@ -2105,8 +2101,10 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
                         """, (req.youtube_url, "youtube", "analyzed"))
                         source_id = cur.fetchone()[0]
 
-                        # Insert segments with resolved originals (Step 2b)
-                        insert_tuples = _grouped_clips_to_segment_rows(clips, source_id)
+                        # Update insert tuples with correct source_id
+                        insert_tuples = [(source_id,) + tup[1:] for tup in insert_tuples]
+                        # Delete any existing segments for idempotency (P1-a)
+                        cur.execute("DELETE FROM video_segments WHERE source_id = %s", (source_id,))
                         if insert_tuples:
                             cur.executemany("""
                                 INSERT INTO video_segments
@@ -2128,13 +2126,13 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
 
                         conn.commit()
 
-                        # Return final state
+                        # Return final state with grouped clips (not raw shots)
                         run_data = _load_run(run_id) or {}
                         run_data.update({
                             "status": "done",
                             "current_stage": "done",
                             "source_id": source_id,
-                            "segments": shots,
+                            "segments": clips,
                         })
                         _save_run(run_id, run_data)
                 except Exception as e:
@@ -2144,12 +2142,12 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
                 finally:
                     conn.close()
             else:
-                # No DB, still mark as done
+                # No DB, still mark as done with grouped clips
                 run_data = _load_run(run_id) or {}
                 run_data.update({
                     "status": "done",
                     "current_stage": "done",
-                    "segments": shots,
+                    "segments": clips,
                 })
                 _save_run(run_id, run_data)
 
@@ -2161,6 +2159,10 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
                 "error": str(e)[:500],
             })
             _save_run(run_id, run_data)
+        finally:
+            # Clean up frame directory
+            frame_dir = f"/tmp/decompose_frames_{_extract_video_id_from_youtube_url(req.youtube_url)}"
+            shutil.rmtree(frame_dir, ignore_errors=True)
 
     bg.add_task(_decompose_job)
     return {"status": "started", "run_id": run_id}

@@ -239,7 +239,8 @@ def test_grouped_clips_to_segment_rows_empty():
     assert tuples == []
 
 
-def test_grouped_clips_to_segment_rows_origin_status_not_found():
+@patch("main._find_original_tier_a", return_value={"original_url": None, "origin_status": "not_found", "confidence": 0.0, "method": "no_credit"})
+def test_grouped_clips_to_segment_rows_origin_status_not_found(mock_find):
     """_grouped_clips_to_segment_rows should set origin_status='not_found' (Step 2a)."""
     clips = [
         {"clip_index": 1, "start_sec": 0.0, "end_sec": 5.0, "credit_handle": "@bob"},
