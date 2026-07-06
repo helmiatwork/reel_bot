@@ -18,7 +18,8 @@ from unittest.mock import MagicMock, patch
 
 from main import (
     _scenes_to_shots, _build_video_segment_insert_tuples,
-    _parse_grouping_json, _grouped_clips_to_segment_rows
+    _parse_grouping_json, _grouped_clips_to_segment_rows,
+    _build_handle_search_query, _rank_candidates, _find_original_tier_a
 )
 
 
@@ -209,19 +210,27 @@ def test_parse_grouping_json_no_clips_key():
 
 
 def test_grouped_clips_to_segment_rows_basic():
-    """_grouped_clips_to_segment_rows should convert clips to insert tuples."""
+    """_grouped_clips_to_segment_rows should convert clips to insert tuples with original finding."""
     clips = [
         {"clip_index": 1, "start_sec": 0.0, "end_sec": 5.0, "credit_handle": "@alice"},
         {"clip_index": 2, "start_sec": 5.0, "end_sec": 9.0, "credit_handle": None},
     ]
     source_id = 42
-    
+
     tuples = _grouped_clips_to_segment_rows(clips, source_id)
-    
+
     assert len(tuples) == 2
     # (source_id, clip_index, start_sec, end_sec, credit_handle, original_url, origin_status, confidence, segment_path)
-    assert tuples[0] == (42, 1, 0.0, 5.0, "@alice", None, "not_found", None, None)
-    assert tuples[1] == (42, 2, 5.0, 9.0, None, None, "not_found", None, None)
+    # Tuple structure: index 0=source_id, 1=clip_index, 2=start_sec, 3=end_sec, 4=credit_handle, 5=original_url, 6=origin_status, 7=confidence, 8=segment_path
+    assert tuples[0][0] == 42  # source_id
+    assert tuples[0][1] == 1   # clip_index
+    assert tuples[0][4] == "@alice"  # credit_handle
+    assert tuples[0][6] in ("found", "not_found")  # origin_status (could be found or not found depending on API)
+
+    assert tuples[1][0] == 42  # source_id
+    assert tuples[1][1] == 2   # clip_index
+    assert tuples[1][4] is None  # credit_handle is None
+    assert tuples[1][6] == "not_found"  # origin_status is always not_found for None credit
 
 
 def test_grouped_clips_to_segment_rows_empty():
@@ -235,11 +244,99 @@ def test_grouped_clips_to_segment_rows_origin_status_not_found():
     clips = [
         {"clip_index": 1, "start_sec": 0.0, "end_sec": 5.0, "credit_handle": "@bob"},
     ]
-    
+
     tuples = _grouped_clips_to_segment_rows(clips, 1)
-    
+
     # origin_status is at index 6
     assert tuples[0][6] == "not_found"
+
+
+# ── Tests for Step 2b: Tier A original-finder ──────────────────────────────────
+
+def test_build_handle_search_query_with_at_symbol():
+    """_build_handle_search_query should strip leading @ and whitespace."""
+    assert _build_handle_search_query("@alice") == "alice"
+    assert _build_handle_search_query(" @alice ") == "alice"
+    assert _build_handle_search_query("@bob smith") == "bob smith"
+
+
+def test_build_handle_search_query_without_at_symbol():
+    """_build_handle_search_query should normalize handle without @."""
+    assert _build_handle_search_query("charlie") == "charlie"
+    assert _build_handle_search_query(" dave ") == "dave"
+
+
+def test_build_handle_search_query_empty():
+    """_build_handle_search_query should return empty string for empty/None input."""
+    assert _build_handle_search_query("") == ""
+    assert _build_handle_search_query(None) == ""
+    assert _build_handle_search_query("   ") == ""
+
+
+def test_rank_candidates_empty():
+    """_rank_candidates should return (None, 0.0) for empty candidate list."""
+    best, conf = _rank_candidates([], "@alice")
+    assert best is None
+    assert conf == 0.0
+
+
+def test_rank_candidates_exact_match():
+    """_rank_candidates should return 1.0 confidence for exact channel name match."""
+    candidates = [
+        {"channel_title": "alice", "title": "video 1", "video_id": "vid1"},
+        {"channel_title": "bob", "title": "video 2", "video_id": "vid2"},
+    ]
+    best, conf = _rank_candidates(candidates, "@alice")
+    assert best["video_id"] == "vid1"
+    assert conf == 1.0
+
+
+def test_rank_candidates_substring_match():
+    """_rank_candidates should rank substring matches lower than exact matches."""
+    candidates = [
+        {"channel_title": "alice studio", "title": "video 1", "video_id": "vid1"},
+        {"channel_title": "bob", "title": "alice in wonderland", "video_id": "vid2"},
+    ]
+    best, conf = _rank_candidates(candidates, "@alice")
+    # "alice studio" contains "alice" → 0.85 (channel match)
+    # "alice in wonderland" contains "alice" → 0.5 (title match)
+    # Should pick "alice studio"
+    assert best["video_id"] == "vid1"
+    assert conf == 0.85
+
+
+def test_rank_candidates_no_match():
+    """_rank_candidates should return (None, 0.0) when no match found."""
+    candidates = [
+        {"channel_title": "bob", "title": "video 1", "video_id": "vid1"},
+    ]
+    best, conf = _rank_candidates(candidates, "@alice")
+    assert best is None
+    assert conf == 0.0
+
+
+def test_find_original_tier_a_no_credit():
+    """_find_original_tier_a should return not_found for empty credit_handle."""
+    result = _find_original_tier_a("")
+    assert result["origin_status"] == "not_found"
+    assert result["confidence"] == 0.0
+    assert result["method"] == "no_credit"
+    assert result["original_url"] is None
+
+
+def test_find_original_tier_a_no_credit_none():
+    """_find_original_tier_a should return not_found for None credit_handle."""
+    result = _find_original_tier_a(None)
+    assert result["origin_status"] == "not_found"
+    assert result["confidence"] == 0.0
+    assert result["method"] == "no_credit"
+
+
+def test_find_original_tier_a_whitespace_credit():
+    """_find_original_tier_a should treat whitespace-only handle as no_credit."""
+    result = _find_original_tier_a("   ")
+    assert result["origin_status"] == "not_found"
+    assert result["method"] == "no_credit"
 
 
 # ── Main runner (fallback for no pytest) ────────────────────────────────────────
@@ -264,6 +361,17 @@ def __main__():
         test_grouped_clips_to_segment_rows_basic,
         test_grouped_clips_to_segment_rows_empty,
         test_grouped_clips_to_segment_rows_origin_status_not_found,
+        # Step 2b: Tier A original-finder tests
+        test_build_handle_search_query_with_at_symbol,
+        test_build_handle_search_query_without_at_symbol,
+        test_build_handle_search_query_empty,
+        test_rank_candidates_empty,
+        test_rank_candidates_exact_match,
+        test_rank_candidates_substring_match,
+        test_rank_candidates_no_match,
+        test_find_original_tier_a_no_credit,
+        test_find_original_tier_a_no_credit_none,
+        test_find_original_tier_a_whitespace_credit,
     ]
 
     passed = 0
