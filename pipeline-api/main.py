@@ -4359,6 +4359,95 @@ def get_source_segments(source_id: int):
         conn.close()
 
 
+@app.get("/sources/{source_id}/analysis")
+def get_source_analysis(source_id: int):
+    """
+    Get real analysis data for a source (hook, retention, summary, detail, structure, tags).
+
+    Joins sources → video_analysis by youtube_url, returns latest analysis row.
+
+    Returns:
+      {
+        "hook": str,
+        "structure": str,
+        "retention": str (text description),
+        "retention_score": int (1-10),
+        "summary": str (content_summary),
+        "detail": str (content_detail),
+        "tags": [str, ...]
+      }
+
+    On DB error or no analysis row: returns all keys with empty/None values (never 500).
+    Validates source_id is int. Tags parsed from JSON; handles str/list/None → [] gracefully.
+    """
+    try:
+        source_id = int(source_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="source_id must be an integer")
+
+    conn = _db_conn()
+    if not conn:
+        return _json({
+            "hook": "", "structure": "", "retention": "", "retention_score": None,
+            "summary": "", "detail": "", "tags": []
+        })
+
+    try:
+        with conn.cursor() as cur:
+            # Join sources → video_analysis by youtube_url, get latest analysis
+            cur.execute("""
+                SELECT va.hook, va.structure, va.retention, va.retention_score,
+                       va.content_summary, va.content_detail, va.tags
+                FROM sources s
+                LEFT JOIN video_analysis va ON s.youtube_url = va.youtube_url
+                WHERE s.id = %s
+                ORDER BY va.created_at DESC NULLS LAST
+                LIMIT 1
+            """, (source_id,))
+
+            row = cur.fetchone()
+
+            # If no row or all NULLs, return empty shell
+            if not row or all(v is None for v in row):
+                return _json({
+                    "hook": "", "structure": "", "retention": "", "retention_score": None,
+                    "summary": "", "detail": "", "tags": []
+                })
+
+            hook, structure, retention, retention_score, summary, detail, tags = row
+
+            # Parse tags JSON (psycopg may return it pre-parsed or as string)
+            parsed_tags = []
+            if tags is not None:
+                if isinstance(tags, str):
+                    try:
+                        parsed_tags = json.loads(tags)
+                        if not isinstance(parsed_tags, list):
+                            parsed_tags = []
+                    except Exception:
+                        parsed_tags = []
+                elif isinstance(tags, list):
+                    parsed_tags = tags
+
+            return _json({
+                "hook": hook or "",
+                "structure": structure or "",
+                "retention": retention or "",
+                "retention_score": retention_score,
+                "summary": summary or "",
+                "detail": detail or "",
+                "tags": parsed_tags
+            })
+    except Exception as e:
+        print(f"[get_source_analysis] error for source_id {source_id}: {e}")
+        return _json({
+            "hook": "", "structure": "", "retention": "", "retention_score": None,
+            "summary": "", "detail": "", "tags": []
+        })
+    finally:
+        conn.close()
+
+
 @app.get("/creators")
 def list_creators(limit: int = 25, offset: int = 0):
     """
