@@ -7,7 +7,32 @@
   let framesLoading = $state(false)
   let segments = $state([])
 
+  // decompose state
+  let decomposeRunning = $state(false)
+  let decomposeStage = $state('')
+  let decomposeError = $state('')
+  let pollInterval = null
+
+  // lightbox state
+  let lightboxSrc = $state(null)
+
+  function stopPoll() {
+    if (pollInterval) { clearInterval(pollInterval); pollInterval = null }
+  }
+
+  function openLightbox(src) { lightboxSrc = src }
+  function closeLightbox() { lightboxSrc = null }
+
+  function onLightboxKey(e) {
+    if (e.key === 'Escape') closeLightbox()
+  }
+
   drawer.subscribe(async (v) => {
+    stopPoll()
+    decomposeRunning = false
+    decomposeStage = ''
+    decomposeError = ''
+    lightboxSrc = null
     d = v
     frames = []
     segments = []
@@ -25,7 +50,68 @@
       }
     }
   })
+
+  async function startDecompose() {
+    const s = d?.data
+    if (!s?.youtube_url) return
+    decomposeRunning = true
+    decomposeError = ''
+    decomposeStage = 'memulai…'
+
+    const resp = await api.decompose(s.youtube_url)
+    if (!resp?.run_id) {
+      decomposeError = resp?.error || 'Gagal memulai decompose.'
+      decomposeRunning = false
+      return
+    }
+
+    const run_id = resp.run_id
+    // ponytail: poll every 4s, stop on done/error
+    pollInterval = setInterval(async () => {
+      const st = await api.decomposeStatus(run_id)
+      if (!st) return
+      decomposeStage = st.current_stage || decomposeStage
+
+      if (st.status === 'done') {
+        stopPoll()
+        decomposeRunning = false
+        // prefer segments from status response, fallback to re-fetch
+        if (st.segments?.length) {
+          segments = st.segments
+        } else if (st.source_id) {
+          const res = await api.sourceSegments(st.source_id)
+          segments = res?.segments ?? []
+        } else if (s.id) {
+          const res = await api.sourceSegments(s.id)
+          segments = res?.segments ?? []
+        }
+      } else if (st.status === 'error') {
+        stopPoll()
+        decomposeRunning = false
+        decomposeError = st.error || 'Terjadi kesalahan.'
+      }
+    }, 4000)
+  }
 </script>
+
+<!-- Lightbox overlay -->
+{#if lightboxSrc}
+  <div
+    class="lb-overlay"
+    onclick={closeLightbox}
+    onkeydown={onLightboxKey}
+    role="dialog"
+    aria-modal="true"
+    aria-label="Preview gambar"
+    tabindex="-1"
+  >
+    <button class="lb-close" onclick={closeLightbox} aria-label="Tutup">✕</button>
+    <!-- ponytail: button wrapper keeps img non-interactive (a11y), stopPropagation prevents overlay close on img click -->
+    <button class="lb-img-btn" onclick={(e) => e.stopPropagation()} aria-label="Gambar diperbesar">
+      <img src={lightboxSrc} alt="preview besar" class="lb-img" />
+    </button>
+  </div>
+{/if}
 
 {#if d}
   <div class="scrim" onclick={closeDrawer} role="presentation"></div>
@@ -41,7 +127,9 @@
           <div class="mut" style="font-size:12px;padding:8px 0">Memuat frames…</div>
         {:else if frames.length}
           {#each frames as src}
-            <img {src} alt="frame" loading="lazy" style="width:100%;border-radius:4px;object-fit:cover" />
+            <button class="frame-thumb-btn" onclick={() => openLightbox(src)} title="Klik untuk perbesar" aria-label="Perbesar frame">
+              <img {src} alt="frame" loading="lazy" class="frame-thumb" />
+            </button>
           {/each}
         {:else if s.youtube_url}
           <div class="mut" style="font-size:12px;padding:8px 0">No frames tersimpan untuk video ini.</div>
@@ -61,6 +149,27 @@
         <div class="kv"><span>Tags</span><span style="text-align:right;max-width:60%">{#each s.tags as t}<span class="tag">{t}</span>{/each}</span></div>
       {/if}
       {#if s.sum}<p class="mut" style="font-size:12.5px;margin-top:12px">{s.sum}</p>{/if}
+
+      <!-- Pecah button -->
+      {#if s.youtube_url}
+        <div class="pecah-wrap">
+          <button
+            class="pecah-btn"
+            disabled={decomposeRunning}
+            onclick={startDecompose}
+          >
+            {decomposeRunning ? '⏳ Memecah…' : segments.length ? 'Pecah ulang' : 'Pecah kompilasi'}
+          </button>
+          {#if decomposeRunning && decomposeStage}
+            <span class="pecah-stage">{decomposeStage}</span>
+          {/if}
+          {#if decomposeError}
+            <span class="pecah-err">{decomposeError}</span>
+          {/if}
+        </div>
+      {:else}
+        <div class="mut" style="font-size:12px;margin-top:10px">youtube_url tidak ada — tidak bisa decompose.</div>
+      {/if}
 
       {#if segments.length}
         <h3 style="margin:16px 0 8px;font-size:13px;font-weight:600">Segmen</h3>
@@ -137,4 +246,50 @@
   }
   .b-found { background: #dcfce7; color: #166534; }
   .b-grey { background: #f0f0f0; color: #666; }
+
+  .pecah-wrap {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .pecah-btn {
+    font-size: 12px; font-weight: 600; padding: 5px 12px;
+    border-radius: 6px; border: none; cursor: pointer;
+    background: #2563eb; color: #fff; transition: opacity .15s;
+  }
+  .pecah-btn:disabled { opacity: .55; cursor: default; }
+  .pecah-btn:not(:disabled):hover { opacity: .85; }
+  .pecah-stage { font-size: 11px; color: #555; font-style: italic; }
+  .pecah-err { font-size: 11px; color: #dc2626; }
+
+  /* frame thumbnails — clickable zoom cue */
+  .frame-thumb-btn {
+    display: block; width: 100%; padding: 0; border: none; background: none;
+    cursor: zoom-in; border-radius: 4px; transition: opacity .15s;
+  }
+  .frame-thumb-btn:hover { opacity: .85; }
+  .frame-thumb { width: 100%; border-radius: 4px; object-fit: cover; display: block; }
+
+  /* lightbox */
+  .lb-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,.82);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .lb-img {
+    max-width: 90vw; max-height: 90vh;
+    object-fit: contain; border-radius: 6px;
+    box-shadow: 0 8px 40px rgba(0,0,0,.6);
+  }
+  .lb-close {
+    position: absolute; top: 16px; right: 20px;
+    background: rgba(255,255,255,.15); border: none; color: #fff;
+    font-size: 18px; line-height: 1; width: 32px; height: 32px;
+    border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+  }
+  .lb-close:hover { background: rgba(255,255,255,.3); }
+  .lb-img-btn {
+    padding: 0; border: none; background: none; cursor: default;
+    display: flex; align-items: center; justify-content: center;
+  }
 </style>
