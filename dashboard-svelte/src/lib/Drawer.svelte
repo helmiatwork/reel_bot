@@ -6,6 +6,7 @@
   let frames = $state([])
   let framesLoading = $state(false)
   let segments = $state([])
+  let analysis = $state({})
 
   // decompose state
   let decomposeRunning = $state(false)
@@ -36,6 +37,7 @@
     d = v
     frames = []
     segments = []
+    analysis = {}
     if (v?.type === 'source') {
       if (v.data?.youtube_url) {
         framesLoading = true
@@ -45,8 +47,11 @@
       }
       // ponytail: non-fatal — segments missing = silently empty
       if (v.data?.id) {
-        const res = await api.sourceSegments(v.data.id)
-        segments = res?.segments ?? []
+        const segRes = await api.sourceSegments(v.data.id)
+        segments = segRes?.segments ?? []
+        // Fetch real analysis data from backend
+        const anaRes = await api.sourceAnalysis(v.data.id)
+        analysis = anaRes ?? {}
       }
     }
   })
@@ -137,18 +142,30 @@
           <div class="mut" style="font-size:12px;padding:8px 0">youtube_url tidak tersedia di baris ini — frames tidak dapat dimuat. (Lihat blocker note di kode.)</div>
         {/if}
       </div>
+      {#if s.youtube_url}
+        <div class="kv"><span>URL</span><a href={s.youtube_url} target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;cursor:pointer">buka video ↗</a></div>
+      {/if}
       <div class="kv"><span>Views</span><span class="num">{s.viewsLabel}</span></div>
       <div class="kv"><span>Niche</span><span>{s.niche}</span></div>
-      <div class="kv"><span>Formula</span><span>{s.formula}</span></div>
-      <div class="kv"><span>Durasi / res</span><span>{s.dur} · {s.res}</span></div>
-      <div class="kv"><span>Bahasa</span><span>{s.lang}</span></div>
-      <div class="kv"><span>Hook</span><span style="text-align:right;max-width:60%">{s.hook}</span></div>
-      <div class="kv"><span>Clippable / wajah</span><span>{s.clip ? 'ya' : 'tidak'} / {s.face ? 'ada' : 'no'}</span></div>
       <div class="kv"><span>Status</span><span>{s.status}</span></div>
-      {#if s.tags?.length}
-        <div class="kv"><span>Tags</span><span style="text-align:right;max-width:60%">{#each s.tags as t}<span class="tag">{t}</span>{/each}</span></div>
+      {#if analysis.hook}
+        <div class="kv"><span>Hook</span><span style="text-align:right;max-width:60%">{analysis.hook}</span></div>
       {/if}
-      {#if s.sum}<p class="mut" style="font-size:12.5px;margin-top:12px">{s.sum}</p>{/if}
+      {#if analysis.retention}
+        <div class="kv"><span>Retention</span><span style="text-align:right;max-width:60%">{analysis.retention}{analysis.retention_score ? ` (${analysis.retention_score}/10)` : ''}</span></div>
+      {/if}
+      {#if analysis.structure}
+        <div class="kv"><span>Struktur</span><span style="text-align:right;max-width:60%">{analysis.structure}</span></div>
+      {/if}
+      {#if analysis.summary}
+        <div class="kv-text"><span>Ringkas</span><div class="ana-text">{analysis.summary}</div></div>
+      {/if}
+      {#if analysis.detail}
+        <div class="kv-text"><span>Detail</span><div class="ana-text">{analysis.detail}</div></div>
+      {/if}
+      {#if analysis.tags?.length}
+        <div class="kv"><span>Tags</span><span style="text-align:right;max-width:60%">{#each analysis.tags as t}<span class="tag">{t}</span>{/each}</span></div>
+      {/if}
 
       <!-- Pecah button -->
       {#if s.youtube_url}
@@ -231,6 +248,16 @@
 {/if}
 
 <style>
+  .kv-text {
+    display: flex; flex-direction: column; gap: 4px;
+    padding: 8px 0; border-bottom: 1px solid #eee;
+  }
+  .kv-text span { font-weight: 600; color: #333; font-size: 12px; }
+  .ana-text {
+    font-size: 12px; color: #555; line-height: 1.5;
+    max-height: 120px; overflow-y: auto; padding: 6px; background: #f9f9f9;
+    border-radius: 4px; white-space: pre-wrap; word-break: break-word;
+  }
   .seg-list { display: flex; flex-direction: column; gap: 6px; }
   .seg-row {
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
