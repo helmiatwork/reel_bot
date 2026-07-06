@@ -33,13 +33,17 @@ Three ways in:
 
    **Analyze mode** (single synchronous call — no polling):
    - POST `http://localhost:8000/analyze/claude` with `{"youtube_url":"<url>","intent":"<user's ask, optional>"}`.
-   - This is the cheap, fast path: claude reads the real frames via vision. It returns `{"hook","structure","retention","tags","model","cost_usd","cached":true/false}` directly.
+   - This is the cheap, fast path: claude reads the real frames via vision. It returns `{"summary","detail","hook","structure","retention","tags","model","cost_usd","cached":true/false}` directly.
    - Results are saved to the DB; re-submitting the same URL returns cached results at zero cost.
    - Present the result in EXACTLY this Telegram-friendly layout (emoji headers + bold labels). Same layout for fresh AND cached. NEVER use a markdown table (`| ... |`) — Telegram shows raw pipes:
 
      🎬 **Analisis: <judul singkat atau video id>**
 
      **Model:** <model> | **Biaya:** $<cost_usd> | **Status:** <Belum cached | Cached (gratis)>
+
+     📹 **Isi Video**
+     Ringkas: <summary>
+     Detail: <detail>
 
      🪝 **Hook (0–3 detik)**
      <hook>
@@ -57,6 +61,7 @@ Three ways in:
      • <tiap item dari field `steps` respons, satu per baris — langkah + tool yang dijalankan>
 
    - Render `steps` APA ADANYA dari respons (jangan mengarang langkah). Cached dan fresh punya langkah berbeda; kalau `steps` kosong/absen, lewati section ini.
+   - For the **📹 Isi Video** section: if both `summary` AND `detail` are empty (old cached rows predating this feature), skip the section entirely. Otherwise render both (they may be present only on fresh analyses or recently-cached rows).
    - `cached:true` → Status "Cached (gratis)". Use the retention_score field (1-10) in the Retention header. If user then asks for a script, proceed to research mode.
    - On 429 (rate limit), tell the user the claude quota is full and to retry later. On other errors, report the actual status honestly.
 

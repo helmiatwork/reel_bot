@@ -2933,6 +2933,8 @@ Frame gambar dari video telah disertakan — gunakan untuk analisa visual.
 PENTING: Kembalikan HANYA objek JSON murni (tanpa markdown, tanpa penjelasan, tanpa teks tambahan).
 Format JSON yang harus dikembalikan:
 {{
+  "summary": "<1 kalimat lugas: video ini tentang apa / orang di video ngapain>",
+  "detail": "<play-by-play: urutan aksi/kejadian di video, langkah demi langkah, konkret dari yang terlihat di frame>",
   "hook": "<string: bagaimana video membuka/menarik penonton dalam 3 detik pertama>",
   "structure": "<string: struktur naratif/penyampaian konten video secara keseluruhan>",
   "retention": "<string: teknik yang digunakan untuk mempertahankan penonton sampai akhir>",
@@ -4001,7 +4003,7 @@ def analyze_claude(req: AnalyzeClaudeRequest):
                 with conn.cursor() as cur:
                     cur.execute(
                         """
-                        SELECT youtube_url, intent, hook, structure, retention, tags, model, cost_usd, created_at, retention_score
+                        SELECT youtube_url, intent, hook, structure, retention, tags, model, cost_usd, created_at, retention_score, content_summary, content_detail
                         FROM video_analysis
                         WHERE youtube_url = %s
                         ORDER BY id DESC
@@ -4024,6 +4026,8 @@ def analyze_claude(req: AnalyzeClaudeRequest):
                         cached_cost = cached_row[7]  # cost_usd column
                         if cached_cost is not None:
                             cached_cost = float(cached_cost)
+                        cached_summary = cached_row[10] or ""  # content_summary column
+                        cached_detail = cached_row[11] or ""  # content_detail column
                         # Backfill creator/source/song for previously-analyzed URLs
                         # (these are check-and-skip, so they no-op if already saved).
                         _save_creator(req.youtube_url)
@@ -4032,6 +4036,8 @@ def analyze_claude(req: AnalyzeClaudeRequest):
                         steps = _build_analyze_steps(cached=True)
                         return _json({
                             "youtube_url": cached_row[0],
+                            "summary": cached_summary,
+                            "detail": cached_detail,
                             "hook": cached_row[2],
                             "structure": cached_row[3],
                             "retention": cached_row[4],
@@ -4130,6 +4136,8 @@ def analyze_claude(req: AnalyzeClaudeRequest):
         print(f"[analyze/claude] raw_result[:500]: {raw_result[:500]}")
         raise HTTPException(status_code=502, detail=f"Could not parse claude result as JSON: {exc}")
 
+    summary = parsed.get("summary", "")
+    detail = parsed.get("detail", "")
     hook = parsed.get("hook", "")
     structure = parsed.get("structure", "")
     retention = parsed.get("retention", "")
@@ -4163,8 +4171,8 @@ def analyze_claude(req: AnalyzeClaudeRequest):
                 cur.execute(
                     """
                     INSERT INTO video_analysis
-                        (youtube_url, intent, hook, structure, retention, tags, raw_result, model, cost_usd, retention_score)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        (youtube_url, intent, hook, structure, retention, tags, raw_result, model, cost_usd, retention_score, content_summary, content_detail)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
                         req.youtube_url,
@@ -4177,6 +4185,8 @@ def analyze_claude(req: AnalyzeClaudeRequest):
                         model,
                         cost_usd,
                         retention_score,
+                        summary or None,
+                        detail or None,
                     ),
                 )
             conn.commit()
@@ -4199,6 +4209,8 @@ def analyze_claude(req: AnalyzeClaudeRequest):
 
     return _json({
         "youtube_url": req.youtube_url,
+        "summary": summary,
+        "detail": detail,
         "hook": hook,
         "structure": structure,
         "retention": retention,
