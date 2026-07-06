@@ -16,6 +16,7 @@ from pathlib import Path
 # Import the helpers from reelbot_mcp
 sys.path.insert(0, str(Path(__file__).parent))
 from reelbot_mcp import (
+    _valid_url,
     _clamp_limit,
     _parse_tags,
     _source_row_to_dict,
@@ -23,6 +24,37 @@ from reelbot_mcp import (
     _segment_row_to_dict,
     _read_soul,
 )
+
+
+def test_valid_url_https():
+    """Test URL validation with https URL."""
+    assert _valid_url("https://youtube.com/watch?v=abc123") is True, "https URL should be valid"
+    assert _valid_url("https://YOUTUBE.COM/watch?v=abc") is True, "uppercase https URL should be valid"
+    print("✓ test_valid_url_https")
+
+
+def test_valid_url_http():
+    """Test URL validation with http URL."""
+    assert _valid_url("http://youtube.com/watch?v=xyz") is True, "http URL should be valid"
+    assert _valid_url("http://example.com") is True, "simple http URL should be valid"
+    print("✓ test_valid_url_http")
+
+
+def test_valid_url_invalid():
+    """Test URL validation with invalid URLs."""
+    assert _valid_url("") is False, "empty string should be invalid"
+    assert _valid_url("notaurl") is False, "plain text should be invalid"
+    assert _valid_url("ftp://example.com") is False, "ftp URL should be invalid"
+    assert _valid_url("youtube.com/watch?v=abc") is False, "URL without scheme should be invalid"
+    print("✓ test_valid_url_invalid")
+
+
+def test_valid_url_edge_cases():
+    """Test URL validation with edge cases."""
+    assert _valid_url(None) is False, "None should be invalid"
+    assert _valid_url(123) is False, "non-string should be invalid"
+    assert _valid_url("  https://example.com  ") is True, "whitespace-padded URL should be valid"
+    print("✓ test_valid_url_edge_cases")
 
 
 def test_clamp_limit():
@@ -180,6 +212,10 @@ def test_read_soul_missing_file():
 def main():
     """Run all tests."""
     tests = [
+        test_valid_url_https,
+        test_valid_url_http,
+        test_valid_url_invalid,
+        test_valid_url_edge_cases,
         test_clamp_limit,
         test_parse_tags_none,
         test_parse_tags_list,
