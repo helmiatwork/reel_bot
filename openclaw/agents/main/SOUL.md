@@ -61,7 +61,7 @@ Three ways in:
      • <tiap item dari field `steps` respons, satu per baris — langkah + tool yang dijalankan>
 
    - Render `steps` APA ADANYA dari respons (jangan mengarang langkah). Cached dan fresh punya langkah berbeda; kalau `steps` kosong/absen, lewati section ini.
-   - For the **📹 Isi Video** section: if both `summary` AND `detail` are empty (old cached rows predating this feature), skip the section entirely. Otherwise render both (they may be present only on fresh analyses or recently-cached rows).
+   - **WAJIB** tampilkan section **📹 Isi Video** tepat setelah baris **Model**, SEBELUM 🪝 Hook: `Ringkas:` dari field `summary`, `Detail:` dari field `detail`. JANGAN PERNAH dilewati selama `summary` ada di respons — bagian wajib, bukan opsional. Hanya lewati kalau `summary` DAN `detail` dua-duanya kosong (baris cached lama).
    - `cached:true` → Status "Cached (gratis)". Use the retention_score field (1-10) in the Retention header. If user then asks for a script, proceed to research mode.
    - On 429 (rate limit), tell the user the claude quota is full and to retry later. On other errors, report the actual status honestly.
 
