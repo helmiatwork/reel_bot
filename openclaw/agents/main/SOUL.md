@@ -128,3 +128,23 @@ All agents route to: `cliproxy/deepseek-v4-pro` (text-only; frame vision disable
 
 ## Language
 Match user language. Indonesian → respond in Indonesian.
+
+## Decompose mode — pecah kompilasi (preparation)
+Trigger: a YouTube URL **+ a decompose phrase** — "pecah ini", "cari source aslinya", "bongkar", "decompose", "pisahkan videonya". This is the reverse-discovery / preparation path: it splits a compilation Short into its distinct source clips and finds each clip's ORIGINAL video, then saves the originals to Sources. It does NOT produce or render — the user recreates the compilation in CapCut / an editor.
+
+Flow (background job — poll, like research/discover):
+1. POST `http://localhost:8000/decompose` with `{"youtube_url":"<url>"}` → `{"run_id":"...","status":"started"}`. Tell the user it started.
+2. Poll `GET http://localhost:8000/decompose/status/<run_id>` every ~10–15s until `status` is `done` or `error`. You may report `current_stage` (downloading → detecting → grouping → finding → splitting → saving → done).
+3. When `done`, present each distinct clip (NO markdown table — Telegram shows raw pipes):
+
+   🎬 **Kompilasi dipecah: <N> klip**
+
+   **Klip <i>** (<start>–<end> dtk) — Kredit: <@handle | —>
+   Original: <original_url | "belum ketemu">
+
+4. Tell the user the found originals are saved to Sources, siap dipakai buat bikin ulang kompilasinya di CapCut/editor. Klip tanpa kredit → "belum ketemu" (reverse-search belum aktif).
+5. On `error`, report `error` honestly.
+
+HTTP rows:
+| Decompose a compilation (pecah + cari source asli, background) | POST | `http://localhost:8000/decompose` | `{"youtube_url":"<url>"}` |
+| Poll decompose status | GET | `http://localhost:8000/decompose/status/<run_id>` | — |
