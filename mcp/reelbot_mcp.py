@@ -38,6 +38,7 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 CLAUDE_BRIDGE_URL = os.getenv("CLAUDE_BRIDGE_URL", "http://localhost:9999")
+PIPELINE_API_URL = os.getenv("PIPELINE_API_URL", "http://localhost:8000")
 REPO_ROOT = Path(__file__).parent.parent
 
 # MCP server
@@ -45,6 +46,18 @@ server = FastMCP("reelbot")
 
 
 # ── Pure helpers (testable without DB/network) ──────────────────────────
+
+def _valid_url(url: str) -> bool:
+    """
+    Validate that a URL is non-empty and looks like an http(s) URL.
+
+    Returns True if valid, False otherwise.
+    """
+    if not url or not isinstance(url, str):
+        return False
+    url_lower = url.lower().strip()
+    return url_lower.startswith("http://") or url_lower.startswith("https://")
+
 
 def _clamp_limit(limit: int) -> int:
     """Clamp limit to [1, 100]."""
@@ -361,6 +374,53 @@ def make_brief(analysis_json: str, target: str = "") -> dict:
         return {"error": result, "brief": ""}
 
     return {"brief": result, "model": "claude-sonnet-4-6"}
+
+
+@server.tool()
+def analyze(youtube_url: str, intent: str = "") -> dict:
+    """
+    Run a fresh Claude-vision analysis of a YouTube video and save it to the corpus DB.
+
+    POSTs to the running pipeline-api /analyze/claude endpoint. Synchronous call;
+    may take a minute or more (download + vision).
+
+    Args:
+        youtube_url: the YouTube video URL to analyze
+        intent: optional intent/context for the analysis (e.g., "find viral hooks")
+
+    Returns:
+        {"hook", "structure", "retention", "retention_score", "tags", "model", "cost_usd", "cached"}
+        or {"error": "<message>"} on failure
+    """
+    # Validate URL
+    if not _valid_url(youtube_url):
+        return {"error": "invalid youtube_url"}
+
+    try:
+        resp = httpx.post(
+            f"{PIPELINE_API_URL}/analyze/claude",
+            json={"youtube_url": youtube_url, "intent": intent},
+            timeout=httpx.Timeout(connect=10.0, read=300.0, write=10.0, pool=5.0),
+        )
+    except httpx.ConnectError as e:
+        return {"error": f"pipeline-api unreachable: {e}"}
+    except httpx.TimeoutException as e:
+        return {"error": f"pipeline-api timeout (analysis may still be running): {e}"}
+    except Exception as e:
+        return {"error": f"request failed: {e}"}
+
+    try:
+        data = resp.json()
+    except Exception as e:
+        return {"error": f"response parse error: {e}"}
+
+    # If HTTP error, return error from response body
+    if resp.status_code >= 400:
+        error_detail = data.get("detail", f"HTTP {resp.status_code}")
+        return {"error": error_detail}
+
+    # Return the full response (hook, structure, retention, retention_score, tags, model, cost_usd, cached)
+    return data
 
 
 # ── Entry point ──────────────────────────────────────────────────────────

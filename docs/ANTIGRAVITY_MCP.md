@@ -285,6 +285,67 @@ if not brief_result.get("error"):
 
 ---
 
+### `analyze(youtube_url: str, intent: str = "") → dict`
+
+Run a fresh Claude-vision analysis of a YouTube video and save it to the corpus DB.
+
+**Important:** This is a synchronous call that may take 1–2 minutes (video download + frame extraction + Claude vision). Requires the pipeline-api service to be running.
+
+**Args:**
+- `youtube_url` (str, required): the YouTube video URL to analyze
+- `intent` (str, optional): context or intent for the analysis (e.g., "find viral hooks", "analyze pacing")
+
+**Returns:**
+```json
+{
+  "youtube_url": "https://youtube.com/watch?v=...",
+  "hook": "Curiosity gap — why did she do this?",
+  "structure": "3-beat: setup, reveal, reaction",
+  "retention": [45, 60, 80, 75],
+  "retention_score": 8,
+  "tags": ["viral", "reaction", "mystery"],
+  "model": "claude-sonnet-4-6",
+  "cost_usd": 0.08,
+  "cached": false
+}
+```
+
+On error: `{"error": "<reason>"}`
+
+**Error cases:**
+- Invalid URL (not http/https) → `"invalid youtube_url"`
+- Pipeline API unreachable → `"pipeline-api unreachable: ..."`
+- Pipeline API timeout → `"pipeline-api timeout (analysis may still be running): ..."`
+- Frame extraction failed → `"Frame extraction failed: ..."`
+- Video unreadable → `"No frames could be extracted from the video"`
+
+**Example:**
+```python
+result = call_tool("analyze", {
+    "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "intent": "find the viral hook moment"
+})
+
+if "error" not in result or not result["error"]:
+    analysis = result
+    print(f"Hook: {analysis['hook']}")
+    print(f"Retention score: {analysis['retention_score']}/10")
+    print(f"Cost: ${analysis['cost_usd']:.2f}")
+    print(f"Cached: {analysis.get('cached', False)}")
+    # Now use this analysis with get_analysis() or make_brief()
+else:
+    print(f"Analysis failed: {result['error']}")
+```
+
+**Caching:** If the same URL has been analyzed before, pipeline-api returns the cached result with `"cached": true` and skips re-analysis.
+
+**When to use:**
+- Fresh video added to corpus that needs analysis
+- Re-analyze an existing URL with `force=true` (pass via intent if needed)
+- Antigravity wants independent analysis without waiting for batch jobs
+
+---
+
 ## Workflow Example
 
 ### Step 1: Browse the Corpus
