@@ -21,8 +21,8 @@
       status: r.status,
       views: r.views,
       viewsLabel: fmtViews(r.views),
-      // AI-inferred category from DB; fall back to SOURCE_DETAIL, then platform
-      niche: r.niche && r.niche !== '-' ? r.niche : (d.niche || r.platform || '-'),
+      // AI-inferred category from DB; fall back to SOURCE_DETAIL, never platform
+      niche: r.niche && r.niche !== '-' ? r.niche : (d.niche || '-'),
       platform: r.platform || '-',
       formula: d.formula || '-',
       tags: d.tags || [],
