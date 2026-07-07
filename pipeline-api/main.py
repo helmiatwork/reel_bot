@@ -2040,6 +2040,7 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
     })
 
     def _decompose_job():
+        frame_dir = None  # set once video_id is known; used by finally cleanup
         try:
             # Download
             _save_run(run_id, _update_run(run_id, status="downloading"))
@@ -2054,7 +2055,10 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
 
             # Group shots into distinct source clips (Step 2a)
             _save_run(run_id, _update_run(run_id, status="grouping"))
-            frame_dir = f"/tmp/decompose_frames_{video_id}"
+            # Frames MUST live under ANALYZE_FRAME_DIR/<subdir> — that is the only
+            # place the claude bridge resolves them. subdir == video_id[:8] to match
+            # the subdir _group_shots_claude passes to the bridge.
+            frame_dir = f"{ANALYZE_FRAME_DIR}/{video_id[:8]}"
             clips = _group_shots_claude(video_id, shots, frame_dir, str(video_path))
             if not clips:
                 # Fallback: treat each shot as a clip (no grouping)
@@ -2069,16 +2073,19 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
                     for i, shot in enumerate(shots)
                 ]
 
-            # Split (if requested)
+            # Split (if requested) — cut one mp4 per GROUPED clip (its full
+            # start→end range), not per raw shot. Otherwise a clip's file would
+            # only cover its opening shot, not the whole source clip.
             if req.split_files:
                 _save_run(run_id, _update_run(run_id, status="splitting"))
-                shots = _split_segments(str(video_path), video_id, shots)
-                # Propagate segment_path to clips
-                shot_to_segment = {shot["index"]: shot.get("segment_path") for shot in shots}
-                for clip in clips:
-                    if clip.get("shot_indices") and clip["shot_indices"]:
-                        first_shot_idx = clip["shot_indices"][0]
-                        clip["segment_path"] = shot_to_segment.get(first_shot_idx)
+                clip_ranges = [
+                    {"index": c["clip_index"] - 1, "start_sec": c["start_sec"], "end_sec": c["end_sec"]}
+                    for c in clips
+                ]
+                split = _split_segments(str(video_path), video_id, clip_ranges)
+                idx_to_path = {s["index"]: s.get("segment_path") for s in split}
+                for c in clips:
+                    c["segment_path"] = idx_to_path.get(c["clip_index"] - 1)
 
             # Find originals (Step 2b: Tier A credit → search)
             _save_run(run_id, _update_run(run_id, status="finding"))
@@ -2160,9 +2167,11 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
             })
             _save_run(run_id, run_data)
         finally:
-            # Clean up frame directory
-            frame_dir = f"/tmp/decompose_frames_{_extract_video_id_from_youtube_url(req.youtube_url)}"
-            shutil.rmtree(frame_dir, ignore_errors=True)
+            # Clean up frame directory. Reuse the in-scope frame_dir (set in try)
+            # — never re-derive it here: a raising call inside finally would
+            # suppress the real exception from the try block.
+            if frame_dir:
+                shutil.rmtree(frame_dir, ignore_errors=True)
 
     bg.add_task(_decompose_job)
     return {"status": "started", "run_id": run_id}
