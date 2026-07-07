@@ -3070,12 +3070,18 @@ def _extract_video_id_from_youtube_url(url: str) -> str:
     return video_id
 
 
-def _ytdlp_source_args() -> list:
+def _ytdlp_source_args(force_player_client: bool = True) -> list:
     """
     Build yt-dlp argv fragments for YouTube downloads.
     Returns a list of args that includes:
-      - extractor-args for youtube:player_client (android,web_safari,ios)
+      - extractor-args for youtube:player_client (android,web_safari,ios) unless
+        force_player_client is False
       - cookies args if YTDLP_COOKIES_FILE env is set and file exists (copied to writable temp)
+
+    force_player_client=False lets yt-dlp use its default client set, which is the
+    ONLY way it exposes DASH 720p/1080p for Shorts — the android client returns just
+    the 360p muxed format. Keep it True for keyframe extraction (360p is fine there
+    and android is more bot-resistant); set False for full-quality source downloads.
 
     Caller must pass result to yt-dlp command via subprocess.run([...] + _ytdlp_source_args() + [...]).
     """
@@ -3083,7 +3089,8 @@ def _ytdlp_source_args() -> list:
 
     # Add extractor-args for player_client fallback chain
     # android bypasses the n-challenge; web_safari + ios as fallbacks
-    args.extend(["--extractor-args", "youtube:player_client=android,web_safari,ios"])
+    if force_player_client:
+        args.extend(["--extractor-args", "youtube:player_client=android,web_safari,ios"])
 
     # Check for cookies env var and copy to writable temp location if needed
     cookies_file = os.getenv("YTDLP_COOKIES_FILE", "")
@@ -3155,14 +3162,17 @@ def _download_source_video(youtube_url: str) -> Path:
     dl_proc = subprocess.run(
         [
             "yt-dlp",
-            "-f", "bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/best[ext=mp4][height<=480]/best[height<=480]/best",
+            # Best available quality (no resolution cap). The old height<=480 cap
+            # made every downloaded source — and thus every decomposed clip — 480p,
+            # and mis-handled portrait Shorts (a 1080x1920 clip has height 1920).
+            "-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
             "--merge-output-format", "mp4",
             "--retries", "5",
             "--fragment-retries", "5",
             "--socket-timeout", "30",
             "-o", output_template,
             "--no-playlist",
-        ] + _ytdlp_source_args() + [
+        ] + _ytdlp_source_args(force_player_client=False) + [
             youtube_url,
         ],
         capture_output=True, text=True, timeout=300,
