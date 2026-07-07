@@ -1604,8 +1604,9 @@ def _split_segments(video_path: str, video_id: str, shots: list) -> list:
                 "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
                 "-i", str(video_path),
                 "-ss", str(start), "-to", str(end),
-                "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
-                "-c:a", "aac",
+                "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+                "-pix_fmt", "yuv420p",
+                "-c:a", "aac", "-b:a", "192k",
                 "-movflags", "+faststart",
                 str(seg_path),
             ]
