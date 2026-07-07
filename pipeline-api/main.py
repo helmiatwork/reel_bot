@@ -2031,9 +2031,11 @@ class DecomposeRequest(BaseModel):
     # True: AI-group shots into distinct source clips (for compilations).
     # False: one segment per detected scene cut (plain split, no AI merge).
     group_clips: bool = True
-    # Shots shorter than this (seconds) are merged into their neighbor, so tiny
-    # false-cuts don't become their own <1s segments.
-    min_clip_sec: float = 1.5
+    # Shots shorter than this (seconds) are merged into their neighbor. Off by
+    # default (0): merging is blind to content, so it can glue the short opening
+    # shots of a NEW scene onto the previous one. Prefer group_clips for merging;
+    # only raise this if you knowingly accept duration-based gluing.
+    min_clip_sec: float = 0.0
 
 
 @app.post("/decompose")
