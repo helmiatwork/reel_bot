@@ -3162,10 +3162,13 @@ def _download_source_video(youtube_url: str) -> Path:
     dl_proc = subprocess.run(
         [
             "yt-dlp",
-            # Best available quality (no resolution cap). The old height<=480 cap
-            # made every downloaded source — and thus every decomposed clip — 480p,
-            # and mis-handled portrait Shorts (a 1080x1920 clip has height 1920).
-            "-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+            # Grab YouTube's raw highest-bitrate H.264 stream, remuxed (not re-encoded)
+            # into mp4. Prefer avc1 explicitly: yt-dlp's default sort would pick a lower-
+            # bitrate AV1 stream ("newer codec"), which is both lower quality here and
+            # poorly supported by editors (CapCut). -S picks the max-bitrate variant.
+            # No height cap — the old height<=480 also mis-handled portrait Shorts.
+            "-f", "bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio/best",
+            "-S", "res,fps,vbr,abr",
             "--merge-output-format", "mp4",
             "--retries", "5",
             "--fragment-retries", "5",
