@@ -2009,6 +2009,13 @@ def _grouped_clips_to_segment_rows(clips: list, source_id: int) -> list:
 class DecomposeRequest(BaseModel):
     youtube_url: str
     split_files: bool = True
+    # PySceneDetect ContentDetector threshold. Lower = more sensitive = catches
+    # faster/subtler cuts (fewer merged-scene segments), at the cost of possible
+    # over-splitting. 27 is the library default; 20-22 suits fast-cut short-form.
+    scene_threshold: float = 22.0
+    # True: AI-group shots into distinct source clips (for compilations).
+    # False: one segment per detected scene cut (plain split, no AI merge).
+    group_clips: bool = True
 
 
 @app.post("/decompose")
@@ -2047,17 +2054,22 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
 
             # Detect cuts
             _save_run(run_id, _update_run(run_id, status="detecting"))
-            shots = _detect_scene_cuts(str(video_path), threshold=27.0)
+            shots = _detect_scene_cuts(str(video_path), threshold=req.scene_threshold)
             if not shots:
                 shots = [{"index": 0, "start_sec": 0.0, "end_sec": 999999.0}]  # fallback: whole video
 
-            # Group shots into distinct source clips (Step 2a)
-            _save_run(run_id, _update_run(run_id, status="grouping"))
-            # Frames MUST live under ANALYZE_FRAME_DIR/<subdir> — that is the only
-            # place the claude bridge resolves them. subdir == video_id[:8] to match
-            # the subdir _group_shots_claude passes to the bridge.
-            frame_dir = f"{ANALYZE_FRAME_DIR}/{video_id[:8]}"
-            clips = _group_shots_claude(video_id, shots, frame_dir, str(video_path))
+            # Group shots into distinct source clips (Step 2a). Only for compilations —
+            # when group_clips is False, each detected scene cut becomes its own segment
+            # (raw per-cut split, no AI merging, no vision call). That is what you want
+            # for plainly cutting a single video at every scene change.
+            clips = []
+            if req.group_clips:
+                _save_run(run_id, _update_run(run_id, status="grouping"))
+                # Frames MUST live under ANALYZE_FRAME_DIR/<subdir> — that is the only
+                # place the claude bridge resolves them. subdir == video_id[:8] to match
+                # the subdir _group_shots_claude passes to the bridge.
+                frame_dir = f"{ANALYZE_FRAME_DIR}/{video_id[:8]}"
+                clips = _group_shots_claude(video_id, shots, frame_dir, str(video_path))
             if not clips:
                 # Fallback: treat each shot as a clip (no grouping)
                 clips = [
