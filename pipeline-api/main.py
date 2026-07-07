@@ -2054,7 +2054,10 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
 
             # Group shots into distinct source clips (Step 2a)
             _save_run(run_id, _update_run(run_id, status="grouping"))
-            frame_dir = f"/tmp/decompose_frames_{video_id}"
+            # Frames MUST live under ANALYZE_FRAME_DIR/<subdir> — that is the only
+            # place the claude bridge resolves them. subdir == video_id[:8] to match
+            # the subdir _group_shots_claude passes to the bridge.
+            frame_dir = f"{ANALYZE_FRAME_DIR}/{video_id[:8]}"
             clips = _group_shots_claude(video_id, shots, frame_dir, str(video_path))
             if not clips:
                 # Fallback: treat each shot as a clip (no grouping)
@@ -2160,8 +2163,8 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
             })
             _save_run(run_id, run_data)
         finally:
-            # Clean up frame directory
-            frame_dir = f"/tmp/decompose_frames_{_extract_video_id_from_youtube_url(req.youtube_url)}"
+            # Clean up frame directory (must match the grouping frame_dir above)
+            frame_dir = f"{ANALYZE_FRAME_DIR}/{_extract_video_id_from_youtube_url(req.youtube_url)[:8]}"
             shutil.rmtree(frame_dir, ignore_errors=True)
 
     bg.add_task(_decompose_job)
