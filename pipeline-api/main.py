@@ -1596,23 +1596,20 @@ def _split_segments(video_path: str, video_id: str, shots: list) -> list:
         seg_path = seg_dir / f"seg_{index:02d}.mp4"
 
         try:
-            # ffmpeg: stream-copy (fastest), re-encode fallback if copy fails
+            # Frame-accurate cut: -ss/-to AFTER -i forces exact-frame seeking, and
+            # re-encoding lets ffmpeg cut mid-GOP. Stream-copy (-c copy) snapped the
+            # start back to the nearest keyframe, so segments ran long and bled the
+            # tail of the previous clip. Slower, but precise — fine for short-form.
             cmd = [
                 "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
-                "-ss", str(start), "-to", str(end),
                 "-i", str(video_path),
-                "-c", "copy",  # stream-copy: no re-encode
-                "-avoid_negative_ts", "make_zero",
+                "-ss", str(start), "-to", str(end),
+                "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+                "-c:a", "aac",
+                "-movflags", "+faststart",
                 str(seg_path),
             ]
-            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-
-            # If stream-copy fails, fallback to re-encode
-            if proc.returncode != 0 and "copy" in cmd:
-                cmd[cmd.index("copy")] = "libx264"
-                cmd.insert(cmd.index("libx264") + 1, "-preset")
-                cmd.insert(cmd.index("libx264") + 2, "ultrafast")
-                proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
 
             if proc.returncode == 0 and seg_path.exists():
                 aug_shot = dict(shot)
