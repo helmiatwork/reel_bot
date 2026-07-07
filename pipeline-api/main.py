@@ -1513,13 +1513,16 @@ def research_result(run_id: str):
 
 # ── Video Decompose: scene-cut detection + segment split (Step 1 foundation) ──
 
-def _detect_scene_cuts(video_path: str, threshold: float = 27.0) -> list:
+def _detect_scene_cuts(video_path: str, threshold: float = 27.0, min_sec: float = 1.5) -> list:
     """
     Detect scene cuts in a video using PySceneDetect ContentDetector.
 
     Args:
         video_path: absolute path to video file
         threshold: ContentDetector threshold (0-100, default 27.0)
+        min_sec: minimum shot duration; shots shorter than this are merged into
+                 the previous shot so spurious sub-second false-cuts don't become
+                 their own segments (set 0 to disable).
 
     Returns:
         list of dicts: [{"index": i, "start_sec": float, "end_sec": float}, ...]
@@ -1529,15 +1532,27 @@ def _detect_scene_cuts(video_path: str, threshold: float = 27.0) -> list:
         from scenedetect import detect, ContentDetector
         scenes = detect(video_path, ContentDetector(threshold=threshold))
 
-        shots = []
-        for i, scene in enumerate(scenes):
+        raw = []
+        for scene in scenes:
             start_sec = float(scene[0].get_seconds()) if hasattr(scene[0], 'get_seconds') else float(scene[0]) / 1000.0
             end_sec = float(scene[1].get_seconds()) if hasattr(scene[1], 'get_seconds') else float(scene[1]) / 1000.0
-            shots.append({
-                "index": i,
-                "start_sec": start_sec,
-                "end_sec": end_sec,
-            })
+            raw.append({"start_sec": start_sec, "end_sec": end_sec})
+
+        # Merge shots shorter than min_sec into the previous shot (or the next one
+        # if it's the very first shot) so tiny false-cuts don't split a scene.
+        shots = []
+        for s in raw:
+            if min_sec > 0 and shots and (s["end_sec"] - s["start_sec"]) < min_sec:
+                shots[-1]["end_sec"] = s["end_sec"]
+            else:
+                shots.append({"start_sec": s["start_sec"], "end_sec": s["end_sec"]})
+        # Absorb a leading short shot forward into the next one
+        if min_sec > 0 and len(shots) >= 2 and (shots[0]["end_sec"] - shots[0]["start_sec"]) < min_sec:
+            shots[1]["start_sec"] = shots[0]["start_sec"]
+            shots.pop(0)
+
+        for i, s in enumerate(shots):
+            s["index"] = i
         return shots
     except Exception as e:
         print(f"[_detect_scene_cuts] error: {e}")
@@ -2016,6 +2031,9 @@ class DecomposeRequest(BaseModel):
     # True: AI-group shots into distinct source clips (for compilations).
     # False: one segment per detected scene cut (plain split, no AI merge).
     group_clips: bool = True
+    # Shots shorter than this (seconds) are merged into their neighbor, so tiny
+    # false-cuts don't become their own <1s segments.
+    min_clip_sec: float = 1.5
 
 
 @app.post("/decompose")
@@ -2054,7 +2072,7 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
 
             # Detect cuts
             _save_run(run_id, _update_run(run_id, status="detecting"))
-            shots = _detect_scene_cuts(str(video_path), threshold=req.scene_threshold)
+            shots = _detect_scene_cuts(str(video_path), threshold=req.scene_threshold, min_sec=req.min_clip_sec)
             if not shots:
                 shots = [{"index": 0, "start_sec": 0.0, "end_sec": 999999.0}]  # fallback: whole video
 
