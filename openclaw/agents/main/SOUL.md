@@ -163,4 +163,11 @@ HTTP rows:
 - Balas field `script` APA ADANYA (sudah berformat: judul, hook, beat-by-beat, CTA). JANGAN diringkas.
 - Di bawah script tambahkan: "📚 Dari winner:" list `based_on` (URL) + `niches`.
 - BEDA dari discover mode: generate TIDAK cari video baru — ngeklon formula winner yang sudah dianalisa di corpus.
+| Isi corpus dari niche (cari N video + analisa semua, background) | POST | `http://localhost:8000/discover/corpus` | `{"niche":"<niche>","count":5}` |
+
+**Corpus-fill mode** (trigger: "isi corpus"/"kumpulin"/"cari banyak" + niche — auto cari + analisa banyak video sekaligus, TANPA URL):
+- POST `http://localhost:8000/discover/corpus` dengan `{"niche":"<niche>","count":5}`. Background — bilang lagi diproses.
+- Poll `GET http://localhost:8000/discover/corpus/status/<run_id>` tiap ~15s. Laporkan `added`/`failed` + `current`. Tiap video ~1-2 menit, jadi total bisa lama.
+- Selesai (`status: done`): laporkan berapa video masuk corpus (`added`) + yang gagal.
+- BEDA dari discover biasa (/pipeline/discover): corpus-fill nganalisa BANYAK video ke corpus, bukan produksi 1 short.
 | Poll decompose status | GET | `http://localhost:8000/decompose/status/<run_id>` | — |

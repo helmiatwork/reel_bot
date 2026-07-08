@@ -2144,6 +2144,64 @@ def generate_script(req: GenerateScriptRequest):
     }
 
 
+class DiscoverCorpusRequest(BaseModel):
+    niche: str
+    count: int = 5           # how many videos to discover + analyze into the corpus
+
+
+@app.post("/discover/corpus")
+def start_discover_corpus(req: DiscoverCorpusRequest, bg: BackgroundTasks):
+    """
+    Auto-fill the corpus: search YouTube for `niche`, then analyze each result via
+    /analyze/claude (which saves source + analysis + inferred niche). Background job;
+    poll /discover/corpus/status/{run_id}.
+    """
+    import uuid
+    if not req.niche.strip():
+        raise HTTPException(status_code=400, detail="niche is required")
+
+    run_id = str(uuid.uuid4())
+    _save_run(run_id, {"status": "running", "niche": req.niche, "added": [], "failed": [], "current": None})
+
+    def _job():
+        try:
+            n = max(1, min(req.count, 15))
+            items = v3_search(req.niche, max_results=n)
+            added, failed = [], []
+            for it in items:
+                vid = it.get("video_id")
+                if not vid:
+                    continue
+                url = f"https://www.youtube.com/watch?v={vid}"
+                run = _load_run(run_id) or {}
+                run.update({"current": url, "added": added, "failed": failed})
+                _save_run(run_id, run)
+                try:
+                    # Call analyze in-process — NEVER self-HTTP to this same uvicorn
+                    # (a blocking self-call from a sync background task deadlocks it).
+                    analyze_claude(AnalyzeClaudeRequest(youtube_url=url))
+                    added.append(url)
+                except Exception as e:
+                    print(f"[discover_corpus] analyze failed for {url}: {e}")
+                    failed.append(url)
+            _save_run(run_id, {"status": "done", "niche": req.niche, "added": added, "failed": failed, "current": None})
+        except Exception as e:
+            run = _load_run(run_id) or {}
+            run.update({"status": "error", "error": str(e)[:500]})
+            _save_run(run_id, run)
+
+    bg.add_task(_job)
+    return {"status": "started", "run_id": run_id}
+
+
+@app.get("/discover/corpus/status/{run_id}")
+def discover_corpus_status(run_id: str):
+    run = _load_run(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="run not found")
+    return run
+
+
 class DecomposeRequest(BaseModel):
     youtube_url: str
     split_files: bool = True
