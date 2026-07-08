@@ -14,6 +14,11 @@
   let decomposeError = $state('')
   let pollInterval = null
 
+  // re-analyze state
+  let reanalyzeLoading = $state(false)
+  let reanalyzeError = $state('')
+  let reanalyzeDone = $state(false)
+
   // lightbox state
   let lightboxSrc = $state(null)
 
@@ -33,6 +38,9 @@
     decomposeRunning = false
     decomposeStage = ''
     decomposeError = ''
+    reanalyzeLoading = false
+    reanalyzeError = ''
+    reanalyzeDone = false
     lightboxSrc = null
     d = v
     frames = []
@@ -55,6 +63,26 @@
       }
     }
   })
+
+  async function reanalyze() {
+    const s = d?.data
+    if (!s?.youtube_url) return
+    reanalyzeLoading = true
+    reanalyzeError = ''
+    reanalyzeDone = false
+    const r = await api.analyzeClaude(s.youtube_url, true)
+    reanalyzeLoading = false
+    if (!r || r.error || r.detail) {
+      reanalyzeError = r?.error || r?.detail || 'Re-analyze failed.'
+      return
+    }
+    // refresh analysis display from canonical source
+    if (s.id) {
+      const fresh = await api.sourceAnalysis(s.id)
+      if (fresh) analysis = fresh
+    }
+    reanalyzeDone = true
+  }
 
   async function startDecompose() {
     const s = d?.data
@@ -167,6 +195,26 @@
         <div class="kv"><span>Tags</span><span style="text-align:right;max-width:60%">{#each analysis.tags as t}<span class="tag">{t}</span>{/each}</span></div>
       {/if}
 
+      <!-- Re-analyze button -->
+      {#if s.youtube_url}
+        <div class="reana-wrap">
+          <button
+            class="reana-btn"
+            disabled={reanalyzeLoading}
+            onclick={reanalyze}
+            aria-label="Re-analyze this video"
+          >
+            {reanalyzeLoading ? '⏳ Analyzing…' : 'Re-analyze'}
+          </button>
+          {#if reanalyzeDone}
+            <span class="reana-ok">done</span>
+          {/if}
+          {#if reanalyzeError}
+            <span class="reana-err">{reanalyzeError}</span>
+          {/if}
+        </div>
+      {/if}
+
       <!-- Pecah button -->
       {#if s.youtube_url}
         <div class="pecah-wrap">
@@ -273,6 +321,21 @@
   }
   .b-found { background: #dcfce7; color: #166534; }
   .b-grey { background: #f0f0f0; color: #666; }
+
+  .reana-wrap {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line, #1f2937);
+  }
+  .reana-btn {
+    font-size: 12px; font-weight: 600; padding: 5px 12px;
+    border-radius: 6px; cursor: pointer;
+    background: rgba(110,168,254,.12); color: #6ea8fe;
+    border: 1px solid rgba(110,168,254,.3); transition: opacity .15s;
+  }
+  .reana-btn:disabled { opacity: .55; cursor: default; }
+  .reana-btn:not(:disabled):hover { background: rgba(110,168,254,.22); }
+  .reana-ok  { font-size: 11px; color: #34d399; }
+  .reana-err { font-size: 11px; color: #f87171; }
 
   .pecah-wrap {
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
