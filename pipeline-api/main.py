@@ -2021,6 +2021,129 @@ def _grouped_clips_to_segment_rows(clips: list, source_id: int) -> list:
     return tuples
 
 
+class GenerateScriptRequest(BaseModel):
+    topic: str
+    niche: str = ""          # optional; if empty, match against topic / use top winners
+    top_n: int = 5           # how many corpus winners to learn from
+
+
+def _fetch_corpus_winners(niche: str, topic: str, top_n: int) -> list:
+    """
+    Pull the highest-retention analyzed videos from the corpus to learn from.
+    Matches on niche/tags when a niche or topic is given; otherwise returns the
+    global top performers. Returns [] if DB is unavailable (non-fatal).
+    """
+    conn = _db_conn()
+    if not conn:
+        return []
+    n = max(1, min(top_n, 20))
+    base = (
+        "SELECT s.youtube_url, s.niche, va.hook, va.structure, va.retention, "
+        "va.tags, va.content_summary, va.retention_score "
+        "FROM video_analysis va JOIN sources s ON s.youtube_url = va.youtube_url "
+    )
+    order = " ORDER BY va.retention_score DESC NULLS LAST, va.id DESC LIMIT %(n)s"
+    try:
+        with conn.cursor() as cur:
+            # Prefer niche-matched winners; if none match (or no niche given), fall
+            # back to the global top performers. Topic only guides the LLM, not the
+            # SQL filter — it rarely matches a niche/tag substring verbatim.
+            niche = (niche or "").strip()
+            rows = []
+            if niche:
+                cur.execute(
+                    base + "WHERE s.niche ILIKE %(q)s OR va.tags ILIKE %(q)s" + order,
+                    {"q": f"%{niche}%", "n": n},
+                )
+                rows = cur.fetchall()
+            if not rows:
+                cur.execute(base + order, {"n": n})
+                rows = cur.fetchall()
+            cols = [d[0] for d in cur.description]
+            return [dict(zip(cols, r)) for r in rows]
+    except Exception as e:
+        print(f"[generate] corpus fetch error: {e}")
+        return []
+    finally:
+        conn.close()
+
+
+def _build_script_prompt(topic: str, winners: list) -> str:
+    """Build the Indonesian script-generation prompt from corpus winners."""
+    lines = [
+        f"Kamu penulis script konten short-form. Tulis SATU script Short siap syuting untuk topik: \"{topic}\".",
+        "",
+        "Pelajari formula dari video-video yang TERBUKTI perform ini, lalu kloning pola yang bikin mereka nempel (hook, struktur, retensi) ke topik di atas:",
+        "",
+    ]
+    for i, w in enumerate(winners, 1):
+        lines.append(f"--- Winner {i} (niche: {w.get('niche') or '-'}, retention_score: {w.get('retention_score')}) ---")
+        if w.get("hook"):
+            lines.append(f"Hook: {str(w['hook'])[:300]}")
+        if w.get("structure"):
+            lines.append(f"Struktur: {str(w['structure'])[:400]}")
+        if w.get("retention"):
+            lines.append(f"Retensi: {str(w['retention'])[:300]}")
+        if w.get("content_summary"):
+            lines.append(f"Isi: {str(w['content_summary'])[:200]}")
+        lines.append("")
+    lines += [
+        "Output dalam Bahasa Indonesia, format siap eksekusi:",
+        "1. Judul + hashtag",
+        "2. HOOK (detik 0-3, teks yang muncul + visual)",
+        "3. Beat-by-beat: tiap beat = [VISUAL yang disyut] + [voiceover/caption] + [perkiraan durasi]",
+        "4. CTA penutup",
+        "5. Saran cold-open (1 kalimat)",
+        "Jangan jelaskan formula-nya; langsung tulis script-nya.",
+    ]
+    return "\n".join(lines)
+
+
+@app.post("/generate/script")
+def generate_script(req: GenerateScriptRequest):
+    """
+    Generate a new ready-to-shoot Short script for `topic`, cloning the winning
+    formula of the highest-retention analyzed videos in the corpus.
+    """
+    if not req.topic or not req.topic.strip():
+        raise HTTPException(status_code=400, detail="topic is required")
+
+    winners = _fetch_corpus_winners(req.niche, req.topic, req.top_n)
+    if not winners:
+        raise HTTPException(status_code=404, detail="no analyzed winners in corpus yet — analyze some videos first")
+
+    prompt = _build_script_prompt(req.topic, winners)
+    try:
+        import httpx as _httpx
+        bridge_timeout = _httpx.Timeout(connect=10.0, read=180.0, write=10.0, pool=5.0)
+        resp = _httpx.post(
+            f"{CLAUDE_BRIDGE_URL}/run",
+            json={"prompt": prompt, "frames": [], "model": "claude-sonnet-4-6"},
+            timeout=bridge_timeout,
+        )
+        data = resp.json()
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"claude bridge error: {e}")
+
+    if not data.get("ok"):
+        raise HTTPException(status_code=502, detail=f"generation failed: {data.get('error', 'unknown')}")
+
+    _log_api_usage(
+        agent="generate_script",
+        model=data.get("model", "claude-sonnet-4-6"),
+        raw_usage=data.get("raw_usage", {}),
+        cost_usd=data.get("cost_usd"),
+    )
+
+    return {
+        "status": "ok",
+        "topic": req.topic,
+        "based_on": [w.get("youtube_url") for w in winners],
+        "niches": sorted({w.get("niche") for w in winners if w.get("niche")}),
+        "script": data.get("result", ""),
+    }
+
+
 class DecomposeRequest(BaseModel):
     youtube_url: str
     split_files: bool = True

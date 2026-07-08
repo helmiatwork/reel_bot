@@ -156,4 +156,11 @@ Flow (background job — poll, like research/discover):
 
 HTTP rows:
 | Decompose a compilation (pecah + cari source asli, background) | POST | `http://localhost:8000/decompose` | `{"youtube_url":"<url>"}` |
+| Bikin script baru dari corpus (trigger: "script"/"bikin script" + topik, TANPA URL) | POST | `http://localhost:8000/generate/script` | `{"topic":"<topik>"}` |
+
+**Generate mode** (bikin script baru dari winner corpus — trigger: pesan mengandung "script"/"bikin script"/"generate script" + topik, TANPA URL):
+- POST `http://localhost:8000/generate/script` dengan `{"topic":"<topik>"}`. Sinkron, bisa 1–2 menit — bilang ke user lagi diproses.
+- Balas field `script` APA ADANYA (sudah berformat: judul, hook, beat-by-beat, CTA). JANGAN diringkas.
+- Di bawah script tambahkan: "📚 Dari winner:" list `based_on` (URL) + `niches`.
+- BEDA dari discover mode: generate TIDAK cari video baru — ngeklon formula winner yang sudah dianalisa di corpus.
 | Poll decompose status | GET | `http://localhost:8000/decompose/status/<run_id>` | — |
