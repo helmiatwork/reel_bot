@@ -64,6 +64,11 @@ export const api = {
   youtubeQuota: () => getJSON('/youtube/quota'),
   clipThis: (video_id) => postJSON('/youtube/clip-this', { video_id }),
 
+  generateScript: (topic, niche = '', top_n = 5) => postJSON('/generate/script', { topic, niche, top_n }),
+  discoverCorpus: (niche, count = 5) => postJSON('/discover/corpus', { niche, count }),
+  discoverCorpusStatus: (run_id) => getJSON('/discover/corpus/status/' + run_id),
+  analyzeClaude: (youtube_url, force = false) => postJSON('/analyze/claude', { youtube_url, force }),
+
   decompose: (youtube_url) => postJSON('/decompose', { youtube_url }),
   decomposeStatus: (run_id) => getJSON('/decompose/status/' + encodeURIComponent(run_id)),
   sourceSegments: (source_id) => getJSON('/sources/' + source_id + '/segments'),
