@@ -25,8 +25,9 @@
 
   const PLATFORMS = ['youtube', 'tiktok', 'instagram', 'xiaohongshu']
 
-  const PLATFORM_LABEL = {
-    youtube: 'YT', tiktok: 'TT', instagram: 'IG', xiaohongshu: 'XHS'
+  // ponytail: render SVG brand logos for platforms; remove text labels
+  const PLATFORM_ICON = {
+    youtube: 'i-yt', tiktok: 'i-tt', instagram: 'i-ig', xiaohongshu: 'i-xhs'
   }
 
   const STATUS_LABEL = {
@@ -346,7 +347,9 @@
             </div>
             <div class="tile-plats">
               {#each plist as p}
-                <span class="plat-badge {p}" class:posted={(item.platform_urls || {})[p]}>{PLATFORM_LABEL[p] || p}</span>
+                <span class="plat-badge {p}" class:posted={(item.platform_urls || {})[p]}>
+                  <svg class="plat-ico {p}"><use href="#{PLATFORM_ICON[p] || 'i-yt'}"/></svg>
+                </span>
               {/each}
             </div>
           </div>
@@ -399,8 +402,9 @@
                 >
                   {#if state === 'posted'}
                     <svg class="chip-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+                  {:else}
+                    <svg class="chip-ico plat-ico {p}"><use href="#{PLATFORM_ICON[p] || 'i-yt'}"/></svg>
                   {/if}
-                  {PLATFORM_LABEL[p]}
                 </button>
                 {#if state === 'posted' && urls[p]}
                   <a class="posted-url" href={urls[p]} target="_blank" rel="noopener">{urls[p].slice(0, 32)}…</a>
@@ -514,7 +518,7 @@
           <div class="chip-row">
             {#each PLATFORMS as p}
               <button class="chip {newForm.platforms.includes(p) ? 'on' : 'off'}" onclick={() => toggleNewPlatform(p)}>
-                {PLATFORM_LABEL[p]}
+                <svg class="chip-ico plat-ico {p}"><use href="#{PLATFORM_ICON[p] || 'i-yt'}"/></svg>
               </button>
             {/each}
           </div>
@@ -592,12 +596,15 @@
   .tile-title{font-size:13px;font-weight:600;color:var(--txt);margin-bottom:4px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
   .tile-meta{font-size:11px;color:var(--mut);margin-bottom:6px}
   .tile-plats{display:flex;gap:4px;flex-wrap:wrap}
-  .plat-badge{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:var(--soft);color:var(--mut)}
+  .plat-badge{font-size:10px;font-weight:700;padding:4px 8px;border-radius:6px;background:var(--soft);color:var(--mut);display:flex;align-items:center;gap:4px}
+  .plat-ico{width:14px;height:14px;flex-shrink:0;fill:currentColor;stroke:none}
+  .plat-badge.youtube .plat-ico{color:#FF0000}
+  .plat-badge.tiktok .plat-ico{color:#000}
+  .plat-badge.instagram .plat-ico{color:#E4405F}
+  .plat-badge.xiaohongshu .plat-ico{color:#FF2442}
   .plat-badge.posted{background:rgba(10,179,156,.1);color:var(--green)}
-  .plat-badge.youtube{border-left:2px solid #ff0000}
-  .plat-badge.tiktok{border-left:2px solid #000}
-  .plat-badge.instagram{border-left:2px solid #c13584}
-  .plat-badge.xiaohongshu{border-left:2px solid #fe2c55}
+  /* dark mode: tiktok white text/icon in dark theme */
+  :global(.dark) .plat-badge.tiktok .plat-ico{color:#fff}
 
   /* Overlay & modal */
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
@@ -624,12 +631,18 @@
   /* Chips */
   .chip-row{display:flex;gap:8px;flex-wrap:wrap}
   .chip-wrap{display:flex;flex-direction:column;gap:4px}
-  .chip{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--line);background:var(--bg);color:var(--mut);transition:all .15s}
+  .chip{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--line);background:var(--bg);color:var(--mut);transition:all .15s;display:flex;align-items:center;gap:6px}
   .chip:disabled{cursor:default;opacity:1}
   .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
   .chip.off:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
   .chip.posted{background:rgba(10,179,156,.1);border-color:var(--green);color:var(--green);display:flex;align-items:center;gap:4px}
-  .chip-ico{width:12px;height:12px;flex-shrink:0}
+  .chip-ico{width:14px;height:14px;flex-shrink:0;fill:currentColor;stroke:none}
+  /* chip brand colors — stay colored in all states */
+  .chip .plat-ico.youtube{color:#FF0000}
+  .chip .plat-ico.tiktok{color:#000}
+  .chip .plat-ico.instagram{color:#E4405F}
+  .chip .plat-ico.xiaohongshu{color:#FF2442}
+  :global(.dark) .chip .plat-ico.tiktok{color:#fff}
   .posted-url{font-size:11px;color:var(--accent);word-break:break-all;max-width:160px}
   .url-row{display:flex;gap:6px;align-items:center}
   .url-input{border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:12px;background:var(--bg);color:var(--txt);outline:none;min-width:0;flex:1}
