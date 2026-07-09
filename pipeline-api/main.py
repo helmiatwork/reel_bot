@@ -2,6 +2,7 @@
 # FastAPI service exposing all pipeline gaps as REST endpoints
 
 import os, sys, json
+import functools
 import socket
 import ipaddress
 import shutil
@@ -3330,7 +3331,8 @@ def _detect_platform(url: str) -> str:
         return "tiktok"
     if "instagram.com" in net:
         return "instagram"
-    if "xiaohongshu.com" in net or "xhslink.com" in net:
+    if ("xiaohongshu.com" in net or "xhslink.com" in net or "rednote.com" in net
+            or "xhscdn.com" in net or "rednotecdn.com" in net):
         return "xiaohongshu"
     return "unknown"
 
@@ -3377,6 +3379,11 @@ def _extract_video_id_from_youtube_url(url: str) -> str:
         m = re.search(r"/(?:reel|reels|p|tv)/([A-Za-z0-9_-]+)", parsed.path)
         if m:
             video_id = f"ig_{m.group(1)}"
+    elif platform == "xiaohongshu":
+        # xiaohongshu.com/explore/<hex_id> or rednote.com/explore/<hex_id>
+        m = re.search(r"/(?:explore|discovery/item)/([0-9a-fA-F]+)", parsed.path)
+        if m:
+            video_id = f"xhs_{m.group(1)}"
 
     if not video_id:
         try:
@@ -3392,6 +3399,19 @@ def _extract_video_id_from_youtube_url(url: str) -> str:
 
     video_id = re.sub(r"[^a-zA-Z0-9_-]", "", video_id)
     return video_id
+
+
+@functools.lru_cache(maxsize=1)
+def _ytdlp_impersonate_available() -> bool:
+    """True if the yt-dlp binary has a usable impersonate target (curl_cffi present)."""
+    try:
+        out = subprocess.run(["yt-dlp", "--list-impersonate-targets"],
+                             capture_output=True, text=True, timeout=15).stdout
+    except Exception:
+        return False
+    return any(line.strip() and "unavailable" not in line.lower()
+               and not line.lower().startswith(("[info]", "client", "---"))
+               for line in out.splitlines())
 
 
 def _ytdlp_source_args(force_player_client: bool = True, platform: str = "youtube") -> list:
@@ -3420,7 +3440,8 @@ def _ytdlp_source_args(force_player_client: bool = True, platform: str = "youtub
         # TikTok/Instagram/Xiaohongshu: impersonate a real browser (bypasses some
         # blocks) and use platform-specific cookies. These sites require login
         # cookies; TikTok may still IP-block without a residential egress.
-        args.extend(["--impersonate", "chrome"])
+        if _ytdlp_impersonate_available():
+            args.extend(["--impersonate", "chrome"])
         cookies_env = {
             "tiktok": "TIKTOK_COOKIES_FILE",
             "instagram": "IG_COOKIES_FILE",
@@ -3443,6 +3464,45 @@ def _ytdlp_source_args(force_player_client: bool = True, platform: str = "youtub
     return args
 
 
+def _download_direct(url: str, dest: Path) -> None:
+    """Download a direct media URL to dest via curl_cffi (impersonate chrome).
+    Used for hosts yt-dlp can't extract (e.g. Xiaohongshu CDN)."""
+    from curl_cffi import requests as cffi_requests
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    resp = cffi_requests.get(url, impersonate="chrome", timeout=120)
+    if resp.status_code != 200 or not resp.content:
+        raise RuntimeError(f"direct download failed: http {resp.status_code}")
+    dest.write_bytes(resp.content)
+
+
+def _xhs_resolve_video(note_url: str) -> tuple:
+    """Scrape a Xiaohongshu/RedNote note page for its direct CDN video URL.
+    yt-dlp returns 0 formats for XHS, so we pull masterUrl from the note page's
+    embedded __INITIAL_STATE__ and return the open CDN mp4 URL (no auth needed).
+    Raises RuntimeError with a clear hint if no video is found."""
+    import re
+    from curl_cffi import requests as cffi_requests
+    import http.cookiejar
+    fetch_url = note_url.replace("rednote.com", "xiaohongshu.com")
+    cookies = {}
+    cf = _cookie_file("xiaohongshu")
+    if cf.exists():
+        cj = http.cookiejar.MozillaCookieJar(str(cf))
+        cj.load(ignore_discard=True, ignore_expires=True)
+        cookies = {c.name: c.value for c in cj}
+    r = cffi_requests.get(fetch_url, cookies=cookies, impersonate="chrome", timeout=30)
+    html = r.text
+    m = re.search(r'"masterUrl":"([^"]+)"', html)
+    if not m:
+        raise RuntimeError(
+            "XHS: no video found in note page — the note may be an image post, "
+            "or the xiaohongshu cookies expired (re-export incl. the 'a1' cookie).")
+    cdn = m.group(1).encode().decode("unicode_escape")
+    tm = re.search(r'<meta[^>]+og:title[^>]+content="([^"]*)"', html)
+    title = tm.group(1) if tm else ""
+    return cdn, title
+
+
 def _download_source_video(youtube_url: str) -> Path:
     """
     Download a YouTube video to data/videos/<video_id>/source.mp4.
@@ -3462,6 +3522,14 @@ def _download_source_video(youtube_url: str) -> Path:
     cached_video = cache_dir / "source.mp4"
     if cached_video.exists():
         return cached_video.absolute()
+
+    # Xiaohongshu: scrape CDN URL directly (yt-dlp returns 0 formats for XHS)
+    if platform == "xiaohongshu":
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        cdn_url, _ = _xhs_resolve_video(youtube_url)
+        dest = cache_dir / "source.mp4"
+        _download_direct(cdn_url, dest)
+        return dest.absolute()
 
     # Download with yt-dlp
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -3723,40 +3791,48 @@ def _extract_keyframes(youtube_url: str, out_dir: str, n: int = 20) -> list:
     import tempfile
     import math
 
-    # Download video via yt-dlp to a temp file
+    # Download video to a temp file
     tmp_video_dir = tempfile.mkdtemp(prefix="analyze_vid_")
-    output_template = f"{tmp_video_dir}/source_video.%(ext)s"
     platform = _detect_platform(youtube_url)
-    # 480p is plenty for frame analysis (claude downsamples). YouTube caps height;
-    # TikTok/IG single-rendition just take best.
-    if platform == "youtube":
-        fmt = "bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/best[ext=mp4][height<=480]/best[height<=480]/best"
+
+    if platform == "xiaohongshu":
+        # yt-dlp returns 0 formats for XHS; scrape CDN URL directly
+        cdn_url, _ = _xhs_resolve_video(youtube_url)
+        dest = Path(tmp_video_dir) / "source_video.mp4"
+        _download_direct(cdn_url, dest)
+        video_path = str(dest)
     else:
-        fmt = "bestvideo+bestaudio/best[ext=mp4]/best"
+        output_template = f"{tmp_video_dir}/source_video.%(ext)s"
+        # 480p is plenty for frame analysis (claude downsamples). YouTube caps height;
+        # TikTok/IG single-rendition just take best.
+        if platform == "youtube":
+            fmt = "bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/best[ext=mp4][height<=480]/best[height<=480]/best"
+        else:
+            fmt = "bestvideo+bestaudio/best[ext=mp4]/best"
 
-    dl_proc = subprocess.run(
-        [
-            "yt-dlp",
-            "-f", fmt,
-            "--merge-output-format", "mp4",
-            "--retries", "5",
-            "--fragment-retries", "5",
-            "--socket-timeout", "30",
-            "-o", output_template,
-            "--no-playlist",
-        ] + _ytdlp_source_args(platform=platform) + [
-            youtube_url,
-        ],
-        capture_output=True, text=True, timeout=300,
-    )
-    if dl_proc.returncode != 0:
-        raise RuntimeError(f"yt-dlp download failed: {dl_proc.stderr[:300]}")
+        dl_proc = subprocess.run(
+            [
+                "yt-dlp",
+                "-f", fmt,
+                "--merge-output-format", "mp4",
+                "--retries", "5",
+                "--fragment-retries", "5",
+                "--socket-timeout", "30",
+                "-o", output_template,
+                "--no-playlist",
+            ] + _ytdlp_source_args(platform=platform) + [
+                youtube_url,
+            ],
+            capture_output=True, text=True, timeout=300,
+        )
+        if dl_proc.returncode != 0:
+            raise RuntimeError(f"yt-dlp download failed: {dl_proc.stderr[:300]}")
 
-    # Locate downloaded file
-    video_files = list(Path(tmp_video_dir).glob("source_video.*"))
-    if not video_files:
-        raise RuntimeError("Downloaded video file not found after yt-dlp")
-    video_path = str(video_files[0])
+        # Locate downloaded file
+        video_files = list(Path(tmp_video_dir).glob("source_video.*"))
+        if not video_files:
+            raise RuntimeError("Downloaded video file not found after yt-dlp")
+        video_path = str(video_files[0])
 
     # Get video duration via ffprobe
     probe = subprocess.run(
@@ -3952,6 +4028,9 @@ def _fetch_channel_meta(youtube_url: str) -> dict:
     Returns dict with channel_id, channel, creator_name, total_followers (may be null).
     Non-fatal: on error returns empty dict.
     """
+    # XHS has no yt-dlp metadata; degrade gracefully so callers don't crash.
+    if _detect_platform(youtube_url) == "xiaohongshu":
+        return {}
     try:
         cmd = [
             "yt-dlp",
@@ -4110,9 +4189,17 @@ def _save_source(youtube_url: str) -> None:
     with NULL niche, backfill niche. Non-fatal: any error is logged but doesn't break analyze.
     """
     try:
-        meta = _fetch_channel_meta(youtube_url)
-        if not meta.get("title") and not meta.get("channel"):
-            return  # nothing useful to save
+        if _detect_platform(youtube_url) == "xiaohongshu":
+            # yt-dlp has no XHS metadata; scrape title best-effort from note page
+            try:
+                _, xhs_title = _xhs_resolve_video(youtube_url)
+            except Exception:
+                xhs_title = ""
+            meta: dict = {"title": xhs_title, "channel": None, "view_count": None}
+        else:
+            meta = _fetch_channel_meta(youtube_url)
+            if not meta.get("title") and not meta.get("channel"):
+                return  # nothing useful to save
 
         conn = _db_conn()
         if not conn:
