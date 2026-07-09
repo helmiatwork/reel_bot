@@ -133,6 +133,8 @@ export const api = {
   performance: () => getJSON('/performance'),
   performanceRefresh: () => postJSON('/performance/refresh', {}),
 
+  seoAnalyze: (topic, platform = 'youtube', niche = '') => postJSON('/seo/analyze', { topic, platform, niche }),
+
   decompose: (youtube_url) => postJSON('/decompose', { youtube_url }),
   decomposeStatus: (run_id) => getJSON('/decompose/status/' + encodeURIComponent(run_id)),
   sourceSegments: (source_id) => getJSON('/sources/' + source_id + '/segments'),

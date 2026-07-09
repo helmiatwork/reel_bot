@@ -23,6 +23,7 @@
   import Generate from './pages/Generate.svelte'
   import Cookies from './pages/Cookies.svelte'
   import Jadwal from './pages/Jadwal.svelte'
+  import Seo from './pages/Seo.svelte'
 
   // Standard line icons (Lucide), monochrome, inherit text color.
   const I = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`
@@ -35,6 +36,7 @@
     ]},
     { title: 'Discover & Analyze', items: [
       { p: 'discover', ico: I('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>'), label: 'Discover' },
+      { p: 'seo', ico: I('<line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/>'), label: 'SEO' },
       { p: 'sources', ico: I('<path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/>'), label: 'Sources' },
       { p: 'snoop', ico: I('<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>'), label: 'Snoop' },
       { p: 'creators', ico: I('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'), label: 'Creators' },
@@ -304,6 +306,7 @@
       {:else if current === 'generate'}<Generate />
       {:else if current === 'cookies'}<Cookies />
       {:else if current === 'jadwal'}<Jadwal />
+      {:else if current === 'seo'}<Seo />
       {/if}
     </div>
   </main>
