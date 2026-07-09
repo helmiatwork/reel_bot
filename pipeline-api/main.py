@@ -6095,21 +6095,37 @@ def _performance_init_db():
                     ON performance_snapshots (platform, captured_at)
             """)
         conn.commit()
+        # Phase 3 migration: per-account attribution (additive, idempotent)
+        with conn.cursor() as cur:
+            cur.execute("""
+                ALTER TABLE performance_snapshots
+                ADD COLUMN IF NOT EXISTS account_id BIGINT
+                -- no FK to accounts: intentional — historical snapshots are retained
+                -- even if the account row is later deleted (display degrades to "Akun #N")
+            """)
+        conn.commit()
     except Exception as e:
         print(f"[performance] init db error: {e}")
     finally:
         conn.close()
 
 
-def _build_performance_view(rows: list) -> dict:
-    """Pure aggregation: snapshot rows → {series, totals, videos}.
+def _build_performance_view(rows: list, accounts_lookup: dict | None = None) -> dict:
+    """Pure aggregation: snapshot rows → {series, totals, videos, accounts}.
 
-    Each row must be a dict with keys: platform, url, title, views, captured_at
-    (captured_at may be a date/datetime or ISO string 'YYYY-MM-DD...' or 'YYYY-MM-DD').
+    Each row must be a dict with keys: platform, url, title, views, captured_at,
+    and optionally account_id (int or None for legacy/unattributed rows).
+    captured_at may be a date/datetime or ISO string 'YYYY-MM-DD...' or 'YYYY-MM-DD'.
 
-    series  — per-platform daily points (sum of latest-known views per video that day)
-    totals  — per-platform {total_views, video_count} using most-recent snapshot per url
-    videos  — flat list per (platform, url): latest_views, first_seen, last_seen
+    accounts_lookup  — optional {account_id: {"handle": str, "label": str}} for display names
+    series           — per-platform daily roll-up points
+    totals           — per-platform {total_views, video_count}
+    videos           — flat list per (platform, url): latest_views, first_seen, last_seen
+    accounts         — per-account breakdown: [{platform, account_id, handle, label,
+                        total_views, video_count, series:[{date,views}]}]
+                       null account_id rows group under "Tanpa akun" per platform
+                       (null = legacy pre-phase-3 snapshot OR post with no account selected —
+                       both are intentionally collapsed into the same bucket for display)
     """
     import datetime as _dt
 
@@ -6122,12 +6138,27 @@ def _build_performance_view(rows: list) -> dict:
             return _dt.date.fromisoformat(v[:10])
         return None
 
-    # One-pass title lookup: avoids O(N×M) scan in the videos loop below
+    def _url_map_series(url_map: dict) -> list:
+        """Compute daily roll-up series from {url: {date: views}}."""
+        all_dates = sorted({d for date_map in url_map.values() for d in date_map})
+        points = []
+        for day in all_dates:
+            day_total = 0
+            for date_map in url_map.values():
+                known = [d for d in date_map if d <= day]
+                if known:
+                    day_total += date_map[max(known)]
+            points.append({"date": day.isoformat(), "views": day_total})
+        return points
+
+    # One-pass title lookup
     title_by_url = {r["url"]: r["title"] for r in rows if r.get("url") and r.get("title")}
 
-    # Group by (platform, url) → {date → max views that day}
-    # Structure: snap_by_url[platform][url][date] = views
-    snap_by_url: dict = {}
+    # Group by (platform, url) for platform roll-up
+    # AND (platform, account_id_key, url) for per-account breakdown
+    snap_by_url: dict = {}   # [platform][url][date] = views
+    snap_by_acct: dict = {}  # [platform][account_id_key][url][date] = views
+
     for r in rows:
         platform = r.get("platform") or ""
         url = r.get("url") or ""
@@ -6136,38 +6167,35 @@ def _build_performance_view(rows: list) -> dict:
         if not platform or not url or views is None or captured_date is None:
             continue
         views = int(views)
+        account_id = r.get("account_id")  # None = legacy / unattributed
+
+        # platform roll-up
         snap_by_url.setdefault(platform, {}).setdefault(url, {})
-        existing = snap_by_url[platform][url].get(captured_date, -1)
-        if views > existing:
+        if views > snap_by_url[platform][url].get(captured_date, -1):
             snap_by_url[platform][url][captured_date] = views
 
-    # Build output structures
+        # per-account grouping (None key = "Tanpa akun" bucket)
+        snap_by_acct.setdefault(platform, {}).setdefault(account_id, {}).setdefault(url, {})
+        if views > snap_by_acct[platform][account_id][url].get(captured_date, -1):
+            snap_by_acct[platform][account_id][url][captured_date] = views
+
+    # Build platform roll-up structures (unchanged shape — backward compat)
     series = []
     totals = []
     videos = []
 
     for platform, url_map in sorted(snap_by_url.items()):
-        # Latest snapshot per url
         latest_views_by_url = {}
         for url, date_map in url_map.items():
             if date_map:
-                latest_date = max(date_map)
-                latest_views_by_url[url] = (latest_date, date_map[latest_date])
+                latest_views_by_url[url] = (max(date_map), date_map[max(date_map)])
 
-        # totals row
         total_views = sum(v for _, v in latest_views_by_url.values())
-        totals.append({
-            "platform": platform,
-            "total_views": total_views,
-            "video_count": len(url_map),
-        })
+        totals.append({"platform": platform, "total_views": total_views, "video_count": len(url_map)})
 
-        # videos list
         for url, date_map in url_map.items():
             if not date_map:
                 continue
-            first_seen = min(date_map).isoformat()
-            last_seen = max(date_map).isoformat()
             _, lv = latest_views_by_url.get(url, (None, 0))
             title = title_by_url.get(url)
             videos.append({
@@ -6175,24 +6203,45 @@ def _build_performance_view(rows: list) -> dict:
                 "url": url,
                 "title": title or url,
                 "latest_views": lv,
-                "first_seen": first_seen,
-                "last_seen": last_seen,
+                "first_seen": min(date_map).isoformat(),
+                "last_seen": max(date_map).isoformat(),
             })
 
-        # series: per day, sum of latest-known views across all urls on that day
-        # "latest-known" = for each url, the most recent snapshot up to (and including) that day
-        all_dates = sorted({d for date_map in url_map.values() for d in date_map})
-        points = []
-        for day in all_dates:
-            day_total = 0
-            for url, date_map in url_map.items():
-                known_dates = [d for d in date_map if d <= day]
-                if known_dates:
-                    day_total += date_map[max(known_dates)]
-            points.append({"date": day.isoformat(), "views": day_total})
-        series.append({"platform": platform, "points": points})
+        series.append({"platform": platform, "points": _url_map_series(url_map)})
 
-    return {"series": series, "totals": totals, "videos": videos}
+    # Build per-account breakdown
+    accounts = []
+    for platform in sorted(snap_by_acct.keys()):
+        # None last so named accounts come first
+        for acct_key in sorted(snap_by_acct[platform].keys(), key=lambda k: (k is None, k or 0)):
+            url_map = snap_by_acct[platform][acct_key]
+            if not url_map:
+                continue
+            latest_per_url = {
+                url: date_map[max(date_map)]
+                for url, date_map in url_map.items() if date_map
+            }
+            total_views = sum(latest_per_url.values())
+            video_count = len(url_map)
+            if acct_key is None:
+                handle = label = "Tanpa akun"
+            elif accounts_lookup and acct_key in accounts_lookup:
+                info = accounts_lookup[acct_key]
+                handle = info.get("handle") or f"Akun #{acct_key}"
+                label = info.get("label") or handle
+            else:
+                handle = label = f"Akun #{acct_key}"
+            accounts.append({
+                "platform": platform,
+                "account_id": acct_key,
+                "handle": handle,
+                "label": label,
+                "total_views": total_views,
+                "video_count": video_count,
+                "series": _url_map_series(url_map),
+            })
+
+    return {"series": series, "totals": totals, "videos": videos, "accounts": accounts}
 
 
 def _collect_performance_snapshots() -> dict:
@@ -6210,27 +6259,33 @@ def _collect_performance_snapshots() -> dict:
 
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT id, platform_urls FROM scheduled_posts")
+            cur.execute("SELECT id, platform_urls, platform_accounts FROM scheduled_posts")
             posts = cur.fetchall()
     except Exception as e:
         result["errors"].append(f"query scheduled_posts: {e}")
         conn.close()
         return result
 
-    # Collect (post_id, platform, url) triples
+    # Collect (post_id, platform, url, account_id) tuples
     tasks = []
     for row in posts:
         post_id = row[0]
         pu_raw = row[1] or "{}"
+        pa_raw = row[2] or "{}"
         try:
             pu = json.loads(pu_raw) if isinstance(pu_raw, str) else pu_raw
         except Exception:
             pu = {}
+        try:
+            pa = json.loads(pa_raw) if isinstance(pa_raw, str) else pa_raw
+        except Exception:
+            pa = {}
         for platform, url in (pu or {}).items():
             if url and isinstance(url, str) and url.startswith("http"):
-                tasks.append((post_id, platform.lower(), url))
+                account_id = (pa or {}).get(platform)
+                tasks.append((post_id, platform.lower(), url, account_id))
 
-    for post_id, platform, url in tasks:
+    for post_id, platform, url, account_id in tasks:
         result["checked"] += 1
         try:
             ytdlp_args = _ytdlp_source_args(force_player_client=True, platform=platform)
@@ -6255,12 +6310,13 @@ def _collect_performance_snapshots() -> dict:
             title = title.strip()[:255]
             with conn.cursor() as cur:
                 cur.execute("""
-                    INSERT INTO performance_snapshots (post_id, platform, url, title, views)
-                    VALUES (%s, %s, %s, %s, %s)
+                    INSERT INTO performance_snapshots (post_id, platform, url, title, views, account_id)
+                    VALUES (%s, %s, %s, %s, %s, %s)
                     ON CONFLICT (url, (captured_at::date)) DO UPDATE
                         SET views = EXCLUDED.views,
-                            title = EXCLUDED.title
-                """, (post_id, platform, url, title, views))
+                            title = EXCLUDED.title,
+                            account_id = COALESCE(EXCLUDED.account_id, performance_snapshots.account_id)
+                """, (post_id, platform, url, title, views, account_id))
                 conn.commit()
             result["saved"] += 1
         except Exception as e:
@@ -6280,22 +6336,31 @@ def performance_refresh():
 
 @app.get("/performance")
 def performance_get():
-    """Return per-platform growth series, totals, and video list."""
+    """Return per-platform growth series, totals, video list, and per-account breakdown."""
     conn = _db_conn()
     if conn is None:
-        return _json({"series": [], "totals": [], "videos": []})
+        return _json({"series": [], "totals": [], "videos": [], "accounts": []})
     try:
         with conn.cursor() as cur:
+            # Build accounts lookup for display names
+            accounts_lookup = {}
+            try:
+                cur.execute("SELECT id, handle, label FROM accounts WHERE active")
+                for aid, handle, label in cur.fetchall():
+                    accounts_lookup[aid] = {"handle": handle, "label": label}
+            except Exception:
+                conn.rollback()  # reset aborted txn so the main query below can still run
+
             cur.execute("""
-                SELECT platform, url, title, views, captured_at
+                SELECT platform, url, title, views, captured_at, account_id
                 FROM performance_snapshots
                 ORDER BY captured_at
             """)
             cols = [c.name for c in cur.description]
             rows = [dict(zip(cols, r)) for r in cur.fetchall()]
-        return _json(_build_performance_view(rows))
+        return _json(_build_performance_view(rows, accounts_lookup))
     except Exception as exc:
         print(f"[performance] query failed: {exc}")
-        return _json({"series": [], "totals": [], "videos": []})
+        return _json({"series": [], "totals": [], "videos": [], "accounts": []})
     finally:
         conn.close()
