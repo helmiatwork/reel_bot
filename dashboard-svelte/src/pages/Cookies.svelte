@@ -2,135 +2,219 @@
   import { api } from '../lib/api.js'
 
   const PLATFORMS = [
-    { id: 'instagram',   label: 'Instagram' },
-    { id: 'tiktok',      label: 'TikTok' },
-    { id: 'xiaohongshu', label: 'Xiaohongshu (小红书)' },
+    { id: 'youtube',      label: 'YouTube',              icon: 'i-yt' },
+    { id: 'tiktok',       label: 'TikTok',               icon: 'i-tt' },
+    { id: 'instagram',    label: 'Instagram',            icon: 'i-ig' },
+    { id: 'xiaohongshu',  label: 'Xiaohongshu (小红书)',  icon: 'i-xhs' },
   ]
 
-  // ponytail: deep reactive array — mutate .text/.saving/.msg directly in Svelte 5
-  let platforms = $state(PLATFORMS.map(p => ({
-    ...p,
-    text:     '',
-    saving:   false,
-    deleting: false,
-    msg:      null,   // { ok: bool, text: string } | null
-    status:   { present: false, cookies: 0, bytes: 0 }
-  })))
+  let accounts = $state([])
+  let loading  = $state(true)
+  // per-platform UI state keyed by platform id
+  let ui = $state(Object.fromEntries(
+    PLATFORMS.map(p => [p.id, { adding: false, handle: '', label: '', saving: false, msg: null }])
+  ))
+  // per-account cookie paste state keyed by account id
+  let cookieUi = $state({})
 
-  let loading = $state(true)
-
-  function fmtBytes(n) {
-    n = Number(n) || 0
-    if (n >= 1024) return (n / 1024).toFixed(1) + ' KB'
-    return n + ' B'
+  function accountsForPlatform(pid) {
+    return accounts.filter(a => a.platform === pid)
   }
 
-  async function loadStatus() {
+  function cookieState(id) {
+    if (!cookieUi[id]) cookieUi[id] = { text: '', saving: false, deleting: false, msg: null }
+    return cookieUi[id]
+  }
+
+  async function load() {
     loading = true
-    const r = await api.cookiesStatus()
+    const rows = await api.accounts()
     loading = false
-    if (!r) return
-    for (const p of platforms) {
-      if (r[p.id]) p.status = r[p.id]
+    if (rows) accounts = rows
+  }
+
+  $effect(() => { load() })
+
+  async function addAccount(p) {
+    const u = ui[p.id]
+    const handle = u.handle.trim()
+    if (!handle) return
+    u.saving = true
+    u.msg = null
+    const r = await api.accountCreate({ platform: p.id, handle, label: u.label.trim() || handle })
+    u.saving = false
+    if (!r || r.detail) {
+      u.msg = { ok: false, text: r?.detail || 'Request failed' }
+    } else {
+      u.adding = false
+      u.handle = ''
+      u.label  = ''
+      u.msg    = null
+      await load()
     }
   }
 
-  $effect(() => { loadStatus() })
+  async function toggleActive(acct) {
+    await api.accountUpdate(acct.id, { active: !acct.active })
+    await load()
+  }
 
-  async function save(p) {
-    const content = p.text.trim()
+  async function deleteAccount(acct) {
+    if (!confirm(`Delete account @${acct.handle}?`)) return
+    await api.accountDelete(acct.id)
+    await load()
+  }
+
+  async function saveCookies(acct) {
+    const cs = cookieState(acct.id)
+    const content = cs.text.trim()
     if (!content) return
-    p.saving = true
-    p.msg = null
-    const r = await api.saveCookies(p.id, content)
-    p.saving = false
-    if (!r) {
-      p.msg = { ok: false, text: 'Request failed — is the backend running?' }
-    } else if (r.detail || r.error) {
-      p.msg = { ok: false, text: r.detail || r.error }
+    cs.saving = true
+    cs.msg = null
+    const r = await api.accountSaveCookies(acct.id, content)
+    cs.saving = false
+    if (!r || r.detail) {
+      cs.msg = { ok: false, text: r?.detail || 'Request failed' }
     } else {
-      p.msg = { ok: true, text: `Saved ${r.cookies ?? ''} cookies` }
-      p.text = ''
-      await loadStatus()
+      cs.msg = { ok: true, text: 'Cookies saved' }
+      cs.text = ''
+      await load()
     }
   }
 
-  async function del(p) {
-    if (!confirm(`Delete ${p.label} cookies?`)) return
-    p.deleting = true
-    p.msg = null
-    const r = await api.deleteCookies(p.id)
-    p.deleting = false
-    if (!r) {
-      p.msg = { ok: false, text: 'Request failed' }
-    } else {
-      p.msg = { ok: true, text: `Removed ${r.removed ?? ''} cookies` }
-      await loadStatus()
-    }
+  async function deleteCookies(acct) {
+    const cs = cookieState(acct.id)
+    cs.deleting = true
+    cs.msg = null
+    await api.accountDeleteCookies(acct.id)
+    cs.deleting = false
+    await load()
   }
 </script>
 
-<div class="ck">
+<div class="ac">
   <div class="top">
-    <h1>Cookies</h1>
-    <div class="sub">Manage login cookies for social platforms used during scraping.</div>
+    <h1>Accounts</h1>
+    <div class="sub">Manage social accounts and their login cookies for scraping.</div>
   </div>
 
   <div class="help">
-    Export with the "Get cookies.txt LOCALLY" browser extension while logged in, then paste here.
-    The file must be in Netscape tab-separated format.
+    Export cookies with the "Get cookies.txt LOCALLY" browser extension while logged in,
+    then paste them per-account. The file must be in Netscape tab-separated format.
   </div>
 
   {#if loading}
-    <div class="state-msg mut">Loading…</div>
+    <div class="state-msg">Loading…</div>
   {:else}
-    <div class="cards">
-      {#each platforms as p}
-        <div class="card">
-          <div class="card-head">
-            <span class="plabel">{p.label}</span>
-            {#if p.status.present}
-              <span class="badge ok">&#10003; {p.status.cookies} cookie{p.status.cookies !== 1 ? 's' : ''} &middot; {fmtBytes(p.status.bytes)}</span>
-            {:else}
-              <span class="badge na">not set</span>
-            {/if}
-          </div>
-
-          <textarea
-            class="paste"
-            placeholder="Paste Netscape cookies.txt here&#8230;"
-            bind:value={p.text}
-            rows="6"
-            aria-label="{p.label} cookies.txt"
-            spellcheck="false"
-          ></textarea>
-
-          {#if p.msg}
-            <div class="msg" class:err={!p.msg.ok}>{p.msg.text}</div>
-          {/if}
-
-          <div class="actions">
-            <button
-              class="btn-save"
-              disabled={p.saving || !p.text.trim()}
-              onclick={() => save(p)}
-            >{p.saving ? 'Saving…' : 'Save'}</button>
-            {#if p.status.present}
-              <button
-                class="btn-del"
-                disabled={p.deleting}
-                onclick={() => del(p)}
-              >{p.deleting ? 'Deleting…' : 'Delete'}</button>
-            {/if}
-          </div>
+    {#each PLATFORMS as p}
+      {@const list = accountsForPlatform(p.id)}
+      {@const u = ui[p.id]}
+      <section class="platform">
+        <div class="plat-head">
+          <svg class="plat-ico"><use href="#{p.icon}"/></svg>
+          <span class="plat-label">{p.label}</span>
+          <button class="btn-add-toggle" onclick={() => { u.adding = !u.adding; u.msg = null }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>
+            Tambah akun
+          </button>
         </div>
-      {/each}
-    </div>
+
+        {#if u.adding}
+          <div class="add-form">
+            <input
+              class="inp"
+              placeholder="Handle / username"
+              bind:value={u.handle}
+              aria-label="Handle"
+            />
+            <input
+              class="inp"
+              placeholder="Label (opsional)"
+              bind:value={u.label}
+              aria-label="Label"
+            />
+            <div class="add-actions">
+              <button class="btn-save" disabled={u.saving || !u.handle.trim()} onclick={() => addAccount(p)}>
+                {u.saving ? 'Menyimpan…' : 'Simpan'}
+              </button>
+              <button class="btn-cancel" onclick={() => { u.adding = false; u.handle = ''; u.label = ''; u.msg = null }}>Batal</button>
+            </div>
+            {#if u.msg}
+              <div class="msg" class:err={!u.msg.ok}>{u.msg.text}</div>
+            {/if}
+          </div>
+        {/if}
+
+        {#if list.length === 0}
+          <div class="empty">Belum ada akun untuk platform ini.</div>
+        {:else}
+          <div class="acct-list">
+            {#each list as acct}
+              {@const cs = cookieState(acct.id)}
+              <div class="acct-card" class:inactive={!acct.active}>
+                <div class="acct-head">
+                  <div class="acct-info">
+                    <span class="acct-handle">@{acct.handle}</span>
+                    {#if acct.label && acct.label !== acct.handle}
+                      <span class="acct-label">{acct.label}</span>
+                    {/if}
+                  </div>
+                  <div class="acct-badges">
+                    {#if acct.has_cookies}
+                      <span class="badge ok">cookies ✓</span>
+                    {:else}
+                      <span class="badge na">no cookies</span>
+                    {/if}
+                    <button
+                      class="badge toggle"
+                      class:active={acct.active}
+                      title={acct.active ? 'Aktif — klik nonaktifkan' : 'Nonaktif — klik aktifkan'}
+                      onclick={() => toggleActive(acct)}
+                    >{acct.active ? 'aktif' : 'nonaktif'}</button>
+                    <button class="btn-icon del" title="Hapus akun" onclick={() => deleteAccount(acct)}>
+                      <svg class="ic"><use href="#i-trash"/></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <textarea
+                  class="paste"
+                  placeholder="Tempel Netscape cookies.txt di sini…"
+                  bind:value={cs.text}
+                  rows="5"
+                  aria-label="Cookies untuk @{acct.handle}"
+                  spellcheck="false"
+                ></textarea>
+
+                {#if cs.msg}
+                  <div class="msg" class:err={!cs.msg.ok}>{cs.msg.text}</div>
+                {/if}
+
+                <div class="acct-actions">
+                  <button
+                    class="btn-save"
+                    disabled={cs.saving || !cs.text.trim()}
+                    onclick={() => saveCookies(acct)}
+                  >{cs.saving ? 'Menyimpan…' : 'Simpan Cookies'}</button>
+                  {#if acct.has_cookies}
+                    <button
+                      class="btn-del"
+                      disabled={cs.deleting}
+                      onclick={() => deleteCookies(acct)}
+                    >{cs.deleting ? 'Menghapus…' : 'Hapus Cookies'}</button>
+                  {/if}
+                </div>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </section>
+    {/each}
   {/if}
 </div>
 
 <style>
-  .ck { padding-bottom: 60px; }
+  .ac { padding-bottom: 60px; }
 
   .top { margin-bottom: 10px; }
   h1   { margin: 0 0 4px; }
@@ -148,39 +232,136 @@
 
   .state-msg { text-align: center; padding: 48px 0; font-size: 13.5px; color: var(--mut); }
 
-  /* ── card grid ─────────────────────────────────────────────────────────── */
-  .cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 16px;
+  /* ── platform section ───────────────────────────────────────────────────── */
+  .platform {
+    margin-bottom: 32px;
   }
 
-  .card {
+  .plat-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .plat-ico {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+
+  .plat-label {
+    font-size: 15px;
+    font-weight: 650;
+    flex: 1;
+  }
+
+  .btn-add-toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-size: 12.5px;
+    color: var(--txt);
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-add-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── add form ───────────────────────────────────────────────────────────── */
+  .add-form {
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 16px;
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .inp {
+    background: var(--panel2, #0e1420);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--txt);
+    font-size: 13.5px;
+    padding: 8px 11px;
+    outline: none;
+    font-family: inherit;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .inp:focus { border-color: var(--accent); }
+
+  .add-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* ── empty state ────────────────────────────────────────────────────────── */
+  .empty {
+    font-size: 13px;
+    color: var(--mut);
+    padding: 10px 2px;
+  }
+
+  /* ── account cards ──────────────────────────────────────────────────────── */
+  .acct-list {
     display: flex;
     flex-direction: column;
     gap: 12px;
   }
 
-  /* ── card header ────────────────────────────────────────────────────────── */
-  .card-head {
+  .acct-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .acct-card.inactive { opacity: 0.55; }
+
+  .acct-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
+    flex-wrap: wrap;
   }
 
-  .plabel {
-    font-size: 15px;
+  .acct-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .acct-handle {
+    font-size: 14.5px;
     font-weight: 650;
   }
 
-  .badge {
+  .acct-label {
     font-size: 12px;
-    padding: 3px 10px;
+    color: var(--mut);
+  }
+
+  .acct-badges {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  /* ── badges ─────────────────────────────────────────────────────────────── */
+  .badge {
+    font-size: 11.5px;
+    padding: 3px 9px;
     border-radius: 999px;
     border: 1px solid transparent;
   }
@@ -194,6 +375,31 @@
     border-color: var(--line);
     color: var(--mut);
   }
+  .badge.toggle {
+    cursor: pointer;
+    font-family: inherit;
+    background: var(--panel2, #0e1420);
+    border-color: var(--line);
+    color: var(--mut);
+  }
+  .badge.toggle.active {
+    background: rgba(99,102,241,.1);
+    border-color: rgba(99,102,241,.35);
+    color: #818cf8;
+  }
+
+  /* ── icon button ────────────────────────────────────────────────────────── */
+  .btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 3px;
+    color: var(--mut);
+    display: flex;
+    align-items: center;
+  }
+  .btn-icon.del:hover { color: #f87171; }
+  .ic { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
   /* ── textarea ───────────────────────────────────────────────────────────── */
   .paste {
@@ -229,7 +435,7 @@
   }
 
   /* ── action buttons ─────────────────────────────────────────────────────── */
-  .actions {
+  .acct-actions {
     display: flex;
     gap: 8px;
   }
@@ -239,12 +445,11 @@
     color: #0b0f17;
     border: none;
     border-radius: 9px;
-    padding: 9px 20px;
-    font-size: 13.5px;
+    padding: 8px 18px;
+    font-size: 13px;
     font-weight: 650;
     cursor: pointer;
     font-family: inherit;
-    flex: 1;
   }
   .btn-save:disabled { opacity: 0.45; cursor: default; }
 
@@ -253,16 +458,26 @@
     border: 1px solid rgba(239,68,68,.35);
     color: #f87171;
     border-radius: 9px;
-    padding: 9px 16px;
-    font-size: 13.5px;
+    padding: 8px 14px;
+    font-size: 13px;
     cursor: pointer;
     font-family: inherit;
   }
   .btn-del:hover:not(:disabled) { border-color: #f87171; }
   .btn-del:disabled { opacity: 0.45; cursor: default; }
 
-  /* ── responsive ─────────────────────────────────────────────────────────── */
+  .btn-cancel {
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 8px 14px;
+    font-size: 13px;
+    color: var(--mut);
+    cursor: pointer;
+    font-family: inherit;
+  }
+
   @media (max-width: 600px) {
-    .cards { grid-template-columns: 1fr; }
+    .acct-head { flex-direction: column; align-items: flex-start; }
   }
 </style>

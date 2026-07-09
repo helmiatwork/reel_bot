@@ -89,6 +89,14 @@ export const api = {
   saveCookies: (platform, content) => postJSON('/cookies/' + platform, { content }),
   deleteCookies: (platform) => delJSON('/cookies/' + platform),
 
+  // Accounts
+  accounts: (platform) => getJSON('/accounts' + (platform ? '?platform=' + platform : '')),
+  accountCreate: (body) => postJSON('/accounts', body),
+  accountUpdate: (id, body) => patchJSON(`/accounts/${id}`, body),
+  accountDelete: (id) => delJSON(`/accounts/${id}`),
+  accountSaveCookies: (id, content) => postJSON(`/accounts/${id}/cookies`, { content }),
+  accountDeleteCookies: (id) => delJSON(`/accounts/${id}/cookies`),
+
   generateScript: (topic, niche = '', top_n = 5) => postJSON('/generate/script', { topic, niche, top_n }),
   discoverCorpus: (niche, count = 5) => postJSON('/discover/corpus', { niche, count }),
   discoverCorpusStatus: (run_id) => getJSON('/discover/corpus/status/' + run_id),
