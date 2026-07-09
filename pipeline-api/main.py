@@ -51,6 +51,10 @@ def startup_event():
         _schedule_init_db()
     except Exception as e:
         print(f"[startup] schedule db init failed (non-fatal): {e}")
+    try:
+        _performance_init_db()
+    except Exception as e:
+        print(f"[startup] performance db init failed (non-fatal): {e}")
 
 # ── SSRF guard: blocked networks (module-level constant) ────────────────────
 # Extra ranges beyond ipaddress.ip_address check (0.0.0.0/8, CGNAT, etc)
@@ -5778,3 +5782,234 @@ def schedule_corpus():
     except Exception as exc:
         print(f"[schedule/corpus] query failed: {exc}")
         return _json([])
+
+
+# ── Performance Tracking ────────────────────────────────────────────────────────
+
+def _performance_init_db():
+    """Create performance_snapshots table + index. Non-fatal on error."""
+    conn = _db_conn()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS performance_snapshots (
+                    id          BIGSERIAL PRIMARY KEY,
+                    post_id     BIGINT,
+                    platform    TEXT NOT NULL,
+                    url         TEXT NOT NULL,
+                    title       TEXT,
+                    views       BIGINT,
+                    captured_at TIMESTAMPTZ DEFAULT now()
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_perf_snapshots_url_date
+                    ON performance_snapshots (url, (captured_at::date));
+                CREATE INDEX IF NOT EXISTS idx_perf_snapshots_platform_date
+                    ON performance_snapshots (platform, captured_at)
+            """)
+        conn.commit()
+    except Exception as e:
+        print(f"[performance] init db error: {e}")
+    finally:
+        conn.close()
+
+
+def _build_performance_view(rows: list) -> dict:
+    """Pure aggregation: snapshot rows → {series, totals, videos}.
+
+    Each row must be a dict with keys: platform, url, title, views, captured_at
+    (captured_at may be a date/datetime or ISO string 'YYYY-MM-DD...' or 'YYYY-MM-DD').
+
+    series  — per-platform daily points (sum of latest-known views per video that day)
+    totals  — per-platform {total_views, video_count} using most-recent snapshot per url
+    videos  — flat list per (platform, url): latest_views, first_seen, last_seen
+    """
+    import datetime as _dt
+
+    def _to_date(v):
+        if isinstance(v, _dt.datetime):
+            return v.date()
+        if isinstance(v, _dt.date):
+            return v
+        if isinstance(v, str):
+            return _dt.date.fromisoformat(v[:10])
+        return None
+
+    # One-pass title lookup: avoids O(N×M) scan in the videos loop below
+    title_by_url = {r["url"]: r["title"] for r in rows if r.get("url") and r.get("title")}
+
+    # Group by (platform, url) → {date → max views that day}
+    # Structure: snap_by_url[platform][url][date] = views
+    snap_by_url: dict = {}
+    for r in rows:
+        platform = r.get("platform") or ""
+        url = r.get("url") or ""
+        views = r.get("views")
+        captured_date = _to_date(r.get("captured_at"))
+        if not platform or not url or views is None or captured_date is None:
+            continue
+        views = int(views)
+        snap_by_url.setdefault(platform, {}).setdefault(url, {})
+        existing = snap_by_url[platform][url].get(captured_date, -1)
+        if views > existing:
+            snap_by_url[platform][url][captured_date] = views
+
+    # Build output structures
+    series = []
+    totals = []
+    videos = []
+
+    for platform, url_map in sorted(snap_by_url.items()):
+        # Latest snapshot per url
+        latest_views_by_url = {}
+        for url, date_map in url_map.items():
+            if date_map:
+                latest_date = max(date_map)
+                latest_views_by_url[url] = (latest_date, date_map[latest_date])
+
+        # totals row
+        total_views = sum(v for _, v in latest_views_by_url.values())
+        totals.append({
+            "platform": platform,
+            "total_views": total_views,
+            "video_count": len(url_map),
+        })
+
+        # videos list
+        for url, date_map in url_map.items():
+            if not date_map:
+                continue
+            first_seen = min(date_map).isoformat()
+            last_seen = max(date_map).isoformat()
+            _, lv = latest_views_by_url.get(url, (None, 0))
+            title = title_by_url.get(url)
+            videos.append({
+                "platform": platform,
+                "url": url,
+                "title": title or url,
+                "latest_views": lv,
+                "first_seen": first_seen,
+                "last_seen": last_seen,
+            })
+
+        # series: per day, sum of latest-known views across all urls on that day
+        # "latest-known" = for each url, the most recent snapshot up to (and including) that day
+        all_dates = sorted({d for date_map in url_map.values() for d in date_map})
+        points = []
+        for day in all_dates:
+            day_total = 0
+            for url, date_map in url_map.items():
+                known_dates = [d for d in date_map if d <= day]
+                if known_dates:
+                    day_total += date_map[max(known_dates)]
+            points.append({"date": day.isoformat(), "views": day_total})
+        series.append({"platform": platform, "points": points})
+
+    return {"series": series, "totals": totals, "videos": videos}
+
+
+def _collect_performance_snapshots() -> dict:
+    """Fetch current view counts for all posted videos and upsert snapshots.
+
+    Reads scheduled_posts.platform_urls, runs yt-dlp per url, stores results.
+    Never raises — per-url errors are collected and returned in the summary.
+    """
+    result = {"checked": 0, "saved": 0, "skipped": 0, "errors": []}
+
+    conn = _db_conn()
+    if conn is None:
+        result["errors"].append("no database connection")
+        return result
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, platform_urls FROM scheduled_posts")
+            posts = cur.fetchall()
+    except Exception as e:
+        result["errors"].append(f"query scheduled_posts: {e}")
+        conn.close()
+        return result
+
+    # Collect (post_id, platform, url) triples
+    tasks = []
+    for row in posts:
+        post_id = row[0]
+        pu_raw = row[1] or "{}"
+        try:
+            pu = json.loads(pu_raw) if isinstance(pu_raw, str) else pu_raw
+        except Exception:
+            pu = {}
+        for platform, url in (pu or {}).items():
+            if url and isinstance(url, str) and url.startswith("http"):
+                tasks.append((post_id, platform.lower(), url))
+
+    for post_id, platform, url in tasks:
+        result["checked"] += 1
+        try:
+            ytdlp_args = _ytdlp_source_args(force_player_client=True, platform=platform)
+            cmd = (
+                ["yt-dlp", "--no-warnings", "--print", "%(view_count)s|||%(title)s"]
+                + ytdlp_args
+                + [url]
+            )
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            line = (proc.stdout or "").strip().splitlines()[0] if proc.stdout else ""
+            if "|||" not in line:
+                result["skipped"] += 1
+                result["errors"].append(f"no output for {url}: {proc.stderr[:120]}")
+                continue
+            views_str, title = line.split("|||", 1)
+            views_str = views_str.strip()
+            if not views_str or views_str in ("None", "NA"):
+                # xiaohongshu or platform that doesn't expose view_count
+                result["skipped"] += 1
+                continue
+            views = int(views_str)
+            title = title.strip()[:255]
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO performance_snapshots (post_id, platform, url, title, views)
+                    VALUES (%s, %s, %s, %s, %s)
+                    ON CONFLICT (url, (captured_at::date)) DO UPDATE
+                        SET views = EXCLUDED.views,
+                            title = EXCLUDED.title
+                """, (post_id, platform, url, title, views))
+                conn.commit()
+            result["saved"] += 1
+        except Exception as e:
+            result["skipped"] += 1
+            result["errors"].append(f"{url}: {type(e).__name__}: {str(e)[:120]}")
+
+    conn.close()
+    return result
+
+
+@app.post("/performance/refresh")
+def performance_refresh():
+    """Collect current view snapshots for all posted videos."""
+    # ponytail: synchronous — few videos, slow yt-dlp calls; add BackgroundTasks if latency matters
+    return _json(_collect_performance_snapshots())
+
+
+@app.get("/performance")
+def performance_get():
+    """Return per-platform growth series, totals, and video list."""
+    conn = _db_conn()
+    if conn is None:
+        return _json({"series": [], "totals": [], "videos": []})
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT platform, url, title, views, captured_at
+                FROM performance_snapshots
+                ORDER BY captured_at
+            """)
+            cols = [c.name for c in cur.description]
+            rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+        return _json(_build_performance_view(rows))
+    except Exception as exc:
+        print(f"[performance] query failed: {exc}")
+        return _json({"series": [], "totals": [], "videos": []})
+    finally:
+        conn.close()
