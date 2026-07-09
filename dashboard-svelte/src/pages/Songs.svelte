@@ -153,11 +153,11 @@
 <!-- ── Import panel ────────────────────────────────────────────────────────── -->
 {#if showImport}
 <div class="card" style="margin-bottom:1rem">
-  <div style="font-weight:600;margin-bottom:0.75rem">Import file audio</div>
+  <div style="font-weight:600;margin-bottom:0.75rem">Import file audio atau video</div>
 
   <div class="form-row">
-    <label>File (mp3 / wav / m4a / aac / ogg, maks 30 MB)</label>
-    <input type="file" accept=".mp3,.wav,.m4a,.aac,.ogg"
+    <label>File audio (mp3 / wav / m4a / aac / ogg, maks 30 MB) atau video (mp4 / mov / webm / mkv / m4v, maks 200 MB)</label>
+    <input type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,video/*,.mp4,.mov,.webm,.mkv,.m4v"
       onchange={e => importFile = e.target.files?.[0] ?? null} />
   </div>
 
