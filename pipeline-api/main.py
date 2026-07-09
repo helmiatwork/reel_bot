@@ -1,6 +1,7 @@
 # pipeline-api/main.py
 # FastAPI service exposing all pipeline gaps as REST endpoints
 
+import io
 import os, sys, json, uuid
 import functools
 import socket
@@ -9,12 +10,13 @@ import shutil
 import subprocess
 import tempfile
 import time
+import zipfile
 
 import asyncio
 from pathlib import Path
 from urllib.parse import urlparse
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Header, Depends, UploadFile, Form, File
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional, List
@@ -59,6 +61,10 @@ def startup_event():
         _accounts_init_db()
     except Exception as e:
         print(f"[startup] accounts db init failed (non-fatal): {e}")
+    try:
+        _prep_bundles_init_db()
+    except Exception as e:
+        print(f"[startup] prep_bundles db init failed (non-fatal): {e}")
 
 # ── SSRF guard: blocked networks (module-level constant) ────────────────────
 # Extra ranges beyond ipaddress.ip_address check (0.0.0.0/8, CGNAT, etc)
@@ -6881,3 +6887,665 @@ def seo_analyze(req: SeoAnalyzeRequest):
         "trends": trends,
         "suggestions": suggestions,
     })
+
+
+# ── Prep Bundle ────────────────────────────────────────────────────────────────
+# Aggregates all assets needed to finish a Short in CapCut:
+# HD source, clip segments, BGM, transcript, strategy, SEO, roughcut, ZIP.
+
+
+def _prep_bundles_init_db():
+    """Initialize prep_bundles table at startup (non-fatal on failure)."""
+    conn = _db_conn()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""CREATE TABLE IF NOT EXISTS prep_bundles (
+                source_id       BIGINT PRIMARY KEY,
+                bgm_song_id     BIGINT,
+                roughcut_path   TEXT,
+                roughcut_status TEXT DEFAULT 'none',
+                updated_at      TIMESTAMPTZ DEFAULT now()
+            )""")
+        conn.commit()
+    except Exception as e:
+        print(f"[prep_bundles] init db error: {e}")
+    finally:
+        conn.close()
+
+
+# ── Prep helpers (private) ─────────────────────────────────────────────────────
+
+def _prep_source_hd_path(youtube_url: str):
+    """Return Path to downloaded HD source, or None if not present."""
+    try:
+        video_id = _extract_video_id_from_youtube_url(youtube_url)
+        p = _REPO_ROOT / "data" / "videos" / video_id / "source.mp4"
+        return p if p.exists() else None
+    except Exception:
+        return None
+
+
+def _prep_ffprobe_info(path) -> dict:
+    """Best-effort: get width/height/duration via ffprobe. Returns {} on any error."""
+    try:
+        proc = subprocess.run(
+            ["ffprobe", "-v", "quiet", "-print_format", "json",
+             "-show_streams", "-select_streams", "v:0", str(path)],
+            capture_output=True, text=True, timeout=10,
+        )
+        if proc.returncode != 0:
+            return {}
+        data = json.loads(proc.stdout)
+        streams = data.get("streams", [])
+        if not streams:
+            return {}
+        s = streams[0]
+        result = {}
+        w, h = s.get("width"), s.get("height")
+        if w and h:
+            result["resolution"] = f"{w}x{h}"
+        dur = s.get("duration")
+        if dur:
+            try:
+                result["duration_sec"] = round(float(dur), 2)
+            except Exception:
+                pass
+        return result
+    except Exception:
+        return {}
+
+
+def _prep_get_analysis(source_id: int, conn) -> dict:
+    """Query analysis data using an existing connection. Never raises."""
+    _empty = {"hook": "", "structure": "", "retention": "", "retention_score": None,
+               "summary": "", "detail": "", "tags": []}
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT va.hook, va.structure, va.retention, va.retention_score,
+                       va.content_summary, va.content_detail, va.tags
+                FROM sources s
+                LEFT JOIN video_analysis va ON s.youtube_url = va.youtube_url
+                WHERE s.id = %s
+                ORDER BY va.created_at DESC NULLS LAST
+                LIMIT 1
+            """, (source_id,))
+            row = cur.fetchone()
+        if not row or all(v is None for v in row):
+            return _empty
+        hook, structure, retention, retention_score, summary, detail, tags = row
+        parsed_tags = []
+        if tags is not None:
+            if isinstance(tags, list):
+                parsed_tags = tags
+            elif isinstance(tags, str):
+                try:
+                    parsed_tags = json.loads(tags)
+                    if not isinstance(parsed_tags, list):
+                        parsed_tags = []
+                except Exception:
+                    parsed_tags = []
+        return {
+            "hook": hook or "", "structure": structure or "",
+            "retention": retention or "", "retention_score": retention_score,
+            "summary": summary or "", "detail": detail or "", "tags": parsed_tags,
+        }
+    except Exception:
+        return _empty
+
+
+def _prep_get_segments(source_id: int, conn) -> list:
+    """Query segments using an existing connection. Never raises."""
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT clip_index, start_sec, end_sec, credit_handle,
+                       original_url, origin_status, confidence, segment_path
+                FROM video_segments
+                WHERE source_id = %s
+                ORDER BY clip_index ASC
+            """, (source_id,))
+            rows = cur.fetchall()
+        return [
+            {
+                "clip_index": r[0],
+                "start_sec": float(r[1]) if r[1] is not None else None,
+                "end_sec":   float(r[2]) if r[2] is not None else None,
+                "credit_handle": r[3], "original_url": r[4],
+                "origin_status": r[5],
+                "confidence": float(r[6]) if r[6] is not None else None,
+                "segment_path": r[7],
+            }
+            for r in rows
+        ]
+    except Exception:
+        return []
+
+
+def _prep_get_bundle_row(source_id: int, conn) -> dict:
+    """Get prep_bundles row for source_id. Returns {} if absent."""
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT bgm_song_id, roughcut_path, roughcut_status
+                FROM prep_bundles WHERE source_id = %s
+            """, (source_id,))
+            row = cur.fetchone()
+        if not row:
+            return {}
+        return {
+            "bgm_song_id": row[0],
+            "roughcut_path": row[1],
+            "roughcut_status": row[2] or "none",
+        }
+    except Exception:
+        return {}
+
+
+def _prep_get_song(song_id: int, conn) -> dict:
+    """Fetch song metadata for the BGM field. Returns None if not found."""
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, title, audio_path, bpm, music_key FROM songs WHERE id = %s",
+                (song_id,)
+            )
+            row = cur.fetchone()
+        if not row:
+            return None
+        return {
+            "song_id": row[0],
+            "title": row[1] or "",
+            "url": f"/songs/{row[0]}/download",
+            "bpm": float(row[3]) if row[3] is not None else None,
+            "music_key": row[4],
+            # audio_path kept for zip logic (not exposed in bundle JSON)
+            "_audio_path": row[2],
+        }
+    except Exception:
+        return None
+
+
+def _prep_build_transcript(segments: list, analysis: dict) -> str:
+    """Best-available transcript: analysis detail, else summary."""
+    # ponytail: no per-segment transcript field in video_segments; fall back to analysis text
+    return analysis.get("detail") or analysis.get("summary") or ""
+
+
+def _prep_build_strategy_md(title: str, analysis: dict) -> str:
+    """Build a markdown strategy doc from analysis data."""
+    parts = [f"# Strategy: {title or 'Untitled'}"]
+    for field, label in [("hook", "Hook"), ("structure", "Structure"), ("retention", "Retention")]:
+        val = analysis.get(field, "")
+        if val:
+            parts.append(f"\n## {label}\n{val}")
+    score = analysis.get("retention_score")
+    if score is not None:
+        parts.append(f"\n## Retention Score\n{score}/10")
+    return "\n".join(parts)
+
+
+def _prep_seo(title: str, platform: str) -> dict:
+    """Best-effort SEO pack using source title as topic. Returns empty dict on failure."""
+    _empty = {"titles": [], "hashtags": [], "description": ""}
+    if not title:
+        return _empty
+    try:
+        kws = _seo_autocomplete(title, platform)
+        kw_dicts = [{"term": t, "source": "autocomplete"} for t in kws[:10]]
+        synth = _seo_synthesize(title, kw_dicts, {}, platform)
+        return {
+            "titles": synth.get("titles", []),
+            "hashtags": synth.get("hashtags", []),
+            "description": synth.get("description", ""),
+        }
+    except Exception:
+        return _empty
+
+
+def _prep_set_roughcut_status(source_id: int, status: str, path):
+    """Upsert roughcut_status + path in prep_bundles (opens its own connection)."""
+    conn = _db_conn()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO prep_bundles (source_id, roughcut_status, roughcut_path, updated_at)
+                VALUES (%s, %s, %s, now())
+                ON CONFLICT (source_id) DO UPDATE
+                SET roughcut_status = EXCLUDED.roughcut_status,
+                    roughcut_path   = EXCLUDED.roughcut_path,
+                    updated_at      = now()
+            """, (source_id, status, path))
+        conn.commit()
+    except Exception as e:
+        print(f"[prep_set_roughcut_status] error: {e}")
+    finally:
+        conn.close()
+
+
+def _prep_build_roughcut(segments: list, hd_path, bgm_path, out_path):
+    """
+    Concat clip segments into a 9:16 draft MP4 via ffmpeg.
+    // ponytail: naive concat + scale/pad, not an EDL; frame-precise cuts stay in CapCut.
+    Falls back to the whole HD source when no segments exist.
+    Raises RuntimeError on any failure.
+    """
+    seg_paths = [
+        s["segment_path"] for s in segments
+        if s.get("segment_path") and Path(str(s["segment_path"])).exists()
+    ]
+    if not seg_paths and hd_path and Path(str(hd_path)).exists():
+        seg_paths = [str(hd_path)]
+    if not seg_paths:
+        raise RuntimeError("no video sources available for roughcut")
+
+    n = len(seg_paths)
+    inputs = []
+    for p in seg_paths:
+        inputs.extend(["-i", str(p)])
+
+    use_bgm = bool(bgm_path and Path(str(bgm_path)).exists())
+    if use_bgm:
+        inputs.extend(["-i", str(bgm_path)])
+
+    # Build filter_complex: scale/pad each clip to 1080x1920, then concat
+    fc_parts = []
+    for i in range(n):
+        fc_parts.append(
+            f"[{i}:v]scale=1080:1920:force_original_aspect_ratio=decrease,"
+            f"pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1[v{i}]"
+        )
+    concat_v = "".join(f"[v{i}]" for i in range(n))
+    concat_a = "".join(f"[{i}:a]" for i in range(n))
+    fc_parts.append(f"{concat_v}{concat_a}concat=n={n}:v=1:a=1[vout][aout]")
+
+    if use_bgm:
+        fc_parts.append(f"[{n}:a]volume=0.3[bgm]")
+        fc_parts.append("[aout][bgm]amix=inputs=2:duration=first[afinal]")
+        map_audio = "[afinal]"
+    else:
+        map_audio = "[aout]"
+
+    filter_complex = ";".join(fc_parts)
+
+    cmd = [
+        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+        *inputs,
+        "-filter_complex", filter_complex,
+        "-map", "[vout]", "-map", map_audio,
+        "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+        "-c:a", "aac", "-b:a", "128k",
+        "-movflags", "+faststart",
+        str(out_path),
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+    if proc.returncode != 0:
+        raise RuntimeError(f"ffmpeg roughcut failed: {proc.stderr[:300]}")
+
+
+# ── Prep endpoints ─────────────────────────────────────────────────────────────
+
+@app.get("/prep/list")
+def prep_list():
+    """
+    List sources available for production prep, newest first.
+    Never 500 — returns empty list on any error.
+    """
+    conn = _db_conn()
+    if not conn:
+        return _json([])
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT id, title, platform, youtube_url, created_at
+                FROM sources
+                ORDER BY created_at DESC
+                LIMIT 100
+            """)
+            rows = cur.fetchall()
+        return _json([
+            {
+                "source_id": r[0],
+                "title": r[1] or "",
+                "platform": r[2] or "youtube",
+                "thumb_url": None,  # ponytail: no thumb endpoint yet
+                "created_at": str(r[4]) if r[4] else None,
+            }
+            for r in rows
+        ])
+    except Exception as e:
+        print(f"[prep_list] error: {e}")
+        return _json([])
+    finally:
+        conn.close()
+
+
+@app.get("/prep/{source_id}/source-hd")
+def prep_source_hd_download(source_id: int):
+    """Serve the HD source video."""
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT youtube_url FROM sources WHERE id = %s", (source_id,))
+            row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="source not found")
+        youtube_url = row[0]
+    finally:
+        conn.close()
+
+    hd_path = _prep_source_hd_path(youtube_url) if youtube_url else None
+    if not hd_path:
+        raise HTTPException(status_code=404, detail="HD source not downloaded yet; run /decompose first")
+    return FileResponse(str(hd_path), media_type="video/mp4", filename=f"source_{source_id}.mp4")
+
+
+@app.get("/prep/{source_id}/clip/{clip_index}")
+def prep_clip_download(source_id: int, clip_index: int):
+    """Serve a clip segment file."""
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT segment_path FROM video_segments
+                WHERE source_id = %s AND clip_index = %s
+            """, (source_id, clip_index))
+            row = cur.fetchone()
+    finally:
+        conn.close()
+
+    if not row or not row[0]:
+        raise HTTPException(status_code=404, detail="clip not found")
+
+    seg_path = Path(row[0]).resolve()
+    base_dir = (_REPO_ROOT / "data" / "segments").resolve()
+    if not str(seg_path).startswith(str(base_dir) + os.sep):
+        raise HTTPException(status_code=403, detail="path traversal rejected")
+    if not seg_path.exists():
+        raise HTTPException(status_code=404, detail="clip file not found on disk")
+
+    return FileResponse(str(seg_path), media_type="video/mp4", filename=f"clip_{clip_index:02d}.mp4")
+
+
+@app.get("/prep/{source_id}/roughcut/download")
+def prep_roughcut_download(source_id: int):
+    """Serve the roughcut video when ready."""
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT roughcut_path, roughcut_status FROM prep_bundles WHERE source_id = %s
+            """, (source_id,))
+            row = cur.fetchone()
+    finally:
+        conn.close()
+
+    if not row or row[1] != "ready" or not row[0]:
+        raise HTTPException(status_code=404, detail="roughcut not ready")
+
+    rc_path = Path(row[0]).resolve()
+    base_dir = (_REPO_ROOT / "data" / "prep").resolve()
+    if not str(rc_path).startswith(str(base_dir) + os.sep):
+        raise HTTPException(status_code=403, detail="path traversal rejected")
+    if not rc_path.exists():
+        raise HTTPException(status_code=404, detail="roughcut file not found")
+
+    return FileResponse(str(rc_path), media_type="video/mp4",
+                        filename=f"roughcut_{source_id}_9x16.mp4")
+
+
+@app.get("/prep/{source_id}")
+def prep_get(source_id: int):
+    """
+    Aggregate all production-prep assets for one source.
+    Never 500 — uses null/empty for anything missing.
+    """
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=503, detail="database unavailable")
+
+    try:
+        # Source row
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT title, platform, youtube_url FROM sources WHERE id = %s",
+                (source_id,)
+            )
+            row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="source not found")
+        title, platform, youtube_url = row
+
+        analysis = _prep_get_analysis(source_id, conn)
+        segments = _prep_get_segments(source_id, conn)
+        bundle   = _prep_get_bundle_row(source_id, conn)
+        bgm_song_id    = bundle.get("bgm_song_id")
+        roughcut_path  = bundle.get("roughcut_path")
+        roughcut_status = bundle.get("roughcut_status", "none")
+
+        bgm = _prep_get_song(bgm_song_id, conn) if bgm_song_id else None
+    finally:
+        conn.close()
+
+    # HD source (may not be downloaded yet)
+    hd_path = _prep_source_hd_path(youtube_url) if youtube_url else None
+    if hd_path:
+        probe = _prep_ffprobe_info(hd_path)
+        source_hd = {
+            "url": f"/prep/{source_id}/source-hd",
+            "size_bytes": hd_path.stat().st_size,
+            "resolution": probe.get("resolution"),
+        }
+        duration_sec = probe.get("duration_sec")
+    else:
+        source_hd = None
+        duration_sec = None
+
+    # Clips
+    clips = []
+    for seg in segments:
+        idx = seg["clip_index"]
+        clips.append({
+            "index": idx,
+            "start": seg.get("start_sec"),
+            "end":   seg.get("end_sec"),
+            "label": "clip",
+            "url":   f"/prep/{source_id}/clip/{idx}" if seg.get("segment_path") else None,
+        })
+
+    # Strip internal key before returning bgm
+    bgm_out = None
+    if bgm:
+        bgm_out = {k: v for k, v in bgm.items() if not k.startswith("_")}
+
+    roughcut_url = (
+        f"/prep/{source_id}/roughcut/download" if roughcut_status == "ready" else None
+    )
+
+    return _json({
+        "source_id":  source_id,
+        "title":      title or "",
+        "platform":   platform or "youtube",
+        "preview":    {"video_url": f"/prep/{source_id}/source-hd" if hd_path else None,
+                       "duration_sec": duration_sec},
+        "source_hd":  source_hd,
+        "clips":      clips,
+        "transcript": _prep_build_transcript(segments, analysis),
+        "strategy":   {
+            "hook": analysis.get("hook", ""),
+            "structure": analysis.get("structure", ""),
+            "retention": analysis.get("retention", ""),
+            "retention_score": analysis.get("retention_score"),
+        },
+        "seo":        _prep_seo(title or "", platform or "youtube"),
+        "bgm":        bgm_out,
+        "roughcut":   {"status": roughcut_status, "url": roughcut_url},
+    })
+
+
+class PrepBundleUpdate(BaseModel):
+    bgm_song_id: Optional[int] = None
+
+
+@app.patch("/prep/{source_id}")
+def prep_patch(source_id: int, req: PrepBundleUpdate):
+    """Set/clear BGM for a prep bundle. Upserts prep_bundles row."""
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id FROM sources WHERE id = %s", (source_id,))
+            if not cur.fetchone():
+                raise HTTPException(status_code=404, detail="source not found")
+            cur.execute("""
+                INSERT INTO prep_bundles (source_id, bgm_song_id, updated_at)
+                VALUES (%s, %s, now())
+                ON CONFLICT (source_id) DO UPDATE
+                SET bgm_song_id = EXCLUDED.bgm_song_id,
+                    updated_at  = now()
+            """, (source_id, req.bgm_song_id))
+        conn.commit()
+        return _json({"ok": True, "source_id": source_id, "bgm_song_id": req.bgm_song_id})
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[prep_patch] error for source_id {source_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+
+
+@app.post("/prep/{source_id}/roughcut")
+def prep_roughcut_start(source_id: int, bg: BackgroundTasks):
+    """
+    Kick off a background rough-cut build for this source.
+    Returns {status: 'building', url: null} immediately.
+    // ponytail: naive concat, not EDL; frame-precise cutting stays in CapCut.
+    """
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT youtube_url FROM sources WHERE id = %s", (source_id,))
+            row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="source not found")
+        youtube_url = row[0]
+
+        segments = _prep_get_segments(source_id, conn)
+        bundle   = _prep_get_bundle_row(source_id, conn)
+        bgm_song_id = bundle.get("bgm_song_id")
+        bgm_path = None
+        if bgm_song_id:
+            with conn.cursor() as cur:
+                cur.execute("SELECT audio_path FROM songs WHERE id = %s", (bgm_song_id,))
+                sr = cur.fetchone()
+            if sr and sr[0]:
+                bgm_path = sr[0]
+    finally:
+        conn.close()
+
+    hd_path = _prep_source_hd_path(youtube_url) if youtube_url else None
+
+    out_dir = _REPO_ROOT / "data" / "prep" / str(source_id)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "roughcut_9x16.mp4"
+
+    _prep_set_roughcut_status(source_id, "building", None)
+
+    def _job():
+        try:
+            _prep_build_roughcut(segments, hd_path, bgm_path, out_path)
+            _prep_set_roughcut_status(source_id, "ready", str(out_path.absolute()))
+        except Exception as exc:
+            print(f"[prep_roughcut] job failed for source_id {source_id}: {exc}")
+            _prep_set_roughcut_status(source_id, "none", None)
+
+    bg.add_task(_job)
+    return _json({"status": "building", "url": None})
+
+
+@app.get("/prep/{source_id}/zip")
+def prep_zip(source_id: int):
+    """
+    Stream a ZIP of all available prep assets:
+    source_hd.mp4, clip files, BGM audio, transcript.txt, strategy.md, seo.json,
+    and roughcut_9x16.mp4 if built. 404 when source not found.
+    """
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT title, platform, youtube_url FROM sources WHERE id = %s",
+                (source_id,)
+            )
+            row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="source not found")
+        title, platform, youtube_url = row
+
+        segments = _prep_get_segments(source_id, conn)
+        analysis = _prep_get_analysis(source_id, conn)
+        bundle   = _prep_get_bundle_row(source_id, conn)
+        bgm_song_id    = bundle.get("bgm_song_id")
+        roughcut_path  = bundle.get("roughcut_path")
+        roughcut_status = bundle.get("roughcut_status", "none")
+
+        bgm_audio_path = None
+        if bgm_song_id:
+            with conn.cursor() as cur:
+                cur.execute("SELECT audio_path FROM songs WHERE id = %s", (bgm_song_id,))
+                sr = cur.fetchone()
+            if sr and sr[0]:
+                bgm_audio_path = sr[0]
+    finally:
+        conn.close()
+
+    hd_path = _prep_source_hd_path(youtube_url) if youtube_url else None
+    transcript = _prep_build_transcript(segments, analysis)
+    strategy_md = _prep_build_strategy_md(title or "", analysis)
+    seo = _prep_seo(title or "", platform or "youtube")
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        if hd_path and hd_path.exists():
+            zf.write(str(hd_path), "source_hd.mp4")
+        for seg in segments:
+            sp = seg.get("segment_path")
+            if sp:
+                sp_path = Path(sp)
+                if sp_path.exists():
+                    zf.write(str(sp_path), f"clips/clip_{seg['clip_index']:02d}.mp4")
+        if bgm_audio_path:
+            bgm_p = Path(bgm_audio_path)
+            if bgm_p.exists():
+                zf.write(str(bgm_p), f"bgm{bgm_p.suffix}")
+        if roughcut_status == "ready" and roughcut_path:
+            rc_p = Path(roughcut_path)
+            if rc_p.exists():
+                zf.write(str(rc_p), "roughcut_9x16.mp4")
+        # Generated text files — always include
+        zf.writestr("transcript.txt", transcript)
+        zf.writestr("strategy.md", strategy_md)
+        zf.writestr("seo.json", json.dumps(seo, indent=2, ensure_ascii=False))
+
+    buf.seek(0)
+    return StreamingResponse(
+        iter([buf.read()]),
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename=prep_{source_id}.zip"},
+    )
