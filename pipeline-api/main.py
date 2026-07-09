@@ -5498,7 +5498,7 @@ def _schedule_init_db():
                     id           BIGSERIAL PRIMARY KEY,
                     content_ref  TEXT,
                     title        TEXT,
-                    platforms    TEXT,
+                    platforms    TEXT,           -- CSV, format: 'youtube,tiktok' (no spaces, lowercase)
                     scheduled_at TIMESTAMPTZ,
                     caption      TEXT,
                     thumb_url    TEXT,
@@ -5668,6 +5668,8 @@ def schedule_update(item_id: int, body: ScheduleUpdate):
                 existing = cur.fetchone()
                 if not existing:
                     raise HTTPException(status_code=404, detail="Not found")
+                # `or "{}"` covers both NULL and "" (empty string is falsy) so
+                # json.loads always receives valid JSON or the "{}" fallback.
                 current_pu_raw = existing[0] or "{}"
                 try:
                     current_pu = json.loads(current_pu_raw) if isinstance(current_pu_raw, str) else (current_pu_raw or {})

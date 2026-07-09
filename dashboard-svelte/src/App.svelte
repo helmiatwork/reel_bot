@@ -58,7 +58,7 @@
     ]}
   ]
 
-  // Sample notifications (static for shell demo)
+  // Sample notifications (static for shell demo — wire to real endpoint when multi-user)
   const NOTIFS = [
     { id: 1, msg: 'Corpus discovery selesai — 5 video baru', time: '2 mnt lalu', read: false },
     { id: 2, msg: 'Jadwal post "Carp salt crust" jatuh tempo', time: '18 mnt lalu', read: false },
