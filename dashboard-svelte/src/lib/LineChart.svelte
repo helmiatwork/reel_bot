@@ -14,18 +14,22 @@
     const ds = $state.snapshot(datasets)
     if (!canvas) return
     if (chart) chart.destroy()
+    // Read CSS vars at chart creation time so both light and dark themes render correctly
+    const style = getComputedStyle(document.documentElement)
+    const gridColor = style.getPropertyValue('--line').trim() || '#1f2937'
+    const mutColor  = style.getPropertyValue('--mut').trim()  || '#878a99'
     chart = new Chart(canvas, {
       type: 'line',
       data: { labels: lbl, datasets: ds },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#8b97ab', boxWidth: 12, font: { size: 11 } } } },
+        plugins: { legend: { labels: { color: mutColor, boxWidth: 12, font: { size: 11 } } } },
         scales: {
-          x: { ticks: { color: '#8b97ab', font: { size: 11 } }, grid: { color: '#1f2937' } },
+          x: { ticks: { color: mutColor, font: { size: 11 } }, grid: { color: gridColor } },
           y: {
-            ticks: { color: '#8b97ab', font: { size: 11 }, callback: (v) => (v / 1e6).toFixed(1) + 'jt' },
-            grid: { color: '#1f2937' }
+            ticks: { color: mutColor, font: { size: 11 }, callback: (v) => (v / 1e6).toFixed(1) + 'jt' },
+            grid: { color: gridColor }
           }
         }
       }
