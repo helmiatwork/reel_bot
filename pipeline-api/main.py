@@ -6345,7 +6345,7 @@ def performance_get():
                 for aid, handle, label in cur.fetchall():
                     accounts_lookup[aid] = {"handle": handle, "label": label}
             except Exception:
-                pass  # accounts table may not exist in older deploys
+                conn.rollback()  # reset aborted txn so the main query below can still run
 
             cur.execute("""
                 SELECT platform, url, title, views, captured_at, account_id
