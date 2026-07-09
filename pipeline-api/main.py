@@ -5788,7 +5788,10 @@ def schedule_corpus():
 
 def _performance_init_db():
     """Create performance_snapshots table + index. Non-fatal on error."""
-    with _db_conn() as conn:
+    conn = _db_conn()
+    if not conn:
+        return
+    try:
         with conn.cursor() as cur:
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS performance_snapshots (
@@ -5804,7 +5807,11 @@ def _performance_init_db():
                 CREATE INDEX IF NOT EXISTS idx_perf_snapshots_platform_date
                     ON performance_snapshots (platform, captured_at)
             """)
-            conn.commit()
+        conn.commit()
+    except Exception as e:
+        print(f"[performance] init db error: {e}")
+    finally:
+        conn.close()
 
 
 def _build_performance_view(rows: list) -> dict:
@@ -5827,6 +5834,9 @@ def _build_performance_view(rows: list) -> dict:
         if isinstance(v, str):
             return _dt.date.fromisoformat(v[:10])
         return None
+
+    # One-pass title lookup: avoids O(N×M) scan in the videos loop below
+    title_by_url = {r["url"]: r["title"] for r in rows if r.get("url") and r.get("title")}
 
     # Group by (platform, url) → {date → max views that day}
     # Structure: snap_by_url[platform][url][date] = views
@@ -5872,10 +5882,7 @@ def _build_performance_view(rows: list) -> dict:
             first_seen = min(date_map).isoformat()
             last_seen = max(date_map).isoformat()
             _, lv = latest_views_by_url.get(url, (None, 0))
-            title = next(
-                (r.get("title") for r in rows if r.get("url") == url and r.get("title")),
-                None
-            )
+            title = title_by_url.get(url)
             videos.append({
                 "platform": platform,
                 "url": url,
@@ -5953,7 +5960,7 @@ def _collect_performance_snapshots() -> dict:
                 continue
             views_str, title = line.split("|||", 1)
             views_str = views_str.strip()
-            if not views_str or views_str in ("None", "NA", ""):
+            if not views_str or views_str in ("None", "NA"):
                 # xiaohongshu or platform that doesn't expose view_count
                 result["skipped"] += 1
                 continue
@@ -5978,12 +5985,10 @@ def _collect_performance_snapshots() -> dict:
 
 
 @app.post("/performance/refresh")
-async def performance_refresh(background_tasks: BackgroundTasks):
+def performance_refresh():
     """Collect current view snapshots for all posted videos."""
-    # Run synchronously — yt-dlp per-url calls are slow but there are few videos
-    # ponytail: run inline for simplicity; add BackgroundTasks if latency matters
-    summary = _collect_performance_snapshots()
-    return _json(summary)
+    # ponytail: synchronous — few videos, slow yt-dlp calls; add BackgroundTasks if latency matters
+    return _json(_collect_performance_snapshots())
 
 
 @app.get("/performance")

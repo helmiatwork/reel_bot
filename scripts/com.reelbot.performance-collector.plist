@@ -6,13 +6,20 @@
   Calls POST /performance/refresh → yt-dlp fetches view counts for all
   posted videos and upserts a snapshot row.
 
+  ⚠️  EDIT BEFORE INSTALL: the ProgramArguments and WorkingDirectory values
+  below are hardcoded to /Users/ichigo/Documents/repo/helmi/reelbot.
+  Replace them with your actual repo path before running launchctl load.
+  Quick one-liner (run from repo root):
+    REPO=$(pwd) && sed "s|/Users/ichigo/Documents/repo/helmi/reelbot|$REPO|g" \
+      scripts/com.reelbot.performance-collector.plist \
+      > ~/Library/LaunchAgents/com.reelbot.performance-collector.plist
+
   ⚠️  macOS TCC caveat: the repo lives under ~/Documents, a privacy-protected
   folder. launchd-spawned processes get "Operation not permitted" reading it
   unless you grant Full Disk Access to /bin/bash in
   System Settings → Privacy & Security → Full Disk Access.
 
-  Install (per-user, only after granting Full Disk Access):
-    cp scripts/com.reelbot.performance-collector.plist ~/Library/LaunchAgents/
+  Install (per-user, only after granting Full Disk Access and editing paths):
     launchctl load -w ~/Library/LaunchAgents/com.reelbot.performance-collector.plist
 
   Reload after edits:
