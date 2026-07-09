@@ -47,6 +47,10 @@ def startup_event():
         _songs_init_db()
     except Exception as e:
         print(f"[startup] songs db init failed (non-fatal): {e}")
+    try:
+        _schedule_init_db()
+    except Exception as e:
+        print(f"[startup] schedule db init failed (non-fatal): {e}")
 
 # ── SSRF guard: blocked networks (module-level constant) ────────────────────
 # Extra ranges beyond ipaddress.ip_address check (0.0.0.0/8, CGNAT, etc)
@@ -5481,3 +5485,292 @@ def dash_clip_finds(limit: int = 25, offset: int = 0):
     except Exception as exc:
         print(f"[dash/clip-finds] query failed: {exc}")
         return _json({"rows": [], "total": 0, "limit": limit, "offset": offset})
+
+
+# ── Scheduled Posts ────────────────────────────────────────────────────────────
+
+def _schedule_init_db():
+    """Create scheduled_posts table if it doesn't exist. Non-fatal on error."""
+    with _db_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS scheduled_posts (
+                    id           BIGSERIAL PRIMARY KEY,
+                    content_ref  TEXT,
+                    title        TEXT,
+                    platforms    TEXT,
+                    scheduled_at TIMESTAMPTZ,
+                    caption      TEXT,
+                    thumb_url    TEXT,
+                    source_url   TEXT,
+                    platform_urls TEXT DEFAULT '{}',
+                    created_at   TIMESTAMPTZ DEFAULT now(),
+                    updated_at   TIMESTAMPTZ DEFAULT now()
+                )
+            """)
+            conn.commit()
+
+
+def _derive_schedule_counts(items, now_dt=None):
+    """Pure helper: derive {total, today, overdue, scheduled, draft, posted} from item list.
+
+    Args:
+        items: list of dicts with keys: scheduled_at (ISO str or None),
+               platforms (CSV str), platform_urls (dict or None).
+        now_dt: datetime to use as "now" (default: datetime.datetime.utcnow()).
+    Returns:
+        dict with integer counts.
+    """
+    import datetime as _dt
+
+    if now_dt is None:
+        now_dt = _dt.datetime.utcnow().replace(tzinfo=_dt.timezone.utc)
+
+    counts = {"total": len(items), "today": 0, "overdue": 0, "scheduled": 0, "draft": 0, "posted": 0}
+
+    today_date = now_dt.date()
+
+    for item in items:
+        platforms_csv = item.get("platforms") or ""
+        targets = [p.strip() for p in platforms_csv.split(",") if p.strip()]
+        platform_urls = item.get("platform_urls") or {}
+        if isinstance(platform_urls, str):
+            try:
+                platform_urls = json.loads(platform_urls)
+            except Exception:
+                platform_urls = {}
+
+        all_posted = bool(targets) and all(platform_urls.get(p) for p in targets)
+        if all_posted:
+            counts["posted"] += 1
+            continue
+
+        scheduled_at_raw = item.get("scheduled_at")
+        if not scheduled_at_raw:
+            counts["draft"] += 1
+            continue
+
+        # Parse scheduled_at to timezone-aware datetime
+        try:
+            if isinstance(scheduled_at_raw, str):
+                sa = _dt.datetime.fromisoformat(scheduled_at_raw.replace("Z", "+00:00"))
+            else:
+                sa = scheduled_at_raw
+            if sa.tzinfo is None:
+                sa = sa.replace(tzinfo=_dt.timezone.utc)
+        except Exception:
+            counts["draft"] += 1
+            continue
+
+        if sa.date() == today_date:
+            counts["today"] += 1
+
+        if sa < now_dt:
+            counts["overdue"] += 1
+        else:
+            counts["scheduled"] += 1
+
+    return counts
+
+
+class ScheduleCreate(BaseModel):
+    content_ref: Optional[str] = None
+    title: Optional[str] = None
+    platforms: Optional[str] = ""
+    scheduled_at: Optional[str] = None
+    caption: Optional[str] = ""
+    thumb_url: Optional[str] = None
+    source_url: Optional[str] = None
+
+
+class ScheduleUpdate(BaseModel):
+    title: Optional[str] = None
+    platforms: Optional[str] = None
+    scheduled_at: Optional[str] = None
+    caption: Optional[str] = None
+    thumb_url: Optional[str] = None
+    source_url: Optional[str] = None
+    platform_urls: Optional[dict] = None
+
+
+def _row_to_schedule(row, cols):
+    d = dict(zip(cols, row))
+    # Deserialize platform_urls TEXT → dict
+    pu = d.get("platform_urls") or "{}"
+    if isinstance(pu, str):
+        try:
+            d["platform_urls"] = json.loads(pu)
+        except Exception:
+            d["platform_urls"] = {}
+    # Serialize datetimes to ISO strings
+    import datetime as _dt
+    for k in ("scheduled_at", "created_at", "updated_at"):
+        v = d.get(k)
+        if isinstance(v, (_dt.datetime, _dt.date)):
+            d[k] = v.isoformat()
+    return d
+
+
+@app.get("/schedule")
+def schedule_list():
+    """Return all scheduled posts with derived counts."""
+    import datetime as _dt
+    try:
+        with _db_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT * FROM scheduled_posts ORDER BY scheduled_at NULLS LAST, id DESC")
+                cols = [c.name for c in cur.description]
+                items = [_row_to_schedule(r, cols) for r in cur.fetchall()]
+        now_dt = _dt.datetime.utcnow().replace(tzinfo=_dt.timezone.utc)
+        counts = _derive_schedule_counts(items, now_dt)
+        return _json({"items": items, "counts": counts})
+    except Exception as exc:
+        print(f"[schedule] list failed: {exc}")
+        return _json({"items": [], "counts": {"total": 0, "today": 0, "overdue": 0, "scheduled": 0, "draft": 0, "posted": 0}})
+
+
+@app.post("/schedule")
+def schedule_create(body: ScheduleCreate):
+    """Create a new scheduled post."""
+    try:
+        pu_json = "{}"
+        with _db_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """INSERT INTO scheduled_posts
+                       (content_ref, title, platforms, scheduled_at, caption, thumb_url, source_url, platform_urls)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                       RETURNING *""",
+                    (body.content_ref, body.title, body.platforms or "",
+                     body.scheduled_at or None, body.caption or "",
+                     body.thumb_url, body.source_url, pu_json)
+                )
+                cols = [c.name for c in cur.description]
+                row = _row_to_schedule(cur.fetchone(), cols)
+                conn.commit()
+        return _json(row)
+    except Exception as exc:
+        print(f"[schedule] create failed: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.patch("/schedule/{item_id}")
+def schedule_update(item_id: int, body: ScheduleUpdate):
+    """Partially update a scheduled post. platform_urls merges (not replaces)."""
+    import datetime as _dt
+    try:
+        with _db_conn() as conn:
+            with conn.cursor() as cur:
+                # Fetch current platform_urls for merge
+                cur.execute("SELECT platform_urls FROM scheduled_posts WHERE id = %s", (item_id,))
+                existing = cur.fetchone()
+                if not existing:
+                    raise HTTPException(status_code=404, detail="Not found")
+                current_pu_raw = existing[0] or "{}"
+                try:
+                    current_pu = json.loads(current_pu_raw) if isinstance(current_pu_raw, str) else (current_pu_raw or {})
+                except Exception:
+                    current_pu = {}
+
+                updates = {}
+                if body.title is not None:
+                    updates["title"] = body.title
+                if body.platforms is not None:
+                    updates["platforms"] = body.platforms
+                if body.scheduled_at is not None:
+                    updates["scheduled_at"] = body.scheduled_at if body.scheduled_at else None
+                if body.caption is not None:
+                    updates["caption"] = body.caption
+                if body.thumb_url is not None:
+                    updates["thumb_url"] = body.thumb_url
+                if body.source_url is not None:
+                    updates["source_url"] = body.source_url
+                if body.platform_urls is not None:
+                    merged = {**current_pu, **body.platform_urls}
+                    updates["platform_urls"] = json.dumps(merged)
+
+                if not updates:
+                    cur.execute("SELECT * FROM scheduled_posts WHERE id = %s", (item_id,))
+                    cols = [c.name for c in cur.description]
+                    return _json(_row_to_schedule(cur.fetchone(), cols))
+
+                updates["updated_at"] = _dt.datetime.utcnow()
+                set_clause = ", ".join(f"{k} = %s" for k in updates)
+                values = list(updates.values()) + [item_id]
+                cur.execute(
+                    f"UPDATE scheduled_posts SET {set_clause} WHERE id = %s RETURNING *",
+                    values
+                )
+                cols = [c.name for c in cur.description]
+                row = _row_to_schedule(cur.fetchone(), cols)
+                conn.commit()
+        return _json(row)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"[schedule] update failed: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.delete("/schedule/{item_id}")
+def schedule_delete(item_id: int):
+    """Delete a scheduled post."""
+    try:
+        with _db_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM scheduled_posts WHERE id = %s RETURNING id", (item_id,))
+                deleted = cur.fetchone()
+                conn.commit()
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Not found")
+        return _json({"deleted": deleted[0]})
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"[schedule] delete failed: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get("/schedule/corpus")
+def schedule_corpus():
+    """Return analyzed sources suitable for scheduling.
+
+    Joins sources + video_analysis. Returns list of
+    {ref, title, platform, thumb, retention, tags, summary, source_url}.
+    """
+    try:
+        with _db_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT
+                        s.id AS ref_id,
+                        s.youtube_url AS source_url,
+                        COALESCE(va.title, s.youtube_url) AS title,
+                        s.platform,
+                        va.retention_score AS retention,
+                        va.tags,
+                        va.content_summary AS summary
+                    FROM sources s
+                    LEFT JOIN video_analysis va ON va.youtube_url = s.youtube_url
+                    WHERE va.youtube_url IS NOT NULL
+                    ORDER BY va.retention_score DESC NULLS LAST
+                    LIMIT 100
+                """)
+                cols = [c.name for c in cur.description]
+                rows = []
+                for r in cur.fetchall():
+                    d = dict(zip(cols, r))
+                    rows.append({
+                        "ref": f"source:{d['ref_id']}",
+                        "title": d.get("title") or d.get("source_url") or "",
+                        "platform": d.get("platform") or "",
+                        "thumb": None,
+                        "retention": float(d["retention"]) if d.get("retention") is not None else None,
+                        "tags": d.get("tags") or [],
+                        "summary": d.get("summary") or "",
+                        "source_url": d.get("source_url") or ""
+                    })
+        return _json(rows)
+    except Exception as exc:
+        print(f"[schedule/corpus] query failed: {exc}")
+        return _json([])
