@@ -6100,6 +6100,8 @@ def _performance_init_db():
             cur.execute("""
                 ALTER TABLE performance_snapshots
                 ADD COLUMN IF NOT EXISTS account_id BIGINT
+                -- no FK to accounts: intentional — historical snapshots are retained
+                -- even if the account row is later deleted (display degrades to "Akun #N")
             """)
         conn.commit()
     except Exception as e:
@@ -6122,6 +6124,8 @@ def _build_performance_view(rows: list, accounts_lookup: dict | None = None) -> 
     accounts         — per-account breakdown: [{platform, account_id, handle, label,
                         total_views, video_count, series:[{date,views}]}]
                        null account_id rows group under "Tanpa akun" per platform
+                       (null = legacy pre-phase-3 snapshot OR post with no account selected —
+                       both are intentionally collapsed into the same bucket for display)
     """
     import datetime as _dt
 
