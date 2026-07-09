@@ -27,7 +27,11 @@ export default defineConfig({
       '/health': 'http://localhost:8000',
       '/sources': 'http://localhost:8000',
       '/decompose': 'http://localhost:8000',
-      '/frames': 'http://localhost:8000'
+      '/frames': 'http://localhost:8000',
+      '/schedule': 'http://localhost:8000',
+      '/cookies': 'http://localhost:8000',
+      '/generate': 'http://localhost:8000',
+      '/discover': 'http://localhost:8000'
     }
   }
 })
