@@ -2,12 +2,28 @@
   import { onMount } from 'svelte'
   import { api, fmtViews } from '../lib/api.js'
   import LineChart from '../lib/LineChart.svelte'
+  import { rangeFilter, bucket } from '../lib/perfBuckets.js'
 
   const PLATFORMS_ALL = ['youtube', 'tiktok', 'instagram', 'xiaohongshu']
   const PLATFORM_ICON = { youtube: 'i-yt', tiktok: 'i-tt', instagram: 'i-ig', xiaohongshu: 'i-xhs' }
   const PLATFORM_COLORS = {
     youtube: '#FF0000', tiktok: '#69C9D0', instagram: '#E4405F', xiaohongshu: '#FF2442',
   }
+  const CHART_TYPES = [
+    { v: 'table', icon: 'i-chart-table', label: 'Table' },
+    { v: 'bar',   icon: 'i-chart-bar',   label: 'Bar' },
+    { v: 'line',  icon: 'i-chart-line',  label: 'Line' },
+    { v: 'area',  icon: 'i-chart-area',  label: 'Area' },
+  ]
+  const RANGE_OPTIONS = [
+    { v: '7d',     l: 'Last 7 days' },
+    { v: '30d',    l: 'Last 30 days' },
+    { v: '90d',    l: 'Last 90 days' },
+    { v: 'year',   l: 'This year' },
+    { v: 'all',    l: 'All time' },
+    { v: 'custom', l: 'Custom range' },
+  ]
+
   function colorFor(p) {
     return PLATFORM_COLORS[p?.toLowerCase()] || '#6ea8fe'
   }
@@ -25,58 +41,68 @@
   // ── Filters ────────────────────────────────────────────────────────────────
   let filterPlatform = $state('all')
   let filterAccount  = $state('all')
-  let filterDays     = $state(0)  // 0 = all time
+  let rangePreset    = $state('30d')
+  let customFrom     = $state('')
+  let customTo       = $state('')
+  let granularity    = $state('D')
+  let chartType      = $state('line')
 
-  // Labels visible after time-range filter
-  let visibleLabels = $derived(
-    filterDays > 0 ? labels.slice(-filterDays) : labels
+  // ── Stat card derivations ──────────────────────────────────────────────────
+  let totalViews  = $derived(totals.reduce((s, t) => s + (t.total_views || 0), 0))
+  let topPlatform = $derived(
+    totals.length
+      ? totals.reduce((a, b) => b.total_views > a.total_views ? b : a).platform
+      : '—'
   )
 
-  // Datasets visible after platform + time filter
+  // Platform-filtered raw datasets (for legend + overlay check)
   let visibleDatasets = $derived(
-    (filterPlatform === 'all' ? datasets : datasets.filter(d => d.label === filterPlatform))
-      .map(d => ({
-        ...d,
-        data: filterDays > 0 ? d.data.slice(-filterDays) : d.data,
-      }))
+    filterPlatform === 'all' ? datasets : datasets.filter(d => d.label === filterPlatform)
   )
 
-  // Chart labels — falls back to last-7-days skeleton when no data loaded yet
-  let chartLabels = $derived(
-    visibleLabels.length ? visibleLabels
-      : Array.from({ length: 7 }, (_, i) => {
-          const d = new Date()
-          d.setDate(d.getDate() - 6 + i)
-          return d.toISOString().slice(0, 10)
-        })
+  // Range + granularity applied → chart-ready or null when empty
+  function _computeChartReady(lbls, ds, range, cfrom, cto, gran) {
+    if (!lbls.length || !ds.length) return null
+    const { labels: rl, data: rd } = rangeFilter(lbls, ds.map(d => d.data), range, cfrom, cto)
+    const { labels: bl, data: bd } = bucket(rl, rd, gran)
+    if (!bl.length) return null
+    return { labels: bl, datasets: ds.map((d, i) => ({ ...d, data: bd[i] ?? [] })) }
+  }
+
+  let _chartReady = $derived(
+    _computeChartReady(labels, visibleDatasets, rangePreset, customFrom, customTo, granularity)
   )
 
-  // Chart datasets — falls back to dashed skeleton lines when nothing to show
+  // Skeleton labels (last 7 days, computed once at mount)
+  const _skeletonLabels = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - 6 + i); return d.toISOString().slice(0, 10)
+  })
+
+  let chartLabels = $derived(_chartReady?.labels ?? _skeletonLabels)
+
   let chartDatasets = $derived(
-    visibleDatasets.length
-      ? visibleDatasets
+    _chartReady
+      ? _chartReady.datasets
       : (filterPlatform === 'all' ? PLATFORMS_ALL : [filterPlatform]).map(p => ({
           label: p,
           data: new Array(chartLabels.length).fill(null),
           borderColor: colorFor(p) + '44',
           backgroundColor: 'transparent',
-          tension: 0.35,
           pointRadius: 0,
           spanGaps: false,
           borderDash: [4, 4],
         }))
   )
 
-  // Legend items — always show something (real or skeleton)
   let legendItems = $derived(
-    visibleDatasets.length
-      ? visibleDatasets
+    _chartReady
+      ? _chartReady.datasets
       : (filterPlatform === 'all' ? PLATFORMS_ALL : [filterPlatform]).map(p => ({
           label: p, borderColor: colorFor(p),
         }))
   )
 
-  // Platform totals table rows (with skeleton placeholders when empty)
+  // ── Other derived values (unchanged from original) ─────────────────────────
   let visibleTotals = $derived(
     filterPlatform === 'all' ? totals : totals.filter(t => t.platform === filterPlatform)
   )
@@ -89,7 +115,6 @@
         }))
   )
 
-  // Per-account breakdown filtered by platform + account
   let visibleAccounts = $derived(
     accounts.filter(a =>
       (filterPlatform === 'all' || a.platform === filterPlatform) &&
@@ -104,7 +129,6 @@
     }, {})
   )
 
-  // Videos filtered by platform
   let visibleVideos = $derived(
     filterPlatform === 'all' ? videos : videos.filter(v => v.platform === filterPlatform)
   )
@@ -125,7 +149,6 @@
         }),
         borderColor: colorFor(s.platform),
         backgroundColor: colorFor(s.platform) + '22',
-        tension: 0.35,
         pointRadius: 3,
         spanGaps: true,
       }))
@@ -144,7 +167,6 @@
     refreshing = false
   }
 
-  // Picking an account auto-narrows the platform chip to match
   function pickAccount(id) {
     filterAccount = id
     if (id !== 'all') {
@@ -170,6 +192,26 @@
 {#if lastRefresh}
   <div class="sub" style="margin-bottom:12px;font-size:11.5px">Terakhir refresh: {lastRefresh}</div>
 {/if}
+
+<!-- ── Stat cards ───────────────────────────────────────────────────────────── -->
+<div class="kpis" style="margin-bottom:16px">
+  <div class="card kpi">
+    <div class="label">Total Views</div>
+    <div class="val">{totals.length ? fmtViews(totalViews) : '—'}</div>
+  </div>
+  <div class="card kpi">
+    <div class="label">Platforms tracked</div>
+    <div class="val">{totals.length || '—'}</div>
+  </div>
+  <div class="card kpi">
+    <div class="label">Videos tracked</div>
+    <div class="val">{videos.length || '—'}</div>
+  </div>
+  <div class="card kpi">
+    <div class="label">Top platform</div>
+    <div class="val" style="font-size:18px;text-transform:capitalize">{topPlatform}</div>
+  </div>
+</div>
 
 <!-- ── Filter bar ───────────────────────────────────────────────────────────── -->
 <div class="pf-bar">
@@ -198,22 +240,44 @@
     </select>
   {/if}
 
-  <!-- Time range segmented control -->
-  <div class="seg" style="margin-left:auto">
-    {#each [{v:7,l:'7 hari'},{v:30,l:'30 hari'},{v:0,l:'Semua'}] as opt}
-      <button class:active={filterDays === opt.v} onclick={() => filterDays = opt.v}>{opt.l}</button>
-    {/each}
+  <!-- Range + granularity (right-aligned) -->
+  <div class="pf-right">
+    <select class="acct-sel" onchange={e => rangePreset = e.currentTarget.value}>
+      {#each RANGE_OPTIONS as opt}
+        <option value={opt.v} selected={rangePreset === opt.v}>{opt.l}</option>
+      {/each}
+    </select>
+    {#if rangePreset === 'custom'}
+      <input type="date" class="acct-sel" bind:value={customFrom}>
+      <span class="mut" style="font-size:12px">–</span>
+      <input type="date" class="acct-sel" bind:value={customTo}>
+    {/if}
+    <div class="seg">
+      {#each [{v:'D',l:'D'},{v:'M',l:'M'},{v:'Q',l:'Q'}] as opt}
+        <button class:active={granularity === opt.v} onclick={() => granularity = opt.v}>{opt.l}</button>
+      {/each}
+    </div>
   </div>
 </div>
 
 <!-- ── Growth chart ─────────────────────────────────────────────────────────── -->
 <div class="card" style="margin-bottom:16px">
-  <h3>Pertumbuhan views <span class="mut">— per platform</span></h3>
+  <div class="chart-hdr">
+    <h3 style="margin:0">Pertumbuhan views <span class="mut">— per platform</span></h3>
+    <!-- Chart-type toggle -->
+    <div class="ct-btns" role="group" aria-label="Chart type">
+      {#each CHART_TYPES as ct}
+        <button class:active={chartType === ct.v} onclick={() => chartType = ct.v} title={ct.label} aria-label={ct.label}>
+          <svg class="ic" style="width:14px;height:14px"><use href="#{ct.icon}"/></svg>
+        </button>
+      {/each}
+    </div>
+  </div>
 
   <!-- Legend — always visible, muted when skeleton -->
-  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px">
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin:8px 0 10px">
     {#each legendItems as ds}
-      <span style="display:flex;align-items:center;gap:5px;font-size:12px;opacity:{visibleDatasets.length ? 1 : 0.4}">
+      <span style="display:flex;align-items:center;gap:5px;font-size:12px;opacity:{_chartReady ? 1 : 0.4}">
         <span style="display:inline-block;width:20px;height:3px;background:{ds.borderColor};border-radius:2px"></span>
         {ds.label}
       </span>
@@ -222,14 +286,42 @@
 
   {#if loading}
     <p class="mut" style="font-size:12.5px">Memuat…</p>
+  {:else if chartType === 'table'}
+    <!-- Table view -->
+    <div style="overflow-x:auto;max-height:400px;overflow-y:auto">
+      {#if !_chartReady}
+        <p class="mut" style="font-size:12.5px;padding:20px 0;text-align:center">
+          {datasets.length ? 'Tidak ada data untuk filter ini' : 'Belum ada data'}
+        </p>
+      {:else}
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              {#each _chartReady.datasets as ds}<th class="num" style="text-align:right">{ds.label}</th>{/each}
+            </tr>
+          </thead>
+          <tbody>
+            {#each _chartReady.labels as lbl, i}
+              <tr>
+                <td class="num">{lbl}</td>
+                {#each _chartReady.datasets as ds}
+                  <td class="num" style="text-align:right">{ds.data[i] != null ? fmtViews(ds.data[i]) : '—'}</td>
+                {/each}
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      {/if}
+    </div>
   {:else}
     <div class="chart-wrap">
-      <LineChart labels={chartLabels} datasets={chartDatasets} height={160} />
+      <LineChart labels={chartLabels} datasets={chartDatasets} height={160} chartType={chartType} />
       {#if !datasets.length}
         <div class="chart-overlay">
           <p>Belum ada data — video yang kamu tandai posted di Jadwal Post akan muncul di sini setelah worker fetch views</p>
         </div>
-      {:else if !visibleDatasets.length}
+      {:else if !_chartReady}
         <div class="chart-overlay">
           <p>Tidak ada data untuk filter ini</p>
         </div>
@@ -372,18 +464,21 @@
 
   /* Platform brand icon inside chip */
   .pico { width: 13px; height: 13px; flex-shrink: 0; fill: currentColor; stroke: none; }
-  .pfchip:not(.active).youtube  .pico { color: #FF0000; }
-  .pfchip:not(.active).tiktok   .pico { color: #333; }
+  .pfchip:not(.active).youtube   .pico { color: #FF0000; }
+  .pfchip:not(.active).tiktok    .pico { color: #333; }
   .pfchip:not(.active).instagram .pico { color: #E4405F; }
   .pfchip:not(.active).xiaohongshu .pico { color: #FF2442; }
   :global(.dark) .pfchip:not(.active).tiktok .pico { color: #aaa; }
-  /* Active chip always white icon */
   .pfchip.active .pico { color: #fff; }
 
   .acct-sel {
     background: var(--panel); border: 1px solid var(--line); color: var(--txt);
     border-radius: 8px; padding: 6px 10px; font-size: 12.5px; cursor: pointer;
     font-family: inherit;
+  }
+
+  .pf-right {
+    display: flex; align-items: center; gap: 6px; margin-left: auto; flex-wrap: wrap;
   }
 
   .seg {
@@ -397,6 +492,21 @@
   }
   .seg button.active { background: var(--accent); color: #fff; }
   .seg button:hover:not(.active) { color: var(--accent); }
+
+  /* ── Chart card header ───────────────────────────────────────────────────── */
+  .chart-hdr {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 0;
+  }
+
+  /* ── Chart-type toggle ───────────────────────────────────────────────────── */
+  .ct-btns { display: inline-flex; gap: 2px; }
+  .ct-btns button {
+    background: none; border: none; padding: 5px 7px; border-radius: 7px;
+    cursor: pointer; color: var(--mut); display: flex; align-items: center;
+    font-family: inherit; transition: background .12s, color .12s;
+  }
+  .ct-btns button.active { background: var(--soft); color: var(--accent); }
+  .ct-btns button:hover:not(.active) { color: var(--accent); }
 
   /* ── Empty chart overlay ─────────────────────────────────────────────────── */
   .chart-wrap { position: relative; }

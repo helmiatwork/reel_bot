@@ -182,6 +182,11 @@
   <!-- trend arrows -->
   <symbol id="i-arrow-up-right" viewBox="0 0 24 24"><path d="M7 17 17 7M7 7h10v10"/></symbol>
   <symbol id="i-arrow-down-right" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7v10H7"/></symbol>
+  <!-- chart-type toggle icons (stroke, inherit from svg.ic) -->
+  <symbol id="i-chart-table" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M3 15h18M9 3v18"/></symbol>
+  <symbol id="i-chart-bar"   viewBox="0 0 24 24"><path d="M3 20h18M6 20V13M10 20V8M14 20V11M18 20V5"/></symbol>
+  <symbol id="i-chart-line"  viewBox="0 0 24 24"><polyline points="3 17 8 11 13 14 21 6"/></symbol>
+  <symbol id="i-chart-area"  viewBox="0 0 24 24"><polyline points="3 17 8 11 13 14 21 6"/><path d="M21 6V20H3V17"/></symbol>
 </defs></svg>
 
 <div class="app">
