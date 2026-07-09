@@ -135,6 +135,13 @@ export const api = {
 
   seoAnalyze: (topic, platform = 'youtube', niche = '') => postJSON('/seo/analyze', { topic, platform, niche }),
 
+  // Prep Bundle — aggregate assets for CapCut finishing
+  prepList: () => getJSON('/prep/list'),
+  prepGet: (id) => getJSON('/prep/' + id),
+  prepSetBgm: (id, bgm_song_id) => patchJSON('/prep/' + id, { bgm_song_id }),
+  prepRoughcut: (id) => postJSON('/prep/' + id + '/roughcut', {}),
+  prepZipUrl: (id) => '/prep/' + id + '/zip',
+
   decompose: (youtube_url) => postJSON('/decompose', { youtube_url }),
   decomposeStatus: (run_id) => getJSON('/decompose/status/' + encodeURIComponent(run_id)),
   sourceSegments: (source_id) => getJSON('/sources/' + source_id + '/segments'),
