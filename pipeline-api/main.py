@@ -5506,7 +5506,9 @@ def _schedule_init_db():
                     platform_urls TEXT DEFAULT '{}',
                     created_at   TIMESTAMPTZ DEFAULT now(),
                     updated_at   TIMESTAMPTZ DEFAULT now()
-                )
+                );
+                CREATE INDEX IF NOT EXISTS idx_scheduled_posts_scheduled_at
+                    ON scheduled_posts (scheduled_at NULLS LAST)
             """)
             conn.commit()
 
@@ -5524,7 +5526,7 @@ def _derive_schedule_counts(items, now_dt=None):
     import datetime as _dt
 
     if now_dt is None:
-        now_dt = _dt.datetime.utcnow().replace(tzinfo=_dt.timezone.utc)
+        now_dt = _dt.datetime.now(_dt.timezone.utc)
 
     counts = {"total": len(items), "today": 0, "overdue": 0, "scheduled": 0, "draft": 0, "posted": 0}
 
@@ -5621,7 +5623,7 @@ def schedule_list():
                 cur.execute("SELECT * FROM scheduled_posts ORDER BY scheduled_at NULLS LAST, id DESC")
                 cols = [c.name for c in cur.description]
                 items = [_row_to_schedule(r, cols) for r in cur.fetchall()]
-        now_dt = _dt.datetime.utcnow().replace(tzinfo=_dt.timezone.utc)
+        now_dt = _dt.datetime.now(_dt.timezone.utc)
         counts = _derive_schedule_counts(items, now_dt)
         return _json({"items": items, "counts": counts})
     except Exception as exc:
@@ -5694,7 +5696,7 @@ def schedule_update(item_id: int, body: ScheduleUpdate):
                     cols = [c.name for c in cur.description]
                     return _json(_row_to_schedule(cur.fetchone(), cols))
 
-                updates["updated_at"] = _dt.datetime.utcnow()
+                updates["updated_at"] = _dt.datetime.now(_dt.timezone.utc)
                 set_clause = ", ".join(f"{k} = %s" for k in updates)
                 values = list(updates.values()) + [item_id]
                 cur.execute(

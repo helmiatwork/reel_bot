@@ -83,7 +83,7 @@
   }
 
   // ── Filtering ────────────────────────────────────────────────────────────────
-  let filtered = $derived(() => {
+  let filtered = $derived.by(() => {
     if (activeTab === 'semua') return items
     if (activeTab === 'today') return items.filter(i => {
       if (!i.scheduled_at) return false
@@ -140,7 +140,7 @@
     const payload = {
       title: modal.title,
       platforms: modal.platforms.join(','),
-      scheduled_at: modal.scheduled_at || null,
+      scheduled_at: modal.scheduled_at ?? '',
       caption: modal.caption || '',
       thumb_url: modal.thumb_url || '',
       source_url: modal.source_url || ''
@@ -321,11 +321,11 @@
   <!-- Grid -->
   {#if loading}
     <div class="empty-state">Memuat jadwal…</div>
-  {:else if filtered().length === 0}
+  {:else if filtered.length === 0}
     <div class="empty-state">Tidak ada item. <button class="link" onclick={openCreate}>+ Buat jadwal baru</button></div>
   {:else}
     <div class="grid">
-      {#each filtered() as item (item.id)}
+      {#each filtered as item (item.id)}
         {@const st = itemStatus(item)}
         {@const plist = platformList(item.platforms)}
         <div class="tile" onclick={() => openModal(item)}>
@@ -422,7 +422,7 @@
         <label>
           <span>Tanggal & waktu post</span>
           <input type="datetime-local" value={toDatetimeLocal(modal.scheduled_at)}
-            oninput={(e) => modal = { ...modal, scheduled_at: e.target.value ? new Date(e.target.value).toISOString() : null }}>
+            oninput={(e) => modal = { ...modal, scheduled_at: e.target.value ? new Date(e.target.value).toISOString() : '' }}>
         </label>
 
         <label>

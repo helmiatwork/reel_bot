@@ -28,6 +28,7 @@ async function patchJSON(path, body) {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body)
     })
+    if (!r.ok) throw new Error(`${r.status}`)
     return await r.json()
   } catch (e) {
     return null
