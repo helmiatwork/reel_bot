@@ -470,7 +470,7 @@ class TestPrepBuildRoughcut:
         assert str(hd) in cmd
 
     def test_includes_bgm_when_provided(self, tmp_path):
-        """BGM input and amix filter appear in ffmpeg command when bgm_path exists."""
+        """BGM is added as a looped input; volume filter applied; no amix (direct map)."""
         seg_file = tmp_path / "seg_00.mp4"
         seg_file.write_bytes(b"fake")
         bgm = tmp_path / "bgm.mp3"
@@ -487,11 +487,21 @@ class TestPrepBuildRoughcut:
 
         cmd = mock_run.call_args[0][0]
         assert str(bgm) in cmd
-        # BGM mixing should appear in filter_complex
+        # BGM input must be looped
+        assert "-stream_loop" in cmd
+        # BGM mapped as audio; no amix needed
         fc_idx = cmd.index("-filter_complex")
         filter_val = cmd[fc_idx + 1]
-        assert "amix" in filter_val
         assert "volume=0.3" in filter_val
+        assert "amix" not in filter_val
+        # Concat must be video-only (a=0)
+        assert "a=0" in filter_val
+        assert "a=1" not in filter_val
+        # No segment audio stream references (segments are inputs 0..n-1; BGM is
+        # the last input and its [n:a] pad is legitimately used for the audio track)
+        assert "[0:a]" not in filter_val
+        # -shortest keeps mux length tied to video
+        assert "-shortest" in cmd
 
     def test_raises_on_ffmpeg_failure(self, tmp_path):
         """RuntimeError raised when ffmpeg returns non-zero."""
