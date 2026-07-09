@@ -12,6 +12,16 @@
   let q = $state('')
   let niche = $state('')
 
+  const PLATFORM_ICON = {
+    youtube: 'i-yt', tiktok: 'i-tt', instagram: 'i-ig', xiaohongshu: 'i-xhs'
+  }
+
+  function fmtPlatform(p) {
+    if (!p || p === '-') return { icon: null, label: '—' }
+    const labels = { youtube: 'YouTube', tiktok: 'TikTok', instagram: 'Instagram', xiaohongshu: 'Xiaohongshu' }
+    return { icon: PLATFORM_ICON[p], label: labels[p] || p }
+  }
+
   function enrich(r) {
     const d = SOURCE_DETAIL[r.id] || {}
     return {
@@ -81,10 +91,20 @@
     </thead>
     <tbody>
       {#each filtered as s}
+        {@const plat = fmtPlatform(s.platform)}
         <tr onclick={() => openDrawer('source', s)}>
           <td>{s.title}</td>
           <td>{s.niche}</td>
-          <td>{s.platform}</td>
+          <td>
+            {#if plat.icon}
+              <div style="display:flex;align-items:center;gap:0.25rem">
+                <svg class="plat-ico {s.platform}" style="width:14px;height:14px"><use href="#{plat.icon}"/></svg>
+                <span>{plat.label}</span>
+              </div>
+            {:else}
+              {plat.label}
+            {/if}
+          </td>
           <td>{#each s.tags.slice(0, 3) as t}<span class="tag">{t}</span>{/each}</td>
           <td class="num" style="text-align:right">{s.viewsLabel}</td>
           <td><span class="chip {s.status === 'used' ? 'c-used' : 'c-analyzed'}">{s.status}</span></td>

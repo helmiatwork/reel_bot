@@ -4162,11 +4162,21 @@ def _creators_init_db():
                 creator_name    TEXT,
                 total_followers BIGINT,
                 gender          TEXT,
+                platform        TEXT,
                 created_at      TIMESTAMPTZ DEFAULT now(),
                 last_updated    TIMESTAMPTZ DEFAULT now()
             )""")
             cur.execute("""CREATE INDEX IF NOT EXISTS creators_last_updated_idx
                 ON creators (last_updated DESC)""")
+            # Additive migration for existing installs
+            cur.execute("ALTER TABLE creators ADD COLUMN IF NOT EXISTS platform TEXT")
+            # Best-effort backfill from sources table
+            cur.execute("""
+                UPDATE creators c
+                SET platform = s.platform
+                FROM (SELECT DISTINCT channel, platform FROM sources WHERE platform IS NOT NULL) s
+                WHERE c.platform IS NULL AND s.channel = c.channel
+            """)
         conn.commit()
     except Exception as e:
         print(f"[creators] init db error: {e}")
@@ -4587,18 +4597,20 @@ def _save_creator(youtube_url: str) -> None:
                 if cur.fetchone():
                     return  # Creator already exists, skip
 
-                # New creator: infer gender and insert
+                # New creator: infer gender and platform, then insert
                 gender = _infer_gender(meta.get("creator_name", ""), meta.get("channel", ""))
+                platform = _detect_platform(youtube_url)
                 cur.execute(
                     """INSERT INTO creators
-                    (channel_id, channel, creator_name, total_followers, gender)
-                    VALUES (%s, %s, %s, %s, %s)""",
+                    (channel_id, channel, creator_name, total_followers, gender, platform)
+                    VALUES (%s, %s, %s, %s, %s, %s)""",
                     (
                         meta["channel_id"],
                         meta.get("channel"),
                         meta.get("creator_name"),
                         meta.get("total_followers"),
                         gender,
+                        platform,
                     )
                 )
             conn.commit()
@@ -5321,7 +5333,7 @@ def list_creators(limit: int = 25, offset: int = 0):
 
             cur.execute(
                 """
-                SELECT channel_id, channel, creator_name, total_followers, gender, created_at, last_updated
+                SELECT channel_id, channel, creator_name, total_followers, gender, platform, created_at, last_updated
                 FROM creators
                 ORDER BY last_updated DESC
                 LIMIT %s OFFSET %s
@@ -5336,8 +5348,9 @@ def list_creators(limit: int = 25, offset: int = 0):
                     "creator_name": row[2],
                     "total_followers": row[3],
                     "gender": row[4],
-                    "created_at": row[5],
-                    "last_updated": row[6],
+                    "platform": row[5],
+                    "created_at": row[6],
+                    "last_updated": row[7],
                 }
                 for row in rows
             ]
