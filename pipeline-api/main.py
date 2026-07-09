@@ -5749,7 +5749,7 @@ def schedule_corpus():
                     SELECT
                         s.id AS ref_id,
                         s.youtube_url AS source_url,
-                        COALESCE(va.title, s.youtube_url) AS title,
+                        COALESCE(s.title, s.youtube_url) AS title,
                         s.platform,
                         va.retention_score AS retention,
                         va.tags,
