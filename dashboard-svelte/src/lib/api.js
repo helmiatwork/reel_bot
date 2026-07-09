@@ -21,6 +21,14 @@ async function postJSON(path, body) {
     return null
   }
 }
+async function delJSON(path) {
+  try {
+    const r = await fetch(path, { method: 'DELETE' })
+    return await r.json()
+  } catch (e) {
+    return null
+  }
+}
 
 export const api = {
   services: () => getJSON('/dash/services'),
@@ -63,6 +71,10 @@ export const api = {
   youtubeVideo: (video_id) => getJSON(`/youtube/video/${encodeURIComponent(video_id)}`),
   youtubeQuota: () => getJSON('/youtube/quota'),
   clipThis: (video_id) => postJSON('/youtube/clip-this', { video_id }),
+
+  cookiesStatus: () => getJSON('/cookies'),
+  saveCookies: (platform, content) => postJSON('/cookies/' + platform, { content }),
+  deleteCookies: (platform) => delJSON('/cookies/' + platform),
 
   generateScript: (topic, niche = '', top_n = 5) => postJSON('/generate/script', { topic, niche, top_n }),
   discoverCorpus: (niche, count = 5) => postJSON('/discover/corpus', { niche, count }),

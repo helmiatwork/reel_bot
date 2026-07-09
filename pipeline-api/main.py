@@ -2213,6 +2213,60 @@ def discover_corpus_status(run_id: str):
     return run
 
 
+class CookieUpdate(BaseModel):
+    content: str
+
+
+@app.get("/cookies")
+def cookies_status():
+    """Report which platforms have stored cookies (for the dashboard)."""
+    out = {}
+    for p in COOKIE_PLATFORMS:
+        f = _cookie_file(p)
+        if f.exists():
+            try:
+                lines = [ln for ln in f.read_text().splitlines() if ln.strip() and not ln.startswith("#")]
+                out[p] = {"present": True, "cookies": len(lines), "bytes": f.stat().st_size}
+            except Exception:
+                out[p] = {"present": True, "cookies": 0, "bytes": 0}
+        else:
+            out[p] = {"present": False, "cookies": 0, "bytes": 0}
+    return out
+
+
+@app.post("/cookies/{platform}")
+def cookies_save(platform: str, req: CookieUpdate):
+    """Save pasted Netscape-format cookies for a platform to data/cookies/<platform>.txt."""
+    if platform not in COOKIE_PLATFORMS:
+        raise HTTPException(status_code=400, detail=f"platform must be one of {COOKIE_PLATFORMS}")
+    content = (req.content or "").strip()
+    if not content:
+        raise HTTPException(status_code=400, detail="content is empty")
+    # Light sanity check: Netscape cookies are tab-separated or start with the header.
+    if "\t" not in content and "# Netscape" not in content:
+        raise HTTPException(status_code=400, detail="does not look like Netscape cookies.txt (need tab-separated lines)")
+    COOKIES_DIR.mkdir(parents=True, exist_ok=True)
+    f = _cookie_file(platform)
+    if not content.startswith("# Netscape"):
+        content = "# Netscape HTTP Cookie File\n" + content
+    f.write_text(content + ("\n" if not content.endswith("\n") else ""))
+    f.chmod(0o600)
+    lines = [ln for ln in content.splitlines() if ln.strip() and not ln.startswith("#")]
+    return {"status": "ok", "platform": platform, "cookies": len(lines)}
+
+
+@app.delete("/cookies/{platform}")
+def cookies_delete(platform: str):
+    """Remove stored cookies for a platform."""
+    if platform not in COOKIE_PLATFORMS:
+        raise HTTPException(status_code=400, detail=f"platform must be one of {COOKIE_PLATFORMS}")
+    f = _cookie_file(platform)
+    existed = f.exists()
+    if existed:
+        f.unlink()
+    return {"status": "ok", "platform": platform, "removed": existed}
+
+
 class DecomposeRequest(BaseModel):
     youtube_url: str
     split_files: bool = True
@@ -3267,23 +3321,69 @@ def _fetch_transcript(youtube_url: str) -> list:
         return []
 
 
+def _detect_platform(url: str) -> str:
+    """Return 'youtube' | 'tiktok' | 'instagram' | 'xiaohongshu' | 'unknown'."""
+    net = urlparse(url).netloc.lower()
+    if "youtube.com" in net or "youtu.be" in net:
+        return "youtube"
+    if "tiktok.com" in net:
+        return "tiktok"
+    if "instagram.com" in net:
+        return "instagram"
+    if "xiaohongshu.com" in net or "xhslink.com" in net:
+        return "xiaohongshu"
+    return "unknown"
+
+
+# Platforms that support user-supplied cookies via the dashboard.
+COOKIE_PLATFORMS = ("instagram", "tiktok", "xiaohongshu")
+COOKIES_DIR = _REPO_ROOT / "data" / "cookies"
+
+
+def _cookie_file(platform: str) -> Path:
+    """Path to the stored Netscape cookies file for a platform."""
+    return COOKIES_DIR / f"{platform}.txt"
+
+
 def _extract_video_id_from_youtube_url(url: str) -> str:
-    """Extract video ID from YouTube URL."""
+    """Extract a stable video ID from a YouTube / TikTok / Instagram URL.
+
+    (Name kept for backwards-compat with existing callers; it now handles all
+    three platforms.) Falls back to `yt-dlp --get-id` when the URL shape is
+    unrecognized — note that fallback needs network + working auth for TT/IG.
+    """
     import re
     parsed = urlparse(url)
     video_id = None
+    platform = _detect_platform(url)
 
-    if "youtube.com" in parsed.netloc or "youtu.be" in parsed.netloc:
+    if platform == "youtube":
         if "youtu.be" in parsed.netloc:
             video_id = parsed.path.strip("/").split("?")[0]
         elif "v=" in parsed.query:
             video_id = parsed.query.split("v=")[1].split("&")[0]
+        else:
+            # /shorts/<id> or /embed/<id>
+            parts = [p for p in parsed.path.split("/") if p]
+            if len(parts) >= 2 and parts[0] in ("shorts", "embed"):
+                video_id = parts[1]
+    elif platform == "tiktok":
+        # tiktok.com/@user/video/<numeric id>  (also /v/<id>)
+        m = re.search(r"/(?:video|v)/(\d+)", parsed.path)
+        if m:
+            video_id = f"tt_{m.group(1)}"
+    elif platform == "instagram":
+        # instagram.com/reel/<code>/ , /p/<code>/ , /tv/<code>/
+        m = re.search(r"/(?:reel|reels|p|tv)/([A-Za-z0-9_-]+)", parsed.path)
+        if m:
+            video_id = f"ig_{m.group(1)}"
 
     if not video_id:
         try:
             proc = subprocess.run(["yt-dlp", "--get-id", url], capture_output=True, text=True, timeout=30)
-            if proc.returncode == 0:
-                video_id = proc.stdout.strip()
+            if proc.returncode == 0 and proc.stdout.strip():
+                prefix = {"tiktok": "tt_", "instagram": "ig_"}.get(platform, "")
+                video_id = prefix + proc.stdout.strip()
         except Exception:
             pass
 
@@ -3294,7 +3394,7 @@ def _extract_video_id_from_youtube_url(url: str) -> str:
     return video_id
 
 
-def _ytdlp_source_args(force_player_client: bool = True) -> list:
+def _ytdlp_source_args(force_player_client: bool = True, platform: str = "youtube") -> list:
     """
     Build yt-dlp argv fragments for YouTube downloads.
     Returns a list of args that includes:
@@ -3311,18 +3411,33 @@ def _ytdlp_source_args(force_player_client: bool = True) -> list:
     """
     args = []
 
-    # Add extractor-args for player_client fallback chain
-    # android bypasses the n-challenge; web_safari + ios as fallbacks
-    if force_player_client:
-        args.extend(["--extractor-args", "youtube:player_client=android,web_safari,ios"])
+    if platform == "youtube":
+        # android bypasses the n-challenge; web_safari + ios as fallbacks
+        if force_player_client:
+            args.extend(["--extractor-args", "youtube:player_client=android,web_safari,ios"])
+        cookies_env = "YTDLP_COOKIES_FILE"
+    else:
+        # TikTok/Instagram/Xiaohongshu: impersonate a real browser (bypasses some
+        # blocks) and use platform-specific cookies. These sites require login
+        # cookies; TikTok may still IP-block without a residential egress.
+        args.extend(["--impersonate", "chrome"])
+        cookies_env = {
+            "tiktok": "TIKTOK_COOKIES_FILE",
+            "instagram": "IG_COOKIES_FILE",
+            "xiaohongshu": "XHS_COOKIES_FILE",
+        }.get(platform, "YTDLP_COOKIES_FILE")
 
-    # Check for cookies env var and copy to writable temp location if needed
-    cookies_file = os.getenv("YTDLP_COOKIES_FILE", "")
+    # Cookie source order: platform env var → dashboard-managed file
+    # (data/cookies/<platform>.txt) → generic YTDLP_COOKIES_FILE.
+    cookies_file = os.getenv(cookies_env, "")
+    if not cookies_file and platform in COOKIE_PLATFORMS and _cookie_file(platform).exists():
+        cookies_file = str(_cookie_file(platform))
+    if not cookies_file:
+        cookies_file = os.getenv("YTDLP_COOKIES_FILE", "")
     if cookies_file and Path(cookies_file).exists():
-        # Copy cookies to a writable temp file (yt-dlp writes refreshed cookies)
-        original_cookies = Path(cookies_file)
-        writable_cookies = Path(tempfile.gettempdir()) / f"cookies_{os.getpid()}.txt"
-        shutil.copy(str(original_cookies), str(writable_cookies))
+        # Copy to a writable temp file (yt-dlp rewrites refreshed cookies).
+        writable_cookies = Path(tempfile.gettempdir()) / f"cookies_{platform}_{os.getpid()}.txt"
+        shutil.copy(str(cookies_file), str(writable_cookies))
         args.extend(["--cookies", str(writable_cookies)])
 
     return args
@@ -3335,43 +3450,12 @@ def _download_source_video(youtube_url: str) -> Path:
     Returns absolute Path to the downloaded video.
     Caches by video_id — if already exists, returns it without re-downloading.
     """
-    import re
-
-    # Extract video_id from YouTube URL (handle multiple URL formats)
-    # Formats: youtube.com/watch?v=<id>, youtu.be/<id>, etc.
-    parsed = urlparse(youtube_url)
-    video_id = None
-
-    if "youtube.com" in parsed.netloc or "youtu.be" in parsed.netloc:
-        if "youtu.be" in parsed.netloc:
-            video_id = parsed.path.strip("/").split("?")[0]
-        else:
-            # youtube.com/watch?v=<id> or youtube.com/embed/<id>
-            if "v=" in parsed.query:
-                video_id = parsed.query.split("v=")[1].split("&")[0]
-            else:
-                # Try path-based ID (embed or watch)
-                path_parts = parsed.path.strip("/").split("/")
-                if len(path_parts) >= 2:
-                    video_id = path_parts[1]
-
-    # Fallback: use yt-dlp to extract the ID
-    if not video_id:
-        try:
-            proc = subprocess.run(
-                ["yt-dlp", "--get-id", youtube_url],
-                capture_output=True, text=True, timeout=30
-            )
-            if proc.returncode == 0:
-                video_id = proc.stdout.strip()
-        except Exception:
-            pass
-
-    # Sanitize video_id to avoid directory traversal
-    if video_id:
-        video_id = re.sub(r"[^a-zA-Z0-9_-]", "", video_id)
-    if not video_id:
-        raise RuntimeError(f"Could not extract video_id from URL: {youtube_url}")
+    # Platform-agnostic id + platform (handles YouTube / TikTok / Instagram)
+    platform = _detect_platform(youtube_url)
+    try:
+        video_id = _extract_video_id_from_youtube_url(youtube_url)
+    except ValueError as e:
+        raise RuntimeError(str(e))
 
     # Check cache
     cache_dir = _REPO_ROOT / "data" / "videos" / video_id
@@ -3383,15 +3467,17 @@ def _download_source_video(youtube_url: str) -> Path:
     cache_dir.mkdir(parents=True, exist_ok=True)
     output_template = str(cache_dir / "source.%(ext)s")
 
+    # YouTube: force raw highest-bitrate H.264 (avc1), remuxed, editor-friendly.
+    # TikTok/IG only serve one mp4 rendition — just take best and remux.
+    if platform == "youtube":
+        fmt = "bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio/best"
+    else:
+        fmt = "bestvideo+bestaudio/best[ext=mp4]/best"
+
     dl_proc = subprocess.run(
         [
             "yt-dlp",
-            # Grab YouTube's raw highest-bitrate H.264 stream, remuxed (not re-encoded)
-            # into mp4. Prefer avc1 explicitly: yt-dlp's default sort would pick a lower-
-            # bitrate AV1 stream ("newer codec"), which is both lower quality here and
-            # poorly supported by editors (CapCut). -S picks the max-bitrate variant.
-            # No height cap — the old height<=480 also mis-handled portrait Shorts.
-            "-f", "bestvideo[vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio/best",
+            "-f", fmt,
             "-S", "res,fps,vbr,abr",
             "--merge-output-format", "mp4",
             "--retries", "5",
@@ -3399,7 +3485,7 @@ def _download_source_video(youtube_url: str) -> Path:
             "--socket-timeout", "30",
             "-o", output_template,
             "--no-playlist",
-        ] + _ytdlp_source_args(force_player_client=False) + [
+        ] + _ytdlp_source_args(force_player_client=False, platform=platform) + [
             youtube_url,
         ],
         capture_output=True, text=True, timeout=300,
@@ -3640,18 +3726,25 @@ def _extract_keyframes(youtube_url: str, out_dir: str, n: int = 20) -> list:
     # Download video via yt-dlp to a temp file
     tmp_video_dir = tempfile.mkdtemp(prefix="analyze_vid_")
     output_template = f"{tmp_video_dir}/source_video.%(ext)s"
+    platform = _detect_platform(youtube_url)
+    # 480p is plenty for frame analysis (claude downsamples). YouTube caps height;
+    # TikTok/IG single-rendition just take best.
+    if platform == "youtube":
+        fmt = "bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/best[ext=mp4][height<=480]/best[height<=480]/best"
+    else:
+        fmt = "bestvideo+bestaudio/best[ext=mp4]/best"
 
     dl_proc = subprocess.run(
         [
             "yt-dlp",
-            "-f", "bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/best[ext=mp4][height<=480]/best[height<=480]/best",
+            "-f", fmt,
             "--merge-output-format", "mp4",
             "--retries", "5",
             "--fragment-retries", "5",
             "--socket-timeout", "30",
             "-o", output_template,
             "--no-playlist",
-        ] + _ytdlp_source_args() + [
+        ] + _ytdlp_source_args(platform=platform) + [
             youtube_url,
         ],
         capture_output=True, text=True, timeout=300,
@@ -3866,8 +3959,9 @@ def _fetch_channel_meta(youtube_url: str) -> dict:
             "--skip-download",
             "--no-playlist",
         ]
-        # Add player_client args from _ytdlp_source_args
-        cmd.extend(["--extractor-args", "youtube:player_client=android,web_safari,ios"])
+        # Platform-aware auth/impersonate/cookies (YouTube player_client, or
+        # impersonate+cookies for TikTok/Instagram).
+        cmd.extend(_ytdlp_source_args(platform=_detect_platform(youtube_url)))
         cmd.append(youtube_url)
 
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
@@ -4049,7 +4143,7 @@ def _save_source(youtube_url: str) -> None:
                     (
                         youtube_url,
                         meta.get("title"),
-                        "youtube",
+                        _detect_platform(youtube_url),
                         meta.get("channel"),
                         meta.get("view_count"),
                         "analyzed",
