@@ -5777,6 +5777,12 @@ def _schedule_init_db():
                     ON scheduled_posts (scheduled_at NULLS LAST)
             """)
             conn.commit()
+            # Phase 2 migration: per-account tracking per platform (additive, idempotent)
+            cur.execute("""
+                ALTER TABLE scheduled_posts
+                ADD COLUMN IF NOT EXISTS platform_accounts TEXT DEFAULT '{}'
+            """)
+            conn.commit()
 
 
 def _derive_schedule_counts(items, now_dt=None):
@@ -5849,6 +5855,7 @@ class ScheduleCreate(BaseModel):
     caption: Optional[str] = ""
     thumb_url: Optional[str] = None
     source_url: Optional[str] = None
+    platform_accounts: Optional[dict] = None  # {"youtube": <account_id>, ...}
 
 
 class ScheduleUpdate(BaseModel):
@@ -5859,6 +5866,7 @@ class ScheduleUpdate(BaseModel):
     thumb_url: Optional[str] = None
     source_url: Optional[str] = None
     platform_urls: Optional[dict] = None
+    platform_accounts: Optional[dict] = None  # merged on PATCH like platform_urls
 
 
 def _row_to_schedule(row, cols):
@@ -5870,6 +5878,13 @@ def _row_to_schedule(row, cols):
             d["platform_urls"] = json.loads(pu)
         except Exception:
             d["platform_urls"] = {}
+    # Deserialize platform_accounts TEXT → dict
+    pa = d.get("platform_accounts") or "{}"
+    if isinstance(pa, str):
+        try:
+            d["platform_accounts"] = json.loads(pa)
+        except Exception:
+            d["platform_accounts"] = {}
     # Serialize datetimes to ISO strings
     import datetime as _dt
     for k in ("scheduled_at", "created_at", "updated_at"):
@@ -5902,16 +5917,17 @@ def schedule_create(body: ScheduleCreate):
     """Create a new scheduled post."""
     try:
         pu_json = "{}"
+        pa_json = json.dumps(body.platform_accounts) if body.platform_accounts else "{}"
         with _db_conn() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """INSERT INTO scheduled_posts
-                       (content_ref, title, platforms, scheduled_at, caption, thumb_url, source_url, platform_urls)
-                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                       (content_ref, title, platforms, scheduled_at, caption, thumb_url, source_url, platform_urls, platform_accounts)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                        RETURNING *""",
                     (body.content_ref, body.title, body.platforms or "",
                      body.scheduled_at or None, body.caption or "",
-                     body.thumb_url, body.source_url, pu_json)
+                     body.thumb_url, body.source_url, pu_json, pa_json)
                 )
                 cols = [c.name for c in cur.description]
                 row = _row_to_schedule(cur.fetchone(), cols)
@@ -5929,18 +5945,23 @@ def schedule_update(item_id: int, body: ScheduleUpdate):
     try:
         with _db_conn() as conn:
             with conn.cursor() as cur:
-                # Fetch current platform_urls for merge
-                cur.execute("SELECT platform_urls FROM scheduled_posts WHERE id = %s", (item_id,))
+                # Fetch current platform_urls + platform_accounts for merge
+                cur.execute("SELECT platform_urls, platform_accounts FROM scheduled_posts WHERE id = %s", (item_id,))
                 existing = cur.fetchone()
                 if not existing:
                     raise HTTPException(status_code=404, detail="Not found")
                 # `or "{}"` covers both NULL and "" (empty string is falsy) so
                 # json.loads always receives valid JSON or the "{}" fallback.
                 current_pu_raw = existing[0] or "{}"
+                current_pa_raw = existing[1] or "{}"
                 try:
                     current_pu = json.loads(current_pu_raw) if isinstance(current_pu_raw, str) else (current_pu_raw or {})
                 except Exception:
                     current_pu = {}
+                try:
+                    current_pa = json.loads(current_pa_raw) if isinstance(current_pa_raw, str) else (current_pa_raw or {})
+                except Exception:
+                    current_pa = {}
 
                 updates = {}
                 if body.title is not None:
@@ -5958,6 +5979,9 @@ def schedule_update(item_id: int, body: ScheduleUpdate):
                 if body.platform_urls is not None:
                     merged = {**current_pu, **body.platform_urls}
                     updates["platform_urls"] = json.dumps(merged)
+                if body.platform_accounts is not None:
+                    merged_pa = {**current_pa, **body.platform_accounts}
+                    updates["platform_accounts"] = json.dumps(merged_pa)
 
                 if not updates:
                     cur.execute("SELECT * FROM scheduled_posts WHERE id = %s", (item_id,))
