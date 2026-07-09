@@ -1,7 +1,7 @@
 # pipeline-api/main.py
 # FastAPI service exposing all pipeline gaps as REST endpoints
 
-import os, sys, json
+import os, sys, json, uuid
 import functools
 import socket
 import ipaddress
@@ -13,7 +13,7 @@ import time
 import asyncio
 from pathlib import Path
 from urllib.parse import urlparse
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Header, Depends
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Header, Depends, UploadFile, Form, File
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -4243,15 +4243,171 @@ def _songs_init_db():
                 title        TEXT,
                 audio_path   TEXT,
                 duration_sec INTEGER,
+                bpm          REAL,
+                music_key    TEXT,
+                energy       REAL,
+                mood         TEXT,
+                genre        TEXT,
+                tags         TEXT,
+                source       TEXT,
                 created_at   TIMESTAMPTZ DEFAULT now()
             )""")
             cur.execute("""CREATE INDEX IF NOT EXISTS songs_created_at_idx
                 ON songs (created_at DESC)""")
+            # Additive migrations for existing installs (safe to re-run)
+            for col_def in [
+                "bpm REAL", "music_key TEXT", "energy REAL",
+                "mood TEXT", "genre TEXT", "tags TEXT", "source TEXT",
+            ]:
+                cur.execute(
+                    f"ALTER TABLE songs ADD COLUMN IF NOT EXISTS {col_def}"
+                )
         conn.commit()
     except Exception as e:
         print(f"[songs] init db error: {e}")
     finally:
         conn.close()
+
+
+def _analyze_audio(path: str) -> dict:
+    """
+    Extract objective musical features from an audio file using librosa.
+    Returns dict with: bpm, music_key, energy, duration_sec.
+    mood/genre/tags are intentionally left None — use _suggest_music_tags for auto
+    hints or let the user tag manually.
+    Never raises — returns best-effort dict (Nones on any error).
+    """
+    result: dict = {
+        "bpm": None, "music_key": None, "energy": None, "duration_sec": None,
+    }
+    try:
+        import librosa
+        import numpy as np
+
+        y, sr = librosa.load(path, sr=None, mono=True)
+        result["duration_sec"] = round(float(librosa.get_duration(y=y, sr=sr)), 2)
+
+        # BPM — beat_track returns ndarray in librosa ≥0.10
+        tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
+        result["bpm"] = round(float(np.asarray(tempo).flat[0]), 1)
+
+        # Dominant key from chroma
+        chroma = librosa.feature.chroma_stft(y=y, sr=sr)
+        key_idx = int(chroma.mean(axis=1).argmax())
+        notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+        result["music_key"] = notes[key_idx]
+
+        # Energy — RMS mean
+        result["energy"] = round(float(librosa.feature.rms(y=y).mean()), 6)
+
+    except Exception as e:
+        print(f"[songs] _analyze_audio error (non-fatal): {e}")
+
+    return result
+
+
+_MUSIC_TAG_MODEL = "gemini-2.5-flash-lite"  # ponytail: swap here if model changes
+
+
+def _suggest_music_tags(path: str) -> list:
+    """
+    Auto-tag audio via Gemini (through cliproxy gateway).
+    Trims first 10s to mono mp3, sends as input_audio, parses JSON tags.
+    Cost: ~390 tokens/song (~$0.00004) — fine to run on every import.
+    Returns [] on any failure — never raises, never blocks import.
+    Reads CLIPROXY_URL and CLIPROXY_KEY from environment.
+    """
+    cliproxy_url = os.getenv("CLIPROXY_URL", "http://localhost:8317/v1").rstrip("/")
+    cliproxy_key = os.getenv("CLIPROXY_KEY", "")
+    if not cliproxy_key:
+        return []
+
+    try:
+        import base64
+        import httpx
+
+        # Trim first 10s to mono mp3 in a temp file
+        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
+            tmp_path = f.name
+        try:
+            subprocess.run(
+                ["ffmpeg", "-y", "-i", path,
+                 "-t", "10", "-vn", "-ac", "1", "-ar", "22050", "-b:a", "64k",
+                 tmp_path],
+                capture_output=True, timeout=30, check=True,
+            )
+            audio_b64 = base64.b64encode(Path(tmp_path).read_bytes()).decode()
+        finally:
+            Path(tmp_path).unlink(missing_ok=True)
+
+        payload = {
+            "model": _MUSIC_TAG_MODEL,
+            "max_tokens": 200,
+            "messages": [{
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": (
+                            'Identify this music. Return ONLY JSON: '
+                            '{"genre":"","instruments":[],"mood":"","tags":[]}. '
+                            'Use short lowercase tags like classic, piano, saxophone, jazz.'
+                        ),
+                    },
+                    {
+                        "type": "input_audio",
+                        "input_audio": {"data": audio_b64, "format": "mp3"},
+                    },
+                ],
+            }],
+        }
+
+        resp = httpx.post(
+            f"{cliproxy_url}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {cliproxy_key}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=60.0,
+        )
+        resp.raise_for_status()
+
+        content = resp.json()["choices"][0]["message"]["content"].strip()
+
+        # Strip markdown code fences if present
+        if content.startswith("```"):
+            parts = content.split("```", 2)
+            inner = parts[1]
+            if inner.startswith("json"):
+                inner = inner[4:]
+            content = inner.rsplit("```", 1)[0].strip()
+
+        data = json.loads(content)
+
+        # Merge all fields into a deduplicated tag list
+        raw_tags: list = []
+        if isinstance(data.get("tags"), list):
+            raw_tags.extend(data["tags"])
+        if isinstance(data.get("instruments"), list):
+            raw_tags.extend(data["instruments"])
+        if isinstance(data.get("genre"), str) and data["genre"]:
+            raw_tags.append(data["genre"])
+        if isinstance(data.get("mood"), str) and data["mood"]:
+            raw_tags.append(data["mood"])
+
+        seen: set = set()
+        result: list = []
+        for t in raw_tags:
+            t = str(t).lower().strip()
+            if t and t not in seen:
+                seen.add(t)
+                result.append(t)
+        return result
+
+    except Exception as e:
+        print(f"[songs] _suggest_music_tags error (non-fatal): {e}")
+        return []
 
 
 def _log_api_usage(agent: str, model: str, raw_usage: dict, cost_usd) -> None:
@@ -4616,13 +4772,14 @@ def _save_song(youtube_url: str) -> None:
 
                 cur.execute(
                     """INSERT INTO songs
-                    (youtube_url, title, audio_path, duration_sec)
-                    VALUES (%s, %s, %s, %s)""",
+                    (youtube_url, title, audio_path, duration_sec, source)
+                    VALUES (%s, %s, %s, %s, %s)""",
                     (
                         youtube_url,
                         result.get("title"),
                         result.get("audio_path"),
                         result.get("duration_sec"),
+                        "youtube",
                     )
                 )
             conn.commit()
@@ -5193,9 +5350,16 @@ def list_creators(limit: int = 25, offset: int = 0):
 
 
 @app.get("/songs")
-def list_songs(limit: int = 25, offset: int = 0):
+def list_songs(
+    limit: int = 25,
+    offset: int = 0,
+    tag: Optional[str] = None,
+    mood: Optional[str] = None,
+    min_bpm: Optional[float] = None,
+    max_bpm: Optional[float] = None,
+):
     """
-    List songs with pagination.
+    List songs with pagination and optional filters (tag, mood, min_bpm, max_bpm).
     Returns list ordered by created_at DESC (most recent first).
     On DB error, returns empty list gracefully.
     """
@@ -5207,18 +5371,35 @@ def list_songs(limit: int = 25, offset: int = 0):
 
     try:
         with conn.cursor() as cur:
-            # Get total count
-            cur.execute("SELECT count(*) FROM songs")
+            filters, params = [], []
+            if tag:
+                # JSON array stored as text — match substring (e.g. '"jazz"')
+                filters.append("tags LIKE %s")
+                params.append(f'%"{tag}"%')
+            if mood:
+                filters.append("mood = %s")
+                params.append(mood)
+            if min_bpm is not None:
+                filters.append("bpm >= %s")
+                params.append(min_bpm)
+            if max_bpm is not None:
+                filters.append("bpm <= %s")
+                params.append(max_bpm)
+
+            where = ("WHERE " + " AND ".join(filters)) if filters else ""
+
+            cur.execute(f"SELECT count(*) FROM songs {where}", params)
             total = cur.fetchone()[0]
 
             cur.execute(
-                """
-                SELECT id, youtube_url, title, audio_path, duration_sec, created_at
-                FROM songs
+                f"""
+                SELECT id, youtube_url, title, audio_path, duration_sec,
+                       bpm, music_key, energy, mood, genre, tags, source, created_at
+                FROM songs {where}
                 ORDER BY created_at DESC
                 LIMIT %s OFFSET %s
                 """,
-                (limit, offset)
+                params + [limit, offset],
             )
             rows = cur.fetchall()
             songs = [
@@ -5228,7 +5409,14 @@ def list_songs(limit: int = 25, offset: int = 0):
                     "title": row[2],
                     "audio_path": row[3],
                     "duration_sec": row[4],
-                    "created_at": row[5],
+                    "bpm": row[5],
+                    "music_key": row[6],
+                    "energy": row[7],
+                    "mood": row[8],
+                    "genre": row[9],
+                    "tags": json.loads(row[10]) if row[10] else [],
+                    "source": row[11],
+                    "created_at": row[12],
                 }
                 for row in rows
             ]
@@ -5281,6 +5469,162 @@ def download_song(song_id: int):
         raise HTTPException(status_code=500, detail="Download failed")
     finally:
         conn.close()
+
+
+class SongUpdateRequest(BaseModel):
+    title: Optional[str] = None
+    mood: Optional[str] = None
+    genre: Optional[str] = None
+    tags: Optional[List[str]] = None
+
+
+@app.patch("/songs/{song_id}")
+def update_song(song_id: int, req: SongUpdateRequest):
+    """
+    Partial update of song metadata: title, mood, genre, tags.
+    All fields optional — only provided fields are updated.
+    Returns the updated row.
+    """
+    fields, params = [], []
+    if req.title is not None:
+        fields.append("title = %s"); params.append(req.title)
+    if req.mood is not None:
+        fields.append("mood = %s"); params.append(req.mood)
+    if req.genre is not None:
+        fields.append("genre = %s"); params.append(req.genre)
+    if req.tags is not None:
+        fields.append("tags = %s"); params.append(json.dumps(req.tags, ensure_ascii=False))
+
+    if not fields:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    params.append(song_id)
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database unavailable")
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"UPDATE songs SET {', '.join(fields)} WHERE id = %s "
+                f"RETURNING id, youtube_url, title, audio_path, duration_sec, "
+                f"bpm, music_key, energy, mood, genre, tags, source, created_at",
+                params,
+            )
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="Song not found")
+        conn.commit()
+        return _json({
+            "id": row[0], "youtube_url": row[1], "title": row[2],
+            "audio_path": row[3], "duration_sec": row[4],
+            "bpm": row[5], "music_key": row[6], "energy": row[7],
+            "mood": row[8], "genre": row[9],
+            "tags": json.loads(row[10]) if row[10] else [],
+            "source": row[11], "created_at": row[12],
+        })
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[songs] PATCH /songs/{song_id} failed: {e}")
+        raise HTTPException(status_code=500, detail="Update failed")
+    finally:
+        conn.close()
+
+
+_SONG_IMPORT_ALLOWED_EXTS = {".mp3", ".wav", ".m4a", ".aac", ".ogg"}
+_SONG_IMPORT_MAX_BYTES = 30 * 1024 * 1024  # 30 MB
+
+
+@app.post("/songs/import")
+async def import_song(
+    file: UploadFile = File(...),
+    title: str = Form(default=""),
+    tags: str = Form(default="[]"),
+    mood: str = Form(default=""),
+    genre: str = Form(default=""),
+):
+    """
+    Import a user-supplied audio file into the songs library.
+    Runs librosa auto-analysis for BPM/key/energy; tags/mood/genre are user-supplied.
+    Validates extension (mp3/wav/m4a/aac/ogg) and caps at 30 MB.
+    Stored as data/songs/imported/<uuid>.<ext> (no path traversal from original name).
+    """
+    original_name = file.filename or ""
+    ext = Path(original_name).suffix.lower()
+    if ext not in _SONG_IMPORT_ALLOWED_EXTS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported format '{ext}'. Allowed: {', '.join(sorted(_SONG_IMPORT_ALLOWED_EXTS))}",
+        )
+
+    content = await file.read()
+    if len(content) > _SONG_IMPORT_MAX_BYTES:
+        raise HTTPException(status_code=413, detail="File too large (max 30 MB)")
+
+    # UUID path — no path traversal from original filename
+    file_id = str(uuid.uuid4())
+    import_dir = Path(_REPO_ROOT) / "data" / "songs" / "imported"
+    import_dir.mkdir(parents=True, exist_ok=True)
+    dest_path = import_dir / f"{file_id}{ext}"
+    dest_path.write_bytes(content)
+
+    features = _analyze_audio(str(dest_path))
+    auto_tags = _suggest_music_tags(str(dest_path))  # [] until auto-tagger wired up
+
+    # Merge user-supplied tags with auto suggestions
+    try:
+        user_tags = json.loads(tags) if tags.strip().startswith("[") else [
+            t.strip() for t in tags.split(",") if t.strip()
+        ]
+    except Exception:
+        user_tags = []
+    merged_tags = list({*user_tags, *auto_tags})
+
+    clean_title = title.strip() or Path(original_name).stem or file_id
+    clean_mood = mood.strip() or None
+    clean_genre = genre.strip() or None
+    duration_int = int(round(features["duration_sec"])) if features.get("duration_sec") else None
+
+    conn = _db_conn()
+    if not conn:
+        dest_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=500, detail="Database unavailable")
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO songs
+                   (title, audio_path, duration_sec, bpm, music_key, energy,
+                    mood, genre, tags, source)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                   RETURNING id, youtube_url, title, audio_path, duration_sec,
+                             bpm, music_key, energy, mood, genre, tags, source, created_at""",
+                (
+                    clean_title, str(dest_path), duration_int,
+                    features.get("bpm"), features.get("music_key"), features.get("energy"),
+                    clean_mood, clean_genre,
+                    json.dumps(merged_tags, ensure_ascii=False),
+                    "import",
+                ),
+            )
+            row = cur.fetchone()
+        conn.commit()
+    except Exception as e:
+        dest_path.unlink(missing_ok=True)
+        print(f"[songs] import_song db error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save song record")
+    finally:
+        conn.close()
+
+    return _json({
+        "id": row[0], "youtube_url": row[1], "title": row[2],
+        "audio_path": row[3], "duration_sec": row[4],
+        "bpm": row[5], "music_key": row[6], "energy": row[7],
+        "mood": row[8], "genre": row[9],
+        "tags": json.loads(row[10]) if row[10] else [],
+        "source": row[11], "created_at": row[12],
+    })
 
 
 @app.post("/clips/find-claude")
