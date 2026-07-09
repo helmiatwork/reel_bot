@@ -23,6 +23,12 @@
   // URL paste per platform (in modal)
   let urlInputs = $state({})
 
+  // Per-platform account selection: { platform: account_id } for modal + create flow
+  let platformAccounts = $state({})
+  let newPlatformAccounts = $state({})
+  // Cache of accounts fetched per platform: { platform: [{id, handle, label, active}] }
+  let acctsByPlatform = $state({})
+
   const PLATFORMS = ['youtube', 'tiktok', 'instagram', 'xiaohongshu']
 
   // ponytail: render SVG brand logos for platforms; remove text labels
@@ -95,11 +101,21 @@
     return items.filter(i => itemStatus(i) === activeTab)
   })
 
+  // ── Account helpers ──────────────────────────────────────────────────────────
+  async function loadAccounts(p) {
+    if (acctsByPlatform[p] !== undefined) return  // already loaded
+    const r = await api.accounts(p)
+    acctsByPlatform = { ...acctsByPlatform, [p]: r || [] }
+  }
+
   // ── Modal helpers ────────────────────────────────────────────────────────────
   function openModal(item) {
     modal = { ...item, platforms: platformList(item.platforms) }
     urlInputs = {}
     saveErr = ''
+    platformAccounts = { ...(item.platform_accounts || {}) }
+    // Load accounts for all platforms lazily on first modal open
+    PLATFORMS.forEach(p => loadAccounts(p))
   }
 
   function closeModal() { modal = null; saveErr = '' }
@@ -113,6 +129,7 @@
       modal = { ...modal, platforms: modal.platforms.filter(x => x !== p) }
     } else {
       modal = { ...modal, platforms: [...modal.platforms, p] }
+      loadAccounts(p)
     }
   }
 
@@ -144,7 +161,8 @@
       scheduled_at: modal.scheduled_at ?? '',
       caption: modal.caption || '',
       thumb_url: modal.thumb_url || '',
-      source_url: modal.source_url || ''
+      source_url: modal.source_url || '',
+      platform_accounts: platformAccounts
     }
     const r = modal.id
       ? await api.scheduleUpdate(modal.id, payload)
@@ -172,6 +190,7 @@
     corpus = []
     pickedRef = null
     newForm = emptyForm()
+    newPlatformAccounts = {}
     const r = await api.scheduleCorpus()
     corpus = r || []
     corpusLoading = false
@@ -198,7 +217,8 @@
       caption: newForm.caption || '',
       thumb_url: newForm.thumb_url || '',
       source_url: newForm.source_url || '',
-      content_ref: newForm.content_ref || ''
+      content_ref: newForm.content_ref || '',
+      platform_accounts: newPlatformAccounts
     }
     const r = await api.scheduleCreate(payload)
     saving = false
@@ -216,6 +236,7 @@
       newForm = { ...newForm, platforms: newForm.platforms.filter(x => x !== p) }
     } else {
       newForm = { ...newForm, platforms: [...newForm.platforms, p] }
+      loadAccounts(p)
     }
   }
 
@@ -408,6 +429,12 @@
                 </button>
                 {#if state === 'posted' && urls[p]}
                   <a class="posted-url" href={urls[p]} target="_blank" rel="noopener">{urls[p].slice(0, 32)}…</a>
+                  {#if platformAccounts[p]}
+                    {@const acct = (acctsByPlatform[p] || []).find(a => a.id === platformAccounts[p])}
+                    {#if acct}
+                      <span class="acct-label">{acct.label || acct.handle}</span>
+                    {/if}
+                  {/if}
                 {:else if state === 'on'}
                   <div class="url-row">
                     <input
@@ -417,6 +444,18 @@
                     >
                     <button class="btn-sm" onclick={() => savePlatformUrl(p)} disabled={!urlInputs[p]}>Simpan</button>
                   </div>
+                  {#if (acctsByPlatform[p] || []).filter(a => a.active).length > 0}
+                    <select class="acct-select"
+                      value={platformAccounts[p] != null ? platformAccounts[p] : ''}
+                      onchange={(e) => platformAccounts = { ...platformAccounts, [p]: e.target.value ? Number(e.target.value) : null }}>
+                      <option value="">Pilih akun…</option>
+                      {#each (acctsByPlatform[p] || []).filter(a => a.active) as a}
+                        <option value={a.id}>{a.label || a.handle}</option>
+                      {/each}
+                    </select>
+                  {:else if acctsByPlatform[p] !== undefined}
+                    <div class="acct-hint">Belum ada akun — <a href="/accounts" class="acct-link">tambah di Accounts</a></div>
+                  {/if}
                 {/if}
               </div>
             {/each}
@@ -517,9 +556,26 @@
           <span>Platform tujuan</span>
           <div class="chip-row">
             {#each PLATFORMS as p}
-              <button class="chip {newForm.platforms.includes(p) ? 'on' : 'off'}" onclick={() => toggleNewPlatform(p)}>
-                <svg class="chip-ico plat-ico {p}"><use href="#{PLATFORM_ICON[p] || 'i-yt'}"/></svg>
-              </button>
+              {@const isOn = newForm.platforms.includes(p)}
+              <div class="chip-wrap">
+                <button class="chip {isOn ? 'on' : 'off'}" onclick={() => toggleNewPlatform(p)}>
+                  <svg class="chip-ico plat-ico {p}"><use href="#{PLATFORM_ICON[p] || 'i-yt'}"/></svg>
+                </button>
+                {#if isOn}
+                  {#if (acctsByPlatform[p] || []).filter(a => a.active).length > 0}
+                    <select class="acct-select"
+                      value={newPlatformAccounts[p] != null ? newPlatformAccounts[p] : ''}
+                      onchange={(e) => newPlatformAccounts = { ...newPlatformAccounts, [p]: e.target.value ? Number(e.target.value) : null }}>
+                      <option value="">Pilih akun…</option>
+                      {#each (acctsByPlatform[p] || []).filter(a => a.active) as a}
+                        <option value={a.id}>{a.label || a.handle}</option>
+                      {/each}
+                    </select>
+                  {:else if acctsByPlatform[p] !== undefined}
+                    <div class="acct-hint">Belum ada akun — <a href="/accounts" class="acct-link">tambah</a></div>
+                  {/if}
+                {/if}
+              </div>
             {/each}
           </div>
         </label>
@@ -659,6 +715,14 @@
   .thumb-ph-sm svg{width:22px;height:22px}
   .corpus-title{font-size:12px;font-weight:600;padding:6px 8px 2px;color:var(--txt);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
   .corpus-ret{font-size:11px;color:var(--green);padding:0 8px 8px;font-weight:600}
+
+  /* Account picker */
+  .acct-select{border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:12px;background:var(--bg);color:var(--txt);outline:none;max-width:160px;width:100%}
+  .acct-select:focus{border-color:var(--accent)}
+  .acct-hint{font-size:11px;color:var(--mut)}
+  .acct-link{color:var(--accent);text-decoration:none}
+  .acct-link:hover{text-decoration:underline}
+  .acct-label{font-size:11px;color:var(--mut)}
 
   /* Misc */
   .empty-state{text-align:center;padding:48px 24px;color:var(--mut);font-size:14px}
