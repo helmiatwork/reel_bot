@@ -4682,125 +4682,6 @@ def _save_source(youtube_url: str) -> None:
         print(f"[sources] _save_source error (non-fatal): {e}")
 
 
-def _extract_audio(youtube_url: str) -> dict:
-    """
-    Extract audio from YouTube video to data/songs/<video_id>.mp3.
-    Returns {audio_path, title, duration_sec} on success, {} on error.
-    Non-fatal: any error is logged but doesn't break analyze.
-    Caches by video_id — if mp3 already exists, reuses it.
-    """
-    try:
-        video_id = _extract_video_id_from_youtube_url(youtube_url)
-        songs_dir = Path(_REPO_ROOT) / "data" / "songs"
-        songs_dir.mkdir(parents=True, exist_ok=True)
-        audio_path = songs_dir / f"{video_id}.mp3"
-
-        # If audio already exists, fetch meta and return
-        if audio_path.exists():
-            meta = _fetch_channel_meta(youtube_url)
-            duration_sec = None
-            try:
-                proc = subprocess.run(
-                    ["ffprobe", "-v", "error", "-show_entries", "format=duration",
-                     "-of", "default=noprint_wrappers=1:nokey=1:noprint_wrappers=1",
-                     str(audio_path)],
-                    capture_output=True, text=True, timeout=30
-                )
-                if proc.returncode == 0:
-                    duration_sec = int(float(proc.stdout.strip() or 0))
-            except Exception:
-                pass
-            return {
-                "audio_path": str(audio_path),
-                "title": meta.get("title", ""),
-                "duration_sec": duration_sec,
-            }
-
-        # Download audio
-        cmd = [
-            "yt-dlp",
-            "-x",
-            "--audio-format", "mp3",
-            "--no-playlist",
-        ]
-        cmd.extend(_ytdlp_source_args())
-        cmd.extend(["-o", str(songs_dir / f"{video_id}.%(ext)s")])
-        cmd.append(youtube_url)
-
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-        if proc.returncode != 0:
-            print(f"[songs] yt-dlp audio extraction failed: {proc.stderr[:200]}")
-            return {}
-
-        if not audio_path.exists():
-            print(f"[songs] audio file not created at {audio_path}")
-            return {}
-
-        # Get duration and title
-        meta = _fetch_channel_meta(youtube_url)
-        duration_sec = None
-        try:
-            proc = subprocess.run(
-                ["ffprobe", "-v", "error", "-show_entries", "format=duration",
-                 "-of", "default=noprint_wrappers=1:nokey=1:noprint_wrappers=1",
-                 str(audio_path)],
-                capture_output=True, text=True, timeout=30
-            )
-            if proc.returncode == 0:
-                duration_sec = int(float(proc.stdout.strip() or 0))
-        except Exception:
-            pass
-
-        return {
-            "audio_path": str(audio_path),
-            "title": meta.get("title", ""),
-            "duration_sec": duration_sec,
-        }
-    except Exception as e:
-        print(f"[songs] _extract_audio error: {e}")
-        return {}
-
-
-def _save_song(youtube_url: str) -> None:
-    """
-    Save the song audio to the songs library if not already stored
-    (check by youtube_url). Non-fatal: any error is logged but doesn't break analyze.
-    """
-    try:
-        conn = _db_conn()
-        if not conn:
-            return
-
-        try:
-            with conn.cursor() as cur:
-                cur.execute("SELECT 1 FROM songs WHERE youtube_url = %s", (youtube_url,))
-                if cur.fetchone():
-                    return  # already saved, skip
-
-                # Extract audio
-                result = _extract_audio(youtube_url)
-                if not result.get("audio_path"):
-                    return  # extraction failed
-
-                cur.execute(
-                    """INSERT INTO songs
-                    (youtube_url, title, audio_path, duration_sec, source)
-                    VALUES (%s, %s, %s, %s, %s)""",
-                    (
-                        youtube_url,
-                        result.get("title"),
-                        result.get("audio_path"),
-                        result.get("duration_sec"),
-                        "youtube",
-                    )
-                )
-            conn.commit()
-        finally:
-            conn.close()
-    except Exception as e:
-        print(f"[songs] _save_song error (non-fatal): {e}")
-
-
 def _build_analyze_steps(cached: bool, video_id: str = "", model: str = "", niche_done: bool = False) -> list[str]:
     """
     Build a list of human-readable process steps for analyze/claude response.
@@ -4892,11 +4773,10 @@ def analyze_claude(req: AnalyzeClaudeRequest):
                             cached_cost = float(cached_cost)
                         cached_summary = cached_row[10] or ""  # content_summary column
                         cached_detail = cached_row[11] or ""  # content_detail column
-                        # Backfill creator/source/song for previously-analyzed URLs
+                        # Backfill creator/source for previously-analyzed URLs
                         # (these are check-and-skip, so they no-op if already saved).
                         _save_creator(req.youtube_url)
                         _save_source(req.youtube_url)
-                        _save_song(req.youtube_url)
                         steps = _build_analyze_steps(cached=True)
                         return _json({
                             "youtube_url": cached_row[0],
@@ -5059,10 +4939,9 @@ def analyze_claude(req: AnalyzeClaudeRequest):
         finally:
             conn.close()
 
-    # Step 6: Save creator + source + song if new (non-fatal)
+    # Step 6: Save creator + source if new (non-fatal)
     _save_creator(req.youtube_url)
     _save_source(req.youtube_url)
-    _save_song(req.youtube_url)
 
     # Build steps trace for fresh analysis path (niche inference included)
     try:
@@ -5545,8 +5424,11 @@ def update_song(song_id: int, req: SongUpdateRequest):
         conn.close()
 
 
-_SONG_IMPORT_ALLOWED_EXTS = {".mp3", ".wav", ".m4a", ".aac", ".ogg"}
-_SONG_IMPORT_MAX_BYTES = 30 * 1024 * 1024  # 30 MB
+_SONG_IMPORT_AUDIO_EXTS = {".mp3", ".wav", ".m4a", ".aac", ".ogg"}
+_SONG_IMPORT_VIDEO_EXTS = {".mp4", ".mov", ".webm", ".mkv", ".m4v"}
+_SONG_IMPORT_ALLOWED_EXTS = _SONG_IMPORT_AUDIO_EXTS | _SONG_IMPORT_VIDEO_EXTS
+_SONG_IMPORT_AUDIO_MAX_BYTES = 30 * 1024 * 1024  # 30 MB
+_SONG_IMPORT_VIDEO_MAX_BYTES = 200 * 1024 * 1024  # 200 MB
 
 
 @app.post("/songs/import")
@@ -5558,32 +5440,72 @@ async def import_song(
     genre: str = Form(default=""),
 ):
     """
-    Import a user-supplied audio file into the songs library.
+    Import a user-supplied audio or video file into the songs library.
+    Accepts audio (mp3/wav/m4a/aac/ogg, max 30 MB) or video (mp4/mov/webm/mkv/m4v, max 200 MB).
+    If video: extracts audio to mp3, analyzes the mp3, then deletes the video.
+    If audio: analyzes directly.
     Runs librosa auto-analysis for BPM/key/energy; tags/mood/genre are user-supplied.
-    Validates extension (mp3/wav/m4a/aac/ogg) and caps at 30 MB.
-    Stored as data/songs/imported/<uuid>.<ext> (no path traversal from original name).
+    Stored as data/songs/imported/<uuid>.mp3 (audio only).
     """
     original_name = file.filename or ""
     ext = Path(original_name).suffix.lower()
     if ext not in _SONG_IMPORT_ALLOWED_EXTS:
         raise HTTPException(
             status_code=400,
-            detail=f"Unsupported format '{ext}'. Allowed: {', '.join(sorted(_SONG_IMPORT_ALLOWED_EXTS))}",
+            detail=f"Unsupported format '{ext}'. Allowed audio: {', '.join(sorted(_SONG_IMPORT_AUDIO_EXTS))} or video: {', '.join(sorted(_SONG_IMPORT_VIDEO_EXTS))}",
         )
 
     content = await file.read()
-    if len(content) > _SONG_IMPORT_MAX_BYTES:
-        raise HTTPException(status_code=413, detail="File too large (max 30 MB)")
+    is_video = ext in _SONG_IMPORT_VIDEO_EXTS
+    max_bytes = _SONG_IMPORT_VIDEO_MAX_BYTES if is_video else _SONG_IMPORT_AUDIO_MAX_BYTES
+    if len(content) > max_bytes:
+        limit_mb = max_bytes // (1024 * 1024)
+        raise HTTPException(status_code=413, detail=f"File too large (max {limit_mb} MB)")
 
     # UUID path — no path traversal from original filename
     file_id = str(uuid.uuid4())
     import_dir = Path(_REPO_ROOT) / "data" / "songs" / "imported"
     import_dir.mkdir(parents=True, exist_ok=True)
-    dest_path = import_dir / f"{file_id}{ext}"
-    dest_path.write_bytes(content)
 
-    features = _analyze_audio(str(dest_path))
-    auto_tags = _suggest_music_tags(str(dest_path))  # [] until auto-tagger wired up
+    # If video, extract audio to mp3; otherwise use the audio file directly
+    if is_video:
+        temp_video_path = import_dir / f"{file_id}_temp{ext}"
+        temp_video_path.write_bytes(content)
+        audio_path = import_dir / f"{file_id}.mp3"
+
+        try:
+            proc = subprocess.run(
+                ["ffmpeg", "-y", "-i", str(temp_video_path),
+                 "-vn", "-ac", "2", "-ar", "44100", "-b:a", "192k",
+                 str(audio_path)],
+                capture_output=True, text=True, timeout=300
+            )
+            if proc.returncode != 0:
+                temp_video_path.unlink(missing_ok=True)
+                audio_path.unlink(missing_ok=True)
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Could not extract audio from video: {proc.stderr[:200]}"
+                )
+        except subprocess.TimeoutExpired:
+            temp_video_path.unlink(missing_ok=True)
+            audio_path.unlink(missing_ok=True)
+            raise HTTPException(status_code=422, detail="Audio extraction timeout")
+        finally:
+            temp_video_path.unlink(missing_ok=True)
+
+        dest_path = audio_path
+    else:
+        dest_path = import_dir / f"{file_id}{ext}"
+        dest_path.write_bytes(content)
+
+    try:
+        features = _analyze_audio(str(dest_path))
+        auto_tags = _suggest_music_tags(str(dest_path))  # [] until auto-tagger wired up
+    except Exception as e:
+        dest_path.unlink(missing_ok=True)
+        print(f"[songs] analysis failed: {e}")
+        raise HTTPException(status_code=500, detail="Audio analysis failed")
 
     # Merge user-supplied tags with auto suggestions
     try:
