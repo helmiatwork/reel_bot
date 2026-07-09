@@ -2213,6 +2213,60 @@ def discover_corpus_status(run_id: str):
     return run
 
 
+class CookieUpdate(BaseModel):
+    content: str
+
+
+@app.get("/cookies")
+def cookies_status():
+    """Report which platforms have stored cookies (for the dashboard)."""
+    out = {}
+    for p in COOKIE_PLATFORMS:
+        f = _cookie_file(p)
+        if f.exists():
+            try:
+                lines = [ln for ln in f.read_text().splitlines() if ln.strip() and not ln.startswith("#")]
+                out[p] = {"present": True, "cookies": len(lines), "bytes": f.stat().st_size}
+            except Exception:
+                out[p] = {"present": True, "cookies": 0, "bytes": 0}
+        else:
+            out[p] = {"present": False, "cookies": 0, "bytes": 0}
+    return out
+
+
+@app.post("/cookies/{platform}")
+def cookies_save(platform: str, req: CookieUpdate):
+    """Save pasted Netscape-format cookies for a platform to data/cookies/<platform>.txt."""
+    if platform not in COOKIE_PLATFORMS:
+        raise HTTPException(status_code=400, detail=f"platform must be one of {COOKIE_PLATFORMS}")
+    content = (req.content or "").strip()
+    if not content:
+        raise HTTPException(status_code=400, detail="content is empty")
+    # Light sanity check: Netscape cookies are tab-separated or start with the header.
+    if "\t" not in content and "# Netscape" not in content:
+        raise HTTPException(status_code=400, detail="does not look like Netscape cookies.txt (need tab-separated lines)")
+    COOKIES_DIR.mkdir(parents=True, exist_ok=True)
+    f = _cookie_file(platform)
+    if not content.startswith("# Netscape"):
+        content = "# Netscape HTTP Cookie File\n" + content
+    f.write_text(content + ("\n" if not content.endswith("\n") else ""))
+    f.chmod(0o600)
+    lines = [ln for ln in content.splitlines() if ln.strip() and not ln.startswith("#")]
+    return {"status": "ok", "platform": platform, "cookies": len(lines)}
+
+
+@app.delete("/cookies/{platform}")
+def cookies_delete(platform: str):
+    """Remove stored cookies for a platform."""
+    if platform not in COOKIE_PLATFORMS:
+        raise HTTPException(status_code=400, detail=f"platform must be one of {COOKIE_PLATFORMS}")
+    f = _cookie_file(platform)
+    existed = f.exists()
+    if existed:
+        f.unlink()
+    return {"status": "ok", "platform": platform, "removed": existed}
+
+
 class DecomposeRequest(BaseModel):
     youtube_url: str
     split_files: bool = True
@@ -3268,7 +3322,7 @@ def _fetch_transcript(youtube_url: str) -> list:
 
 
 def _detect_platform(url: str) -> str:
-    """Return 'youtube' | 'tiktok' | 'instagram' | 'unknown' from a URL."""
+    """Return 'youtube' | 'tiktok' | 'instagram' | 'xiaohongshu' | 'unknown'."""
     net = urlparse(url).netloc.lower()
     if "youtube.com" in net or "youtu.be" in net:
         return "youtube"
@@ -3276,7 +3330,19 @@ def _detect_platform(url: str) -> str:
         return "tiktok"
     if "instagram.com" in net:
         return "instagram"
+    if "xiaohongshu.com" in net or "xhslink.com" in net:
+        return "xiaohongshu"
     return "unknown"
+
+
+# Platforms that support user-supplied cookies via the dashboard.
+COOKIE_PLATFORMS = ("instagram", "tiktok", "xiaohongshu")
+COOKIES_DIR = _REPO_ROOT / "data" / "cookies"
+
+
+def _cookie_file(platform: str) -> Path:
+    """Path to the stored Netscape cookies file for a platform."""
+    return COOKIES_DIR / f"{platform}.txt"
 
 
 def _extract_video_id_from_youtube_url(url: str) -> str:
@@ -3351,16 +3417,25 @@ def _ytdlp_source_args(force_player_client: bool = True, platform: str = "youtub
             args.extend(["--extractor-args", "youtube:player_client=android,web_safari,ios"])
         cookies_env = "YTDLP_COOKIES_FILE"
     else:
-        # TikTok/Instagram: impersonate a real browser (bypasses some blocks) and
-        # use platform-specific cookies. These sites require login cookies; TikTok
-        # may still IP-block without a residential egress.
+        # TikTok/Instagram/Xiaohongshu: impersonate a real browser (bypasses some
+        # blocks) and use platform-specific cookies. These sites require login
+        # cookies; TikTok may still IP-block without a residential egress.
         args.extend(["--impersonate", "chrome"])
-        cookies_env = "TIKTOK_COOKIES_FILE" if platform == "tiktok" else "IG_COOKIES_FILE"
+        cookies_env = {
+            "tiktok": "TIKTOK_COOKIES_FILE",
+            "instagram": "IG_COOKIES_FILE",
+            "xiaohongshu": "XHS_COOKIES_FILE",
+        }.get(platform, "YTDLP_COOKIES_FILE")
 
-    # Copy cookies to a writable temp file (yt-dlp writes refreshed cookies).
-    # Fall back to the generic YTDLP_COOKIES_FILE if no platform-specific one.
-    cookies_file = os.getenv(cookies_env, "") or os.getenv("YTDLP_COOKIES_FILE", "")
+    # Cookie source order: platform env var → dashboard-managed file
+    # (data/cookies/<platform>.txt) → generic YTDLP_COOKIES_FILE.
+    cookies_file = os.getenv(cookies_env, "")
+    if not cookies_file and platform in COOKIE_PLATFORMS and _cookie_file(platform).exists():
+        cookies_file = str(_cookie_file(platform))
+    if not cookies_file:
+        cookies_file = os.getenv("YTDLP_COOKIES_FILE", "")
     if cookies_file and Path(cookies_file).exists():
+        # Copy to a writable temp file (yt-dlp rewrites refreshed cookies).
         writable_cookies = Path(tempfile.gettempdir()) / f"cookies_{platform}_{os.getpid()}.txt"
         shutil.copy(str(cookies_file), str(writable_cookies))
         args.extend(["--cookies", str(writable_cookies)])
