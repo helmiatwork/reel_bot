@@ -5801,9 +5801,10 @@ def _performance_init_db():
                     url         TEXT NOT NULL,
                     title       TEXT,
                     views       BIGINT,
-                    captured_at TIMESTAMPTZ DEFAULT now(),
-                    UNIQUE (url, (captured_at::date))
+                    captured_at TIMESTAMPTZ DEFAULT now()
                 );
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_perf_snapshots_url_date
+                    ON performance_snapshots (url, (captured_at::date));
                 CREATE INDEX IF NOT EXISTS idx_perf_snapshots_platform_date
                     ON performance_snapshots (platform, captured_at)
             """)
