@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+elevenlabs
+gtts
+yt-dlp[default]
+curl_cffi>=0.15
+httpx
+psycopg[binary]
+google-api-python-client
+google-auth-oauthlib
+google-auth-httplib2
+boto3
+docker
