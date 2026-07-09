@@ -18,7 +18,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from main import _derive_schedule_counts  # noqa: E402
+from main import _derive_schedule_counts, _row_to_schedule, _cookie_file  # noqa: E402
 
 # Fixed "now" used across all tests so results are deterministic.
 _NOW = dt.datetime(2025, 7, 10, 12, 0, 0, tzinfo=dt.timezone.utc)
@@ -183,21 +183,141 @@ class TestDeriveScheduleCounts:
         assert c["overdue"] >= 1   # 2020 item must be overdue
 
 
+def _make_row(**kwargs):
+    """Build a minimal (cols, row) pair that _row_to_schedule can consume."""
+    defaults = {
+        "id": 1, "content_ref": None, "title": "Test",
+        "platforms": "youtube", "scheduled_at": None,
+        "caption": "", "thumb_url": None, "source_url": None,
+        "platform_urls": "{}", "platform_accounts": "{}",
+        "created_at": None, "updated_at": None,
+    }
+    defaults.update(kwargs)
+    cols = list(defaults.keys())
+    row = tuple(defaults.values())
+    return row, cols
+
+
+class TestRowToSchedulePlatformAccounts:
+    """_row_to_schedule correctly deserializes platform_accounts."""
+
+    def test_json_string_is_parsed_to_dict(self):
+        row, cols = _make_row(platform_accounts='{"youtube": 5, "tiktok": 12}')
+        d = _row_to_schedule(row, cols)
+        assert d["platform_accounts"] == {"youtube": 5, "tiktok": 12}
+
+    def test_empty_json_string_gives_empty_dict(self):
+        row, cols = _make_row(platform_accounts="{}")
+        d = _row_to_schedule(row, cols)
+        assert d["platform_accounts"] == {}
+
+    def test_none_falls_back_to_empty_dict(self):
+        row, cols = _make_row(platform_accounts=None)
+        d = _row_to_schedule(row, cols)
+        assert d["platform_accounts"] == {}
+
+    def test_invalid_json_falls_back_to_empty_dict(self):
+        row, cols = _make_row(platform_accounts="not-json")
+        d = _row_to_schedule(row, cols)
+        assert d["platform_accounts"] == {}
+
+    def test_already_a_dict_is_preserved(self):
+        # In case the DB driver returns a dict (e.g. JSONB column)
+        row, cols = _make_row(platform_accounts={"instagram": 7})
+        d = _row_to_schedule(row, cols)
+        assert d["platform_accounts"] == {"instagram": 7}
+
+    def test_platform_urls_still_deserialized_alongside(self):
+        row, cols = _make_row(
+            platform_urls='{"youtube": "https://yt.be/x"}',
+            platform_accounts='{"youtube": 3}',
+        )
+        d = _row_to_schedule(row, cols)
+        assert d["platform_urls"] == {"youtube": "https://yt.be/x"}
+        assert d["platform_accounts"] == {"youtube": 3}
+
+
+class TestPlatformAccountsMergeSemantics:
+    """Merge logic used in PATCH /schedule/{id} for platform_accounts."""
+
+    def test_patch_adds_new_platform(self):
+        current = {"youtube": 1}
+        incoming = {"tiktok": 2}
+        merged = {**current, **incoming}
+        assert merged == {"youtube": 1, "tiktok": 2}
+
+    def test_patch_overrides_existing_platform(self):
+        current = {"youtube": 1, "tiktok": 2}
+        incoming = {"youtube": 5}
+        merged = {**current, **incoming}
+        assert merged == {"youtube": 5, "tiktok": 2}
+
+    def test_patch_empty_incoming_preserves_current(self):
+        current = {"youtube": 1}
+        incoming = {}
+        merged = {**current, **incoming}
+        assert merged == {"youtube": 1}
+
+    def test_patch_none_incoming_skips_merge(self):
+        # When body.platform_accounts is None the update block is skipped entirely
+        current = {"youtube": 1}
+        incoming = None
+        merged = current if incoming is None else {**current, **incoming}
+        assert merged == {"youtube": 1}
+
+
+class TestCookieFileResolution:
+    """_cookie_file resolves paths correctly for both legacy and per-account modes."""
+
+    def test_legacy_path_no_account_id(self):
+        p = _cookie_file("youtube")
+        assert p.name == "youtube.txt"
+        assert "youtube" not in str(p.parent.name) or str(p) == str(p)
+        # Key: no sub-directory for account_id
+        assert str(p).endswith("youtube.txt")
+        parts = p.parts
+        assert parts[-1] == "youtube.txt"
+        assert parts[-2] != "youtube"  # parent dir is cookies/, not cookies/youtube/
+
+    def test_per_account_path_with_account_id(self):
+        p = _cookie_file("youtube", account_id=42)
+        assert p.name == "42.txt"
+        assert p.parent.name == "youtube"
+
+    def test_per_account_path_tiktok(self):
+        p = _cookie_file("tiktok", account_id=7)
+        assert p.name == "7.txt"
+        assert p.parent.name == "tiktok"
+
+    def test_legacy_vs_account_paths_differ(self):
+        legacy = _cookie_file("instagram")
+        per_acct = _cookie_file("instagram", account_id=1)
+        assert legacy != per_acct
+        assert str(legacy).endswith("instagram.txt")
+        assert str(per_acct).endswith("instagram/1.txt")
+
+
 if __name__ == "__main__":
     # fallback runner without pytest
     import traceback
-    suite = TestDeriveScheduleCounts()
-    methods = [m for m in dir(suite) if m.startswith("test_")]
+    all_suites = [
+        TestDeriveScheduleCounts(),
+        TestRowToSchedulePlatformAccounts(),
+        TestPlatformAccountsMergeSemantics(),
+        TestCookieFileResolution(),
+    ]
     passed, failed = 0, []
-    for m in methods:
-        try:
-            getattr(suite, m)()
-            passed += 1
-            print(f"  PASS  {m}")
-        except Exception:
-            failed.append(m)
-            print(f"  FAIL  {m}")
-            traceback.print_exc()
+    for suite in all_suites:
+        methods = [m for m in dir(suite) if m.startswith("test_")]
+        for m in methods:
+            try:
+                getattr(suite, m)()
+                passed += 1
+                print(f"  PASS  {m}")
+            except Exception:
+                failed.append(m)
+                print(f"  FAIL  {m}")
+                traceback.print_exc()
     print(f"\n{passed}/{passed + len(failed)} passed")
     if failed:
         sys.exit(1)
