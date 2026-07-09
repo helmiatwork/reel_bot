@@ -7131,6 +7131,8 @@ def _prep_build_roughcut(segments: list, hd_path, bgm_path, out_path):
     """
     Concat clip segments into a 9:16 draft MP4 via ffmpeg.
     // ponytail: naive concat + scale/pad, not an EDL; frame-precise cuts stay in CapCut.
+    Segments are video-only (no audio stream); BGM, when provided, is the sole audio
+    track, looped to cover the full video length then trimmed by -shortest.
     Falls back to the whole HD source when no segments exist.
     Raises RuntimeError on any failure.
     """
@@ -7150,9 +7152,12 @@ def _prep_build_roughcut(segments: list, hd_path, bgm_path, out_path):
 
     use_bgm = bool(bgm_path and Path(str(bgm_path)).exists())
     if use_bgm:
-        inputs.extend(["-i", str(bgm_path)])
+        # -stream_loop -1 loops the BGM so it covers any total video length;
+        # -shortest (added to cmd below) trims the mux at the video end.
+        inputs.extend(["-stream_loop", "-1", "-i", str(bgm_path)])
 
-    # Build filter_complex: scale/pad each clip to 1080x1920, then concat
+    # Build filter_complex: scale/pad each clip to 1080x1920, then concat video-only.
+    # Decomposed segments contain no audio stream, so we never reference [i:a].
     fc_parts = []
     for i in range(n):
         fc_parts.append(
@@ -7160,15 +7165,10 @@ def _prep_build_roughcut(segments: list, hd_path, bgm_path, out_path):
             f"pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1[v{i}]"
         )
     concat_v = "".join(f"[v{i}]" for i in range(n))
-    concat_a = "".join(f"[{i}:a]" for i in range(n))
-    fc_parts.append(f"{concat_v}{concat_a}concat=n={n}:v=1:a=1[vout][aout]")
+    fc_parts.append(f"{concat_v}concat=n={n}:v=1:a=0[vout]")
 
     if use_bgm:
         fc_parts.append(f"[{n}:a]volume=0.3[bgm]")
-        fc_parts.append("[aout][bgm]amix=inputs=2:duration=first[afinal]")
-        map_audio = "[afinal]"
-    else:
-        map_audio = "[aout]"
 
     filter_complex = ";".join(fc_parts)
 
@@ -7176,12 +7176,13 @@ def _prep_build_roughcut(segments: list, hd_path, bgm_path, out_path):
         "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
         *inputs,
         "-filter_complex", filter_complex,
-        "-map", "[vout]", "-map", map_audio,
+        "-map", "[vout]",
         "-c:v", "libx264", "-preset", "fast", "-crf", "23",
-        "-c:a", "aac", "-b:a", "128k",
-        "-movflags", "+faststart",
-        str(out_path),
     ]
+    if use_bgm:
+        cmd += ["-map", "[bgm]", "-c:a", "aac", "-b:a", "128k", "-shortest"]
+    cmd += ["-movflags", "+faststart", str(out_path)]
+
     proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
     if proc.returncode != 0:
         raise RuntimeError(f"ffmpeg roughcut failed: {proc.stderr[:300]}")
