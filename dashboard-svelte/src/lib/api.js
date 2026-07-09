@@ -63,8 +63,28 @@ export const api = {
   discover: (niche, topic = '', top_n = 3) => postJSON('/pipeline/discover', { niche, topic, top_n }),
   research: (youtube_url, topic = '') => postJSON('/pipeline/research', { youtube_url, topic }),
 
-  // Songs — audio extracted from analyzed videos
-  getSongs: (limit = 25, offset = 0) => getJSON(`/songs?limit=${limit}&offset=${offset}`),
+  // Songs — audio extracted from analyzed videos + user imports
+  getSongs: (limit = 25, offset = 0, tag = '', mood = '') => {
+    const p = new URLSearchParams({ limit, offset })
+    if (tag) p.set('tag', tag)
+    if (mood) p.set('mood', mood)
+    return getJSON(`/songs?${p}`)
+  },
+  songImport: async (file, { title = '', tags = [], mood = '', genre = '' } = {}) => {
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('title', title)
+      fd.append('tags', JSON.stringify(tags))
+      fd.append('mood', mood)
+      fd.append('genre', genre)
+      const r = await fetch('/songs/import', { method: 'POST', body: fd })
+      return await r.json()
+    } catch (e) {
+      return null
+    }
+  },
+  songUpdate: (id, body) => patchJSON(`/songs/${id}`, body),
   getCreators: (limit = 25, offset = 0) => getJSON(`/creators?limit=${limit}&offset=${offset}`),
 
   // Frames persisted from analysis
