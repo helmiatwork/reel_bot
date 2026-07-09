@@ -21,6 +21,19 @@ async function postJSON(path, body) {
     return null
   }
 }
+async function patchJSON(path, body) {
+  try {
+    const r = await fetch(path, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+    if (!r.ok) throw new Error(`${r.status}`)
+    return await r.json()
+  } catch (e) {
+    return null
+  }
+}
 async function delJSON(path) {
   try {
     const r = await fetch(path, { method: 'DELETE' })
@@ -80,6 +93,13 @@ export const api = {
   discoverCorpus: (niche, count = 5) => postJSON('/discover/corpus', { niche, count }),
   discoverCorpusStatus: (run_id) => getJSON('/discover/corpus/status/' + run_id),
   analyzeClaude: (youtube_url, force = false) => postJSON('/analyze/claude', { youtube_url, force }),
+
+  // Scheduled posts
+  scheduleList: () => getJSON('/schedule'),
+  scheduleCreate: (data) => postJSON('/schedule', data),
+  scheduleUpdate: (id, data) => patchJSON(`/schedule/${id}`, data),
+  scheduleDelete: (id) => delJSON(`/schedule/${id}`),
+  scheduleCorpus: () => getJSON('/schedule/corpus'),
 
   decompose: (youtube_url) => postJSON('/decompose', { youtube_url }),
   decomposeStatus: (run_id) => getJSON('/decompose/status/' + encodeURIComponent(run_id)),
