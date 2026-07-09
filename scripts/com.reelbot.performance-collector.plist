@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  launchd agent for daily performance snapshot collection.
+
+  Runs collect-performance.sh once a day at 06:00 local time.
+  Calls POST /performance/refresh → yt-dlp fetches view counts for all
+  posted videos and upserts a snapshot row.
+
+  ⚠️  macOS TCC caveat: the repo lives under ~/Documents, a privacy-protected
+  folder. launchd-spawned processes get "Operation not permitted" reading it
+  unless you grant Full Disk Access to /bin/bash in
+  System Settings → Privacy & Security → Full Disk Access.
+
+  Install (per-user, only after granting Full Disk Access):
+    cp scripts/com.reelbot.performance-collector.plist ~/Library/LaunchAgents/
+    launchctl load -w ~/Library/LaunchAgents/com.reelbot.performance-collector.plist
+
+  Reload after edits:
+    launchctl unload ~/Library/LaunchAgents/com.reelbot.performance-collector.plist
+    launchctl load   ~/Library/LaunchAgents/com.reelbot.performance-collector.plist
+
+  Status / logs:
+    launchctl list | grep performance-collector
+    tail -f /tmp/reelbot_performance.log /tmp/perf_collector.err
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.reelbot.performance-collector</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/ichigo/Documents/repo/helmi/reelbot/scripts/collect-performance.sh</string>
+    </array>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>6</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/reelbot_performance.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/tmp/perf_collector.err</string>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/ichigo/Documents/repo/helmi/reelbot</string>
+</dict>
+</plist>

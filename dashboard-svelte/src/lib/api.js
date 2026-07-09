@@ -101,6 +101,10 @@ export const api = {
   scheduleDelete: (id) => delJSON(`/schedule/${id}`),
   scheduleCorpus: () => getJSON('/schedule/corpus'),
 
+  // Performance tracking — own posted videos
+  performance: () => getJSON('/performance'),
+  performanceRefresh: () => postJSON('/performance/refresh', {}),
+
   decompose: (youtube_url) => postJSON('/decompose', { youtube_url }),
   decomposeStatus: (run_id) => getJSON('/decompose/status/' + encodeURIComponent(run_id)),
   sourceSegments: (source_id) => getJSON('/sources/' + source_id + '/segments'),
