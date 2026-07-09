@@ -55,6 +55,10 @@ def startup_event():
         _performance_init_db()
     except Exception as e:
         print(f"[startup] performance db init failed (non-fatal): {e}")
+    try:
+        _accounts_init_db()
+    except Exception as e:
+        print(f"[startup] accounts db init failed (non-fatal): {e}")
 
 # ── SSRF guard: blocked networks (module-level constant) ────────────────────
 # Extra ranges beyond ipaddress.ip_address check (0.0.0.0/8, CGNAT, etc)
@@ -2248,17 +2252,10 @@ def cookies_save(platform: str, req: CookieUpdate):
     """Save pasted Netscape-format cookies for a platform to data/cookies/<platform>.txt."""
     if platform not in COOKIE_PLATFORMS:
         raise HTTPException(status_code=400, detail=f"platform must be one of {COOKIE_PLATFORMS}")
-    content = (req.content or "").strip()
-    if not content:
-        raise HTTPException(status_code=400, detail="content is empty")
-    # Light sanity check: Netscape cookies are tab-separated or start with the header.
-    if "\t" not in content and "# Netscape" not in content:
-        raise HTTPException(status_code=400, detail="does not look like Netscape cookies.txt (need tab-separated lines)")
+    content = _validate_netscape_content(req.content)
     COOKIES_DIR.mkdir(parents=True, exist_ok=True)
     f = _cookie_file(platform)
-    if not content.startswith("# Netscape"):
-        content = "# Netscape HTTP Cookie File\n" + content
-    f.write_text(content + ("\n" if not content.endswith("\n") else ""))
+    f.write_text(content)
     f.chmod(0o600)
     lines = [ln for ln in content.splitlines() if ln.strip() and not ln.startswith("#")]
     return {"status": "ok", "platform": platform, "cookies": len(lines)}
@@ -2274,6 +2271,236 @@ def cookies_delete(platform: str):
     if existed:
         f.unlink()
     return {"status": "ok", "platform": platform, "removed": existed}
+
+
+# ── Accounts ──────────────────────────────────────────────────────────────────
+
+class AccountCreate(BaseModel):
+    platform: str
+    handle: str
+    label: Optional[str] = None
+
+
+class AccountUpdate(BaseModel):
+    label: Optional[str] = None
+    active: Optional[bool] = None
+
+
+class AccountCookiePost(BaseModel):
+    content: str
+
+
+def _accounts_init_db():
+    """Initialize accounts table at startup (non-fatal on failure)."""
+    conn = _db_conn()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""CREATE TABLE IF NOT EXISTS accounts (
+                id         BIGSERIAL PRIMARY KEY,
+                platform   TEXT NOT NULL,
+                handle     TEXT NOT NULL,
+                label      TEXT,
+                active     BOOL DEFAULT true,
+                created_at TIMESTAMPTZ DEFAULT now(),
+                UNIQUE (platform, handle)
+            )""")
+        conn.commit()
+    except Exception as e:
+        print(f"[accounts] init db error: {e}")
+    finally:
+        conn.close()
+
+
+def _account_has_cookies(account_id: int, platform: str) -> bool:
+    f = _account_cookie_file(account_id, platform)
+    return f.exists() and f.stat().st_size > 0
+
+
+@app.get("/accounts")
+def accounts_list(platform: Optional[str] = None):
+    """List accounts, optionally filtered by platform."""
+    conn = _db_conn()
+    if conn is None:
+        return _json([])
+    try:
+        with conn.cursor() as cur:
+            if platform:
+                cur.execute(
+                    "SELECT id,platform,handle,label,active,created_at FROM accounts WHERE platform=%s ORDER BY created_at",
+                    (platform,),
+                )
+            else:
+                cur.execute(
+                    "SELECT id,platform,handle,label,active,created_at FROM accounts ORDER BY platform,created_at"
+                )
+            cols = [c.name for c in cur.description]
+            rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+        for row in rows:
+            row["has_cookies"] = _account_has_cookies(row["id"], row["platform"])
+        return _json(rows)
+    except Exception as exc:
+        print(f"[accounts] list error: {exc}")
+        return _json([])
+    finally:
+        conn.close()
+
+
+@app.post("/accounts")
+def accounts_create(req: AccountCreate):
+    """Create a new account row."""
+    if req.platform not in ACCOUNT_PLATFORMS:
+        raise HTTPException(status_code=400, detail=f"platform must be one of {ACCOUNT_PLATFORMS}")
+    handle = (req.handle or "").strip()
+    if not handle:
+        raise HTTPException(status_code=400, detail="handle is required")
+    conn = _db_conn()
+    if conn is None:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO accounts (platform, handle, label)
+                   VALUES (%s, %s, %s)
+                   ON CONFLICT (platform, handle) DO NOTHING
+                   RETURNING id,platform,handle,label,active,created_at""",
+                (req.platform, handle, req.label or handle),
+            )
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(status_code=409, detail="account (platform, handle) already exists")
+            cols = [c.name for c in cur.description]
+            result = dict(zip(cols, row))
+        conn.commit()
+        result["has_cookies"] = _account_has_cookies(result["id"], result["platform"])
+        return _json(result)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"[accounts] create error: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        conn.close()
+
+
+@app.patch("/accounts/{account_id}")
+def accounts_update(account_id: int, req: AccountUpdate):
+    """Partial update: label and/or active flag."""
+    if req.label is None and req.active is None:
+        raise HTTPException(status_code=400, detail="nothing to update")
+    conn = _db_conn()
+    if conn is None:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    try:
+        sets, params = [], []
+        if req.label is not None:
+            sets.append("label=%s"); params.append(req.label)
+        if req.active is not None:
+            sets.append("active=%s"); params.append(req.active)
+        params.append(account_id)
+        with conn.cursor() as cur:
+            cur.execute(
+                f"UPDATE accounts SET {','.join(sets)} WHERE id=%s RETURNING id,platform,handle,label,active,created_at",
+                params,
+            )
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="account not found")
+            cols = [c.name for c in cur.description]
+            result = dict(zip(cols, row))
+        conn.commit()
+        result["has_cookies"] = _account_has_cookies(result["id"], result["platform"])
+        return _json(result)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"[accounts] update error: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        conn.close()
+
+
+@app.delete("/accounts/{account_id}")
+def accounts_delete(account_id: int):
+    """Delete account row and its cookie file."""
+    conn = _db_conn()
+    if conn is None:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM accounts WHERE id=%s RETURNING platform", (account_id,))
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="account not found")
+            platform = row[0]
+        conn.commit()
+        cf = _account_cookie_file(account_id, platform)
+        if cf.exists():
+            cf.unlink()
+        return {"status": "ok", "id": account_id}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"[accounts] delete error: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        conn.close()
+
+
+@app.post("/accounts/{account_id}/cookies")
+def accounts_cookies_save(account_id: int, req: AccountCookiePost):
+    """Paste Netscape cookies for a specific account."""
+    conn = _db_conn()
+    if conn is None:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT platform FROM accounts WHERE id=%s", (account_id,))
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="account not found")
+            platform = row[0]
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        conn.close()
+
+    content = _validate_netscape_content(req.content)
+    cf = _account_cookie_file(account_id, platform)
+    cf.parent.mkdir(parents=True, exist_ok=True)
+    cf.write_text(content)
+    cf.chmod(0o600)
+    return {"ok": True, "has_cookies": True}
+
+
+@app.delete("/accounts/{account_id}/cookies")
+def accounts_cookies_delete(account_id: int):
+    """Remove cookie file for a specific account."""
+    conn = _db_conn()
+    if conn is None:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT platform FROM accounts WHERE id=%s", (account_id,))
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="account not found")
+            platform = row[0]
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        conn.close()
+
+    cf = _account_cookie_file(account_id, platform)
+    existed = cf.exists()
+    if existed:
+        cf.unlink()
+    return {"ok": True, "has_cookies": False, "removed": existed}
 
 
 class DecomposeRequest(BaseModel):
@@ -3345,14 +3572,44 @@ def _detect_platform(url: str) -> str:
     return "unknown"
 
 
-# Platforms that support user-supplied cookies via the dashboard.
+# Platforms that support user-supplied cookies via the dashboard (legacy single-file).
 COOKIE_PLATFORMS = ("instagram", "tiktok", "xiaohongshu")
+# All platforms supported by the Accounts system (superset of COOKIE_PLATFORMS).
+ACCOUNT_PLATFORMS = ("youtube", "instagram", "tiktok", "xiaohongshu")
 COOKIES_DIR = _REPO_ROOT / "data" / "cookies"
 
 
-def _cookie_file(platform: str) -> Path:
-    """Path to the stored Netscape cookies file for a platform."""
+def _cookie_file(platform: str, account_id=None) -> Path:
+    """Path to Netscape cookies file.
+
+    account_id=None  → legacy per-platform file: data/cookies/<platform>.txt
+    account_id given → per-account file:          data/cookies/<platform>/<account_id>.txt
+    """
+    if account_id is not None:
+        return COOKIES_DIR / platform / f"{account_id}.txt"
     return COOKIES_DIR / f"{platform}.txt"
+
+
+def _account_cookie_file(account_id: int, platform: str) -> Path:
+    """Convenience alias: data/cookies/<platform>/<account_id>.txt"""
+    return _cookie_file(platform, account_id=account_id)
+
+
+def _validate_netscape_content(content: str) -> str:
+    """Validate and normalise Netscape cookie text. Raises HTTPException on failure."""
+    content = (content or "").strip()
+    if not content:
+        raise HTTPException(status_code=400, detail="content is empty")
+    if "\t" not in content and "# Netscape" not in content:
+        raise HTTPException(
+            status_code=400,
+            detail="does not look like Netscape cookies.txt (need tab-separated lines)",
+        )
+    if not content.startswith("# Netscape"):
+        content = "# Netscape HTTP Cookie File\n" + content
+    if not content.endswith("\n"):
+        content += "\n"
+    return content
 
 
 def _extract_video_id_from_youtube_url(url: str) -> str:
