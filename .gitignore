@@ -44,3 +44,6 @@ analyze-frames/*
 node_modules/
 *.log
 Procfile
+
+# user-supplied social cookies (secrets — never commit)
+data/cookies/
