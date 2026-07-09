@@ -2315,7 +2315,10 @@ def _accounts_init_db():
 
 def _account_has_cookies(account_id: int, platform: str) -> bool:
     f = _account_cookie_file(account_id, platform)
-    return f.exists() and f.stat().st_size > 0
+    try:
+        return f.stat().st_size > 0
+    except OSError:
+        return False
 
 
 @app.get("/accounts")
@@ -2323,6 +2326,8 @@ def accounts_list(platform: Optional[str] = None):
     """List accounts, optionally filtered by platform."""
     conn = _db_conn()
     if conn is None:
+        # ponytail: return empty list (not 503) — consistent with other read-list
+        # endpoints (performance_get, etc.) that degrade gracefully on DB outage.
         return _json([])
     try:
         with conn.cursor() as cur:
@@ -3595,7 +3600,7 @@ def _account_cookie_file(account_id: int, platform: str) -> Path:
     return _cookie_file(platform, account_id=account_id)
 
 
-def _validate_netscape_content(content: str) -> str:
+def _validate_netscape_content(content: Optional[str]) -> str:
     """Validate and normalise Netscape cookie text. Raises HTTPException on failure."""
     content = (content or "").strip()
     if not content:
