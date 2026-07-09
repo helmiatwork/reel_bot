@@ -20,13 +20,14 @@ from main import _build_performance_view  # noqa: E402
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
-def _snap(platform, url, views, date, title=None):
+def _snap(platform, url, views, date, title=None, account_id=None):
     return {
         "platform": platform,
         "url": url,
         "title": title or f"Video {url[-1]}",
         "views": views,
         "captured_at": date,
+        "account_id": account_id,
     }
 
 
@@ -53,9 +54,9 @@ class TestBuildPerformanceView:
 
     # ── basic shape ──────────────────────────────────────────────────────────
 
-    def test_returns_three_keys(self):
+    def test_returns_four_keys(self):
         r = _build_performance_view(_ROWS)
-        assert set(r.keys()) == {"series", "totals", "videos"}
+        assert set(r.keys()) == {"series", "totals", "videos", "accounts"}
 
     def test_series_has_one_entry_per_platform(self):
         r = _build_performance_view(_ROWS)
@@ -152,7 +153,7 @@ class TestBuildPerformanceView:
 
     def test_empty_rows(self):
         r = _build_performance_view([])
-        assert r == {"series": [], "totals": [], "videos": []}
+        assert r == {"series": [], "totals": [], "videos": [], "accounts": []}
 
     def test_rows_with_missing_views_skipped(self):
         rows = [_snap("youtube", "https://youtu.be/X", None, _D1)]
@@ -193,3 +194,139 @@ class TestBuildPerformanceView:
         yt = next(s for s in r["series"] if s["platform"] == "youtube")
         assert len(yt["points"]) == 1
         assert yt["points"][0]["views"] == 42
+
+    def test_accounts_empty_when_no_rows(self):
+        r = _build_performance_view([])
+        assert r["accounts"] == []
+
+
+# ── Per-account breakdown tests ───────────────────────────────────────────────
+
+# Dataset: 2 platforms × 2 named accounts + 1 null-account (legacy) row
+_ACCT_LOOKUP = {
+    1: {"handle": "@yt_main", "label": "YouTube Main"},
+    2: {"handle": "@yt_second", "label": "YouTube Second"},
+    3: {"handle": "@tt_main", "label": "TikTok Main"},
+}
+
+_ACCT_ROWS = [
+    # youtube account 1: video A (D1–D3)
+    _snap("youtube", "https://youtu.be/A", 1000, _D1, "Video A", account_id=1),
+    _snap("youtube", "https://youtu.be/A", 1500, _D2, "Video A", account_id=1),
+    _snap("youtube", "https://youtu.be/A", 2000, _D3, "Video A", account_id=1),
+    # youtube account 2: video B (D1, D3)
+    _snap("youtube", "https://youtu.be/B", 500,  _D1, "Video B", account_id=2),
+    _snap("youtube", "https://youtu.be/B", 800,  _D3, "Video B", account_id=2),
+    # youtube legacy (no account): video C
+    _snap("youtube", "https://youtu.be/C", 300,  _D2, "Video C", account_id=None),
+    # tiktok account 3: video D
+    _snap("tiktok", "https://tiktok.com/D", 400,  _D2, "Video D", account_id=3),
+    _snap("tiktok", "https://tiktok.com/D", 900,  _D3, "Video D", account_id=3),
+]
+
+
+class TestBuildPerformanceViewAccounts:
+
+    # ── accounts key structure ────────────────────────────────────────────────
+
+    def test_accounts_key_present(self):
+        r = _build_performance_view(_ACCT_ROWS, _ACCT_LOOKUP)
+        assert "accounts" in r
+
+    def test_accounts_count(self):
+        # yt: acct1, acct2, None(Tanpa akun) → 3; tt: acct3 → 1 → total 4
+        r = _build_performance_view(_ACCT_ROWS, _ACCT_LOOKUP)
+        assert len(r["accounts"]) == 4
+
+    def test_accounts_platforms_present(self):
+        r = _build_performance_view(_ACCT_ROWS, _ACCT_LOOKUP)
+        platforms = {a["platform"] for a in r["accounts"]}
+        assert platforms == {"youtube", "tiktok"}
+
+    # ── named account totals ──────────────────────────────────────────────────
+
+    def test_yt_acct1_total_views(self):
+        # latest for video A = 2000 (D3)
+        r = _build_performance_view(_ACCT_ROWS, _ACCT_LOOKUP)
+        a = next(a for a in r["accounts"] if a["account_id"] == 1)
+        assert a["total_views"] == 2000
+
+    def test_yt_acct2_total_views(self):
+        # latest for video B = 800 (D3)
+        r = _build_performance_view(_ACCT_ROWS, _ACCT_LOOKUP)
+        a = next(a for a in r["accounts"] if a["account_id"] == 2)
+        assert a["total_views"] == 800
+
+    def test_yt_acct1_video_count(self):
+        r = _build_performance_view(_ACCT_ROWS, _ACCT_LOOKUP)
+        a = next(a for a in r["accounts"] if a["account_id"] == 1)
+        assert a["video_count"] == 1
+
+    def test_tt_acct3_total_views(self):
+        # latest for video D = 900 (D3)
+        r = _build_performance_view(_ACCT_ROWS, _ACCT_LOOKUP)
+        a = next(a for a in r["accounts"] if a["account_id"] == 3)
+        assert a["total_views"] == 900
+
+    # ── handle / label resolution ─────────────────────────────────────────────
+
+    def test_named_account_handle(self):
+        r = _build_performance_view(_ACCT_ROWS, _ACCT_LOOKUP)
+        a = next(a for a in r["accounts"] if a["account_id"] == 1)
+        assert a["handle"] == "@yt_main"
+        assert a["label"] == "YouTube Main"
+
+    def test_unknown_account_id_falls_back(self):
+        # account_id=99 not in lookup → "Akun #99"
+        rows = [_snap("youtube", "https://youtu.be/X", 100, _D1, account_id=99)]
+        r = _build_performance_view(rows, _ACCT_LOOKUP)
+        a = next(a for a in r["accounts"] if a["account_id"] == 99)
+        assert a["handle"] == "Akun #99"
+
+    # ── Tanpa akun bucket ─────────────────────────────────────────────────────
+
+    def test_tanpa_akun_bucket_present(self):
+        r = _build_performance_view(_ACCT_ROWS, _ACCT_LOOKUP)
+        tanpa = [a for a in r["accounts"] if a["account_id"] is None and a["platform"] == "youtube"]
+        assert len(tanpa) == 1
+
+    def test_tanpa_akun_handle(self):
+        r = _build_performance_view(_ACCT_ROWS, _ACCT_LOOKUP)
+        tanpa = next(a for a in r["accounts"] if a["account_id"] is None and a["platform"] == "youtube")
+        assert tanpa["handle"] == "Tanpa akun"
+        assert tanpa["label"] == "Tanpa akun"
+
+    def test_tanpa_akun_total_views(self):
+        # video C latest = 300 (only D2 snapshot)
+        r = _build_performance_view(_ACCT_ROWS, _ACCT_LOOKUP)
+        tanpa = next(a for a in r["accounts"] if a["account_id"] is None and a["platform"] == "youtube")
+        assert tanpa["total_views"] == 300
+
+    # ── per-account series ────────────────────────────────────────────────────
+
+    def test_acct1_series_ordered(self):
+        r = _build_performance_view(_ACCT_ROWS, _ACCT_LOOKUP)
+        a = next(a for a in r["accounts"] if a["account_id"] == 1)
+        dates = [p["date"] for p in a["series"]]
+        assert dates == sorted(dates)
+
+    def test_acct1_series_d3_views(self):
+        r = _build_performance_view(_ACCT_ROWS, _ACCT_LOOKUP)
+        a = next(a for a in r["accounts"] if a["account_id"] == 1)
+        pt = next(p for p in a["series"] if p["date"] == _D3.isoformat())
+        assert pt["views"] == 2000
+
+    # ── platform roll-up unaffected ───────────────────────────────────────────
+
+    def test_platform_totals_still_correct(self):
+        # yt total = latest(A)=2000 + latest(B)=800 + latest(C)=300 = 3100
+        r = _build_performance_view(_ACCT_ROWS, _ACCT_LOOKUP)
+        yt = next(t for t in r["totals"] if t["platform"] == "youtube")
+        assert yt["total_views"] == 3100
+
+    def test_no_accounts_lookup_still_works(self):
+        # Without lookup: account_id falls back to "Akun #N" or "Tanpa akun"
+        r = _build_performance_view(_ACCT_ROWS)
+        assert len(r["accounts"]) == 4
+        tanpa = next(a for a in r["accounts"] if a["account_id"] is None)
+        assert tanpa["handle"] == "Tanpa akun"

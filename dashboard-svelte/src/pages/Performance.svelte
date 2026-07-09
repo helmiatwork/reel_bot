@@ -17,9 +17,20 @@
   let datasets    = $state([])
   let totals      = $state([])
   let videos      = $state([])
+  let accounts    = $state([])
   let loading     = $state(true)
   let refreshing  = $state(false)
   let lastRefresh = $state(null)
+  // collapsed state per platform key
+  let collapsed   = $state({})
+
+  // Group accounts by platform: { youtube: [...], tiktok: [...] }
+  let accountsByPlatform = $derived(
+    accounts.reduce((acc, a) => {
+      (acc[a.platform] ??= []).push(a)
+      return acc
+    }, {})
+  )
 
   async function load() {
     loading = true
@@ -40,8 +51,9 @@
         pointRadius: 3,
         spanGaps: true,
       }))
-      totals = d.totals || []
-      videos = d.videos || []
+      totals   = d.totals   || []
+      videos   = d.videos   || []
+      accounts = d.accounts || []
     }
     loading = false
   }
@@ -92,6 +104,7 @@
   {/if}
 </div>
 
+<!-- Platform roll-up table -->
 <div class="card" style="margin-bottom:16px">
   <h3>Views per platform</h3>
   <table>
@@ -123,6 +136,57 @@
     </tbody>
   </table>
 </div>
+
+<!-- Per-account breakdown, grouped by platform -->
+{#if accounts.length}
+<div class="card" style="margin-bottom:16px">
+  <h3>Views per akun <span class="mut">— breakdown per channel</span></h3>
+  {#each Object.entries(accountsByPlatform) as [platform, accts]}
+    {@const ptotal = totals.find(t => t.platform === platform)}
+    <div style="margin-bottom:16px">
+      <!-- Platform header row (collapsible) -->
+      <button
+        onclick={() => collapsed[platform] = !collapsed[platform]}
+        style="display:flex;align-items:center;gap:8px;background:none;border:none;padding:6px 0;cursor:pointer;width:100%;text-align:left"
+      >
+        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:{colorFor(platform)}"></span>
+        <span style="font-weight:600;font-size:13px;text-transform:capitalize">{platform}</span>
+        {#if ptotal}
+          <span class="mut" style="font-size:12px;margin-left:4px">{fmtViews(ptotal.total_views)} total</span>
+        {/if}
+        <span class="mut" style="font-size:11px;margin-left:auto">{collapsed[platform] ? '▶' : '▼'}</span>
+      </button>
+
+      {#if !collapsed[platform]}
+      <table style="margin-top:4px">
+        <thead>
+          <tr>
+            <th>Akun</th>
+            <th class="num" style="text-align:right">Total views</th>
+            <th class="num" style="text-align:right">Video</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each accts as a}
+            <tr>
+              <td style="display:flex;align-items:center;gap:6px">
+                <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:{colorFor(a.platform)}"></span>
+                <span style="font-weight:500">{a.handle}</span>
+                {#if a.label && a.label !== a.handle}
+                  <span class="mut" style="font-size:11.5px">{a.label}</span>
+                {/if}
+              </td>
+              <td class="num" style="text-align:right">{fmtViews(a.total_views)}</td>
+              <td class="num" style="text-align:right">{a.video_count}</td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+      {/if}
+    </div>
+  {/each}
+</div>
+{/if}
 
 {#if videos.length}
 <div class="card">
