@@ -434,6 +434,10 @@ def dash_overview():
     if not conn:
         return _json({"error": "db unavailable"})
     try:
+        # Autocommit so a missing-table error (some optional tables like
+        # performance_snapshots/formulas/clips/pipeline_runs aren't provisioned in
+        # every deployment) doesn't poison the whole transaction and 500 the page.
+        conn.autocommit = True
         with conn.cursor() as cur:
             sources = _scalar(cur, "SELECT count(*) FROM sources", 0)
             produced = _scalar(cur, "SELECT count(*) FROM pipeline_runs WHERE status='done'", 0)
@@ -443,24 +447,31 @@ def dash_overview():
             formulas = _scalar(cur, "SELECT count(*) FROM formulas", 0)
             clips = _scalar(cur, "SELECT count(*) FROM clips", 0)
 
-            # 7-day series per source (top 2 by latest views)
-            cur.execute(
-                "SELECT s.id, COALESCE(s.title,'source '||s.id) FROM sources s "
-                "JOIN performance_snapshots p ON p.subject_type='source' AND p.subject_id=s.id "
-                "GROUP BY s.id ORDER BY max(p.views) DESC NULLS LAST LIMIT 2")
-            top_sources = cur.fetchall()
+            # 7-day series per source (top 2 by latest views) — optional table
             series = []
-            for sid, title in top_sources:
+            try:
                 cur.execute(
-                    "SELECT to_char(captured_at,'MM-DD') d, max(views) v FROM performance_snapshots "
-                    "WHERE subject_type='source' AND subject_id=%s GROUP BY d ORDER BY d", (sid,))
-                pts = cur.fetchall()
-                series.append({"label": (title or "")[:28], "points": [{"d": d, "v": int(v or 0)} for d, v in pts]})
+                    "SELECT s.id, COALESCE(s.title,'source '||s.id) FROM sources s "
+                    "JOIN performance_snapshots p ON p.subject_type='source' AND p.subject_id=s.id "
+                    "GROUP BY s.id ORDER BY max(p.views) DESC NULLS LAST LIMIT 2")
+                top_sources = cur.fetchall()
+                for sid, title in top_sources:
+                    cur.execute(
+                        "SELECT to_char(captured_at,'MM-DD') d, max(views) v FROM performance_snapshots "
+                        "WHERE subject_type='source' AND subject_id=%s GROUP BY d ORDER BY d", (sid,))
+                    pts = cur.fetchall()
+                    series.append({"label": (title or "")[:28], "points": [{"d": d, "v": int(v or 0)} for d, v in pts]})
+            except Exception:
+                series = []
 
-            cur.execute(
-                "SELECT COALESCE(title,'source '||id), COALESCE(views_at_analysis,0) "
-                "FROM sources ORDER BY views_at_analysis DESC NULLS LAST LIMIT 5")
-            movers = [{"title": t[:48], "views": int(v or 0)} for t, v in cur.fetchall()]
+            movers = []
+            try:
+                cur.execute(
+                    "SELECT COALESCE(title,'source '||id), COALESCE(views_at_analysis,0) "
+                    "FROM sources ORDER BY views_at_analysis DESC NULLS LAST LIMIT 5")
+                movers = [{"title": t[:48], "views": int(v or 0)} for t, v in cur.fetchall()]
+            except Exception:
+                movers = []
 
         channel = _build_channel_analytics()
 
