@@ -6721,3 +6721,241 @@ def performance_get():
         return _json({"series": [], "totals": [], "videos": [], "accounts": []})
     finally:
         conn.close()
+
+
+# ── SEO Agent ─────────────────────────────────────────────────────────────────
+
+_SEO_AUTOCOMPLETE_URL = "https://suggestqueries.google.com/complete/search"
+# Cheap text model for synthesis — flash tier keeps cost near zero.
+_SEO_SYNTH_MODEL = "gemini-2.5-flash-lite"
+# A handful of alphabet expansions for long-tail; don't hammer the endpoint.
+_SEO_EXPAND_LETTERS = list("abcdefghijklmnopqrstuvwxyz")[:10]
+
+
+def _seo_autocomplete(seed: str, platform: str = "youtube") -> list:
+    """
+    Fetch autocomplete suggestions for *seed* from Google/YouTube suggest.
+
+    Returns a deduplicated list of strings, capped at ~30.
+    Never raises — returns [] on any network/parse failure.
+    """
+    import urllib.parse
+
+    results: list[str] = []
+
+    def _fetch(q: str) -> list[str]:
+        try:
+            params = {"client": "firefox", "q": q}
+            if platform == "youtube":
+                params["ds"] = "yt"
+            url = f"{_SEO_AUTOCOMPLETE_URL}?{urllib.parse.urlencode(params)}"
+            import httpx
+            resp = httpx.get(url, timeout=5.0)
+            resp.raise_for_status()
+            data = resp.json()
+            # Shape: [query_string, [suggestion, ...], ...]
+            if isinstance(data, list) and len(data) >= 2 and isinstance(data[1], list):
+                return [s for s in data[1] if isinstance(s, str)]
+        except Exception:
+            pass
+        return []
+
+    # Base seed
+    results.extend(_fetch(seed))
+
+    # Modest alphabet expansion for long-tail; stop early if we already have plenty.
+    for letter in _SEO_EXPAND_LETTERS:
+        if len(results) >= 30:
+            break
+        results.extend(_fetch(f"{seed} {letter}"))
+
+    # Dedup preserving order, cap at 30
+    seen: set[str] = set()
+    deduped: list[str] = []
+    for term in results:
+        if term not in seen:
+            seen.add(term)
+            deduped.append(term)
+        if len(deduped) >= 30:
+            break
+
+    return deduped
+
+
+def _seo_trends(seed: str) -> dict:
+    """
+    Fetch Google Trends data for *seed* via pytrends.
+
+    Returns {related_top:[], related_rising:[], interest:[]} on success;
+    the same empty-list dict on any failure (pytrends rate-limits heavily).
+    Never raises.
+    """
+    empty = {"related_top": [], "related_rising": [], "interest": []}
+    try:
+        from pytrends.request import TrendReq  # type: ignore
+        pt = TrendReq(hl="en-US", tz=360, timeout=(5, 15), retries=0)
+        pt.build_payload([seed], timeframe="today 3-m")
+
+        # related queries
+        related = pt.related_queries()
+        top_df = related.get(seed, {}).get("top")
+        rising_df = related.get(seed, {}).get("rising")
+
+        top = (
+            top_df[["query", "value"]].head(10).to_dict(orient="records")
+            if top_df is not None and not top_df.empty else []
+        )
+        rising = (
+            rising_df[["query", "value"]].head(10).to_dict(orient="records")
+            if rising_df is not None and not rising_df.empty else []
+        )
+
+        # interest over time (weekly points, simplified)
+        iot_df = pt.interest_over_time()
+        if iot_df is not None and not iot_df.empty and seed in iot_df.columns:
+            interest = [
+                {"date": str(dt.date()), "value": int(val)}
+                for dt, val in iot_df[seed].items()
+            ]
+        else:
+            interest = []
+
+        return {"related_top": top, "related_rising": rising, "interest": interest}
+    except Exception as exc:
+        print(f"[seo_trends] best-effort failure (non-fatal): {type(exc).__name__}: {exc}")
+        return empty
+
+
+def _seo_synthesize(topic: str, keywords: list, trends: dict, platform: str) -> dict:
+    """
+    Ask the LLM (via cliproxy) to produce optimized titles/hashtags/description.
+
+    Returns {titles:[str,...], hashtags:[str,...], description:str} on success;
+    {} on any failure (missing key, network error, bad JSON).
+    Never raises.
+    """
+    cliproxy_url = os.getenv("CLIPROXY_URL", "http://localhost:8317/v1").rstrip("/")
+    cliproxy_key = os.getenv("CLIPROXY_KEY", "")
+    if not cliproxy_key:
+        return {}
+
+    keyword_list = ", ".join(k["term"] for k in keywords[:20]) if keywords else topic
+    rising_list = ", ".join(
+        r["query"] for r in trends.get("related_rising", [])[:5]
+    ) if trends.get("related_rising") else ""
+
+    platform_hint = {
+        "youtube": "YouTube Shorts (mobile-first, ~60s, discovery via search + home feed)",
+        "tiktok": "TikTok (FYP algorithm, trending sounds, hashtag pages)",
+        "instagram": "Instagram Reels (Explore + hashtag discovery)",
+    }.get(platform, platform)
+
+    sys_prompt = (
+        "You are an SEO specialist for short-form video. "
+        "Return ONLY valid JSON, no markdown fences."
+    )
+    user_prompt = (
+        f'Platform: {platform_hint}\n'
+        f'Topic: {topic}\n'
+        f'Top keywords: {keyword_list}\n'
+        f'Rising queries: {rising_list or "none"}\n\n'
+        'Produce optimized content for this topic. Return JSON with exactly these keys:\n'
+        '{"titles":["<title1>","<title2>","<title3>"],'
+        '"hashtags":["<tag1>","<tag2>",...],'
+        '"description":"<2-3 sentence SEO description>"}'
+    )
+
+    try:
+        import httpx
+        resp = httpx.post(
+            f"{cliproxy_url}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {cliproxy_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": _SEO_SYNTH_MODEL,
+                "max_tokens": 512,
+                "messages": [
+                    {"role": "system", "content": sys_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+            },
+            timeout=30.0,
+        )
+        resp.raise_for_status()
+        content = resp.json()["choices"][0]["message"]["content"].strip()
+
+        # Strip ```json fences if the model ignores the instruction
+        if content.startswith("```"):
+            parts = content.split("```", 2)
+            inner = parts[1]
+            if inner.startswith("json"):
+                inner = inner[4:]
+            content = inner.rsplit("```", 1)[0].strip()
+
+        data = json.loads(content)
+        return {
+            "titles": data.get("titles", []),
+            "hashtags": data.get("hashtags", []),
+            "description": data.get("description", ""),
+        }
+    except Exception as exc:
+        print(f"[seo_synthesize] best-effort failure (non-fatal): {type(exc).__name__}: {exc}")
+        return {}
+
+
+class SeoAnalyzeRequest(BaseModel):
+    topic: str
+    platform: Optional[str] = "youtube"
+    niche: Optional[str] = None
+
+
+@app.post("/seo/analyze")
+def seo_analyze(req: SeoAnalyzeRequest):
+    """
+    SEO keyword research + trend signal + LLM-optimized titles/hashtags/description.
+
+    Data sources:
+    - Autocomplete: YouTube or Google suggest (no API key, best-effort)
+    - Trends: pytrends (unofficial, rate-limited, best-effort)
+    - Synthesis: cheap LLM via cliproxy (best-effort)
+
+    Never 500 on partial-source failure — returns whatever succeeded.
+    """
+    if not req.topic or not req.topic.strip():
+        raise HTTPException(status_code=400, detail="topic is required")
+
+    seed = req.topic.strip()
+    platform = (req.platform or "youtube").lower()
+
+    # 1. Autocomplete keywords
+    raw_suggestions = _seo_autocomplete(seed, platform)
+    keywords = [{"term": t, "source": "autocomplete"} for t in raw_suggestions]
+
+    # 2. Trends (best-effort)
+    trends = _seo_trends(seed)
+
+    # Fold rising trend queries into keywords list (tagged separately) — dedup
+    existing_terms = {k["term"].lower() for k in keywords}
+    for item in trends.get("related_rising", []):
+        q = item.get("query", "")
+        if q and q.lower() not in existing_terms:
+            keywords.append({"term": q, "source": "trends_rising"})
+            existing_terms.add(q.lower())
+    for item in trends.get("related_top", []):
+        q = item.get("query", "")
+        if q and q.lower() not in existing_terms:
+            keywords.append({"term": q, "source": "trends_top"})
+            existing_terms.add(q.lower())
+
+    # 3. LLM synthesis (best-effort)
+    suggestions = _seo_synthesize(seed, keywords, trends, platform)
+
+    return _json({
+        "topic": seed,
+        "platform": platform,
+        "keywords": keywords,
+        "trends": trends,
+        "suggestions": suggestions,
+    })

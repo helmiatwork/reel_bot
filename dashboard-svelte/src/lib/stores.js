@@ -4,7 +4,7 @@ import { writable } from 'svelte/store'
 const VALID_PAGES = new Set([
   'openclaw', 'dashboard', 'sources', 'analysis', 'clips', 'clipper', 'snoop',
   'performance', 'pipeline', 'posts', 'agents', 'formulas', 'cost', 'discover', 'creators', 'songs',
-  'decompose', 'generate', 'cookies', 'jadwal'
+  'decompose', 'generate', 'cookies', 'jadwal', 'seo'
 ])
 
 function hashPage() {
