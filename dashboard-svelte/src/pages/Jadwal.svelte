@@ -104,7 +104,7 @@
   // ── Account helpers ──────────────────────────────────────────────────────────
   async function loadAccounts(p) {
     if (acctsByPlatform[p] !== undefined) return  // already loaded
-    const r = await api.accounts(p)
+    const r = await api.accounts(p, 'publish')
     acctsByPlatform = { ...acctsByPlatform, [p]: r || [] }
   }
 
