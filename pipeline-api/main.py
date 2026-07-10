@@ -1438,6 +1438,10 @@ class ResearchRequest(BaseModel):
     topic: str = ""            # optional topic context for script generation
 
 
+# run_id is a server-generated uuid4; reject anything else so a URL path param
+# (e.g. "../../secret") can never traverse out of research_runs/.
+_SAFE_RUN_ID = _re.compile(r'^[a-f0-9\-]{8,64}$')
+
 def _runs_path(run_id: str) -> Path:
     # P1b: default to repo-relative output/ instead of Docker /output/
     return _REPO_ROOT / "output" / "research_runs" / f"{run_id}.json"
@@ -1448,8 +1452,19 @@ def _save_run(run_id: str, data: dict):
     p.write_text(json.dumps(data))
 
 def _load_run(run_id: str):
+    if not _SAFE_RUN_ID.match(run_id or ""):
+        return None
     p = _runs_path(run_id)
     return json.loads(p.read_text()) if p.exists() else None
+
+def _log_run(run_id: str, msg: str, start_time: float = None):
+    """Append a log line to a run. If start_time provided, calc elapsed seconds."""
+    run = _load_run(run_id) or {"status": "running", "log": []}
+    if "log" not in run:
+        run["log"] = []
+    elapsed = round(time.time() - start_time, 1) if start_time else 0
+    run["log"].append({"msg": msg, "t": elapsed})
+    _save_run(run_id, run)
 
 
 @app.post("/pipeline/research")
@@ -4839,14 +4854,11 @@ class AnalyzeClaudeRequest(BaseModel):
     output_format: str = "none"
 
 
-@app.post("/analyze/claude")
-def analyze_claude(req: AnalyzeClaudeRequest):
+def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = None, start_time: Optional[float] = None) -> dict:
     """
-    Extract keyframes from a YouTube video, send them to the host claude bridge
-    for vision-based analysis, and persist the result to video_analysis table.
-
-    Body: {youtube_url, intent?: str, model?: str, output_format?: 'none'|'prompt_video'|'prompt_json'}
-    Returns: {youtube_url, hook, structure, retention, tags, model, cost_usd, gen_prompt?, gen_prompt_format?}
+    Core analyze logic, reusable by both sync and async endpoints.
+    If progress_id is set, appends log lines via _log_run.
+    Returns the analysis result dict.
     """
     import uuid
     import re
@@ -4882,27 +4894,24 @@ def analyze_claude(req: AnalyzeClaudeRequest):
                     )
                     cached_row = cur.fetchone()
                     cached_score = (cached_row[9] if cached_row and len(cached_row) > 9 else None)
-                    # Only serve from cache if it's a COMPLETE analysis (has a
-                    # retention_score). Old rows predating the score are re-analyzed
-                    # so the score gets backfilled.
                     if cached_row and cached_score is not None:
-                        cached_tags = cached_row[5]  # tags column
+                        cached_tags = cached_row[5]
                         if isinstance(cached_tags, str):
                             try:
                                 cached_tags = json.loads(cached_tags)
                             except Exception:
                                 cached_tags = []
-                        cached_cost = cached_row[7]  # cost_usd column
+                        cached_cost = cached_row[7]
                         if cached_cost is not None:
                             cached_cost = float(cached_cost)
-                        cached_summary = cached_row[10] or ""  # content_summary column
-                        cached_detail = cached_row[11] or ""  # content_detail column
-                        # Backfill creator/source for previously-analyzed URLs
-                        # (these are check-and-skip, so they no-op if already saved).
+                        cached_summary = cached_row[10] or ""
+                        cached_detail = cached_row[11] or ""
                         _save_creator(req.youtube_url)
                         _save_source(req.youtube_url)
+                        if progress_id:
+                            _log_run(progress_id, "✓ Gunakan cache", start_time)
                         steps = _build_analyze_steps(cached=True)
-                        return _json({
+                        return {
                             "youtube_url": cached_row[0],
                             "summary": cached_summary,
                             "detail": cached_detail,
@@ -4915,26 +4924,43 @@ def analyze_claude(req: AnalyzeClaudeRequest):
                             "cost_usd": cached_cost,
                             "cached": True,
                             "steps": steps,
-                        })
+                        }
             except Exception as exc:
                 print(f"[analyze/claude] DB cache check failed (non-fatal): {exc}")
             finally:
                 conn.close()
 
-    # Step 1: Extract keyframes into the shared bind-mount dir
-    # run_id is a safe 8-char hex slug from uuid4 — [0-9a-f-] — valid as a subdir component.
+    # Step 1: Extract keyframes
+    if progress_id:
+        _log_run(progress_id, "⬇ Download video…", start_time)
+
     run_id = re.sub(r"[^A-Za-z0-9_-]", "", str(uuid.uuid4())[:8])
     out_dir = f"{ANALYZE_FRAME_DIR}/{run_id}"
     try:
         frame_paths = _extract_keyframes(req.youtube_url, out_dir, n=20)
     except Exception as exc:
-        print(f"[analyze/claude] frame extraction failed: {exc}")
+        if progress_id:
+            _log_run(progress_id, f"✗ Gagal download: {str(exc)[:100]}", start_time)
+            run = _load_run(progress_id)
+            if run:
+                run["status"] = "error"
+                _save_run(progress_id, run)
         raise HTTPException(status_code=502, detail=f"Frame extraction failed: {exc}")
 
     if not frame_paths:
+        if progress_id:
+            _log_run(progress_id, "✗ Tidak ada frame yang diekstrak", start_time)
+            run = _load_run(progress_id)
+            if run:
+                run["status"] = "error"
+                _save_run(progress_id, run)
         raise HTTPException(status_code=502, detail="No frames could be extracted from the video")
 
-    # Step 1b: Persist frames per video for later serving in Sources detail drawer
+    if progress_id:
+        _log_run(progress_id, f"✓ Video terunduh: {len(frame_paths)} frame", start_time)
+        _log_run(progress_id, f"🎞 Ekstrak {len(frame_paths)} frame…", start_time)
+
+    # Step 1b: Persist frames
     try:
         video_id = _extract_video_id_from_youtube_url(req.youtube_url)
         persist_dir = _REPO_ROOT / "data" / "frames" / video_id
@@ -4944,18 +4970,19 @@ def analyze_claude(req: AnalyzeClaudeRequest):
             dst_path = persist_dir / dst_name
             shutil.copy(src_path, dst_path)
     except Exception as exc:
-        # Non-fatal: frame persistence failure should not break analyze
         print(f"[analyze/claude] frame persistence failed (non-fatal): {exc}")
 
-    # Step 2: Build prompt — intent as DATA, wrapped safely; include gen_prompt sections if output_format requests it
-    prompt = _build_claude_prompt(safe_intent, output_format)
+    if progress_id:
+        _log_run(progress_id, f"✓ {len(frame_paths)} frame diekstrak", start_time)
 
-    # Frame basenames only — the bridge resolves them under its ANALYZE_FRAME_DIR
+    # Step 2: Build prompt
+    prompt = _build_claude_prompt(safe_intent, output_format)
     frame_names = [Path(p).name for p in frame_paths]
 
-    # Step 3: Call the claude bridge
-    # Pass subdir=run_id so the bridge resolves frames under ANALYZE_FRAME_DIR/<run_id>/
-    # rather than the root, matching where _extract_keyframes placed them.
+    # Step 3: Call bridge
+    if progress_id:
+        _log_run(progress_id, "🧠 Sonnet menganalisa frame…", start_time)
+
     import httpx as _httpx
     bridge_timeout = _httpx.Timeout(connect=10.0, read=200.0, write=10.0, pool=5.0)
     try:
@@ -4965,27 +4992,44 @@ def analyze_claude(req: AnalyzeClaudeRequest):
             timeout=bridge_timeout,
         )
     except Exception as exc:
-        print(f"[analyze/claude] bridge unreachable: {exc}")
+        if progress_id:
+            _log_run(progress_id, f"✗ Bridge tidak terjangkau: {str(exc)[:100]}", start_time)
+            run = _load_run(progress_id)
+            if run:
+                run["status"] = "error"
+                _save_run(progress_id, run)
         raise HTTPException(status_code=502, detail=f"Bridge unreachable: {exc}")
 
     try:
         bridge_data = bridge_resp.json()
     except Exception:
+        if progress_id:
+            _log_run(progress_id, "✗ Bridge response bukan JSON", start_time)
+            run = _load_run(progress_id)
+            if run:
+                run["status"] = "error"
+                _save_run(progress_id, run)
         raise HTTPException(status_code=502, detail="Bridge returned a non-JSON response")
 
-    # Rate-limit → 429
+    # Rate-limit
     if bridge_data.get("error_type") == "rate_limit":
-        raise HTTPException(
-            status_code=429,
-            detail="Claude usage/rate limit reached — please retry later",
-        )
+        if progress_id:
+            _log_run(progress_id, "✗ Claude rate limit tercapai", start_time)
+            run = _load_run(progress_id)
+            if run:
+                run["status"] = "error"
+                _save_run(progress_id, run)
+        raise HTTPException(status_code=429, detail="Claude usage/rate limit reached — please retry later")
 
-    # Other bridge failure → 502
+    # Bridge failure
     if not bridge_data.get("ok"):
-        raise HTTPException(
-            status_code=502,
-            detail=f"Bridge error: {bridge_data.get('error', 'unknown')}",
-        )
+        if progress_id:
+            _log_run(progress_id, f"✗ Bridge error: {bridge_data.get('error', 'unknown')}", start_time)
+            run = _load_run(progress_id)
+            if run:
+                run["status"] = "error"
+                _save_run(progress_id, run)
+        raise HTTPException(status_code=502, detail=f"Bridge error: {bridge_data.get('error', 'unknown')}")
 
     # Log API usage
     _log_api_usage(
@@ -4995,7 +5039,7 @@ def analyze_claude(req: AnalyzeClaudeRequest):
         cost_usd=bridge_data.get("cost_usd")
     )
 
-    # Step 4: Parse claude's JSON result (may be fenced or pure)
+    # Step 4: Parse result
     raw_result = bridge_data.get("result", "")
     cost_usd = bridge_data.get("cost_usd")
 
@@ -5003,8 +5047,12 @@ def analyze_claude(req: AnalyzeClaudeRequest):
         cleaned = _strip_json_fences(raw_result)
         parsed = json.loads(cleaned)
     except Exception as exc:
-        print(f"[analyze/claude] JSON parse of claude result failed: {exc}")
-        print(f"[analyze/claude] raw_result[:500]: {raw_result[:500]}")
+        if progress_id:
+            _log_run(progress_id, f"✗ Parse JSON gagal: {str(exc)[:100]}", start_time)
+            run = _load_run(progress_id)
+            if run:
+                run["status"] = "error"
+                _save_run(progress_id, run)
         raise HTTPException(status_code=502, detail=f"Could not parse claude result as JSON: {exc}")
 
     summary = parsed.get("summary", "")
@@ -5021,14 +5069,13 @@ def analyze_claude(req: AnalyzeClaudeRequest):
     if not isinstance(tags, list):
         tags = []
 
-    # Extract gen_prompt based on output_format (non-fatal if missing or unparseable)
+    # Extract gen_prompt
     gen_prompt = None
     gen_prompt_format = None
     if output_format == "prompt_video":
         gen_prompt = parsed.get("gen_prompt", "")
         gen_prompt_format = "prompt_video" if gen_prompt else None
     elif output_format == "prompt_json":
-        # For JSON format, extract the storyboard and re-serialize it
         storyboard = parsed.get("gen_prompt_storyboard", {})
         if storyboard and isinstance(storyboard, dict):
             try:
@@ -5041,9 +5088,11 @@ def analyze_claude(req: AnalyzeClaudeRequest):
             gen_prompt = None
             gen_prompt_format = None
 
-    # Validity gate: only CACHE a real analysis. If claude refused / got no usable
-    # frames (empty or refusal text), do NOT persist — so the next attempt retries
-    # instead of returning a cached failure.
+    if progress_id:
+        elapsed = round(time.time() - start_time, 1) if start_time else 0
+        _log_run(progress_id, f"✓ Analisa selesai ({elapsed}s, ${cost_usd:.4f})" if cost_usd else f"✓ Analisa selesai ({elapsed}s)", start_time)
+
+    # Validity gate
     _blob = f"{hook} {structure} {retention}".lower()
     _refusal = any(p in _blob for p in (
         "tidak dapat dianalisis", "tidak ada frame", "tidak bisa dianalisis",
@@ -5054,7 +5103,7 @@ def analyze_claude(req: AnalyzeClaudeRequest):
     if not analysis_ok:
         print(f"[analyze/claude] analysis invalid (refusal/empty) — NOT caching: {req.youtube_url}")
 
-    # Step 5: Persist to DB (only when the analysis is valid)
+    # Step 5: Persist to DB
     conn = _db_conn() if analysis_ok else None
     if conn:
         try:
@@ -5086,11 +5135,14 @@ def analyze_claude(req: AnalyzeClaudeRequest):
         finally:
             conn.close()
 
-    # Step 6: Save creator + source if new (non-fatal)
+    if progress_id:
+        _log_run(progress_id, "💾 Simpan ke database…", start_time)
+
+    # Step 6: Save creator + source
     _save_creator(req.youtube_url)
     _save_source(req.youtube_url)
 
-    # Step 6b: Persist gen_prompt to sources row if present (non-fatal)
+    # Step 6b: Persist gen_prompt
     if gen_prompt:
         try:
             conn = _db_conn()
@@ -5109,7 +5161,17 @@ def analyze_claude(req: AnalyzeClaudeRequest):
         except Exception as exc:
             print(f"[analyze/claude] gen_prompt persistence error (non-fatal): {exc}")
 
-    # Build steps trace for fresh analysis path (niche inference included)
+    if progress_id:
+        _log_run(progress_id, "✓ Tersimpan", start_time)
+
+    # Generate output for gen_prompt
+    if output_format != "none" and gen_prompt:
+        if progress_id:
+            fmt_name = "video" if output_format == "prompt_video" else "JSON"
+            _log_run(progress_id, f"📝 Generate prompt ({fmt_name})…", start_time)
+            _log_run(progress_id, f"✓ Prompt dibuat", start_time)
+
+    # Build steps trace
     try:
         video_id_for_steps = _extract_video_id_from_youtube_url(req.youtube_url)
     except Exception:
@@ -5133,7 +5195,58 @@ def analyze_claude(req: AnalyzeClaudeRequest):
     if gen_prompt:
         result["gen_prompt"] = gen_prompt
         result["gen_prompt_format"] = gen_prompt_format
+    return result
+
+
+@app.post("/analyze/claude")
+def analyze_claude(req: AnalyzeClaudeRequest):
+    """Sync endpoint — calls helper with no progress tracking."""
+    result = _run_analyze_claude(req, progress_id=None)
     return _json(result)
+
+
+@app.post("/analyze/claude/async")
+def analyze_claude_async(req: AnalyzeClaudeRequest, bg: BackgroundTasks):
+    """Async variant — start background job, return run_id for polling."""
+    # Validate upfront
+    _validate_source_url(req.youtube_url)
+    output_format = (req.output_format or "none").lower()
+    if output_format not in ("none", "prompt_video", "prompt_json"):
+        raise HTTPException(status_code=400, detail=f"Invalid output_format '{output_format}'. Must be one of: none, prompt_video, prompt_json")
+
+    run_id = str(uuid.uuid4())
+    start_time = time.time()
+    _save_run(run_id, {"status": "running", "log": [{"msg": "⏳ Antre…", "t": 0}]})
+
+    def _job():
+        try:
+            result = _run_analyze_claude(req, progress_id=run_id, start_time=start_time)
+            run = _load_run(run_id) or {"status": "running", "log": []}
+            run["status"] = "done"
+            run["result"] = result
+            _save_run(run_id, run)
+        except HTTPException as e:
+            run = _load_run(run_id) or {"status": "running", "log": []}
+            run["status"] = "error"
+            run["error"] = str(e.detail)[:300]
+            _save_run(run_id, run)
+        except Exception as e:
+            run = _load_run(run_id) or {"status": "running", "log": []}
+            run["status"] = "error"
+            run["error"] = str(e)[:300]
+            _save_run(run_id, run)
+
+    bg.add_task(_job)
+    return {"run_id": run_id}
+
+
+@app.get("/analyze/claude/status/{run_id}")
+def analyze_claude_status(run_id: str):
+    """Poll status of async analyze job."""
+    run = _load_run(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="run not found")
+    return run
 
 
 @app.get("/sources/frames")
@@ -6011,6 +6124,332 @@ async def upload_source(
         result["gen_prompt"] = gen_prompt
         result["gen_prompt_format"] = gen_prompt_format
     return _json(result)
+
+
+@app.post("/sources/upload/async")
+async def upload_source_async(
+    file: UploadFile = File(...),
+    intent: str = Form(default=""),
+    output_format: str = Form(default="none"),
+    request: Request = None,
+    bg: BackgroundTasks = None,
+):
+    """
+    Async variant of upload_source — accepts file, validates, saves, then background-analyzes.
+    Returns {run_id} for polling via /analyze/claude/status/{run_id}.
+    """
+    video_path = None
+    import re
+
+    # Validate output_format
+    output_format = (output_format or "none").lower()
+    if output_format not in ("none", "prompt_video", "prompt_json"):
+        raise HTTPException(status_code=400, detail=f"Invalid output_format '{output_format}'. Must be one of: none, prompt_video, prompt_json")
+
+    original_name = file.filename or ""
+    ext = Path(original_name).suffix.lower()
+    if ext not in _SOURCE_UPLOAD_VIDEO_EXTS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported format '{ext}'. Allowed: {', '.join(sorted(_SOURCE_UPLOAD_VIDEO_EXTS))}",
+        )
+
+    # DoS guard: check Content-Length before reading
+    if request:
+        cl = request.headers.get("content-length")
+        if cl and int(cl) > _SOURCE_UPLOAD_VIDEO_MAX_BYTES + 10_000:
+            raise HTTPException(status_code=413, detail="File too large (max 200 MB)")
+
+    content = await file.read()
+    if len(content) > _SOURCE_UPLOAD_VIDEO_MAX_BYTES:
+        limit_mb = _SOURCE_UPLOAD_VIDEO_MAX_BYTES // (1024 * 1024)
+        raise HTTPException(status_code=413, detail=f"File too large (max {limit_mb} MB)")
+
+    # Magic-bytes content sniff
+    if ext in {'.mp4', '.m4v', '.mov'} and len(content) >= 8:
+        if content[4:8] != b"ftyp":
+            raise HTTPException(status_code=400, detail="File content does not match declared format")
+    elif ext in {'.webm', '.mkv'} and len(content) >= 4:
+        if content[0:4] != b"\x1a\x45\xdf\xa3":
+            raise HTTPException(status_code=400, detail="File content does not match declared format")
+
+    # UUID path — no path traversal
+    file_id = str(uuid.uuid4())
+    upload_dir = Path(_REPO_ROOT) / "data" / "sources" / "uploaded"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    video_path = upload_dir / f"{file_id}{ext}"
+    video_path.write_bytes(content)
+
+    source_key = f"file://{file_id}"
+    intent = (intent or "").strip()
+    safe_intent = re.sub(r"[^\w\s\-.,!?()]", "", intent)[:500] if intent else "tidak ada instruksi khusus"
+
+    # Start async job
+    run_id = str(uuid.uuid4())
+    start_time = time.time()
+    _save_run(run_id, {"status": "running", "log": [{"msg": "✓ File diterima", "t": 0}]})
+
+    def _job():
+        """Background job for file upload analysis."""
+        success = False
+        try:
+            # Extract frames
+            _log_run(run_id, "🎞 Ekstrak frame…", start_time)
+            frame_run_id = re.sub(r"[^A-Za-z0-9_-]", "", str(uuid.uuid4())[:8])
+            out_dir = f"{ANALYZE_FRAME_DIR}/{frame_run_id}"
+            try:
+                frame_paths = _extract_frames_from_file(str(video_path), out_dir, n=20)
+            except Exception as exc:
+                _log_run(run_id, f"✗ Ekstrak frame gagal: {str(exc)[:100]}", start_time)
+                run = _load_run(run_id)
+                if run:
+                    run["status"] = "error"
+                    _save_run(run_id, run)
+                return
+
+            if not frame_paths:
+                _log_run(run_id, "✗ Tidak ada frame yang diekstrak", start_time)
+                run = _load_run(run_id)
+                if run:
+                    run["status"] = "error"
+                    _save_run(run_id, run)
+                return
+
+            _log_run(run_id, f"✓ {len(frame_paths)} frame diekstrak", start_time)
+
+            # Persist frames
+            try:
+                persist_dir = _REPO_ROOT / "data" / "frames" / file_id
+                persist_dir.mkdir(parents=True, exist_ok=True)
+                for src_path in frame_paths:
+                    dst_name = Path(src_path).name
+                    dst_path = persist_dir / dst_name
+                    shutil.copy(src_path, dst_path)
+            except Exception as exc:
+                print(f"[sources/upload/async] frame persistence failed (non-fatal): {exc}")
+
+            # Call bridge
+            _log_run(run_id, "🧠 Sonnet menganalisa frame…", start_time)
+            prompt = _build_claude_prompt(safe_intent, output_format)
+            frame_names = [Path(p).name for p in frame_paths]
+            model = "claude-sonnet-4-6"
+
+            import httpx as _httpx
+            bridge_timeout = _httpx.Timeout(connect=10.0, read=200.0, write=10.0, pool=5.0)
+            try:
+                bridge_resp = _httpx.post(
+                    f"{CLAUDE_BRIDGE_URL}/run",
+                    json={"prompt": prompt, "frames": frame_names, "model": model, "subdir": frame_run_id},
+                    timeout=bridge_timeout,
+                )
+            except Exception as exc:
+                _log_run(run_id, f"✗ Bridge tidak terjangkau: {str(exc)[:100]}", start_time)
+                run = _load_run(run_id)
+                if run:
+                    run["status"] = "error"
+                    _save_run(run_id, run)
+                return
+
+            try:
+                bridge_data = bridge_resp.json()
+            except Exception:
+                _log_run(run_id, "✗ Bridge response bukan JSON", start_time)
+                run = _load_run(run_id)
+                if run:
+                    run["status"] = "error"
+                    _save_run(run_id, run)
+                return
+
+            if bridge_data.get("error_type") == "rate_limit":
+                _log_run(run_id, "✗ Claude rate limit tercapai", start_time)
+                run = _load_run(run_id)
+                if run:
+                    run["status"] = "error"
+                    _save_run(run_id, run)
+                return
+
+            if not bridge_data.get("ok"):
+                _log_run(run_id, f"✗ Bridge error: {bridge_data.get('error', 'unknown')}", start_time)
+                run = _load_run(run_id)
+                if run:
+                    run["status"] = "error"
+                    _save_run(run_id, run)
+                return
+
+            # Log API usage
+            _log_api_usage(
+                agent="sources-upload",
+                model=bridge_data.get("model", model),
+                raw_usage=bridge_data.get("raw_usage", {}),
+                cost_usd=bridge_data.get("cost_usd")
+            )
+
+            # Parse result
+            raw_result = bridge_data.get("result", "")
+            cost_usd = bridge_data.get("cost_usd")
+
+            try:
+                cleaned = _strip_json_fences(raw_result)
+                parsed = json.loads(cleaned)
+            except Exception as exc:
+                _log_run(run_id, f"✗ Parse JSON gagal: {str(exc)[:100]}", start_time)
+                run = _load_run(run_id)
+                if run:
+                    run["status"] = "error"
+                    _save_run(run_id, run)
+                return
+
+            summary = parsed.get("summary", "")
+            detail = parsed.get("detail", "")
+            hook = parsed.get("hook", "")
+            structure = parsed.get("structure", "")
+            retention = parsed.get("retention", "")
+            retention_score = parsed.get("retention_score")
+            try:
+                retention_score = max(1, min(10, int(retention_score))) if retention_score is not None else None
+            except (TypeError, ValueError):
+                retention_score = None
+            tags = parsed.get("tags", [])
+            if not isinstance(tags, list):
+                tags = []
+
+            # Extract gen_prompt
+            gen_prompt = None
+            gen_prompt_format = None
+            if output_format == "prompt_video":
+                gen_prompt = parsed.get("gen_prompt", "")
+                gen_prompt_format = "prompt_video" if gen_prompt else None
+            elif output_format == "prompt_json":
+                storyboard = parsed.get("gen_prompt_storyboard", {})
+                if storyboard and isinstance(storyboard, dict):
+                    try:
+                        gen_prompt = json.dumps(storyboard)
+                        gen_prompt_format = "prompt_json"
+                    except Exception:
+                        gen_prompt = None
+                        gen_prompt_format = None
+                else:
+                    gen_prompt = None
+                    gen_prompt_format = None
+
+            _log_run(run_id, f"✓ Analisa selesai ({round(time.time()-start_time, 1)}s, ${cost_usd:.4f})" if cost_usd else f"✓ Analisa selesai ({round(time.time()-start_time, 1)}s)", start_time)
+
+            # Validity gate
+            _blob = f"{hook} {structure} {retention}".lower()
+            _refusal = any(p in _blob for p in (
+                "tidak dapat dianalisis", "tidak ada frame", "tidak bisa dianalisis",
+                "cannot be analyzed", "cannot analyze", "unable to analyze", "no frame",
+                "no image", "tidak ada gambar",
+            ))
+            analysis_ok = bool(hook.strip()) and bool(structure.strip()) and not _refusal
+
+            if not analysis_ok:
+                _log_run(run_id, "✗ Claude tidak bisa menganalisis video ini", start_time)
+                run = _load_run(run_id)
+                if run:
+                    run["status"] = "error"
+                    run["error"] = "Claude could not analyze this video — try a clearer video or different intent"
+                    _save_run(run_id, run)
+                return
+
+            # Persist to DB
+            _log_run(run_id, "💾 Simpan ke database…", start_time)
+            source_id = None
+            conn = _db_conn()
+            if conn:
+                try:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            """INSERT INTO sources
+                            (youtube_url, title, platform, channel, views_at_analysis, status, niche)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            RETURNING id""",
+                            (
+                                source_key,
+                                summary or "Uploaded video",
+                                "file-upload",
+                                None,
+                                None,
+                                "analyzed",
+                                None,
+                            ),
+                        )
+                        source_id = cur.fetchone()[0]
+
+                        # Insert analysis
+                        cur.execute(
+                            """INSERT INTO video_analysis
+                            (youtube_url, hook, structure, retention, tags, raw_result, model, cost_usd, retention_score, content_summary, content_detail)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                            (
+                                source_key,
+                                hook,
+                                structure,
+                                retention,
+                                json.dumps(tags),
+                                raw_result,
+                                model,
+                                cost_usd,
+                                retention_score,
+                                summary or None,
+                                detail or None,
+                            ),
+                        )
+
+                        if gen_prompt:
+                            cur.execute(
+                                "UPDATE sources SET gen_prompt=%s, gen_prompt_format=%s WHERE id=%s",
+                                (gen_prompt, gen_prompt_format, source_id),
+                            )
+                    conn.commit()
+                except Exception as exc:
+                    print(f"[sources/upload/async] DB insert failed: {exc}")
+                finally:
+                    conn.close()
+
+            _log_run(run_id, "✓ Tersimpan", start_time)
+
+            if output_format != "none" and gen_prompt:
+                fmt_name = "video" if output_format == "prompt_video" else "JSON"
+                _log_run(run_id, f"📝 Generate prompt ({fmt_name})…", start_time)
+                _log_run(run_id, "✓ Prompt dibuat", start_time)
+
+            # Mark as done
+            result = {
+                "youtube_url": source_key,
+                "summary": summary,
+                "detail": detail,
+                "hook": hook,
+                "structure": structure,
+                "retention": retention,
+                "retention_score": retention_score,
+                "tags": tags,
+                "model": model,
+                "cost_usd": cost_usd,
+            }
+            if gen_prompt:
+                result["gen_prompt"] = gen_prompt
+                result["gen_prompt_format"] = gen_prompt_format
+
+            run = _load_run(run_id) or {"status": "running", "log": []}
+            run["status"] = "done"
+            run["result"] = result
+            _save_run(run_id, run)
+            success = True
+
+        except Exception as e:
+            run = _load_run(run_id) or {"status": "running", "log": []}
+            run["status"] = "error"
+            run["error"] = str(e)[:300]
+            _save_run(run_id, run)
+        finally:
+            # Orphan cleanup: keep the uploaded file only on success (it's the source asset)
+            if not success and video_path and video_path.exists():
+                video_path.unlink(missing_ok=True)
+
+    if bg:
+        bg.add_task(_job)
+    return {"run_id": run_id}
 
 
 @app.post("/clips/find-claude")
