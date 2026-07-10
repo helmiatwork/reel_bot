@@ -500,3 +500,61 @@ class TestSourcesUploadP1Fixes:
                 assert len(uploaded_files) == 0, f"Uploaded file not cleaned up: {uploaded_files}"
             finally:
                 m._REPO_ROOT = orig_repo_root
+
+    def test_sources_upload_persists_gen_prompt(self, client_with_db):
+        """After /sources/upload with output_format=prompt_json, gen_prompt should be persisted."""
+        import main as m
+        import httpx as _httpx
+
+        tc, mock_conn, mock_cursor = client_with_db
+
+        # Mock cursor to return source_id on INSERT
+        gen_prompt_json = '{"scene_order":[{"scene":1,"description":"Opening"}]}'
+        result_payload = {
+            **_SAMPLE_RESULT,
+            "gen_prompt_storyboard": json.loads(gen_prompt_json)
+        }
+
+        with patch.object(_httpx, "post", return_value=_make_bridge_response(result_payload)):
+            r = tc.post(
+                "/sources/upload",
+                data={"output_format": "prompt_json"},
+                files={"file": ("video.mp4", BytesIO(_make_valid_mp4_content()), "video/mp4")},
+            )
+
+        assert r.status_code == 200
+        resp_data = r.json()
+        assert resp_data.get("gen_prompt_format") == "prompt_json"
+
+        # Verify that UPDATE was called with gen_prompt
+        update_calls = [call for call in mock_cursor.execute.call_args_list
+                        if len(call[0]) > 0 and "UPDATE sources SET gen_prompt" in str(call[0][0])]
+        assert len(update_calls) > 0, "UPDATE gen_prompt should have been called in /sources/upload"
+
+    def test_sources_analysis_returns_gen_prompt(self, client_with_db):
+        """GET /sources/{source_id}/analysis should return gen_prompt and gen_prompt_format."""
+        import main as m
+
+        tc, mock_conn, mock_cursor = client_with_db
+
+        # Mock the SELECT to return gen_prompt data
+        gen_prompt_text = "A cinematic video"
+        mock_cursor.fetchone.return_value = (
+            "Opening hook",  # hook
+            "Problem → Solution",  # structure
+            "Pattern interrupts",  # retention
+            8,  # retention_score
+            "Summary",  # content_summary
+            "Detail",  # content_detail
+            '["tag1", "tag2"]',  # tags
+            gen_prompt_text,  # gen_prompt
+            "prompt_video"  # gen_prompt_format
+        )
+
+        r = tc.get("/sources/1/analysis")
+
+        assert r.status_code == 200
+        resp_data = r.json()
+        assert resp_data.get("gen_prompt") == gen_prompt_text
+        assert resp_data.get("gen_prompt_format") == "prompt_video"
+        assert resp_data.get("hook") == "Opening hook"

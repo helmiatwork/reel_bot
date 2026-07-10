@@ -102,6 +102,8 @@ tbody tr{cursor:pointer} tbody tr:hover td{background:var(--soft)}
 .chip{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600}
 .c-analyzed{background:rgba(64,81,137,.12);color:var(--accent)}
 .c-used{background:rgba(64,81,137,.12);color:var(--accent)}
+.c-prompt-json{background:rgba(10,179,156,.12);color:var(--green)}
+.c-prompt-text{background:rgba(64,81,137,.12);color:var(--accent)}
 .num{font-variant-numeric:tabular-nums}
 .kanban{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
 .col{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px;min-height:120px}
