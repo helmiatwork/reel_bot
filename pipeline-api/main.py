@@ -15,7 +15,7 @@ import zipfile
 import asyncio
 from pathlib import Path
 from urllib.parse import urlparse
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Header, Depends, UploadFile, Form, File
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Header, Depends, UploadFile, Form, File, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -4132,6 +4132,58 @@ def download_render(render_id: str):
     return FileResponse(path=str(mp4_file), media_type="video/mp4", filename=f"{render_id}.mp4")
 
 
+def _extract_frames_from_file(video_path: str, out_dir: str, n: int = 20) -> list:
+    """
+    Extract n evenly-spaced keyframes from a local video file using ffmpeg.
+    Returns a list of absolute frame file paths.
+    ponytail: shared by both URL-based (/analyze/claude) and file-based (/sources/upload) paths
+    """
+    import subprocess
+
+    # Get video duration via ffprobe
+    probe = subprocess.run(
+        [
+            "ffprobe", "-v", "quiet", "-print_format", "json",
+            "-show_format", video_path,
+        ],
+        capture_output=True, text=True, timeout=30,
+    )
+    duration_s = 60.0  # fallback
+    if probe.returncode == 0:
+        try:
+            finfo = json.loads(probe.stdout)
+            duration_s = float(finfo.get("format", {}).get("duration", 60.0))
+        except Exception:
+            pass
+
+    # Build evenly-spaced timestamps (avoid very start/end)
+    margin = max(1.0, duration_s * 0.02)
+    usable = duration_s - 2 * margin
+    if usable <= 0:
+        usable = duration_s
+        margin = 0.0
+    step = usable / max(n - 1, 1)
+    timestamps = [margin + i * step for i in range(n)]
+
+    # Extract frames with ffmpeg
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
+    frame_paths = []
+    for i, ts in enumerate(timestamps):
+        out_file = f"{out_dir}/frame_{i:03d}.jpg"
+        ff = subprocess.run(
+            [
+                "ffmpeg", "-ss", str(ts), "-i", video_path,
+                "-frames:v", "1", "-q:v", "3",
+                "-y", out_file,
+            ],
+            capture_output=True, timeout=30,
+        )
+        if ff.returncode == 0 and Path(out_file).exists():
+            frame_paths.append(out_file)
+
+    return frame_paths
+
+
 def _extract_keyframes(youtube_url: str, out_dir: str, n: int = 20) -> list:
     """
     Download a video from youtube_url and extract n evenly-spaced keyframes
@@ -4142,7 +4194,6 @@ def _extract_keyframes(youtube_url: str, out_dir: str, n: int = 20) -> list:
     """
     import subprocess
     import tempfile
-    import math
 
     # Download video to a temp file
     tmp_video_dir = tempfile.mkdtemp(prefix="analyze_vid_")
@@ -4187,48 +4238,8 @@ def _extract_keyframes(youtube_url: str, out_dir: str, n: int = 20) -> list:
             raise RuntimeError("Downloaded video file not found after yt-dlp")
         video_path = str(video_files[0])
 
-    # Get video duration via ffprobe
-    probe = subprocess.run(
-        [
-            "ffprobe", "-v", "quiet", "-print_format", "json",
-            "-show_format", video_path,
-        ],
-        capture_output=True, text=True, timeout=30,
-    )
-    duration_s = 60.0  # fallback
-    if probe.returncode == 0:
-        try:
-            finfo = json.loads(probe.stdout)
-            duration_s = float(finfo.get("format", {}).get("duration", 60.0))
-        except Exception:
-            pass
-
-    # Build evenly-spaced timestamps (avoid very start/end)
-    margin = max(1.0, duration_s * 0.02)
-    usable = duration_s - 2 * margin
-    if usable <= 0:
-        usable = duration_s
-        margin = 0.0
-    step = usable / max(n - 1, 1)
-    timestamps = [margin + i * step for i in range(n)]
-
-    # Extract frames with ffmpeg
-    Path(out_dir).mkdir(parents=True, exist_ok=True)
-    frame_paths = []
-    for i, ts in enumerate(timestamps):
-        out_file = f"{out_dir}/frame_{i:03d}.jpg"
-        ff = subprocess.run(
-            [
-                "ffmpeg", "-ss", str(ts), "-i", video_path,
-                "-frames:v", "1", "-q:v", "3",
-                "-y", out_file,
-            ],
-            capture_output=True, timeout=30,
-        )
-        if ff.returncode == 0 and Path(out_file).exists():
-            frame_paths.append(out_file)
-
-    return frame_paths
+    # ponytail: shared ffprobe + frame extraction logic now lives in _extract_frames_from_file
+    return _extract_frames_from_file(video_path, out_dir, n)
 
 
 def _creators_init_db():
@@ -4927,7 +4938,10 @@ def analyze_claude(req: AnalyzeClaudeRequest):
         print(f"[analyze/claude] bridge unreachable: {exc}")
         raise HTTPException(status_code=502, detail=f"Bridge unreachable: {exc}")
 
-    bridge_data = bridge_resp.json()
+    try:
+        bridge_data = bridge_resp.json()
+    except Exception:
+        raise HTTPException(status_code=502, detail="Bridge returned a non-JSON response")
 
     # Rate-limit → 429
     if bridge_data.get("error_type") == "rate_limit":
@@ -5513,6 +5527,9 @@ _SONG_IMPORT_ALLOWED_EXTS = _SONG_IMPORT_AUDIO_EXTS | _SONG_IMPORT_VIDEO_EXTS
 _SONG_IMPORT_AUDIO_MAX_BYTES = 30 * 1024 * 1024  # 30 MB
 _SONG_IMPORT_VIDEO_MAX_BYTES = 200 * 1024 * 1024  # 200 MB
 
+_SOURCE_UPLOAD_VIDEO_EXTS = {".mp4", ".mov", ".webm", ".mkv", ".m4v"}
+_SOURCE_UPLOAD_VIDEO_MAX_BYTES = 200 * 1024 * 1024  # 200 MB
+
 
 @app.post("/songs/import")
 async def import_song(
@@ -5642,6 +5659,243 @@ async def import_song(
         "mood": row[8], "genre": row[9],
         "tags": json.loads(row[10]) if row[10] else [],
         "source": row[11], "created_at": row[12],
+    })
+
+
+@app.post("/sources/upload")
+async def upload_source(
+    file: UploadFile = File(...),
+    intent: str = Form(default=""),
+    request: Request = None,
+):
+    """
+    Upload a video file and analyze it like /analyze/claude does.
+    Validates file extension (mp4/mov/webm/mkv/m4v) and size (max 200 MB).
+    Saves to data/sources/uploaded/<uuid>.<ext>, extracts frames, runs Claude vision analysis.
+    Returns the created source id + analysis summary.
+    """
+    video_path = None
+    import re
+
+    original_name = file.filename or ""
+    ext = Path(original_name).suffix.lower()
+    if ext not in _SOURCE_UPLOAD_VIDEO_EXTS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported format '{ext}'. Allowed: {', '.join(sorted(_SOURCE_UPLOAD_VIDEO_EXTS))}",
+        )
+
+    # DoS guard: check Content-Length header before reading body
+    if request:
+        cl = request.headers.get("content-length")
+        if cl and int(cl) > _SOURCE_UPLOAD_VIDEO_MAX_BYTES + 10_000:
+            raise HTTPException(status_code=413, detail="File too large (max 200 MB)")
+
+    content = await file.read()
+    if len(content) > _SOURCE_UPLOAD_VIDEO_MAX_BYTES:
+        limit_mb = _SOURCE_UPLOAD_VIDEO_MAX_BYTES // (1024 * 1024)
+        raise HTTPException(status_code=413, detail=f"File too large (max {limit_mb} MB)")
+
+    # Magic-bytes content sniff: validate file header matches declared format
+    if ext in {'.mp4', '.m4v', '.mov'} and len(content) >= 8:
+        if content[4:8] != b"ftyp":
+            raise HTTPException(status_code=400, detail="File content does not match declared format")
+    elif ext in {'.webm', '.mkv'} and len(content) >= 4:
+        if content[0:4] != b"\x1a\x45\xdf\xa3":
+            raise HTTPException(status_code=400, detail="File content does not match declared format")
+
+    # UUID path — no path traversal from original filename
+    file_id = str(uuid.uuid4())
+    upload_dir = Path(_REPO_ROOT) / "data" / "sources" / "uploaded"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    video_path = upload_dir / f"{file_id}{ext}"
+    video_path.write_bytes(content)
+
+    # Use file://<uuid> as the source key for uploaded videos
+    source_key = f"file://{file_id}"
+    intent = (intent or "").strip()
+    safe_intent = re.sub(r"[^\w\s\-.,!?()]", "", intent)[:500] if intent else "tidak ada instruksi khusus"
+
+    # Extract frames (wrap in try/except for cleanup on failure)
+    run_id = re.sub(r"[^A-Za-z0-9_-]", "", str(uuid.uuid4())[:8])
+    out_dir = f"{ANALYZE_FRAME_DIR}/{run_id}"
+    try:
+        try:
+            frame_paths = _extract_frames_from_file(str(video_path), out_dir, n=20)
+        except Exception as exc:
+            print(f"[sources/upload] frame extraction failed: {exc}")
+            raise HTTPException(status_code=502, detail=f"Frame extraction failed: {exc}")
+
+        if not frame_paths:
+            raise HTTPException(status_code=502, detail="No frames could be extracted from the video")
+
+        # Persist frames for later serving
+        try:
+            persist_dir = _REPO_ROOT / "data" / "frames" / file_id
+            persist_dir.mkdir(parents=True, exist_ok=True)
+            for src_path in frame_paths:
+                dst_name = Path(src_path).name
+                dst_path = persist_dir / dst_name
+                shutil.copy(src_path, dst_path)
+        except Exception as exc:
+            print(f"[sources/upload] frame persistence failed (non-fatal): {exc}")
+
+        # Build prompt and call claude bridge
+        prompt = _CLAUDE_RE_PROMPT_TEMPLATE.format(intent=safe_intent)
+        frame_names = [Path(p).name for p in frame_paths]
+        model = "claude-sonnet-4-6"
+
+        import httpx as _httpx
+        bridge_timeout = _httpx.Timeout(connect=10.0, read=200.0, write=10.0, pool=5.0)
+        try:
+            bridge_resp = _httpx.post(
+                f"{CLAUDE_BRIDGE_URL}/run",
+                json={"prompt": prompt, "frames": frame_names, "model": model, "subdir": run_id},
+                timeout=bridge_timeout,
+            )
+        except Exception as exc:
+            print(f"[sources/upload] bridge unreachable: {exc}")
+            raise HTTPException(status_code=502, detail=f"Bridge unreachable: {exc}")
+
+        # Wrap json() call to catch JSONDecodeError
+        try:
+            bridge_data = bridge_resp.json()
+        except Exception:
+            video_path.unlink(missing_ok=True)
+            raise HTTPException(status_code=502, detail="Bridge returned a non-JSON response")
+
+        if bridge_data.get("error_type") == "rate_limit":
+            video_path.unlink(missing_ok=True)
+            raise HTTPException(status_code=429, detail="Claude usage/rate limit reached — please retry later")
+
+        if not bridge_data.get("ok"):
+            video_path.unlink(missing_ok=True)
+            raise HTTPException(status_code=502, detail=f"Bridge error: {bridge_data.get('error', 'unknown')}")
+
+        # Log API usage
+        _log_api_usage(
+            agent="sources-upload",
+            model=bridge_data.get("model", model),
+            raw_usage=bridge_data.get("raw_usage", {}),
+            cost_usd=bridge_data.get("cost_usd")
+        )
+
+        # Parse claude result
+        raw_result = bridge_data.get("result", "")
+        cost_usd = bridge_data.get("cost_usd")
+
+        try:
+            cleaned = _strip_json_fences(raw_result)
+            parsed = json.loads(cleaned)
+        except Exception as exc:
+            print(f"[sources/upload] JSON parse failed: {exc}")
+            video_path.unlink(missing_ok=True)
+            raise HTTPException(status_code=502, detail=f"Could not parse claude result as JSON: {exc}")
+
+        summary = parsed.get("summary", "")
+        detail = parsed.get("detail", "")
+        hook = parsed.get("hook", "")
+        structure = parsed.get("structure", "")
+        retention = parsed.get("retention", "")
+        retention_score = parsed.get("retention_score")
+        try:
+            retention_score = max(1, min(10, int(retention_score))) if retention_score is not None else None
+        except (TypeError, ValueError):
+            retention_score = None
+        tags = parsed.get("tags", [])
+        if not isinstance(tags, list):
+            tags = []
+
+        # Validity gate: only persist if analysis is valid
+        _blob = f"{hook} {structure} {retention}".lower()
+        _refusal = any(p in _blob for p in (
+            "tidak dapat dianalisis", "tidak ada frame", "tidak bisa dianalisis",
+            "cannot be analyzed", "cannot analyze", "unable to analyze", "no frame",
+            "no image", "tidak ada gambar",
+        ))
+        analysis_ok = bool(hook.strip()) and bool(structure.strip()) and not _refusal
+
+        if not analysis_ok:
+            video_path.unlink(missing_ok=True)
+            raise HTTPException(status_code=422, detail="Claude could not analyze this video — try a clearer video or different intent")
+
+        # Persist source and analysis to DB
+        source_id = None
+        conn = _db_conn()
+        if conn:
+            try:
+                with conn.cursor() as cur:
+                    # Insert source row (youtube_url holds the file:// identifier)
+                    cur.execute(
+                        """INSERT INTO sources
+                        (youtube_url, title, platform, channel, views_at_analysis, status, niche)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        RETURNING id""",
+                        (
+                            source_key,
+                            summary or "Uploaded video",
+                            "file-upload",
+                            None,
+                            None,
+                            "analyzed",
+                            None,  # niche can be inferred later if needed
+                        ),
+                    )
+                    source_id = cur.fetchone()[0]
+
+                    # Insert video_analysis row
+                    cur.execute(
+                        """INSERT INTO video_analysis
+                        (youtube_url, intent, hook, structure, retention, tags, raw_result, model, cost_usd, retention_score, content_summary, content_detail)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                        (
+                            source_key,
+                            intent or None,
+                            hook,
+                            structure,
+                            retention,
+                            json.dumps(tags),
+                            raw_result,
+                            model,
+                            cost_usd,
+                            retention_score,
+                            summary or None,
+                            detail or None,
+                        ),
+                    )
+                conn.commit()
+            except Exception as exc:
+                print(f"[sources/upload] DB insert failed: {exc}")
+                video_path.unlink(missing_ok=True)
+                raise
+            finally:
+                conn.close()
+
+        if not source_id:
+            video_path.unlink(missing_ok=True)
+            raise HTTPException(status_code=500, detail="Failed to persist source to DB")
+    except HTTPException:
+        if video_path is not None:
+            video_path.unlink(missing_ok=True)
+        raise
+    except Exception as exc:
+        if video_path is not None:
+            video_path.unlink(missing_ok=True)
+        print(f"[sources/upload] unexpected error: {exc}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+    return _json({
+        "source_id": source_id,
+        "youtube_url": source_key,
+        "summary": summary,
+        "detail": detail,
+        "hook": hook,
+        "structure": structure,
+        "retention": retention,
+        "retention_score": retention_score,
+        "tags": tags,
+        "model": model,
+        "cost_usd": cost_usd,
     })
 
 
