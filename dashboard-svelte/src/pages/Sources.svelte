@@ -76,10 +76,6 @@
 <div class="top">
   <div class="top-row">
     <div><h1>Sources</h1><div class="sub">Library riset — klik baris buat detail</div></div>
-    <button class="btn-primary" onclick={() => modalOpen = true}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>
-      Tambah source
-    </button>
   </div>
   <div class="pill">{total || rows.length} source</div>
 </div>
@@ -90,6 +86,10 @@
     {#each niches as n}<option value={n}>{n}</option>{/each}
   </select>
   <input placeholder="cari judul..." bind:value={q} />
+  <button class="btn-primary" style="margin-left:auto" onclick={() => modalOpen = true}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>
+    Tambah source
+  </button>
 </div>
 
 <div class="card">
