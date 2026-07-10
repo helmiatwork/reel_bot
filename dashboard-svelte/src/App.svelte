@@ -3,6 +3,7 @@
   import { page } from './lib/stores.js'
   import { api } from './lib/api.js'
   import Drawer from './lib/Drawer.svelte'
+  import HowItWorks from './components/HowItWorks.svelte'
   import OpenClaw from './pages/OpenClaw.svelte'
   import Dashboard from './pages/Dashboard.svelte'
   import Sources from './pages/Sources.svelte'
@@ -88,6 +89,9 @@
 
   // Notification dropdown
   let notifOpen = $state(false)
+
+  // How-it-works walkthrough
+  let tourOpen = $state(false)
 
   function toggleTheme() {
     isDark = !isDark
@@ -183,6 +187,8 @@
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <!-- fullscreen expand -->
   <symbol id="i-expand" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></symbol>
+  <!-- help / question-mark-in-circle -->
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.82 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5" fill="currentColor"/></symbol>
   <!-- trend arrows -->
   <symbol id="i-arrow-up-right" viewBox="0 0 24 24"><path d="M7 17 17 7M7 7h10v10"/></symbol>
   <symbol id="i-arrow-down-right" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7v10H7"/></symbol>
@@ -257,7 +263,10 @@
         <input placeholder="Cari konten, tag, niche…" aria-label="Search">
       </div>
       <div class="tb-spacer"></div>
-      <!-- right cluster: expand · moon/sun · bell · avatar -->
+      <!-- right cluster: help · expand · moon/sun · bell · avatar -->
+      <span class="tb-icon" title="How Reelbot works" onclick={() => tourOpen = true} role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && (tourOpen = true)} aria-label="Open walkthrough">
+        <svg class="ic"><use href="#i-help"/></svg>
+      </span>
       <span class="tb-icon" title="Fullscreen" onclick={() => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()}>
         <svg class="ic"><use href="#i-expand"/></svg>
       </span>
@@ -324,6 +333,7 @@
 </div>
 
 <Drawer />
+<HowItWorks bind:open={tourOpen} />
 
 <style>
   /* Notification panel — scoped to App shell */
