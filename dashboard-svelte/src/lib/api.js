@@ -140,6 +140,22 @@ export const api = {
   discoverCorpus: (niche, count = 5) => postJSON('/discover/corpus', { niche, count }),
   discoverCorpusStatus: (run_id) => getJSON('/discover/corpus/status/' + run_id),
   analyzeClaude: (youtube_url, { intent = '', force = false, output_format = 'none' } = {}) => postJSON('/analyze/claude', { youtube_url, intent, force, output_format }),
+  analyzeClaudeAsync: (youtube_url, { intent = '', force = false, output_format = 'none' } = {}) => postJSON('/analyze/claude/async', { youtube_url, intent, force, output_format }),
+  analyzeClaudeStatus: (run_id) => getJSON('/analyze/claude/status/' + run_id),
+  uploadSourceAsync: async (file, { intent = '', output_format = 'none' } = {}) => {
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      if (intent) fd.append('intent', intent)
+      if (output_format) fd.append('output_format', output_format)
+      const r = await fetch('/sources/upload/async', { method: 'POST', body: fd })
+      const data = await r.json().catch(() => ({}))
+      if (!r.ok) throw new Error(data.detail || ('HTTP ' + r.status))
+      return data
+    } catch (e) {
+      throw e
+    }
+  },
 
   // Scheduled posts
   scheduleList: () => getJSON('/schedule'),
