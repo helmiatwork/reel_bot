@@ -57,7 +57,7 @@
   // ── Revenue derived stat card values ──────────────────────────────────────
   let grandRevenue = $derived(revSummary?.grand_total_revenue ?? 0)
   let grandClicks  = $derived(revSummary?.grand_total_clicks ?? 0)
-  let grandRPM     = $derived(() => {
+  let grandRPM     = $derived.by(() => {
     if (!revSummary?.platforms?.length) return 0
     const totalViews = revSummary.platforms.reduce((s, p) => s + (p.total_views || 0), 0)
     return totalViews > 0 ? grandRevenue / totalViews * 1000 : 0
@@ -307,7 +307,7 @@
   </div>
   <div class="card kpi kpi-money">
     <div class="label">RPM</div>
-    <div class="val">{revLoading ? '…' : fmtRpm(grandRPM())}</div>
+    <div class="val">{revLoading ? '…' : fmtRpm(grandRPM)}</div>
   </div>
   <div class="card kpi kpi-money">
     <div class="label">Total Clicks</div>

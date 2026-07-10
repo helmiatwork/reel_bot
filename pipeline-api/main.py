@@ -6722,28 +6722,33 @@ def _revenue_summary_data() -> dict:
             cols = [c.name for c in cur.description]
             entries = [dict(zip(cols, r)) for r in cur.fetchall()]
 
-        # Per-platform rollup
-        plat_rev: dict = {}   # platform → {revenue, clicks, views}
+        # Per-platform rollup — collect unique URLs per platform to avoid
+        # double-counting views when the same video has multiple revenue entries
+        # (e.g. three monthly AdSense payouts for the same video).
+        plat_rev: dict = {}   # platform → {revenue, clicks, url_set}
         for e in entries:
             p = (e.get("platform") or "").lower()
             rev = float(e.get("revenue_usd") or 0)
             clicks = int(e.get("link_clicks") or 0)
             url = e.get("video_url") or ""
-            views = views_by_url.get(url, 0) if url else 0
             if p not in plat_rev:
-                plat_rev[p] = {"platform": p, "total_revenue": 0.0, "total_clicks": 0, "total_views": 0}
+                plat_rev[p] = {"platform": p, "total_revenue": 0.0, "total_clicks": 0, "url_set": set()}
             plat_rev[p]["total_revenue"] += rev
             plat_rev[p]["total_clicks"] += clicks
-            # Avoid double-counting views for the same URL — only add once per URL per platform
-            # ponytail: simple accumulate; if same URL has entries on multiple dates this is fine
-            # because views_by_url is the single latest count per URL
-            plat_rev[p]["total_views"] += views
+            if url:
+                plat_rev[p]["url_set"].add(url)
 
         platforms = []
         for p, d in sorted(plat_rev.items()):
-            views = d["total_views"]
-            rpm = round(d["total_revenue"] / views * 1000, 4) if views > 0 else 0
-            platforms.append({**d, "rpm": rpm})
+            total_views = sum(views_by_url.get(u, 0) for u in d["url_set"])
+            rpm = round(d["total_revenue"] / total_views * 1000, 4) if total_views > 0 else 0
+            platforms.append({
+                "platform": p,
+                "total_revenue": d["total_revenue"],
+                "total_clicks": d["total_clicks"],
+                "total_views": total_views,
+                "rpm": rpm,
+            })
 
         # Per-video rollup
         vid_rev: dict = {}  # (platform, url) → {revenue, clicks}

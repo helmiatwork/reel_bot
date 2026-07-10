@@ -336,6 +336,29 @@ class TestRevenueSummaryData:
         assert vid["rpm"] == pytest.approx(3.00)
         assert vid["latest_views"] == 2000
 
+    def test_views_not_double_counted_for_same_url(self):
+        """Same URL with two revenue entries must count views only once for RPM."""
+        url = "https://youtu.be/A"
+        conn = self._setup_db(
+            views_rows=[(url, 10000)],
+            entry_rows=[
+                # Two payouts for the same video URL (e.g. June + July AdSense)
+                (1, "youtube", url, Decimal("5.00"), 100,
+                 dt.date(2025, 6, 1), "june", None, dt.datetime(2025, 6, 1)),
+                (2, "youtube", url, Decimal("7.50"), 150,
+                 dt.date(2025, 7, 1), "july", None, dt.datetime(2025, 7, 1)),
+            ],
+        )
+        with patch("main._db_conn", return_value=conn):
+            result = _revenue_summary_data()
+
+        plat = result["platforms"][0]
+        # total_views should be 10000 (once), not 20000 (twice)
+        assert plat["total_views"] == 10000
+        assert plat["total_revenue"] == pytest.approx(12.50)
+        # RPM = 12.50 / 10000 * 1000 = 1.25
+        assert plat["rpm"] == pytest.approx(1.25)
+
     def test_never_raises_on_db_exception(self):
         """DB error mid-execution → empty result, no exception propagated."""
         cur = MagicMock()
