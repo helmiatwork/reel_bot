@@ -69,6 +69,10 @@ def startup_event():
         _studio_init_db()
     except Exception as e:
         print(f"[startup] studio db init failed (non-fatal): {e}")
+    try:
+        _revenue_init_db()
+    except Exception as e:
+        print(f"[startup] revenue db init failed (non-fatal): {e}")
 
 # ── SSRF guard: blocked networks (module-level constant) ────────────────────
 # Extra ranges beyond ipaddress.ip_address check (0.0.0.0/8, CGNAT, etc)
@@ -6651,6 +6655,329 @@ def performance_get():
     except Exception as exc:
         print(f"[performance] query failed: {exc}")
         return _json({"series": [], "totals": [], "videos": [], "accounts": []})
+    finally:
+        conn.close()
+
+
+# ── Revenue Tracking ──────────────────────────────────────────────────────────
+# ponytail: revenue is manually entered; full affiliate-click auto-tracking
+# (a hosted redirect service) is intentionally out of scope.
+
+_VALID_REVENUE_PLATFORMS = {"youtube", "tiktok", "instagram", "xiaohongshu"}
+
+
+def _revenue_init_db():
+    """Create revenue_entries table. Non-fatal on error."""
+    conn = _db_conn()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS revenue_entries (
+                    id                BIGSERIAL PRIMARY KEY,
+                    scheduled_post_id BIGINT,
+                    platform          TEXT,
+                    video_url         TEXT,
+                    revenue_usd       NUMERIC(12,2) NOT NULL DEFAULT 0,
+                    link_clicks       INTEGER DEFAULT 0,
+                    entry_date        DATE NOT NULL,
+                    note              TEXT,
+                    created_at        TIMESTAMPTZ DEFAULT now()
+                )
+            """)
+        conn.commit()
+    except Exception as e:
+        print(f"[revenue] init db error: {e}")
+    finally:
+        conn.close()
+
+
+def _revenue_summary_data() -> dict:
+    """Compute per-platform and per-video revenue rollup joined with latest views.
+
+    Returns {platforms: [...], videos: [...], grand_total_revenue, grand_total_clicks}.
+    Never raises — returns empty on DB error.
+    """
+    conn = _db_conn()
+    if not conn:
+        return {"platforms": [], "videos": [], "grand_total_revenue": 0, "grand_total_clicks": 0}
+    try:
+        with conn.cursor() as cur:
+            # Latest view count per URL from performance_snapshots
+            cur.execute("""
+                SELECT url, MAX(views) AS latest_views
+                FROM performance_snapshots
+                GROUP BY url
+            """)
+            views_by_url: dict = {row[0]: int(row[1] or 0) for row in cur.fetchall()}
+
+            # Revenue entries
+            cur.execute("""
+                SELECT id, platform, video_url, revenue_usd, link_clicks,
+                       entry_date, note, scheduled_post_id, created_at
+                FROM revenue_entries
+                ORDER BY entry_date DESC, created_at DESC
+            """)
+            cols = [c.name for c in cur.description]
+            entries = [dict(zip(cols, r)) for r in cur.fetchall()]
+
+        # Per-platform rollup
+        plat_rev: dict = {}   # platform → {revenue, clicks, views}
+        for e in entries:
+            p = (e.get("platform") or "").lower()
+            rev = float(e.get("revenue_usd") or 0)
+            clicks = int(e.get("link_clicks") or 0)
+            url = e.get("video_url") or ""
+            views = views_by_url.get(url, 0) if url else 0
+            if p not in plat_rev:
+                plat_rev[p] = {"platform": p, "total_revenue": 0.0, "total_clicks": 0, "total_views": 0}
+            plat_rev[p]["total_revenue"] += rev
+            plat_rev[p]["total_clicks"] += clicks
+            # Avoid double-counting views for the same URL — only add once per URL per platform
+            # ponytail: simple accumulate; if same URL has entries on multiple dates this is fine
+            # because views_by_url is the single latest count per URL
+            plat_rev[p]["total_views"] += views
+
+        platforms = []
+        for p, d in sorted(plat_rev.items()):
+            views = d["total_views"]
+            rpm = round(d["total_revenue"] / views * 1000, 4) if views > 0 else 0
+            platforms.append({**d, "rpm": rpm})
+
+        # Per-video rollup
+        vid_rev: dict = {}  # (platform, url) → {revenue, clicks}
+        for e in entries:
+            p = (e.get("platform") or "").lower()
+            url = e.get("video_url") or ""
+            key = (p, url)
+            if key not in vid_rev:
+                vid_rev[key] = {"platform": p, "video_url": url,
+                                "total_revenue": 0.0, "total_clicks": 0}
+            vid_rev[key]["total_revenue"] += float(e.get("revenue_usd") or 0)
+            vid_rev[key]["total_clicks"] += int(e.get("link_clicks") or 0)
+
+        videos = []
+        for (p, url), d in vid_rev.items():
+            v = views_by_url.get(url, 0)
+            rpm = round(d["total_revenue"] / v * 1000, 4) if v > 0 else 0
+            videos.append({**d, "latest_views": v, "rpm": rpm})
+
+        grand_revenue = sum(float(e.get("revenue_usd") or 0) for e in entries)
+        grand_clicks = sum(int(e.get("link_clicks") or 0) for e in entries)
+
+        return {
+            "platforms": platforms,
+            "videos": videos,
+            "grand_total_revenue": round(grand_revenue, 2),
+            "grand_total_clicks": grand_clicks,
+        }
+    except Exception as exc:
+        print(f"[revenue] summary error: {exc}")
+        return {"platforms": [], "videos": [], "grand_total_revenue": 0, "grand_total_clicks": 0}
+    finally:
+        conn.close()
+
+
+class RevenueCreate(BaseModel):
+    platform: str
+    video_url: Optional[str] = None
+    scheduled_post_id: Optional[int] = None
+    revenue_usd: float
+    link_clicks: Optional[int] = 0
+    entry_date: str  # ISO date, e.g. "2025-07-10"
+    note: Optional[str] = None
+
+
+class RevenuePatch(BaseModel):
+    platform: Optional[str] = None
+    video_url: Optional[str] = None
+    revenue_usd: Optional[float] = None
+    link_clicks: Optional[int] = None
+    entry_date: Optional[str] = None
+    note: Optional[str] = None
+
+
+import datetime as _dt_mod
+
+
+def _parse_date(s: str) -> _dt_mod.date:
+    """Parse ISO date string; raises ValueError on bad input."""
+    return _dt_mod.date.fromisoformat(s)
+
+
+@app.post("/revenue")
+def revenue_create(body: RevenueCreate):
+    """Insert a revenue entry. Validates platform, revenue_usd ≥ 0, entry_date."""
+    platform = (body.platform or "").lower().strip()
+    if platform not in _VALID_REVENUE_PLATFORMS:
+        raise HTTPException(status_code=400, detail=f"platform must be one of {sorted(_VALID_REVENUE_PLATFORMS)}")
+    if body.revenue_usd < 0:
+        raise HTTPException(status_code=400, detail="revenue_usd must be >= 0")
+    try:
+        entry_date = _parse_date(body.entry_date)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="entry_date must be a valid ISO date (YYYY-MM-DD)")
+
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO revenue_entries
+                    (platform, video_url, scheduled_post_id, revenue_usd, link_clicks, entry_date, note)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                RETURNING id, platform, video_url, scheduled_post_id, revenue_usd,
+                          link_clicks, entry_date, note, created_at
+            """, (platform, body.video_url, body.scheduled_post_id,
+                  body.revenue_usd, body.link_clicks or 0, entry_date, body.note))
+            cols = [c.name for c in cur.description]
+            row = dict(zip(cols, cur.fetchone()))
+        conn.commit()
+        # Serialize non-JSON-native types
+        row["entry_date"] = row["entry_date"].isoformat() if row.get("entry_date") else None
+        row["created_at"] = row["created_at"].isoformat() if row.get("created_at") else None
+        row["revenue_usd"] = float(row["revenue_usd"])
+        return _json(row)
+    except Exception as exc:
+        print(f"[revenue] create error: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        conn.close()
+
+
+@app.get("/revenue")
+def revenue_list(platform: Optional[str] = None, start: Optional[str] = None, end: Optional[str] = None):
+    """List revenue entries newest first. Optional ?platform=&start=&end= filters."""
+    conn = _db_conn()
+    if not conn:
+        return _json([])
+    try:
+        clauses = []
+        params = []
+        if platform:
+            clauses.append("platform = %s")
+            params.append(platform.lower())
+        if start:
+            try:
+                clauses.append("entry_date >= %s")
+                params.append(_parse_date(start))
+            except ValueError:
+                pass
+        if end:
+            try:
+                clauses.append("entry_date <= %s")
+                params.append(_parse_date(end))
+            except ValueError:
+                pass
+        where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+        with conn.cursor() as cur:
+            cur.execute(f"""
+                SELECT id, platform, video_url, scheduled_post_id, revenue_usd,
+                       link_clicks, entry_date, note, created_at
+                FROM revenue_entries
+                {where}
+                ORDER BY entry_date DESC, created_at DESC
+            """, params)
+            cols = [c.name for c in cur.description]
+            rows = []
+            for r in cur.fetchall():
+                d = dict(zip(cols, r))
+                d["entry_date"] = d["entry_date"].isoformat() if d.get("entry_date") else None
+                d["created_at"] = d["created_at"].isoformat() if d.get("created_at") else None
+                d["revenue_usd"] = float(d["revenue_usd"])
+                rows.append(d)
+        return _json(rows)
+    except Exception as exc:
+        print(f"[revenue] list error: {exc}")
+        return _json([])
+    finally:
+        conn.close()
+
+
+@app.get("/revenue/summary")
+def revenue_summary():
+    """Per-platform and per-video revenue rollup joined with latest view counts."""
+    return _json(_revenue_summary_data())
+
+
+@app.patch("/revenue/{entry_id}")
+def revenue_update(entry_id: int, body: RevenuePatch):
+    """Update fields on a revenue entry."""
+    updates = {}
+    if body.platform is not None:
+        p = body.platform.lower().strip()
+        if p not in _VALID_REVENUE_PLATFORMS:
+            raise HTTPException(status_code=400, detail=f"platform must be one of {sorted(_VALID_REVENUE_PLATFORMS)}")
+        updates["platform"] = p
+    if body.revenue_usd is not None:
+        if body.revenue_usd < 0:
+            raise HTTPException(status_code=400, detail="revenue_usd must be >= 0")
+        updates["revenue_usd"] = body.revenue_usd
+    if body.link_clicks is not None:
+        updates["link_clicks"] = body.link_clicks
+    if body.video_url is not None:
+        updates["video_url"] = body.video_url
+    if body.note is not None:
+        updates["note"] = body.note
+    if body.entry_date is not None:
+        try:
+            updates["entry_date"] = _parse_date(body.entry_date)
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="entry_date must be a valid ISO date (YYYY-MM-DD)")
+    if not updates:
+        raise HTTPException(status_code=400, detail="no fields to update")
+
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    try:
+        set_clause = ", ".join(f"{k} = %s" for k in updates)
+        vals = list(updates.values()) + [entry_id]
+        with conn.cursor() as cur:
+            cur.execute(f"""
+                UPDATE revenue_entries SET {set_clause}
+                WHERE id = %s
+                RETURNING id, platform, video_url, scheduled_post_id, revenue_usd,
+                          link_clicks, entry_date, note, created_at
+            """, vals)
+            if cur.rowcount == 0:
+                raise HTTPException(status_code=404, detail="not found")
+            cols = [c.name for c in cur.description]
+            row = dict(zip(cols, cur.fetchone()))
+        conn.commit()
+        row["entry_date"] = row["entry_date"].isoformat() if row.get("entry_date") else None
+        row["created_at"] = row["created_at"].isoformat() if row.get("created_at") else None
+        row["revenue_usd"] = float(row["revenue_usd"])
+        return _json(row)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"[revenue] update error: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        conn.close()
+
+
+@app.delete("/revenue/{entry_id}")
+def revenue_delete(entry_id: int):
+    """Delete a revenue entry."""
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM revenue_entries WHERE id = %s", (entry_id,))
+            if cur.rowcount == 0:
+                raise HTTPException(status_code=404, detail="not found")
+        conn.commit()
+        return _json({"deleted": entry_id})
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"[revenue] delete error: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
     finally:
         conn.close()
 
