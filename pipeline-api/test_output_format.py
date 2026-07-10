@@ -131,6 +131,38 @@ class TestAnalyzeClaudeOutputFormat:
         parsed = json.loads(gen_prompt_str)
         assert parsed["scene_order"][0]["scene"] == 1
 
+    def test_analyze_claude_persists_gen_prompt(self, client_analyze):
+        """After analyze/claude with output_format=prompt_video, gen_prompt should be persisted to sources."""
+        import main as m
+        gen_prompt_text = "A cinematic video about overcoming with music and cuts"
+        result_payload = {**_SAMPLE_RESULT, "gen_prompt": gen_prompt_text}
+
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_cursor.__enter__ = MagicMock(return_value=mock_cursor)
+        mock_cursor.__exit__ = MagicMock(return_value=False)
+        mock_conn.cursor.return_value = mock_cursor
+        mock_conn.commit = MagicMock()
+        mock_conn.close = MagicMock()
+
+        with patch.object(m, "_db_conn", return_value=mock_conn), \
+             patch.object(httpx, "post", return_value=_make_bridge_response(result_payload)):
+            tc = TestClient(m.app)
+            r = tc.post(
+                "/analyze/claude",
+                json={"youtube_url": "https://youtube.com/watch?v=test", "output_format": "prompt_video"}
+            )
+
+        assert r.status_code == 200
+        # Verify that UPDATE was called on sources with gen_prompt
+        update_calls = [call for call in mock_cursor.execute.call_args_list
+                        if len(call[0]) > 0 and "UPDATE sources SET gen_prompt" in str(call[0][0])]
+        assert len(update_calls) > 0, "UPDATE gen_prompt should have been called"
+        # Check that the update includes the correct values
+        update_call = update_calls[0]
+        assert gen_prompt_text in str(update_call[0][1]), "gen_prompt text should be in UPDATE params"
+        assert "prompt_video" in str(update_call[0][1]), "gen_prompt_format should be in UPDATE params"
+
 
 class TestSourcesUploadOutputFormat:
     def test_invalid_output_format_returns_400(self, client_upload):

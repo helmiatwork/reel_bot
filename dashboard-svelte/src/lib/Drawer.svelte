@@ -22,6 +22,15 @@
   // lightbox state
   let lightboxSrc = $state(null)
 
+  // copy state
+  let copiedPrompt = $state(false)
+  function copyPrompt(text) {
+    navigator.clipboard.writeText(text).then(() => {
+      copiedPrompt = true
+      setTimeout(() => { copiedPrompt = false }, 2000)
+    })
+  }
+
   function stopPoll() {
     if (pollInterval) { clearInterval(pollInterval); pollInterval = null }
   }
@@ -193,6 +202,28 @@
       {/if}
       {#if analysis.tags?.length}
         <div class="kv"><span>Tags</span><span style="text-align:right;max-width:60%">{#each analysis.tags as t}<span class="tag">{t}</span>{/each}</span></div>
+      {/if}
+
+      <!-- Generated prompt section -->
+      {#if analysis.gen_prompt}
+        <h3 style="margin:16px 0 8px;font-size:13px;font-weight:600">Generated prompt</h3>
+        <div class="gen-prompt-box">
+          {#if analysis.gen_prompt_format === 'prompt_json'}
+            <pre class="gen-prompt-json">{(() => {
+              try {
+                const parsed = JSON.parse(analysis.gen_prompt)
+                return JSON.stringify(parsed, null, 2)
+              } catch {
+                return analysis.gen_prompt
+              }
+            })()}</pre>
+          {:else}
+            <div class="gen-prompt-text">{analysis.gen_prompt}</div>
+          {/if}
+        </div>
+        <button class="copy-btn" onclick={() => copyPrompt(analysis.gen_prompt)}>
+          {copiedPrompt ? '✓ Copied!' : 'Copy'}
+        </button>
       {/if}
 
       <!-- Re-analyze button -->
@@ -382,4 +413,21 @@
     padding: 0; border: none; background: none; cursor: default;
     display: flex; align-items: center; justify-content: center;
   }
+
+  .gen-prompt-box {
+    padding: 10px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;
+    margin-bottom: 8px; max-height: 200px; overflow-y: auto;
+  }
+  .gen-prompt-json {
+    font-size: 11px; margin: 0; line-height: 1.4; font-family: monospace;
+    color: #333; white-space: pre-wrap; word-break: break-word;
+  }
+  .gen-prompt-text {
+    font-size: 12px; color: #555; line-height: 1.5; white-space: pre-wrap; word-break: break-word;
+  }
+  .copy-btn {
+    font-size: 11px; padding: 4px 10px; background: #f0f0f0; border: 1px solid #ddd;
+    border-radius: 4px; cursor: pointer; color: #333; transition: background .15s;
+  }
+  .copy-btn:hover { background: #e0e0e0; }
 </style>

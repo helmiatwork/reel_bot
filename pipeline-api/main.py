@@ -522,7 +522,7 @@ def dash_table(name: str, limit: int = 25, offset: int = 0):
     allowed = {
         "sources": {
             "select": "SELECT id, COALESCE(title,'-') title, COALESCE(niche,'-') niche, COALESCE(platform,'-') platform, "
-                      "COALESCE(channel,'-') channel, COALESCE(views_at_analysis,0) views, status, youtube_url "
+                      "COALESCE(channel,'-') channel, COALESCE(views_at_analysis,0) views, status, youtube_url, COALESCE(gen_prompt_format, '') gen_prompt_format "
                       "FROM sources ORDER BY id DESC",
             "table": "sources",
         },
@@ -4321,6 +4321,8 @@ def _sources_init_db():
             cur.execute("""CREATE INDEX IF NOT EXISTS sources_created_at_idx
                 ON sources (created_at DESC)""")
             cur.execute("ALTER TABLE sources ADD COLUMN IF NOT EXISTS niche TEXT")
+            cur.execute("ALTER TABLE sources ADD COLUMN IF NOT EXISTS gen_prompt TEXT")
+            cur.execute("ALTER TABLE sources ADD COLUMN IF NOT EXISTS gen_prompt_format TEXT")
         conn.commit()
     except Exception as e:
         print(f"[sources] init db error: {e}")
@@ -5088,6 +5090,25 @@ def analyze_claude(req: AnalyzeClaudeRequest):
     _save_creator(req.youtube_url)
     _save_source(req.youtube_url)
 
+    # Step 6b: Persist gen_prompt to sources row if present (non-fatal)
+    if gen_prompt:
+        try:
+            conn = _db_conn()
+            if conn:
+                try:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            "UPDATE sources SET gen_prompt=%s, gen_prompt_format=%s WHERE youtube_url=%s",
+                            (gen_prompt, gen_prompt_format, req.youtube_url)
+                        )
+                    conn.commit()
+                except Exception as exc:
+                    print(f"[analyze/claude] UPDATE gen_prompt failed (non-fatal): {exc}")
+                finally:
+                    conn.close()
+        except Exception as exc:
+            print(f"[analyze/claude] gen_prompt persistence error (non-fatal): {exc}")
+
     # Build steps trace for fresh analysis path (niche inference included)
     try:
         video_id_for_steps = _extract_video_id_from_youtube_url(req.youtube_url)
@@ -5289,7 +5310,7 @@ def get_source_analysis(source_id: int):
             # Join sources → video_analysis by youtube_url, get latest analysis
             cur.execute("""
                 SELECT va.hook, va.structure, va.retention, va.retention_score,
-                       va.content_summary, va.content_detail, va.tags
+                       va.content_summary, va.content_detail, va.tags, s.gen_prompt, s.gen_prompt_format
                 FROM sources s
                 LEFT JOIN video_analysis va ON s.youtube_url = va.youtube_url
                 WHERE s.id = %s
@@ -5306,7 +5327,7 @@ def get_source_analysis(source_id: int):
                     "summary": "", "detail": "", "tags": []
                 })
 
-            hook, structure, retention, retention_score, summary, detail, tags = row
+            hook, structure, retention, retention_score, summary, detail, tags, gen_prompt, gen_prompt_format = row
 
             # Parse tags JSON (psycopg may return it pre-parsed or as string)
             parsed_tags = []
@@ -5321,7 +5342,7 @@ def get_source_analysis(source_id: int):
                 elif isinstance(tags, list):
                     parsed_tags = tags
 
-            return _json({
+            resp = {
                 "hook": hook or "",
                 "structure": structure or "",
                 "retention": retention or "",
@@ -5329,7 +5350,11 @@ def get_source_analysis(source_id: int):
                 "summary": summary or "",
                 "detail": detail or "",
                 "tags": parsed_tags
-            })
+            }
+            if gen_prompt:
+                resp["gen_prompt"] = gen_prompt
+                resp["gen_prompt_format"] = gen_prompt_format
+            return _json(resp)
     except Exception as e:
         print(f"[get_source_analysis] error for source_id {source_id}: {e}")
         return _json({
@@ -5941,6 +5966,13 @@ async def upload_source(
                             detail or None,
                         ),
                     )
+
+                    # Persist gen_prompt to sources row if present
+                    if gen_prompt:
+                        cur.execute(
+                            "UPDATE sources SET gen_prompt=%s, gen_prompt_format=%s WHERE youtube_url=%s",
+                            (gen_prompt, gen_prompt_format, source_key)
+                        )
                 conn.commit()
             except Exception as exc:
                 print(f"[sources/upload] DB insert failed: {exc}")
