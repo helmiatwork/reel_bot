@@ -44,6 +44,12 @@
   let lastRefresh = $state(null)
   let collapsed   = $state({})
 
+  // ── Top performers (winners) state ────────────────────────────────────────
+  let winners        = $state([])
+  let winnersLoading = $state(false)
+  // Per-winner clone state keyed by url: { n, running, done, total, createdIds, error }
+  let cloneState     = $state({})
+
   // ── Revenue state ──────────────────────────────────────────────────────────
   let revSummary   = $state(null)   // {platforms, videos, grand_total_revenue, grand_total_clicks}
   let revEntries   = $state([])     // raw list for the revenue table
@@ -193,6 +199,56 @@
     }
     loading = false
     loadRevenue()
+    loadWinners()
+  }
+
+  async function loadWinners() {
+    winnersLoading = true
+    const data = await api.winners()
+    winners = data || []
+    // initialise clone state for each winner (preserve existing if already set)
+    const next = {}
+    for (const w of winners) {
+      next[w.url] = cloneState[w.url] ?? { n: 3, running: false, done: 0, total: 0, createdIds: [], error: null }
+    }
+    cloneState = next
+    winnersLoading = false
+  }
+
+  async function startClone(winner) {
+    const url = winner.url
+    cloneState = { ...cloneState, [url]: { ...cloneState[url], running: true, done: 0, createdIds: [], error: null } }
+    const n = cloneState[url]?.n ?? 3
+    const payload = { n, niche: winner.platform }
+    if (winner.seed?.content_item_id) payload.seed_content_item_id = winner.seed.content_item_id
+    else if (winner.seed?.source_id)  payload.seed_source_id = winner.seed.source_id
+    else                               payload.seed_video_url = winner.url
+
+    const res = await api.winnersClone(payload)
+    if (!res?.run_id) {
+      cloneState = { ...cloneState, [url]: { ...cloneState[url], running: false, error: 'Clone failed to start' } }
+      return
+    }
+    cloneState = { ...cloneState, [url]: { ...cloneState[url], total: n } }
+    pollClone(url, res.run_id)
+  }
+
+  function pollClone(url, run_id) {
+    const tid = setInterval(async () => {
+      const s = await api.winnersCloneStatus(run_id)
+      if (!s) return
+      cloneState = {
+        ...cloneState,
+        [url]: { ...cloneState[url], done: s.done ?? 0, total: s.total ?? 0, createdIds: s.created_ids ?? [] },
+      }
+      if (s.status === 'done' || s.status === 'error') {
+        clearInterval(tid)
+        cloneState = {
+          ...cloneState,
+          [url]: { ...cloneState[url], running: false, error: s.error ?? null },
+        }
+      }
+    }, 1500)
   }
 
   async function loadRevenue() {
@@ -547,6 +603,80 @@
 </div>
 {/if}
 
+<!-- ── Top performers ────────────────────────────────────────────────────────── -->
+<div class="card" style="margin-bottom:16px">
+  <div class="rev-hdr">
+    <h3 style="margin:0">Top performers <span class="mut">— clone winner formula into Studio</span></h3>
+    {#if winners.length}
+      <span class="mut" style="font-size:12px">{winners.length} video</span>
+    {/if}
+  </div>
+
+  {#if winnersLoading}
+    <p class="mut" style="font-size:12.5px;margin-top:8px">Memuat…</p>
+  {:else if !winners.length}
+    <p class="mut" style="font-size:12.5px;margin-top:8px">
+      Belum ada video yang di-post. Setelah refresh views, video terposting akan muncul di sini dan bisa langsung di-clone variasi scriptnya.
+    </p>
+  {:else}
+    <div style="overflow-x:auto;margin-top:8px">
+      <table>
+        <thead>
+          <tr>
+            <th>Platform</th>
+            <th>Judul</th>
+            <th class="num" style="text-align:right">Views</th>
+            <th class="num" style="text-align:right">Revenue</th>
+            <th class="num" style="text-align:right">RPM</th>
+            <th style="text-align:right">Clone ke Studio</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each winners as w}
+            {@const cs = cloneState[w.url] ?? { n: 3, running: false, done: 0, total: 0, createdIds: [], error: null }}
+            <tr>
+              <td>
+                <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:{colorFor(w.platform)};margin-right:6px"></span>
+                {w.platform}
+              </td>
+              <td class="rev-url">
+                <a href={w.url} target="_blank" rel="noopener"
+                   style="color:inherit;text-decoration:underline;text-underline-offset:2px;font-size:12px">
+                  {w.title.length > 48 ? w.title.slice(0, 45) + '…' : w.title}
+                </a>
+              </td>
+              <td class="num" style="text-align:right">{fmtViews(w.latest_views)}</td>
+              <td class="num" style="text-align:right;color:var(--green,#22c55e)">{w.revenue > 0 ? fmtUsd(w.revenue) : '—'}</td>
+              <td class="num" style="text-align:right">{w.rpm > 0 ? fmtRpm(w.rpm) : '—'}</td>
+              <td style="text-align:right;white-space:nowrap">
+                {#if cs.running}
+                  <span class="mut" style="font-size:12px">{cs.done}/{cs.total} dibuat…</span>
+                {:else if cs.createdIds.length && !cs.error}
+                  <span class="clone-ok">
+                    {cs.createdIds.length} script → <a href="#" onclick={e => { e.preventDefault(); document.querySelector('[data-page="studio"]')?.click() }} style="color:var(--accent)">Studio</a>
+                  </span>
+                {:else}
+                  <span class="clone-ctrl">
+                    <input type="number" class="n-input" min="1" max="10" value={cs.n}
+                      oninput={e => cloneState = { ...cloneState, [w.url]: { ...cs, n: Math.max(1, Math.min(10, parseInt(e.currentTarget.value) || 3)) } }}
+                    >
+                    <button class="btn btn-sm" onclick={() => startClone(w)} disabled={cs.running}>
+                      Clone × {cs.n}
+                    </button>
+                  </span>
+                  {#if cs.error}
+                    <div class="mut" style="font-size:11.5px;color:#ef4444">{cs.error}</div>
+                  {/if}
+                {/if}
+              </td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </div>
+  {/if}
+</div>
+
 <!-- ── Revenue section ───────────────────────────────────────────────────────── -->
 <div class="card">
   <div class="rev-hdr">
@@ -801,4 +931,13 @@
     font-family: inherit; transition: border-color .12s, color .12s;
   }
   .btn-ghost:hover { border-color: var(--accent); color: var(--txt); }
+
+  /* ── Clone controls ──────────────────────────────────────────────────────── */
+  .clone-ctrl { display: inline-flex; align-items: center; gap: 5px; }
+  .n-input {
+    width: 42px; text-align: center; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 6px; color: var(--txt);
+    font-size: 12px; padding: 4px 5px; font-family: inherit;
+  }
+  .clone-ok { font-size: 12px; color: var(--mut); }
 </style>
