@@ -7105,6 +7105,67 @@ def _prep_seo(title: str, platform: str) -> dict:
         return _empty
 
 
+# ponytail: keg-only ffmpeg-full has libass/subtitles filter; falls back to
+# system ffmpeg (which means captions are silently skipped if filter absent).
+_ffmpeg_full_bin = sorted(
+    Path("/opt/homebrew/Cellar/ffmpeg-full").glob("*/bin/ffmpeg")
+) if Path("/opt/homebrew/Cellar/ffmpeg-full").exists() else []
+_FFMPEG_SUBTITLES_BIN = str(_ffmpeg_full_bin[-1]) if _ffmpeg_full_bin else "ffmpeg"
+
+
+class RoughcutRequest(BaseModel):
+    captions: bool = True
+
+
+def _prep_transcribe(hd_path, source_id: int) -> Optional[Path]:
+    """
+    Transcribe speech from hd_path using faster-whisper; write SRT to
+    data/prep/{source_id}/captions.srt. Returns path on success, None on any
+    failure (no audio, no speech, import error). Never raises.
+    """
+    try:
+        from faster_whisper import WhisperModel  # lazy import; model downloads ~75 MB on first use
+    except ImportError:
+        print("[prep_transcribe] faster-whisper not installed, skipping captions")
+        return None
+    try:
+        hp = Path(str(hd_path))
+        if not hp.exists():
+            return None
+        model = WhisperModel("tiny", device="cpu", compute_type="int8")
+        segments_iter, _info = model.transcribe(str(hp), word_timestamps=False)
+
+        def _fmt_ts(secs: float) -> str:
+            h = int(secs // 3600)
+            m = int((secs % 3600) // 60)
+            s = int(secs % 60)
+            ms = int((secs % 1) * 1000)
+            return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
+
+        lines: list[str] = []
+        idx = 1
+        for seg in segments_iter:
+            text = seg.text.strip()
+            if not text:
+                continue
+            lines += [str(idx), f"{_fmt_ts(seg.start)} --> {_fmt_ts(seg.end)}", text, ""]
+            idx += 1
+
+        if idx == 1:
+            print(f"[prep_transcribe] no speech detected in source {source_id}")
+            return None
+
+        out_dir = _REPO_ROOT / "data" / "prep" / str(source_id)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        srt_path = out_dir / "captions.srt"
+        srt_path.write_text("\n".join(lines), encoding="utf-8")
+        print(f"[prep_transcribe] {idx - 1} segments → {srt_path}")
+        return srt_path
+    except Exception as e:
+        print(f"[prep_transcribe] error: {e}")
+        return None
+
+
 def _prep_set_roughcut_status(source_id: int, status: str, path):
     """Upsert roughcut_status + path in prep_bundles (opens its own connection)."""
     conn = _db_conn()
@@ -7127,13 +7188,16 @@ def _prep_set_roughcut_status(source_id: int, status: str, path):
         conn.close()
 
 
-def _prep_build_roughcut(segments: list, hd_path, bgm_path, out_path):
+def _prep_build_roughcut(segments: list, hd_path, bgm_path, out_path, srt_path=None):
     """
     Concat clip segments into a 9:16 draft MP4 via ffmpeg.
     // ponytail: naive concat + scale/pad, not an EDL; frame-precise cuts stay in CapCut.
     Segments are video-only (no audio stream); BGM, when provided, is the sole audio
     track, looped to cover the full video length then trimmed by -shortest.
     Falls back to the whole HD source when no segments exist.
+    When srt_path is provided (and the file exists), captions are burned in via the
+    subtitles filter (requires ffmpeg-full with libass). Auto-captions may need a
+    tweak in CapCut. // ponytail: captions are auto-generated from source speech.
     Raises RuntimeError on any failure.
     """
     seg_paths = [
@@ -7170,13 +7234,27 @@ def _prep_build_roughcut(segments: list, hd_path, bgm_path, out_path):
     if use_bgm:
         fc_parts.append(f"[{n}:a]volume=0.3[bgm]")
 
+    # Burn captions when SRT is available. Bold white text, black outline, lower-third.
+    # At PlayResY=288 (libass default for SRT), FontSize=16 → ~107px at 1920 height.
+    use_srt = bool(srt_path and Path(str(srt_path)).exists())
+    if use_srt:
+        abs_srt = str(Path(str(srt_path)).absolute())
+        style = (
+            "Bold=1,FontSize=16,PrimaryColour=&H00FFFFFF,"
+            "OutlineColour=&H00000000,Outline=2,BorderStyle=1,"
+            "Alignment=2,MarginV=20"
+        )
+        fc_parts.append(f"[vout]subtitles='{abs_srt}':force_style='{style}'[vsub]")
+
+    output_label = "[vsub]" if use_srt else "[vout]"
     filter_complex = ";".join(fc_parts)
+    ffmpeg_bin = _FFMPEG_SUBTITLES_BIN if use_srt else "ffmpeg"
 
     cmd = [
-        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+        ffmpeg_bin, "-y", "-hide_banner", "-loglevel", "error",
         *inputs,
         "-filter_complex", filter_complex,
-        "-map", "[vout]",
+        "-map", output_label,
         "-c:v", "libx264", "-preset", "fast", "-crf", "23",
     ]
     if use_bgm:
@@ -7428,12 +7506,20 @@ def prep_patch(source_id: int, req: PrepBundleUpdate):
 
 
 @app.post("/prep/{source_id}/roughcut")
-def prep_roughcut_start(source_id: int, bg: BackgroundTasks):
+def prep_roughcut_start(
+    source_id: int,
+    bg: BackgroundTasks,
+    body: Optional[RoughcutRequest] = None,
+):
     """
     Kick off a background rough-cut build for this source.
     Returns {status: 'building', url: null} immediately.
     // ponytail: naive concat, not EDL; frame-precise cutting stays in CapCut.
+    When body.captions is True (default), source audio is transcribed with
+    faster-whisper and captions are burned into the output.
     """
+    want_captions = body.captions if body is not None else True
+
     conn = _db_conn()
     if not conn:
         raise HTTPException(status_code=503, detail="database unavailable")
@@ -7468,7 +7554,8 @@ def prep_roughcut_start(source_id: int, bg: BackgroundTasks):
 
     def _job():
         try:
-            _prep_build_roughcut(segments, hd_path, bgm_path, out_path)
+            srt_path = _prep_transcribe(hd_path, source_id) if want_captions else None
+            _prep_build_roughcut(segments, hd_path, bgm_path, out_path, srt_path=srt_path)
             _prep_set_roughcut_status(source_id, "ready", str(out_path.absolute()))
         except Exception as exc:
             print(f"[prep_roughcut] job failed for source_id {source_id}: {exc}")
