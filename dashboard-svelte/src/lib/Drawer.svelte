@@ -24,6 +24,13 @@
 
   // copy state
   let copiedPrompt = $state(false)
+  // Display + copy share one string: pretty-printed JSON for prompt_json, raw otherwise
+  function promptDisplay(a) {
+    if (a?.gen_prompt_format === 'prompt_json') {
+      try { return JSON.stringify(JSON.parse(a.gen_prompt), null, 2) } catch { return a.gen_prompt }
+    }
+    return a?.gen_prompt ?? ''
+  }
   function copyPrompt(text) {
     navigator.clipboard.writeText(text).then(() => {
       copiedPrompt = true
@@ -209,19 +216,12 @@
         <h3 style="margin:16px 0 8px;font-size:13px;font-weight:600">Generated prompt</h3>
         <div class="gen-prompt-box">
           {#if analysis.gen_prompt_format === 'prompt_json'}
-            <pre class="gen-prompt-json">{(() => {
-              try {
-                const parsed = JSON.parse(analysis.gen_prompt)
-                return JSON.stringify(parsed, null, 2)
-              } catch {
-                return analysis.gen_prompt
-              }
-            })()}</pre>
+            <pre class="gen-prompt-json">{promptDisplay(analysis)}</pre>
           {:else}
             <div class="gen-prompt-text">{analysis.gen_prompt}</div>
           {/if}
         </div>
-        <button class="copy-btn" onclick={() => copyPrompt(analysis.gen_prompt)}>
+        <button class="copy-btn" onclick={() => copyPrompt(promptDisplay(analysis))}>
           {copiedPrompt ? '✓ Copied!' : 'Copy'}
         </button>
       {/if}

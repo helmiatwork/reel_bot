@@ -3555,11 +3555,11 @@ _GEN_PROMPT_VIDEO_ADDITION = """,
 """
 
 _GEN_PROMPT_JSON_ADDITION = """,
-  "gen_prompt_storyboard": {{
+  "gen_prompt_storyboard": {
     "scene_order": [
-      {{"scene": 1, "description": "<1 sentence scene description>", "camera_angle": "<e.g. wide, close-up, overhead>", "lighting": "<e.g. bright, dim, cinematic>", "objects": ["<obj1>", "<obj2>"], "style": "<visual style>"}}
+      {"scene": 1, "description": "<1 sentence scene description>", "camera_angle": "<e.g. wide, close-up, overhead>", "lighting": "<e.g. bright, dim, cinematic>", "objects": ["<obj1>", "<obj2>"], "style": "<visual style>"}
     ]
-  }}
+  }
 """
 
 def _build_claude_prompt(intent: str, output_format: str = "none") -> str:

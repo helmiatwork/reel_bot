@@ -146,6 +146,10 @@ class TestAnalyzeClaudeOutputFormat:
         mock_conn.close = MagicMock()
 
         with patch.object(m, "_db_conn", return_value=mock_conn), \
+             patch.object(m, "_extract_keyframes", return_value=_SAMPLE_FRAMES), \
+             patch.object(m, "_save_creator"), \
+             patch.object(m, "_save_source"), \
+             patch.object(m, "_build_analyze_steps", return_value=[]), \
              patch.object(httpx, "post", return_value=_make_bridge_response(result_payload)):
             tc = TestClient(m.app)
             r = tc.post(
@@ -162,6 +166,20 @@ class TestAnalyzeClaudeOutputFormat:
         update_call = update_calls[0]
         assert gen_prompt_text in str(update_call[0][1]), "gen_prompt text should be in UPDATE params"
         assert "prompt_video" in str(update_call[0][1]), "gen_prompt_format should be in UPDATE params"
+
+
+class TestBuildClaudePrompt:
+    def test_prompt_json_schema_uses_single_braces(self):
+        """prompt_json addition must reach Claude with real JSON braces, not literal {{ }}."""
+        import main as m
+        p = m._build_claude_prompt("test", "prompt_json")
+        assert '"gen_prompt_storyboard": {' in p, "schema must use a single opening brace"
+        assert "{{" not in p and "}}" not in p, "no doubled braces should survive .format()"
+
+    def test_prompt_none_has_no_gen_prompt(self):
+        import main as m
+        p = m._build_claude_prompt("test", "none")
+        assert "gen_prompt" not in p
 
 
 class TestSourcesUploadOutputFormat:
