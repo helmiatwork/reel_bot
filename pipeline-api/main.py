@@ -2289,15 +2289,20 @@ def cookies_delete(platform: str):
 
 # ── Accounts ──────────────────────────────────────────────────────────────────
 
+ACCOUNT_ROLES = ("scrape", "publish")
+
+
 class AccountCreate(BaseModel):
     platform: str
     handle: str
     label: Optional[str] = None
+    role: str = "scrape"
 
 
 class AccountUpdate(BaseModel):
     label: Optional[str] = None
     active: Optional[bool] = None
+    role: Optional[str] = None
 
 
 class AccountCookiePost(BaseModel):
@@ -2320,6 +2325,15 @@ def _accounts_init_db():
                 created_at TIMESTAMPTZ DEFAULT now(),
                 UNIQUE (platform, handle)
             )""")
+            # Idempotent migrations — safe to re-run on every startup.
+            cur.execute(
+                "ALTER TABLE accounts ADD COLUMN IF NOT EXISTS "
+                "role TEXT NOT NULL DEFAULT 'scrape'"
+            )
+            cur.execute(
+                "ALTER TABLE accounts ADD COLUMN IF NOT EXISTS "
+                "last_used_at TIMESTAMPTZ"
+            )
         conn.commit()
     except Exception as e:
         print(f"[accounts] init db error: {e}")
@@ -2335,9 +2349,52 @@ def _account_has_cookies(account_id: int, platform: str) -> bool:
         return False
 
 
+def _scrape_cookie_file(platform: str):
+    """Return the cookie Path for the least-recently-used active scrape account
+    on this platform, updating last_used_at so the next call rotates to another.
+    Falls back to the legacy data/cookies/<platform>.txt when no scrape account
+    has a cookie file on disk. Returns None when nothing is available.
+
+    NEVER returns a role='publish' account's cookie file — publish accounts are
+    for scheduling/attribution only and must not be exposed to yt-dlp.
+
+    # ponytail: LRU rotation; swap for weighted/random if a burner gets rate-limited
+    """
+    conn = _db_conn()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """SELECT id FROM accounts
+                       WHERE platform = %s AND active = true AND role = 'scrape'
+                       ORDER BY last_used_at NULLS FIRST, id""",
+                    (platform,),
+                )
+                rows = cur.fetchall()
+            for (account_id,) in rows:
+                f = _account_cookie_file(account_id, platform)
+                if f.exists() and f.stat().st_size > 0:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            "UPDATE accounts SET last_used_at = now() WHERE id = %s",
+                            (account_id,),
+                        )
+                    conn.commit()
+                    return f
+        except Exception as e:
+            print(f"[scrape_cookie] db error: {e}")
+        finally:
+            conn.close()
+    # Legacy fallback: data/cookies/<platform>.txt
+    legacy = _cookie_file(platform)
+    return legacy if (legacy.exists() and legacy.stat().st_size > 0) else None
+
+
 @app.get("/accounts")
-def accounts_list(platform: Optional[str] = None):
-    """List accounts, optionally filtered by platform."""
+def accounts_list(platform: Optional[str] = None, role: Optional[str] = None):
+    """List accounts, optionally filtered by platform and/or role."""
+    if role is not None and role not in ACCOUNT_ROLES:
+        raise HTTPException(status_code=400, detail=f"role must be one of {ACCOUNT_ROLES}")
     conn = _db_conn()
     if conn is None:
         # ponytail: return empty list (not 503) — consistent with other read-list
@@ -2345,15 +2402,17 @@ def accounts_list(platform: Optional[str] = None):
         return _json([])
     try:
         with conn.cursor() as cur:
+            wheres, params = [], []
             if platform:
-                cur.execute(
-                    "SELECT id,platform,handle,label,active,created_at FROM accounts WHERE platform=%s ORDER BY created_at",
-                    (platform,),
-                )
-            else:
-                cur.execute(
-                    "SELECT id,platform,handle,label,active,created_at FROM accounts ORDER BY platform,created_at"
-                )
+                wheres.append("platform=%s"); params.append(platform)
+            if role:
+                wheres.append("role=%s"); params.append(role)
+            where_clause = ("WHERE " + " AND ".join(wheres)) if wheres else ""
+            cur.execute(
+                f"SELECT id,platform,handle,label,active,role,last_used_at,created_at "
+                f"FROM accounts {where_clause} ORDER BY platform,created_at",
+                params,
+            )
             cols = [c.name for c in cur.description]
             rows = [dict(zip(cols, r)) for r in cur.fetchall()]
         for row in rows:
@@ -2374,17 +2433,19 @@ def accounts_create(req: AccountCreate):
     handle = (req.handle or "").strip()
     if not handle:
         raise HTTPException(status_code=400, detail="handle is required")
+    if req.role not in ACCOUNT_ROLES:
+        raise HTTPException(status_code=400, detail=f"role must be one of {ACCOUNT_ROLES}")
     conn = _db_conn()
     if conn is None:
         raise HTTPException(status_code=503, detail="database unavailable")
     try:
         with conn.cursor() as cur:
             cur.execute(
-                """INSERT INTO accounts (platform, handle, label)
-                   VALUES (%s, %s, %s)
+                """INSERT INTO accounts (platform, handle, label, role)
+                   VALUES (%s, %s, %s, %s)
                    ON CONFLICT (platform, handle) DO NOTHING
-                   RETURNING id,platform,handle,label,active,created_at""",
-                (req.platform, handle, req.label or handle),
+                   RETURNING id,platform,handle,label,active,role,last_used_at,created_at""",
+                (req.platform, handle, req.label or handle, req.role),
             )
             row = cur.fetchone()
             if not row:
@@ -2405,9 +2466,11 @@ def accounts_create(req: AccountCreate):
 
 @app.patch("/accounts/{account_id}")
 def accounts_update(account_id: int, req: AccountUpdate):
-    """Partial update: label and/or active flag."""
-    if req.label is None and req.active is None:
+    """Partial update: label, active flag, and/or role."""
+    if req.label is None and req.active is None and req.role is None:
         raise HTTPException(status_code=400, detail="nothing to update")
+    if req.role is not None and req.role not in ACCOUNT_ROLES:
+        raise HTTPException(status_code=400, detail=f"role must be one of {ACCOUNT_ROLES}")
     conn = _db_conn()
     if conn is None:
         raise HTTPException(status_code=503, detail="database unavailable")
@@ -2417,10 +2480,13 @@ def accounts_update(account_id: int, req: AccountUpdate):
             sets.append("label=%s"); params.append(req.label)
         if req.active is not None:
             sets.append("active=%s"); params.append(req.active)
+        if req.role is not None:
+            sets.append("role=%s"); params.append(req.role)
         params.append(account_id)
         with conn.cursor() as cur:
             cur.execute(
-                f"UPDATE accounts SET {','.join(sets)} WHERE id=%s RETURNING id,platform,handle,label,active,created_at",
+                f"UPDATE accounts SET {','.join(sets)} WHERE id=%s "
+                f"RETURNING id,platform,handle,label,active,role,last_used_at,created_at",
                 params,
             )
             row = cur.fetchone()
@@ -3732,11 +3798,14 @@ def _ytdlp_source_args(force_player_client: bool = True, platform: str = "youtub
             "xiaohongshu": "XHS_COOKIES_FILE",
         }.get(platform, "YTDLP_COOKIES_FILE")
 
-    # Cookie source order: platform env var → dashboard-managed file
-    # (data/cookies/<platform>.txt) → generic YTDLP_COOKIES_FILE.
+    # Cookie source order: platform env var → scrape-role rotation
+    # (_scrape_cookie_file picks LRU burner account, never a publish account)
+    # → generic YTDLP_COOKIES_FILE.
     cookies_file = os.getenv(cookies_env, "")
-    if not cookies_file and platform in COOKIE_PLATFORMS and _cookie_file(platform).exists():
-        cookies_file = str(_cookie_file(platform))
+    if not cookies_file and platform in COOKIE_PLATFORMS:
+        scrape_f = _scrape_cookie_file(platform)
+        if scrape_f:
+            cookies_file = str(scrape_f)
     if not cookies_file:
         cookies_file = os.getenv("YTDLP_COOKIES_FILE", "")
     if cookies_file and Path(cookies_file).exists():
@@ -3769,8 +3838,8 @@ def _xhs_resolve_video(note_url: str) -> tuple:
     import http.cookiejar
     fetch_url = note_url.replace("rednote.com", "xiaohongshu.com")
     cookies = {}
-    cf = _cookie_file("xiaohongshu")
-    if cf.exists():
+    cf = _scrape_cookie_file("xiaohongshu")  # scrape-role only, never publish
+    if cf and cf.exists():
         cj = http.cookiejar.MozillaCookieJar(str(cf))
         cj.load(ignore_discard=True, ignore_expires=True)
         cookies = {c.name: c.value for c in cj}
