@@ -260,6 +260,7 @@
 
     <!-- Footer -->
     <div class="m-footer">
+      <span class="flow-label">Input → Analyze{outputFormat === 'prompt_video' ? ' → Prompt video' : outputFormat === 'prompt_json' ? ' → Prompt JSON' : ''}</span>
       <button
         class="btn-cancel"
         onclick={closeModal}
@@ -450,6 +451,14 @@
 
   .file-size {
     color: var(--accent);
+  }
+
+  .flow-label {
+    margin-right: auto;
+    align-self: center;
+    font-size: 0.75rem;
+    color: var(--muted, #888);
+    white-space: nowrap;
   }
 
   .m-footer {
