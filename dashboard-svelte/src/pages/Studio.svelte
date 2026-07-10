@@ -1,205 +1,329 @@
 <script>
   import { onDestroy } from 'svelte'
-  import { api, extractRunId } from '../lib/api.js'
+  import { api } from '../lib/api.js'
 
-  // chat transcript — each: { role, text, streaming, runId, run, artifact }
-  let messages = $state([])
-  let input = $state('')
-  let busy = $state(false)
-  let scroller
-  const timers = new Set()
+  const STAGES = ['idea', 'script', 'prep', 'scheduled', 'posted']
+  const STAGE_LABELS = { idea: 'Idea', script: 'Script', prep: 'Prep', scheduled: 'Scheduled', posted: 'Posted' }
 
-  const STEP_ORDER = ['discover', 'download', 'analyze', 'audio', 'script', 'footage', 'music', 'assemble', 'save']
+  // ── Board state ───────────────────────────────────────────────────────────────
+  let board = $state({ idea: [], script: [], prep: [], scheduled: [], posted: [] })
+  let boardError = $state('')
+  let boardLoading = $state(false)
 
-  const SUGGEST = [
-    'kenapa ramen Jepang enak banget',
-    'street food viral di Tokyo',
-    'https://youtube.com/shorts/… (analisa video ini)'
-  ]
-
-  const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
-  function scrollDown() {
-    queueMicrotask(() => scroller && (scroller.scrollTop = scroller.scrollHeight))
+  async function loadBoard() {
+    boardLoading = true
+    boardError = ''
+    const r = await api.studioBoard()
+    boardLoading = false
+    if (!r) { boardError = 'Failed to load board — is the backend running?'; return }
+    board = r
   }
 
-  async function send(text) {
-    const msg = (text ?? input).trim()
-    if (!msg || busy) return
-    input = ''
-    busy = true
+  // ── Batch generate form ───────────────────────────────────────────────────────
+  let batchNiche = $state('')
+  let batchTopic = $state('')
+  let batchCount = $state(10)
+  let batchBusy  = $state(false)
+  let batchError = $state('')
+  let batchProgress = $state(null)   // { status, done, total, created_ids }
+  let batchTimer = null
 
-    // Snapshot run_ids that already exist, so we only attach a NEW run this
-    // turn kicks off (the agent may just chat — same as Telegram — and create none).
-    const known = new Set()
-    const pre = await api.runs(8)
-    if (pre && pre.runs) pre.runs.forEach((r) => known.add(r.run_id))
+  function stopBatchPoll() {
+    if (batchTimer) { clearInterval(batchTimer); batchTimer = null }
+  }
 
-    messages.push({ role: 'user', text: msg })
-    const assistant = { role: 'assistant', text: '', streaming: true, runId: null, run: null, artifact: null }
-    messages.push(assistant)
-    scrollDown()
+  async function pollBatch(run_id) {
+    const r = await api.generateBatchStatus(run_id)
+    if (!r) return
+    batchProgress = r
+    if (r.status === 'done' || r.status === 'error') {
+      stopBatchPoll()
+      batchBusy = false
+      if (r.status === 'done') loadBoard()
+    }
+  }
 
-    // prior turns as history (exclude the two we just pushed)
-    const history = messages.slice(0, -2).map((m) => ({ role: m.role, content: m.text }))
+  async function startBatch() {
+    if (!batchNiche.trim()) return
+    stopBatchPoll()
+    batchBusy = true
+    batchError = ''
+    batchProgress = null
+    const r = await api.generateBatch(batchNiche.trim(), batchTopic.trim(), Number(batchCount))
+    if (!r || !r.run_id) {
+      batchBusy = false
+      batchError = r?.detail || r?.error || 'Failed to start — is the backend running?'
+      return
+    }
+    batchTimer = setInterval(() => pollBatch(r.run_id), 8000)
+    pollBatch(r.run_id)
+  }
 
-    api.streamChat(msg, history, {
-      onDelta: (chunk) => { assistant.text += chunk; scrollDown() },
-      onError: (err) => {
-        assistant.text += (assistant.text ? '\n\n' : '') + `⚠️ ${err}`
-        assistant.streaming = false
-        busy = false
-      },
-      onDone: async () => {
-        assistant.streaming = false
-        busy = false
-        resolveRun(assistant, known)
-      }
+  // ── Card modal ────────────────────────────────────────────────────────────────
+  let modal = $state(null)      // null | { item, editTitle, editScript, saving, deleting }
+  let modalLoading = $state(false)
+
+  async function openCard(card) {
+    modalLoading = true
+    modal = { item: card, editTitle: card.title, editScript: card.script_preview || '', saving: false, deleting: false }
+    const full = await api.studioGet(card.id)
+    modalLoading = false
+    if (full && !full.detail) {
+      modal = { ...modal, item: full, editTitle: full.title, editScript: full.script || '' }
+    }
+  }
+
+  function closeModal() { modal = null }
+
+  async function saveModal() {
+    if (!modal) return
+    modal = { ...modal, saving: true }
+    const r = await api.studioUpdate(modal.item.id, {
+      title: modal.editTitle,
+      script: modal.editScript,
     })
-  }
-
-  // Attach the pipeline run this turn started — a run_id printed in the reply,
-  // or a brand-new run that appears within ~40s. If the agent only chatted
-  // (no run created), nothing is attached.
-  async function resolveRun(assistant, known) {
-    let id = extractRunId(assistant.text)
-    for (let i = 0; i < 10 && !id; i++) {
-      await sleep(4000)
-      const r = await api.runs(8)
-      const fresh = r && r.runs && r.runs.find((x) => !known.has(x.run_id))
-      if (fresh) id = fresh.run_id
-    }
-    if (!id) return
-    assistant.runId = id
-    pollRun(assistant)
-  }
-
-  async function pollRun(assistant) {
-    const tick = async () => {
-      const d = await api.run(assistant.runId)
-      if (d) assistant.run = d
-      if (d && (d.status === 'done' || d.status === 'error')) {
-        clearInterval(t)
-        timers.delete(t)
-        if (d.status === 'done') loadArtifact(assistant)
-      }
-      scrollDown()
-    }
-    const t = setInterval(tick, 4000)
-    timers.add(t)
-    tick()
-  }
-
-  async function loadArtifact(assistant) {
-    assistant.artifact = await api.artifact(assistant.runId)
-    scrollDown()
-  }
-
-  function onKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      send()
+    modal = { ...modal, saving: false }
+    if (r && !r.detail) {
+      closeModal()
+      loadBoard()
     }
   }
 
-  onDestroy(() => timers.forEach(clearInterval))
+  async function deleteCard(id) {
+    if (!confirm('Delete this item?')) return
+    if (modal) modal = { ...modal, deleting: true }
+    await api.studioDelete(id)
+    closeModal()
+    loadBoard()
+  }
+
+  async function moveCard(id, stage) {
+    await api.studioUpdate(id, { stage })
+    loadBoard()
+  }
+
+  // ── Add idea ──────────────────────────────────────────────────────────────────
+  let addTitle = $state('')
+  let addBusy  = $state(false)
+
+  async function addIdea() {
+    if (!addTitle.trim()) return
+    addBusy = true
+    await api.studioCreate({ title: addTitle.trim(), stage: 'idea' })
+    addTitle = ''
+    addBusy = false
+    loadBoard()
+  }
+
+  function onAddKey(e) { if (e.key === 'Enter') addIdea() }
+
+  // Load board on mount
+  loadBoard()
+  onDestroy(stopBatchPoll)
+
+  // ── Derived: total cards across all stages ────────────────────────────────────
+  let totalCards = $derived(STAGES.reduce((s, st) => s + (board[st]?.length ?? 0), 0))
+
+  // ── Stage navigation helpers ──────────────────────────────────────────────────
+  function prevStage(stage) {
+    const i = STAGES.indexOf(stage)
+    return i > 0 ? STAGES[i - 1] : null
+  }
+  function nextStage(stage) {
+    const i = STAGES.indexOf(stage)
+    return i < STAGES.length - 1 ? STAGES[i + 1] : null
+  }
 </script>
 
 <div class="studio">
-  <div class="top">
-    <div><h1>Studio</h1><div class="sub">Ngobrol sama agent — sama kaya Telegram. Ketik topik atau URL, agent yang validasi + jalanin produksi.</div></div>
+  <div class="page-top">
+    <div>
+      <h1>Studio</h1>
+      <div class="sub">Batch-generate scripts and track every piece from idea to posted.</div>
+    </div>
   </div>
 
-  <div class="chat" bind:this={scroller}>
-    {#if !messages.length}
-      <div class="empty">
-        <div class="hi">Mau bikin video apa?</div>
-        <div class="mut" style="font-size:12.5px;margin:6px 0 16px">Tulis topik bebas atau tempel URL YouTube. Contoh:</div>
-        <div class="sugg">
-          {#each SUGGEST as s}
-            <button class="chiprow" onclick={() => send(s)}>{s}</button>
-          {/each}
-        </div>
+  <!-- Batch generate form -->
+  <div class="batch-form panel">
+    <div class="form-row">
+      <input class="inp" placeholder="Niche (required)" bind:value={batchNiche} disabled={batchBusy} />
+      <input class="inp" placeholder="Topic (optional — auto-derived if blank)" bind:value={batchTopic} disabled={batchBusy} />
+      <input class="inp num" type="number" min="1" max="20" bind:value={batchCount} disabled={batchBusy} title="Count (max 20)" />
+      <button class="btn-primary" onclick={startBatch} disabled={batchBusy || !batchNiche.trim()}>
+        {batchBusy ? 'Generating…' : 'Generate'}
+      </button>
+    </div>
+    {#if batchError}<div class="err">{batchError}</div>{/if}
+    {#if batchProgress}
+      <div class="progress-row">
+        <div class="prog-bar"><div class="prog-fill" style="width:{batchProgress.total > 0 ? Math.round(batchProgress.done / batchProgress.total * 100) : 0}%"></div></div>
+        <span class="prog-label">
+          {#if batchProgress.status === 'done'}
+            Done — {batchProgress.created_ids?.length ?? 0} scripts created
+          {:else if batchProgress.status === 'error'}
+            Error: {batchProgress.error || 'unknown'}
+          {:else}
+            {batchProgress.done}/{batchProgress.total} generated…
+          {/if}
+        </span>
       </div>
     {/if}
+  </div>
 
-    {#each messages as m}
-      {#if m.role === 'user'}
-        <div class="row user"><div class="bubble u">{m.text}</div></div>
-      {:else}
-        <div class="row bot">
-          <div class="bubble b">
-            <div class="who"><span class="dot"></span> reelbot {#if m.streaming}<span class="typing">mengetik…</span>{/if}</div>
-            {#if m.text}<div class="txt">{m.text}</div>{/if}
+  <!-- Kanban board -->
+  {#if boardError}<div class="err board-err">{boardError}</div>{/if}
 
-            {#if m.runId}
-              <div class="runbox">
-                <div class="runhdr">Produksi <span class="mut">{m.runId.slice(0, 8)}…</span>
-                  {#if m.run}<span class="chip {m.run.status === 'done' ? 'c-done' : m.run.status === 'error' ? 'c-err' : 'c-run'}">{m.run.status}</span>{/if}
-                </div>
-                <div class="steps">
-                  {#each STEP_ORDER as st}
-                    {@const s = (m.run?.steps || []).find((x) => x.step === st)}
-                    <div class="step {s ? s.status : 'pending'}"><span class="dot"></span> {st}<span class="st">{s ? s.status : '—'}</span></div>
-                  {/each}
-                </div>
-                {#each (m.run?.steps || []).filter((s) => s.status === 'error' && s.error) as e}
-                  <div class="mut" style="font-size:11.5px;margin-top:6px"><span class="down">{e.step}:</span> {e.error}</div>
-                {/each}
-
-                {#if m.artifact}
-                  <div class="arthdr">Hasil</div>
-                  <div style="display:flex;gap:8px;flex-wrap:wrap">
-                    <a class="btn" style="background:#1b2433;color:var(--txt)" href={api.artifactDownloadUrl(m.runId)} download>⬇ Download JSON</a>
-                  </div>
-                  {#if m.artifact?.content?.script?.title || m.artifact?.content?.title}
-                    <div class="kv" style="margin-top:8px"><span>Judul</span><span style="text-align:right;max-width:62%">{m.artifact.content.script?.title || m.artifact.content.title}</span></div>
-                  {/if}
-                  {#if m.artifact?.summary}
-                    <pre class="summary">{m.artifact.summary}</pre>
-                  {/if}
+  {#if !boardLoading && totalCards === 0}
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+          <rect x="3" y="3" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="17" width="18" height="4" rx="1"/>
+        </svg>
+      </div>
+      <div class="empty-title">Board is empty</div>
+      <div class="mut">Batch-generate scripts above, or add an idea manually below.</div>
+    </div>
+  {:else}
+    <div class="board">
+      {#each STAGES as stage}
+        <div class="column">
+          <div class="col-header">
+            <span class="col-title">{STAGE_LABELS[stage]}</span>
+            <span class="col-count">{board[stage]?.length ?? 0}</span>
+          </div>
+          <div class="col-cards">
+            {#each (board[stage] ?? []) as card (card.id)}
+              <div class="card" role="button" tabindex="0" onclick={() => openCard(card)} onkeydown={(e) => e.key === 'Enter' && openCard(card)}>
+                <div class="card-title">{card.title}</div>
+                {#if card.niche}<span class="niche-badge">{card.niche}</span>{/if}
+                {#if card.script_preview}
+                  <div class="card-preview">{card.script_preview}</div>
                 {/if}
+                <div class="card-actions" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="group" aria-label="Move card">
+                  {#if prevStage(stage)}
+                    <button class="move-btn" title="Move to {STAGE_LABELS[prevStage(stage)]}" onclick={() => moveCard(card.id, prevStage(stage))}>←</button>
+                  {/if}
+                  {#if nextStage(stage)}
+                    <button class="move-btn" title="Move to {STAGE_LABELS[nextStage(stage)]}" onclick={() => moveCard(card.id, nextStage(stage))}>→</button>
+                  {/if}
+                </div>
+              </div>
+            {/each}
+
+            {#if stage === 'idea'}
+              <div class="add-idea">
+                <input class="inp add-inp" placeholder="+ Add idea…" bind:value={addTitle} onkeydown={onAddKey} disabled={addBusy} />
+                <button class="btn-ghost" onclick={addIdea} disabled={addBusy || !addTitle.trim()}>Add</button>
               </div>
             {/if}
           </div>
         </div>
-      {/if}
-    {/each}
-  </div>
-
-  <div class="composer">
-    <textarea class="ask" rows="1" placeholder="Ask anything — topik atau URL YouTube…" bind:value={input} onkeydown={onKey} disabled={busy}></textarea>
-    <button class="send" onclick={() => send()} disabled={busy || !input.trim()} title="Kirim">{busy ? '…' : '↑'}</button>
-  </div>
-  <div class="mut foot">Agent ini bisa salah — cek hasilnya sebelum publish.</div>
+      {/each}
+    </div>
+  {/if}
 </div>
 
+<!-- Card modal -->
+{#if modal}
+  <div class="overlay" role="dialog" aria-modal="true" onclick={closeModal} onkeydown={(e) => e.key === 'Escape' && closeModal()}>
+    <div class="modal" role="document" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+      <div class="modal-head">
+        <input class="modal-title-inp" bind:value={modal.editTitle} placeholder="Title" />
+        <button class="icon-btn" onclick={closeModal} title="Close" aria-label="Close">✕</button>
+      </div>
+
+      {#if modalLoading}
+        <div class="mut" style="padding:16px">Loading…</div>
+      {:else}
+        <div class="modal-meta">
+          {#if modal.item.niche}<span class="niche-badge">{modal.item.niche}</span>{/if}
+          {#if modal.item.stage}<span class="stage-badge">{STAGE_LABELS[modal.item.stage] ?? modal.item.stage}</span>{/if}
+          {#if modal.item.created_at}<span class="mut" style="font-size:11px">{modal.item.created_at.slice(0,10)}</span>{/if}
+        </div>
+        <textarea class="modal-script" rows="14" bind:value={modal.editScript} placeholder="Script will appear here…"></textarea>
+        <div class="modal-foot">
+          <button class="btn-danger" onclick={() => deleteCard(modal.item.id)} disabled={modal.deleting}>
+            {modal.deleting ? 'Deleting…' : 'Delete'}
+          </button>
+          <div style="flex:1"></div>
+          <button class="btn-ghost" onclick={closeModal}>Cancel</button>
+          <button class="btn-primary" onclick={saveModal} disabled={modal.saving}>
+            {modal.saving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+      {/if}
+    </div>
+  </div>
+{/if}
+
 <style>
-  .studio { display: flex; flex-direction: column; height: calc(100vh - 48px); }
-  .chat { flex: 1; overflow-y: auto; padding: 8px 2px 16px; }
-  .empty { max-width: 560px; margin: 8vh auto 0; text-align: center; }
-  .empty .hi { font-size: 22px; font-weight: 650; }
-  .sugg { display: flex; flex-direction: column; gap: 8px; align-items: center; }
-  .chiprow { background: var(--panel); border: 1px solid var(--line); color: var(--txt); border-radius: 10px; padding: 10px 14px; font-size: 12.5px; cursor: pointer; width: 100%; max-width: 420px; text-align: left; }
-  .chiprow:hover { border-color: var(--accent); }
-  .row { display: flex; margin: 10px 0; }
-  .row.user { justify-content: flex-end; }
-  .bubble { max-width: 80%; border-radius: 14px; padding: 11px 14px; font-size: 13px; line-height: 1.5; }
-  .bubble.u { background: linear-gradient(135deg, #6ea8fe, #a78bfa); color: #0b0f17; font-weight: 500; }
-  .bubble.b { background: var(--panel); border: 1px solid var(--line); }
-  .who { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--mut); margin-bottom: 6px; }
-  .who .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
-  .typing { color: var(--amber); }
-  .txt { white-space: pre-wrap; }
-  .runbox { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 10px; }
-  .runhdr, .arthdr { font-size: 12px; font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
-  .arthdr { margin-top: 12px; }
-  .chip.c-done { background: rgba(52,211,153,.15); color: var(--green); }
-  .chip.c-err { background: rgba(248,113,113,.15); color: var(--red); }
-  .chip.c-run { background: rgba(251,191,36,.15); color: var(--amber); }
-  .summary { white-space: pre-wrap; font-size: 11.5px; background: #0c1320; border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin-top: 8px; max-height: 220px; overflow: auto; }
-  .composer { display: flex; gap: 8px; align-items: flex-end; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 8px 10px; }
-  .ask { flex: 1; background: transparent; border: 0; color: var(--txt); font-size: 13.5px; resize: none; outline: none; max-height: 160px; padding: 6px 4px; font-family: inherit; }
-  .send { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 50%; border: 0; background: linear-gradient(135deg, #6ea8fe, #a78bfa); color: #0b0f17; font-size: 16px; font-weight: 700; cursor: pointer; }
-  .send:disabled { opacity: .4; cursor: default; }
-  .foot { text-align: center; font-size: 11px; margin-top: 8px; }
+  .studio { padding: 0 2px 32px; }
+  .page-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+  .page-top h1 { font-size: 22px; font-weight: 700; margin: 0 0 2px; }
+  .sub { font-size: 13px; color: var(--mut); }
+
+  /* Batch form */
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; }
+  .form-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .inp { flex: 1; min-width: 140px; background: var(--soft); border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; color: var(--txt); font-size: 13px; outline: none; }
+  .inp.num { flex: 0 0 64px; min-width: 64px; }
+  .inp:focus { border-color: var(--accent); }
+
+  /* Progress */
+  .progress-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .prog-bar { flex: 1; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width .3s; }
+  .prog-label { font-size: 12px; color: var(--mut); white-space: nowrap; }
+
+  /* Board */
+  .board { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
+  .column { flex: 0 0 220px; display: flex; flex-direction: column; }
+  .col-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 4px 8px; }
+  .col-title { font-size: 12.5px; font-weight: 600; color: var(--txt); text-transform: uppercase; letter-spacing: .04em; }
+  .col-count { font-size: 11px; background: var(--soft); border-radius: 10px; padding: 1px 7px; color: var(--mut); }
+  .col-cards { display: flex; flex-direction: column; gap: 8px; }
+
+  /* Card */
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; cursor: pointer; transition: border-color .15s; }
+  .card:hover { border-color: var(--accent); }
+  .card-title { font-size: 13px; font-weight: 600; line-height: 1.4; margin-bottom: 4px; }
+  .niche-badge { display: inline-block; background: rgba(99,102,241,.15); color: var(--accent); font-size: 10.5px; border-radius: 4px; padding: 1px 6px; margin-bottom: 5px; }
+  .stage-badge { display: inline-block; background: var(--soft); color: var(--mut); font-size: 10.5px; border-radius: 4px; padding: 1px 6px; margin-left: 4px; }
+  .card-preview { font-size: 11.5px; color: var(--mut); line-height: 1.5; margin-top: 4px; white-space: pre-wrap; word-break: break-word; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+  .card-actions { display: flex; gap: 4px; margin-top: 8px; }
+  .move-btn { background: var(--soft); border: 1px solid var(--line); color: var(--mut); border-radius: 5px; padding: 2px 8px; font-size: 12px; cursor: pointer; line-height: 1.4; }
+  .move-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Add idea input */
+  .add-idea { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
+  .add-inp { flex: 1; min-width: 0; font-size: 12px; padding: 6px 8px; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--mut); }
+  .empty-icon { opacity: .35; margin-bottom: 14px; display: flex; justify-content: center; }
+  .empty-title { font-size: 16px; font-weight: 600; color: var(--txt); margin-bottom: 6px; }
+
+  /* Buttons */
+  .btn-primary { background: var(--accent); color: #fff; border: none; border-radius: 7px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .btn-primary:disabled { opacity: .45; cursor: default; }
+  .btn-ghost { background: transparent; border: 1px solid var(--line); color: var(--txt); border-radius: 7px; padding: 7px 14px; font-size: 13px; cursor: pointer; }
+  .btn-ghost:disabled { opacity: .45; cursor: default; }
+  .btn-danger { background: transparent; border: 1px solid var(--red, #f87171); color: var(--red, #f87171); border-radius: 7px; padding: 7px 14px; font-size: 13px; cursor: pointer; }
+  .btn-danger:disabled { opacity: .45; cursor: default; }
+  .icon-btn { background: transparent; border: none; color: var(--mut); font-size: 16px; cursor: pointer; padding: 4px 8px; border-radius: 5px; line-height: 1; }
+  .icon-btn:hover { color: var(--txt); }
+
+  /* Errors */
+  .err { color: var(--red, #f87171); font-size: 12.5px; margin-top: 6px; }
+  .board-err { margin-bottom: 12px; }
+
+  /* Modal/overlay */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .modal { background: var(--card, var(--panel)); border: 1px solid var(--line); border-radius: 14px; width: 100%; max-width: 680px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; }
+  .modal-head { display: flex; align-items: center; gap: 10px; padding: 16px 18px 10px; border-bottom: 1px solid var(--line); }
+  .modal-title-inp { flex: 1; background: transparent; border: none; font-size: 16px; font-weight: 700; color: var(--txt); outline: none; }
+  .modal-meta { display: flex; align-items: center; gap: 6px; padding: 10px 18px 6px; flex-wrap: wrap; }
+  .modal-script { width: 100%; box-sizing: border-box; background: var(--soft); border: 1px solid var(--line); border-radius: 8px; color: var(--txt); font-size: 13px; line-height: 1.6; padding: 10px 12px; margin: 8px 18px; width: calc(100% - 36px); resize: vertical; outline: none; font-family: inherit; }
+  .modal-script:focus { border-color: var(--accent); }
+  .modal-foot { display: flex; align-items: center; gap: 8px; padding: 12px 18px 16px; border-top: 1px solid var(--line); }
 </style>
