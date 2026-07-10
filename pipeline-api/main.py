@@ -7975,6 +7975,380 @@ def prep_zip(source_id: int):
     )
 
 
+# ── Winner Clone — generate variation scripts from top performers ───────────────
+
+def _get_winners() -> list:
+    """
+    Fetch top-performing posted videos, ranked by RPM (when revenue present) else views.
+    Returns up to 20 items. Never raises — returns [] on any error.
+    """
+    conn = None
+    try:
+        conn = _db_conn()
+        if not conn:
+            return []
+        with conn.cursor() as cur:
+            # Most-recent snapshot per URL (for title + platform) + max views ever
+            cur.execute("""
+                WITH latest AS (
+                    SELECT DISTINCT ON (url) platform, url, title
+                    FROM performance_snapshots
+                    ORDER BY url, captured_at DESC, id DESC
+                ), max_views AS (
+                    SELECT url, MAX(views) AS latest_views
+                    FROM performance_snapshots
+                    GROUP BY url
+                )
+                SELECT l.platform, l.url, l.title, m.latest_views
+                FROM latest l JOIN max_views m USING (url)
+            """)
+            perf_rows = cur.fetchall()
+
+        if not perf_rows:
+            return []
+
+        urls = [r[1] for r in perf_rows]
+
+        # Revenue per URL (most videos have none — left join semantics)
+        rev_by_url: dict = {}
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT video_url, SUM(revenue_usd)
+                FROM revenue_entries
+                WHERE video_url = ANY(%s)
+                GROUP BY video_url
+            """, (urls,))
+            for url, rev in cur.fetchall():
+                rev_by_url[url] = float(rev or 0)
+
+        # Seed resolution: matching sources.youtube_url → source_id
+        source_by_url: dict = {}
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, youtube_url FROM sources WHERE youtube_url = ANY(%s)", (urls,)
+            )
+            for sid, url in cur.fetchall():
+                source_by_url[url] = sid
+
+        # Seed resolution: content_items whose based_on JSONB array contains the URL
+        ci_by_url: dict = {}
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT id, jsonb_array_elements_text(based_on) AS url
+                FROM content_items
+                WHERE based_on IS NOT NULL AND jsonb_typeof(based_on) = 'array'
+            """)
+            for ci_id, url in cur.fetchall():
+                if url and url not in ci_by_url:
+                    ci_by_url[url] = ci_id
+
+        # Build result rows and rank
+        result = []
+        for platform, url, title, latest_views in perf_rows:
+            latest_views = int(latest_views or 0)
+            revenue = rev_by_url.get(url, 0.0)
+            rpm = round(revenue / latest_views * 1000, 4) if latest_views > 0 and revenue > 0 else 0
+            seed: dict = {}
+            if url in ci_by_url:
+                seed["content_item_id"] = ci_by_url[url]
+            if url in source_by_url:
+                seed["source_id"] = source_by_url[url]
+            result.append({
+                "platform": platform,
+                "url": url,
+                "title": title or url,
+                "latest_views": latest_views,
+                "revenue": revenue,
+                "rpm": rpm,
+                "seed": seed,
+            })
+
+        # Videos with revenue → ranked by RPM desc; rest → ranked by views desc
+        has_rev = sorted((r for r in result if r["rpm"] > 0), key=lambda x: x["rpm"], reverse=True)
+        no_rev = sorted((r for r in result if r["rpm"] == 0), key=lambda x: x["latest_views"], reverse=True)
+        return (has_rev + no_rev)[:20]
+
+    except Exception as exc:
+        print(f"[winners] query failed: {exc}")
+        return []
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.get("/winners")
+def winners_get():
+    """Top-performing posted videos ranked by RPM (with revenue) else views. Never 500."""
+    return _json(_get_winners())
+
+
+def _resolve_winner_exemplar(
+    seed_ci_id: Optional[int],
+    seed_source_id: Optional[int],
+    seed_video_url: Optional[str],
+    niche: str,
+) -> Optional[dict]:
+    """
+    Resolve the "winning formula" material for clone generation.
+
+    Priority:
+    1. seed_content_item_id → existing content_item script + topic
+    2. seed_source_id → source analysis (hook / structure / retention)
+    3. seed_video_url → sources row matched by youtube_url
+    4. corpus fallback via _fetch_corpus_winners(niche, ...)
+
+    Returns None only when corpus fallback also finds nothing.
+    """
+    # Priority 1: content_item script
+    if seed_ci_id is not None:
+        conn = _db_conn()
+        if conn:
+            try:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT topic, script, niche FROM content_items WHERE id = %s", (seed_ci_id,)
+                    )
+                    row = cur.fetchone()
+                if row:
+                    return {
+                        "type": "content_item",
+                        "content_summary": row[0] or "",
+                        "script": row[1] or "",
+                        "niche": row[2] or niche,
+                    }
+            except Exception as e:
+                print(f"[winners_clone] resolve ci error: {e}")
+            finally:
+                conn.close()
+
+    # Priority 2: source analysis (hook / structure / retention)
+    if seed_source_id is not None:
+        conn = _db_conn()
+        if conn:
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT va.hook, va.structure, va.retention, va.content_summary, s.niche
+                        FROM sources s
+                        LEFT JOIN video_analysis va ON s.youtube_url = va.youtube_url
+                        WHERE s.id = %s
+                        ORDER BY va.created_at DESC NULLS LAST
+                        LIMIT 1
+                    """, (seed_source_id,))
+                    row = cur.fetchone()
+                if row and any(v is not None for v in row):
+                    return {
+                        "type": "source",
+                        "hook": row[0] or "",
+                        "structure": row[1] or "",
+                        "retention": row[2] or "",
+                        "content_summary": row[3] or "",
+                        "niche": row[4] or niche,
+                    }
+            except Exception as e:
+                print(f"[winners_clone] resolve source error: {e}")
+            finally:
+                conn.close()
+
+    # Priority 3: seed_video_url → match against analyzed sources
+    if seed_video_url:
+        conn = _db_conn()
+        if conn:
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT va.hook, va.structure, va.retention, va.content_summary, s.niche
+                        FROM sources s
+                        LEFT JOIN video_analysis va ON s.youtube_url = va.youtube_url
+                        WHERE s.youtube_url = %s
+                        ORDER BY va.created_at DESC NULLS LAST
+                        LIMIT 1
+                    """, (seed_video_url,))
+                    row = cur.fetchone()
+                if row and any(v is not None for v in row):
+                    return {
+                        "type": "source_url",
+                        "hook": row[0] or "",
+                        "structure": row[1] or "",
+                        "retention": row[2] or "",
+                        "content_summary": row[3] or "",
+                        "niche": row[4] or niche,
+                    }
+            except Exception as e:
+                print(f"[winners_clone] resolve url error: {e}")
+            finally:
+                conn.close()
+
+    # Priority 4: corpus fallback
+    winners = _fetch_corpus_winners(niche, "", 5)
+    if not winners:
+        return None
+    w = winners[0]
+    return {
+        "type": "corpus_winner",
+        "hook": w.get("hook", ""),
+        "structure": w.get("structure", ""),
+        "retention": w.get("retention", ""),
+        "content_summary": w.get("content_summary", ""),
+        "niche": w.get("niche", niche),
+    }
+
+
+def _build_variation_prompt(exemplar: dict, variation_idx: int, niche: str) -> str:
+    """
+    Build a variation script prompt cloning a winner's formula onto a new topic.
+    ponytail: light wrapper over _build_script_prompt pattern; adds variation instruction.
+    """
+    niche = (niche or "unknown").strip()
+    lines = [
+        "Kamu penulis script konten short-form.",
+        f"Buat SATU script Short yang merupakan VARIASI #{variation_idx} dari video winner berikut.",
+        "Aturan: topik/sudut pandang BERBEDA dari winner, tapi KLONING persis pola berikut:",
+        "  - Hook sekuat winner (teks berbeda, struktur sama)",
+        "  - Beat-by-beat structure sama",
+        "  - Mekanik retensi sama",
+        "",
+    ]
+    if exemplar.get("script"):
+        lines += [
+            "--- Script Pemenang (kloning strukturnya, BUKAN isinya) ---",
+            str(exemplar["script"])[:800],
+            "",
+        ]
+    if exemplar.get("hook"):
+        lines += [f"Hook pemenang: {str(exemplar['hook'])[:300]}", ""]
+    if exemplar.get("structure"):
+        lines += [f"Struktur pemenang: {str(exemplar['structure'])[:400]}", ""]
+    if exemplar.get("retention"):
+        lines += [f"Retensi pemenang: {str(exemplar['retention'])[:300]}", ""]
+    if exemplar.get("content_summary"):
+        lines += [f"Isi pemenang: {str(exemplar['content_summary'])[:200]}", ""]
+    lines += [
+        f"Niche: {niche}",
+        f"Variasi ke-{variation_idx}: pilih topik berbeda tapi relevan dengan niche tersebut.",
+        "",
+        "Output dalam Bahasa Indonesia, format siap eksekusi:",
+        "1. Judul + hashtag (BARU, bukan judul winner)",
+        "2. HOOK (detik 0-3, teks yang muncul + visual)",
+        "3. Beat-by-beat: tiap beat = [VISUAL yang disyut] + [voiceover/caption] + [perkiraan durasi]",
+        "4. CTA penutup",
+        "5. Saran cold-open (1 kalimat)",
+        "Jangan jelaskan formula-nya; langsung tulis script-nya.",
+    ]
+    return "\n".join(lines)
+
+
+class WinnersCloneRequest(BaseModel):
+    seed_content_item_id: Optional[int] = None
+    seed_source_id: Optional[int] = None
+    seed_video_url: Optional[str] = None
+    niche: Optional[str] = None
+    n: int = 3
+
+
+@app.post("/winners/clone")
+def winners_clone(req: WinnersCloneRequest, bg: BackgroundTasks):
+    """
+    Generate n variation scripts cloning a winner's formula, stored as content_items at
+    stage='script' (Studio board). Background job — returns {status, run_id}.
+    Poll GET /winners/clone/status/{run_id}.
+    """
+    n = max(1, min(req.n, 10))
+    run_id = str(uuid.uuid4())
+    _save_run(run_id, {"status": "running", "done": 0, "total": n, "created_ids": []})
+
+    def _job():
+        created_ids: list = []
+        try:
+            exemplar = _resolve_winner_exemplar(
+                req.seed_content_item_id,
+                req.seed_source_id,
+                req.seed_video_url,
+                req.niche or "",
+            )
+            if exemplar is None:
+                _save_run(run_id, {
+                    "status": "error",
+                    "done": 0, "total": n, "created_ids": [],
+                    "error": "no winner material found — provide a seed or analyze some videos first",
+                })
+                return
+
+            niche = req.niche or exemplar.get("niche", "")
+            import httpx as _httpx
+            bridge_timeout = _httpx.Timeout(connect=10.0, read=180.0, write=10.0, pool=5.0)
+
+            for i in range(n):
+                prompt = _build_variation_prompt(exemplar, i + 1, niche)
+                try:
+                    resp = _httpx.post(
+                        f"{CLAUDE_BRIDGE_URL}/run",
+                        json={"prompt": prompt, "frames": [], "model": "claude-sonnet-4-6"},
+                        timeout=bridge_timeout,
+                    )
+                    data = resp.json()
+                except Exception as e:
+                    print(f"[winners_clone] bridge error on variation {i + 1}: {e}")
+                    _save_run(run_id, {"status": "running", "done": i, "total": n, "created_ids": created_ids})
+                    continue
+
+                if not data.get("ok"):
+                    print(f"[winners_clone] bridge not-ok on variation {i + 1}: {data.get('error')}")
+                    _save_run(run_id, {"status": "running", "done": i, "total": n, "created_ids": created_ids})
+                    continue
+
+                script_text = data.get("result", "")
+                title = f"Variation {i + 1} — {(niche or 'unknown')[:40]}"
+                based_on_urls = [req.seed_video_url] if req.seed_video_url else []
+
+                conn = _db_conn()
+                if conn:
+                    try:
+                        with conn.cursor() as cur:
+                            cur.execute(
+                                """INSERT INTO content_items (title, niche, topic, script, based_on, stage)
+                                   VALUES (%s, %s, %s, %s, %s::jsonb, 'script')
+                                   RETURNING id""",
+                                (title, niche, f"Winner variation {i + 1}", script_text,
+                                 json.dumps(based_on_urls)),
+                            )
+                            row = cur.fetchone()
+                            if row:
+                                created_ids.append(row[0])
+                        conn.commit()
+                    except Exception as e:
+                        print(f"[winners_clone] db insert error on variation {i + 1}: {e}")
+                    finally:
+                        conn.close()
+
+                _log_api_usage(
+                    agent="winners_clone",
+                    model=data.get("model", "claude-sonnet-4-6"),
+                    raw_usage=data.get("raw_usage", {}),
+                    cost_usd=data.get("cost_usd"),
+                )
+                _save_run(run_id, {"status": "running", "done": i + 1, "total": n, "created_ids": created_ids})
+
+            _save_run(run_id, {"status": "done", "done": n, "total": n, "created_ids": created_ids})
+
+        except Exception as e:
+            run = _load_run(run_id) or {}
+            run.update({"status": "error", "error": str(e)[:500]})
+            _save_run(run_id, run)
+
+    bg.add_task(_job)
+    return {"status": "started", "run_id": run_id}
+
+
+@app.get("/winners/clone/status/{run_id}")
+def winners_clone_status(run_id: str):
+    """Poll winner clone generation progress."""
+    run = _load_run(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="run not found")
+    return run
+
+
 # ── Studio — batch script generation + Kanban content pipeline ─────────────────
 
 _VALID_STAGES = frozenset({"idea", "script", "prep", "scheduled", "posted"})
