@@ -6,7 +6,10 @@ Covers:
 - GET /prep/{id}          — all keys present; graceful nulls when data missing
 - PATCH /prep/{id}        — upserts bgm_song_id; asserts SQL + params
 - GET /prep/{id}/zip      — valid zip with generated text files; 404 when source absent
-- POST /prep/{id}/roughcut — status transitions; ffmpeg mocked (not actually run)
+- POST /prep/{id}/roughcut — status transitions; captions flag; ffmpeg mocked
+- RoughcutRequest         — captions field defaults to True
+- _prep_transcribe        — SRT write, graceful degradation on no speech / errors
+- _prep_build_roughcut    — subtitles filter present/absent based on srt_path
 
 Run:
     cd pipeline-api && .venv/bin/python -m pytest tests/test_prep.py -v
@@ -23,6 +26,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import main as _main
 from fastapi.testclient import TestClient
 from main import (  # noqa: E402
     app,
@@ -31,6 +35,8 @@ from main import (  # noqa: E402
     _prep_seo,
     _prep_build_roughcut,
     _prep_source_hd_path,
+    _prep_transcribe,
+    RoughcutRequest,
 )
 
 client = TestClient(app, raise_server_exceptions=False)
@@ -520,3 +526,348 @@ class TestPrepBuildRoughcut:
             pytest.raises(RuntimeError, match="ffmpeg roughcut failed"),
         ):
             _prep_build_roughcut(segments, None, None, out)
+
+
+# ── RoughcutRequest model ─────────────────────────────────────────────────────
+
+class TestRoughcutRequest:
+    def test_captions_defaults_to_true(self):
+        """captions field defaults to True when not supplied."""
+        req = RoughcutRequest()
+        assert req.captions is True
+
+    def test_captions_can_be_false(self):
+        """captions field accepts False."""
+        req = RoughcutRequest(captions=False)
+        assert req.captions is False
+
+    def test_endpoint_accepts_captions_field(self):
+        """POST /roughcut with captions=false parses without error."""
+        conn, cursor = _make_conn(
+            fetchone_returns=[("https://youtube.com/watch?v=abc",), None],
+            fetchall_returns=[],
+        )
+        with (
+            patch("main._db_conn", return_value=conn),
+            patch("main._prep_source_hd_path", return_value=None),
+            patch("main._prep_set_roughcut_status"),
+            patch("main._prep_build_roughcut"),
+            patch("main._prep_transcribe", return_value=None),
+        ):
+            r = client.post("/prep/12/roughcut", json={"captions": False})
+        assert r.status_code == 200
+        assert r.json()["status"] == "building"
+
+
+# ── _prep_build_roughcut captions ────────────────────────────────────────────
+
+class TestPrepBuildRoughcutCaptions:
+    def _mock_seg(self, tmp_path, name="seg_00.mp4"):
+        f = tmp_path / name
+        f.write_bytes(b"fake")
+        return f
+
+    def test_includes_subtitles_filter_when_srt_exists(self, tmp_path):
+        """When srt_path exists, filter_complex includes subtitles= referencing the file."""
+        seg = self._mock_seg(tmp_path)
+        srt = tmp_path / "captions.srt"
+        srt.write_text("1\n00:00:00,000 --> 00:00:02,000\nHello\n\n", encoding="utf-8")
+        out = tmp_path / "roughcut.mp4"
+        segments = [{"clip_index": 0, "segment_path": str(seg), "start_sec": 0, "end_sec": 5}]
+
+        mock_proc = MagicMock()
+        mock_proc.returncode = 0
+
+        with patch("subprocess.run", return_value=mock_proc) as mock_run:
+            _prep_build_roughcut(segments, None, None, out, srt_path=srt)
+
+        cmd = mock_run.call_args[0][0]
+        fc_idx = cmd.index("-filter_complex")
+        filter_val = cmd[fc_idx + 1]
+        assert "subtitles" in filter_val
+        assert str(srt.absolute()) in filter_val
+
+    def test_output_label_is_vsub_when_srt_provided(self, tmp_path):
+        """ffmpeg is invoked with -map [vsub] when an SRT is present."""
+        seg = self._mock_seg(tmp_path)
+        srt = tmp_path / "captions.srt"
+        srt.write_text("1\n00:00:00,000 --> 00:00:02,000\nHi\n\n", encoding="utf-8")
+        out = tmp_path / "roughcut.mp4"
+        segments = [{"clip_index": 0, "segment_path": str(seg), "start_sec": 0, "end_sec": 5}]
+
+        mock_proc = MagicMock()
+        mock_proc.returncode = 0
+
+        with patch("subprocess.run", return_value=mock_proc) as mock_run:
+            _prep_build_roughcut(segments, None, None, out, srt_path=srt)
+
+        cmd = mock_run.call_args[0][0]
+        assert "[vsub]" in cmd
+        assert "[vout]" not in cmd[cmd.index("-map"):]
+
+    def test_no_subtitles_filter_when_srt_none(self, tmp_path):
+        """No subtitles filter when srt_path is None."""
+        seg = self._mock_seg(tmp_path)
+        out = tmp_path / "roughcut.mp4"
+        segments = [{"clip_index": 0, "segment_path": str(seg), "start_sec": 0, "end_sec": 5}]
+
+        mock_proc = MagicMock()
+        mock_proc.returncode = 0
+
+        with patch("subprocess.run", return_value=mock_proc) as mock_run:
+            _prep_build_roughcut(segments, None, None, out, srt_path=None)
+
+        cmd = mock_run.call_args[0][0]
+        fc_idx = cmd.index("-filter_complex")
+        filter_val = cmd[fc_idx + 1]
+        assert "subtitles" not in filter_val
+        assert "-map" in cmd
+        map_idx = cmd.index("-map")
+        assert cmd[map_idx + 1] == "[vout]"
+
+    def test_no_subtitles_filter_when_srt_missing_on_disk(self, tmp_path):
+        """SRT path given but file absent → subtitles filter skipped (no crash)."""
+        seg = self._mock_seg(tmp_path)
+        out = tmp_path / "roughcut.mp4"
+        segments = [{"clip_index": 0, "segment_path": str(seg), "start_sec": 0, "end_sec": 5}]
+
+        mock_proc = MagicMock()
+        mock_proc.returncode = 0
+
+        with patch("subprocess.run", return_value=mock_proc) as mock_run:
+            _prep_build_roughcut(
+                segments, None, None, out,
+                srt_path=tmp_path / "nonexistent.srt"
+            )
+
+        cmd = mock_run.call_args[0][0]
+        fc_idx = cmd.index("-filter_complex")
+        assert "subtitles" not in cmd[fc_idx + 1]
+
+    def test_uses_ffmpeg_full_bin_when_srt_present(self, tmp_path):
+        """The ffmpeg-full binary (with libass) is used when captions are burned."""
+        seg = self._mock_seg(tmp_path)
+        srt = tmp_path / "captions.srt"
+        srt.write_text("1\n00:00:00,000 --> 00:00:01,000\nTest\n\n", encoding="utf-8")
+        out = tmp_path / "roughcut.mp4"
+        segments = [{"clip_index": 0, "segment_path": str(seg), "start_sec": 0, "end_sec": 5}]
+
+        mock_proc = MagicMock()
+        mock_proc.returncode = 0
+
+        with (
+            patch("subprocess.run", return_value=mock_proc) as mock_run,
+            patch.object(_main, "_FFMPEG_SUBTITLES_BIN", "/fake/ffmpeg-full"),
+        ):
+            _prep_build_roughcut(segments, None, None, out, srt_path=srt)
+
+        cmd = mock_run.call_args[0][0]
+        assert cmd[0] == "/fake/ffmpeg-full"
+
+    def test_uses_plain_ffmpeg_when_no_srt(self, tmp_path):
+        """Plain 'ffmpeg' is used when no SRT is involved."""
+        seg = self._mock_seg(tmp_path)
+        out = tmp_path / "roughcut.mp4"
+        segments = [{"clip_index": 0, "segment_path": str(seg), "start_sec": 0, "end_sec": 5}]
+
+        mock_proc = MagicMock()
+        mock_proc.returncode = 0
+
+        with patch("subprocess.run", return_value=mock_proc) as mock_run:
+            _prep_build_roughcut(segments, None, None, out, srt_path=None)
+
+        cmd = mock_run.call_args[0][0]
+        assert cmd[0] == "ffmpeg"
+
+
+# ── _prep_transcribe ──────────────────────────────────────────────────────────
+
+class TestPrepTranscribe:
+    def test_returns_none_when_hd_path_is_none(self):
+        """Returns None immediately when hd_path is None (file won't exist)."""
+        result = _prep_transcribe(None, 999)
+        assert result is None
+
+    def test_returns_none_when_file_missing(self, tmp_path):
+        """Returns None when hd_path points to a non-existent file."""
+        result = _prep_transcribe(tmp_path / "nonexistent.mp4", 999)
+        assert result is None
+
+    def test_returns_none_when_no_speech_detected(self, tmp_path):
+        """Returns None when transcription yields zero segments (silent video)."""
+        hd = tmp_path / "source.mp4"
+        hd.write_bytes(b"fake")
+
+        mock_model = MagicMock()
+        mock_model.transcribe.return_value = (iter([]), MagicMock())
+
+        with patch("faster_whisper.WhisperModel", return_value=mock_model):
+            result = _prep_transcribe(hd, 999)
+
+        assert result is None
+
+    def test_writes_srt_and_returns_path(self, tmp_path):
+        """Writes a valid SRT file and returns its path when speech is detected."""
+        hd = tmp_path / "source.mp4"
+        hd.write_bytes(b"fake video")
+
+        seg1 = MagicMock()
+        seg1.start = 0.0
+        seg1.end = 2.5
+        seg1.text = " Hello world"
+
+        seg2 = MagicMock()
+        seg2.start = 2.5
+        seg2.end = 5.0
+        seg2.text = " Second line"
+
+        mock_model = MagicMock()
+        mock_model.transcribe.return_value = (iter([seg1, seg2]), MagicMock())
+
+        with (
+            patch("faster_whisper.WhisperModel", return_value=mock_model),
+            patch.object(_main, "_REPO_ROOT", tmp_path),
+        ):
+            result = _prep_transcribe(hd, 42)
+
+        assert result is not None
+        assert result.exists()
+        content = result.read_text(encoding="utf-8")
+        assert "Hello world" in content
+        assert "Second line" in content
+        assert "00:00:00,000 --> 00:00:02,500" in content
+        # SRT index lines
+        assert "1\n" in content
+        assert "2\n" in content
+
+    def test_returns_none_on_model_error(self, tmp_path):
+        """Never raises — returns None when WhisperModel itself fails."""
+        hd = tmp_path / "source.mp4"
+        hd.write_bytes(b"fake")
+
+        with patch("faster_whisper.WhisperModel", side_effect=RuntimeError("GPU OOM")):
+            result = _prep_transcribe(hd, 999)
+
+        assert result is None
+
+    def test_skips_empty_text_segments(self, tmp_path):
+        """Segments with empty text after strip() are not written to SRT."""
+        hd = tmp_path / "source.mp4"
+        hd.write_bytes(b"fake")
+
+        empty_seg = MagicMock()
+        empty_seg.start = 0.0
+        empty_seg.end = 1.0
+        empty_seg.text = "   "  # whitespace only
+
+        real_seg = MagicMock()
+        real_seg.start = 1.0
+        real_seg.end = 2.0
+        real_seg.text = " Real caption"
+
+        mock_model = MagicMock()
+        mock_model.transcribe.return_value = (iter([empty_seg, real_seg]), MagicMock())
+
+        with (
+            patch("faster_whisper.WhisperModel", return_value=mock_model),
+            patch.object(_main, "_REPO_ROOT", tmp_path),
+        ):
+            result = _prep_transcribe(hd, 99)
+
+        assert result is not None
+        content = result.read_text(encoding="utf-8")
+        assert "Real caption" in content
+        # Only one index entry (empty_seg skipped)
+        assert "1\n" in content
+        assert "2\n" not in content
+
+
+# ── Roughcut endpoint captions integration ────────────────────────────────────
+
+class TestPrepRoughcutCaptionsEndpoint:
+    def _make_roughcut_conn(self):
+        return _make_conn(
+            fetchone_returns=[("https://youtube.com/watch?v=abc",), None],
+            fetchall_returns=[],
+        )
+
+    def test_calls_transcribe_when_captions_true(self):
+        """_prep_transcribe is called in the background job when captions=True."""
+        conn, _ = self._make_roughcut_conn()
+        with (
+            patch("main._db_conn", return_value=conn),
+            patch("main._prep_source_hd_path", return_value=None),
+            patch("main._prep_set_roughcut_status"),
+            patch("main._prep_build_roughcut"),
+            patch("main._prep_transcribe", return_value=None) as mock_tx,
+        ):
+            client.post("/prep/12/roughcut", json={"captions": True})
+
+        mock_tx.assert_called_once()
+
+    def test_skips_transcribe_when_captions_false(self):
+        """_prep_transcribe is NOT called when captions=False."""
+        conn, _ = self._make_roughcut_conn()
+        with (
+            patch("main._db_conn", return_value=conn),
+            patch("main._prep_source_hd_path", return_value=None),
+            patch("main._prep_set_roughcut_status"),
+            patch("main._prep_build_roughcut"),
+            patch("main._prep_transcribe", return_value=None) as mock_tx,
+        ):
+            client.post("/prep/12/roughcut", json={"captions": False})
+
+        mock_tx.assert_not_called()
+
+    def test_default_body_calls_transcribe(self):
+        """Empty body (captions defaults to True) still triggers transcription."""
+        conn, _ = self._make_roughcut_conn()
+        with (
+            patch("main._db_conn", return_value=conn),
+            patch("main._prep_source_hd_path", return_value=None),
+            patch("main._prep_set_roughcut_status"),
+            patch("main._prep_build_roughcut"),
+            patch("main._prep_transcribe", return_value=None) as mock_tx,
+        ):
+            client.post("/prep/12/roughcut", json={})
+
+        mock_tx.assert_called_once()
+
+    def test_roughcut_succeeds_even_when_transcribe_returns_none(self):
+        """Build proceeds and ends up 'ready' even when _prep_transcribe returns None."""
+        conn, _ = self._make_roughcut_conn()
+        status_calls = []
+
+        with (
+            patch("main._db_conn", return_value=conn),
+            patch("main._prep_source_hd_path", return_value=None),
+            patch("main._prep_set_roughcut_status", side_effect=lambda sid, s, p: status_calls.append(s)),
+            patch("main._prep_build_roughcut"),
+            patch("main._prep_transcribe", return_value=None),
+        ):
+            client.post("/prep/12/roughcut", json={"captions": True})
+
+        assert "ready" in status_calls
+
+    def test_srt_path_passed_to_build_roughcut(self, tmp_path):
+        """The SRT returned by _prep_transcribe is forwarded to _prep_build_roughcut."""
+        conn, _ = self._make_roughcut_conn()
+        fake_srt = tmp_path / "captions.srt"
+        fake_srt.write_text("1\n00:00:00,000 --> 00:00:01,000\nHi\n\n")
+
+        build_calls = []
+
+        def _capture_build(*args, **kwargs):
+            build_calls.append(kwargs.get("srt_path") or (args[4] if len(args) > 4 else None))
+
+        with (
+            patch("main._db_conn", return_value=conn),
+            patch("main._prep_source_hd_path", return_value=None),
+            patch("main._prep_set_roughcut_status"),
+            patch("main._prep_build_roughcut", side_effect=_capture_build),
+            patch("main._prep_transcribe", return_value=fake_srt),
+        ):
+            client.post("/prep/12/roughcut", json={"captions": True})
+
+        assert len(build_calls) == 1
+        assert build_calls[0] == fake_srt
