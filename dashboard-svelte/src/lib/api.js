@@ -133,6 +133,20 @@ export const api = {
   performance: () => getJSON('/performance'),
   performanceRefresh: () => postJSON('/performance/refresh', {}),
 
+  // Revenue + RPM tracking (manual entry per posted video)
+  revenueList: (params = {}) => {
+    const p = new URLSearchParams()
+    if (params.platform) p.set('platform', params.platform)
+    if (params.start) p.set('start', params.start)
+    if (params.end) p.set('end', params.end)
+    const qs = p.toString()
+    return getJSON('/revenue' + (qs ? '?' + qs : ''))
+  },
+  revenueSummary: () => getJSON('/revenue/summary'),
+  revenueCreate: (payload) => postJSON('/revenue', payload),
+  revenueUpdate: (id, payload) => patchJSON(`/revenue/${id}`, payload),
+  revenueDelete: (id) => delJSON(`/revenue/${id}`),
+
   seoAnalyze: (topic, platform = 'youtube', niche = '') => postJSON('/seo/analyze', { topic, platform, niche }),
 
   // Prep Bundle — aggregate assets for CapCut finishing

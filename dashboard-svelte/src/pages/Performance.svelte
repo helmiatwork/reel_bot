@@ -27,6 +27,12 @@
   function colorFor(p) {
     return PLATFORM_COLORS[p?.toLowerCase()] || '#6ea8fe'
   }
+  function fmtUsd(n) {
+    return n == null ? '—' : '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  }
+  function fmtRpm(n) {
+    return n == null || n === 0 ? '—' : '$' + Number(n).toFixed(2)
+  }
 
   let labels      = $state([])
   let datasets    = $state([])
@@ -37,6 +43,25 @@
   let refreshing  = $state(false)
   let lastRefresh = $state(null)
   let collapsed   = $state({})
+
+  // ── Revenue state ──────────────────────────────────────────────────────────
+  let revSummary   = $state(null)   // {platforms, videos, grand_total_revenue, grand_total_clicks}
+  let revEntries   = $state([])     // raw list for the revenue table
+  let revLoading   = $state(false)
+  let showRevModal = $state(false)
+  let editingEntry = $state(null)   // null = add mode, object = edit mode
+  let revSaving    = $state(false)
+  let revError     = $state('')
+  let revForm      = $state({ platform: 'youtube', video_url: '', revenue_usd: '', link_clicks: '', entry_date: '', note: '' })
+
+  // ── Revenue derived stat card values ──────────────────────────────────────
+  let grandRevenue = $derived(revSummary?.grand_total_revenue ?? 0)
+  let grandClicks  = $derived(revSummary?.grand_total_clicks ?? 0)
+  let grandRPM     = $derived.by(() => {
+    if (!revSummary?.platforms?.length) return 0
+    const totalViews = revSummary.platforms.reduce((s, p) => s + (p.total_views || 0), 0)
+    return totalViews > 0 ? grandRevenue / totalViews * 1000 : 0
+  })
 
   // ── Filters ────────────────────────────────────────────────────────────────
   let filterPlatform = $state('all')
@@ -102,7 +127,7 @@
         }))
   )
 
-  // ── Other derived values (unchanged from original) ─────────────────────────
+  // ── Other derived values ───────────────────────────────────────────────────
   let visibleTotals = $derived(
     filterPlatform === 'all' ? totals : totals.filter(t => t.platform === filterPlatform)
   )
@@ -133,6 +158,16 @@
     filterPlatform === 'all' ? videos : videos.filter(v => v.platform === filterPlatform)
   )
 
+  // Revenue table filtered by platform + date range
+  let visibleRevEntries = $derived(
+    revEntries.filter(e => {
+      if (filterPlatform !== 'all' && e.platform !== filterPlatform) return false
+      if (customFrom && e.entry_date < customFrom) return false
+      if (customTo   && e.entry_date > customTo)   return false
+      return true
+    })
+  )
+
   // ── Data loading ───────────────────────────────────────────────────────────
   async function load() {
     loading = true
@@ -157,6 +192,15 @@
       accounts = d.accounts || []
     }
     loading = false
+    loadRevenue()
+  }
+
+  async function loadRevenue() {
+    revLoading = true
+    const [summary, list] = await Promise.all([api.revenueSummary(), api.revenueList()])
+    revSummary = summary
+    revEntries = list || []
+    revLoading = false
   }
 
   async function doRefresh() {
@@ -173,6 +217,52 @@
       const acc = accounts.find(a => String(a.id) === id)
       if (acc && filterPlatform === 'all') filterPlatform = acc.platform
     }
+  }
+
+  // ── Revenue modal helpers ──────────────────────────────────────────────────
+  function openAddModal() {
+    const today = new Date().toISOString().slice(0, 10)
+    revForm = { platform: filterPlatform === 'all' ? 'youtube' : filterPlatform,
+                video_url: '', revenue_usd: '', link_clicks: '', entry_date: today, note: '' }
+    editingEntry = null
+    revError = ''
+    showRevModal = true
+  }
+
+  function openEditModal(e) {
+    revForm = { platform: e.platform, video_url: e.video_url || '',
+                revenue_usd: String(e.revenue_usd), link_clicks: String(e.link_clicks || ''),
+                entry_date: e.entry_date, note: e.note || '' }
+    editingEntry = e
+    revError = ''
+    showRevModal = true
+  }
+
+  async function saveRevenue() {
+    revError = ''
+    const payload = {
+      platform:     revForm.platform,
+      video_url:    revForm.video_url || null,
+      revenue_usd:  parseFloat(revForm.revenue_usd) || 0,
+      link_clicks:  parseInt(revForm.link_clicks) || 0,
+      entry_date:   revForm.entry_date,
+      note:         revForm.note || null,
+    }
+    if (!payload.entry_date) { revError = 'Entry date is required'; return }
+    revSaving = true
+    const res = editingEntry
+      ? await api.revenueUpdate(editingEntry.id, payload)
+      : await api.revenueCreate(payload)
+    revSaving = false
+    if (!res || res.detail) { revError = res?.detail || 'Save failed'; return }
+    showRevModal = false
+    loadRevenue()
+  }
+
+  async function deleteRevenue(id) {
+    if (!confirm('Delete this revenue entry?')) return
+    await api.revenueDelete(id)
+    loadRevenue()
   }
 
   onMount(load)
@@ -210,6 +300,18 @@
   <div class="card kpi">
     <div class="label">Top platform</div>
     <div class="val" style="font-size:18px;text-transform:capitalize">{topPlatform}</div>
+  </div>
+  <div class="card kpi kpi-money">
+    <div class="label">Total Revenue</div>
+    <div class="val">{revLoading ? '…' : fmtUsd(grandRevenue)}</div>
+  </div>
+  <div class="card kpi kpi-money">
+    <div class="label">RPM</div>
+    <div class="val">{revLoading ? '…' : fmtRpm(grandRPM)}</div>
+  </div>
+  <div class="card kpi kpi-money">
+    <div class="label">Total Clicks</div>
+    <div class="val">{revLoading ? '…' : (grandClicks || '—')}</div>
   </div>
 </div>
 
@@ -413,7 +515,7 @@
 
 <!-- ── Video detail table ───────────────────────────────────────────────────── -->
 {#if visibleVideos.length}
-<div class="card">
+<div class="card" style="margin-bottom:16px">
   <h3>Detail video <span class="mut">— views terkini per video</span></h3>
   <table>
     <thead>
@@ -445,6 +547,133 @@
 </div>
 {/if}
 
+<!-- ── Revenue section ───────────────────────────────────────────────────────── -->
+<div class="card">
+  <div class="rev-hdr">
+    <h3 style="margin:0">Revenue <span class="mut">— pendapatan per video (manual)</span></h3>
+    <button class="btn btn-sm" onclick={openAddModal}>+ Add revenue</button>
+  </div>
+
+  {#if revLoading}
+    <p class="mut" style="font-size:12.5px;margin-top:8px">Memuat…</p>
+  {:else if !visibleRevEntries.length}
+    <p class="mut" style="font-size:12.5px;margin-top:8px">
+      Belum ada entri revenue{filterPlatform !== 'all' ? ` untuk ${filterPlatform}` : ''}.
+      Tambahkan dengan "+ Add revenue".
+    </p>
+  {:else}
+    <div style="overflow-x:auto;margin-top:8px">
+      <table>
+        <thead>
+          <tr>
+            <th>Platform</th>
+            <th>Video URL</th>
+            <th class="num" style="text-align:right">Views</th>
+            <th class="num" style="text-align:right">Revenue</th>
+            <th class="num" style="text-align:right">RPM</th>
+            <th class="num" style="text-align:right">Clicks</th>
+            <th style="text-align:right">Date</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each visibleRevEntries as e}
+            {@const vidViews = revSummary?.videos?.find(v => v.video_url === e.video_url)?.latest_views ?? 0}
+            {@const rpm = vidViews > 0 ? e.revenue_usd / vidViews * 1000 : 0}
+            <tr>
+              <td>
+                <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:{colorFor(e.platform)};margin-right:5px"></span>
+                {e.platform}
+              </td>
+              <td class="rev-url">
+                {#if e.video_url}
+                  <a href={e.video_url} target="_blank" rel="noopener"
+                     style="color:inherit;text-decoration:underline;text-underline-offset:2px;font-size:12px">
+                    {e.video_url.length > 40 ? e.video_url.slice(0, 37) + '…' : e.video_url}
+                  </a>
+                {:else}
+                  <span class="mut" style="font-size:12px">—</span>
+                {/if}
+              </td>
+              <td class="num" style="text-align:right">{vidViews ? fmtViews(vidViews) : '—'}</td>
+              <td class="num" style="text-align:right;color:var(--green,#22c55e);font-weight:600">{fmtUsd(e.revenue_usd)}</td>
+              <td class="num" style="text-align:right">{fmtRpm(rpm)}</td>
+              <td class="num" style="text-align:right">{e.link_clicks || '—'}</td>
+              <td class="num" style="text-align:right;color:var(--text-muted,var(--mut))">{e.entry_date}</td>
+              <td style="text-align:right;white-space:nowrap">
+                <button class="act-btn" onclick={() => openEditModal(e)} title="Edit">✎</button>
+                <button class="act-btn del" onclick={() => deleteRevenue(e.id)} title="Delete">✕</button>
+              </td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </div>
+  {/if}
+</div>
+
+<!-- ── Revenue modal ──────────────────────────────────────────────────────────── -->
+{#if showRevModal}
+<div class="modal-backdrop" onclick={e => { if (e.target === e.currentTarget) showRevModal = false }}>
+  <div class="modal-box" role="dialog" aria-modal="true">
+    <div class="modal-hdr">
+      <span style="font-weight:600;font-size:14px">{editingEntry ? 'Edit revenue entry' : 'Add revenue entry'}</span>
+      <button class="act-btn" onclick={() => showRevModal = false} style="font-size:16px">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <label class="field">
+        <span>Platform</span>
+        <select class="acct-sel" bind:value={revForm.platform}>
+          {#each PLATFORMS_ALL as p}
+            <option value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
+          {/each}
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Video URL <span class="mut">(optional)</span></span>
+        <input type="url" class="acct-sel inp" bind:value={revForm.video_url} placeholder="https://…">
+      </label>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <label class="field">
+          <span>Revenue (USD)</span>
+          <input type="number" class="acct-sel inp" bind:value={revForm.revenue_usd}
+                 min="0" step="0.01" placeholder="0.00">
+        </label>
+        <label class="field">
+          <span>Link clicks <span class="mut">(optional)</span></span>
+          <input type="number" class="acct-sel inp" bind:value={revForm.link_clicks}
+                 min="0" step="1" placeholder="0">
+        </label>
+      </div>
+
+      <label class="field">
+        <span>Entry date</span>
+        <input type="date" class="acct-sel inp" bind:value={revForm.entry_date}>
+      </label>
+
+      <label class="field">
+        <span>Note <span class="mut">(optional)</span></span>
+        <input type="text" class="acct-sel inp" bind:value={revForm.note} placeholder="e.g. AdSense payout June">
+      </label>
+
+      {#if revError}
+        <p style="color:#ef4444;font-size:12.5px;margin:0">{revError}</p>
+      {/if}
+    </div>
+
+    <div class="modal-foot">
+      <button class="btn-ghost" onclick={() => showRevModal = false}>Cancel</button>
+      <button class="btn" onclick={saveRevenue} disabled={revSaving}>
+        {revSaving ? 'Saving…' : (editingEntry ? 'Save changes' : 'Add entry')}
+      </button>
+    </div>
+  </div>
+</div>
+{/if}
+
 <style>
   /* ── Filter bar ──────────────────────────────────────────────────────────── */
   .pf-bar {
@@ -462,7 +691,6 @@
   .pfchip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
   .pfchip:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
 
-  /* Platform brand icon inside chip */
   .pico { width: 13px; height: 13px; flex-shrink: 0; fill: currentColor; stroke: none; }
   .pfchip:not(.active).youtube   .pico { color: #FF0000; }
   .pfchip:not(.active).tiktok    .pico { color: #333; }
@@ -520,4 +748,57 @@
     padding: 10px 18px; text-align: center; color: var(--mut);
     font-size: 12px; line-height: 1.6; margin: 0; max-width: 360px;
   }
+
+  /* ── Money KPI cards ─────────────────────────────────────────────────────── */
+  .kpi-money { border-left: 2px solid #22c55e; }
+
+  /* ── Revenue section header ──────────────────────────────────────────────── */
+  .rev-hdr {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;
+  }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+  /* ── Revenue table ───────────────────────────────────────────────────────── */
+  .rev-url { max-width: 220px; overflow: hidden; }
+
+  .act-btn {
+    background: none; border: none; cursor: pointer; color: var(--mut);
+    padding: 2px 5px; border-radius: 5px; font-size: 13px; font-family: inherit;
+    transition: background .12s, color .12s;
+  }
+  .act-btn:hover { background: var(--soft); color: var(--txt); }
+  .act-btn.del:hover { background: #fee2e2; color: #ef4444; }
+  :global(.dark) .act-btn.del:hover { background: #450a0a; color: #f87171; }
+
+  /* ── Modal ───────────────────────────────────────────────────────────────── */
+  .modal-backdrop {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,.45); display: flex;
+    align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal-box {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 14px; width: 100%; max-width: 440px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.18);
+  }
+  .modal-hdr {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px 10px; border-bottom: 1px solid var(--line);
+  }
+  .modal-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .modal-foot {
+    padding: 10px 16px 14px; border-top: 1px solid var(--line);
+    display: flex; justify-content: flex-end; gap: 8px;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; }
+  .field span { color: var(--mut); }
+  .inp { width: 100%; box-sizing: border-box; }
+
+  .btn-ghost {
+    background: none; border: 1px solid var(--line); color: var(--mut);
+    border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer;
+    font-family: inherit; transition: border-color .12s, color .12s;
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--txt); }
 </style>
