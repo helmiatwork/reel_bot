@@ -110,9 +110,12 @@ export const api = {
   deleteCookies: (platform) => delJSON('/cookies/' + platform),
 
   // Accounts
-  accounts: (platform) => getJSON('/accounts' + (platform ? '?platform=' + platform : '')),
-  accountCreate: (body) => postJSON('/accounts', body),
-  accountUpdate: (id, body) => patchJSON(`/accounts/${id}`, body),
+  accounts: (platform, role) => {
+    const q = [platform && `platform=${platform}`, role && `role=${role}`].filter(Boolean).join('&')
+    return getJSON('/accounts' + (q ? '?' + q : ''))
+  },
+  accountCreate: (body) => postJSON('/accounts', body),   // pass { role: 'scrape'|'publish' } in body
+  accountUpdate: (id, body) => patchJSON(`/accounts/${id}`, body),  // pass { role } to change role
   accountDelete: (id) => delJSON(`/accounts/${id}`),
   accountSaveCookies: (id, content) => postJSON(`/accounts/${id}/cookies`, { content }),
   accountDeleteCookies: (id) => delJSON(`/accounts/${id}/cookies`),
