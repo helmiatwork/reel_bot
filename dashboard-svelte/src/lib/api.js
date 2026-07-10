@@ -142,6 +142,15 @@ export const api = {
   prepRoughcut: (id) => postJSON('/prep/' + id + '/roughcut', {}),
   prepZipUrl: (id) => '/prep/' + id + '/zip',
 
+  // Studio — batch generation + Kanban board
+  generateBatch: (niche, topic, count) => postJSON('/generate/batch', { niche, topic: topic || undefined, count }),
+  generateBatchStatus: (run_id) => getJSON('/generate/batch/status/' + run_id),
+  studioBoard: () => getJSON('/studio/board'),
+  studioGet: (id) => getJSON('/studio/' + id),
+  studioCreate: (payload) => postJSON('/studio', payload),
+  studioUpdate: (id, payload) => patchJSON('/studio/' + id, payload),
+  studioDelete: (id) => delJSON('/studio/' + id),
+
   decompose: (youtube_url) => postJSON('/decompose', { youtube_url }),
   decomposeStatus: (run_id) => getJSON('/decompose/status/' + encodeURIComponent(run_id)),
   sourceSegments: (source_id) => getJSON('/sources/' + source_id + '/segments'),

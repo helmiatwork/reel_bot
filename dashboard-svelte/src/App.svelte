@@ -25,6 +25,7 @@
   import Jadwal from './pages/Jadwal.svelte'
   import Seo from './pages/Seo.svelte'
   import Prep from './pages/Prep.svelte'
+  import Studio from './pages/Studio.svelte'
 
   // Standard line icons (Lucide), monochrome, inherit text color.
   const I = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`
@@ -54,7 +55,8 @@
       { p: 'pipeline', ico: I('<line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/>'), label: 'Pipeline' },
       { p: 'posts', ico: I('<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>'), label: 'Posts' },
       { p: 'jadwal', ico: I('<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/>'), label: 'Jadwal Post', badge: 'New' },
-      { p: 'prep', ico: I('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'), label: 'Prep' }
+      { p: 'prep', ico: I('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'), label: 'Prep' },
+      { p: 'studio', ico: I('<rect x="3" y="3" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="17" width="18" height="4" rx="1"/>'), label: 'Studio', badge: 'New' }
     ]},
     { title: 'Agents', items: [
       { p: 'openclaw', ico: I('<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/>'), label: 'OpenClaw' },
@@ -315,6 +317,7 @@
       {:else if current === 'jadwal'}<Jadwal />
       {:else if current === 'seo'}<Seo />
       {:else if current === 'prep'}<Prep />
+      {:else if current === 'studio'}<Studio />
       {/if}
     </div>
   </main>
