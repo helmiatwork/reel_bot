@@ -6366,10 +6366,16 @@ def schedule_corpus():
 # ── Performance Tracking ────────────────────────────────────────────────────────
 
 def _performance_init_db():
-    """Create performance_snapshots table + index. Non-fatal on error."""
+    """Create performance_snapshots table + indexes. Non-fatal on error.
+
+    Each DDL step is committed independently so a failing index can never
+    roll back the table creation (the original bug: one-shot execute meant
+    the IMMUTABLE-violation on the unique index silently dropped the table).
+    """
     conn = _db_conn()
     if not conn:
         return
+    # Step 1: table — committed alone so no index failure can roll it back
     try:
         with conn.cursor() as cur:
             cur.execute("""
@@ -6381,14 +6387,42 @@ def _performance_init_db():
                     title       TEXT,
                     views       BIGINT,
                     captured_at TIMESTAMPTZ DEFAULT now()
-                );
+                )
+            """)
+        conn.commit()
+    except Exception as e:
+        print(f"[performance] init db error (table): {e}")
+        conn.close()
+        return
+
+    # Step 2: unique per-day index.
+    # (captured_at AT TIME ZONE 'UTC')::date yields a plain timestamp then
+    # ::date, both steps are IMMUTABLE, so Postgres accepts it as an index expr.
+    # ponytail: bare captured_at::date is NOT IMMUTABLE (timestamptz→date is
+    # tz-dependent); the AT TIME ZONE cast is the minimal IMMUTABLE-safe form.
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
                 CREATE UNIQUE INDEX IF NOT EXISTS idx_perf_snapshots_url_date
-                    ON performance_snapshots (url, (captured_at::date));
+                    ON performance_snapshots (url, ((captured_at AT TIME ZONE 'UTC')::date))
+            """)
+        conn.commit()
+    except Exception as e:
+        print(f"[performance] init db error (unique index): {e}")
+
+    # Step 3: platform/date index (non-fatal if it fails)
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
                 CREATE INDEX IF NOT EXISTS idx_perf_snapshots_platform_date
                     ON performance_snapshots (platform, captured_at)
             """)
         conn.commit()
-        # Phase 3 migration: per-account attribution (additive, idempotent)
+    except Exception as e:
+        print(f"[performance] init db error (platform index): {e}")
+
+    # Step 4: Phase 3 migration — per-account attribution (additive, idempotent)
+    try:
         with conn.cursor() as cur:
             cur.execute("""
                 ALTER TABLE performance_snapshots
@@ -6398,9 +6432,9 @@ def _performance_init_db():
             """)
         conn.commit()
     except Exception as e:
-        print(f"[performance] init db error: {e}")
-    finally:
-        conn.close()
+        print(f"[performance] init db error (account_id migration): {e}")
+
+    conn.close()
 
 
 def _build_performance_view(rows: list, accounts_lookup: dict | None = None) -> dict:
@@ -6605,7 +6639,7 @@ def _collect_performance_snapshots() -> dict:
                 cur.execute("""
                     INSERT INTO performance_snapshots (post_id, platform, url, title, views, account_id)
                     VALUES (%s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (url, (captured_at::date)) DO UPDATE
+                    ON CONFLICT (url, ((captured_at AT TIME ZONE 'UTC')::date)) DO UPDATE
                         SET views = EXCLUDED.views,
                             title = EXCLUDED.title,
                             account_id = COALESCE(EXCLUDED.account_id, performance_snapshots.account_id)
