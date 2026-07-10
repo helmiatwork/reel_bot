@@ -50,14 +50,15 @@ class TestCreatorsEndpoint:
     @pytest.fixture
     def client(self):
         """Get test client."""
+        from fastapi.testclient import TestClient
         from main import app
-        return app.test_client()
+        return TestClient(app)
 
     def test_get_creators_includes_platform(self, client):
         """GET /creators response includes platform field."""
         response = client.get("/creators")
         assert response.status_code == 200
-        data = response.get_json()
+        data = response.json()
 
         assert "creators" in data
         assert "total" in data
@@ -74,7 +75,7 @@ class TestCreatorsEndpoint:
         """GET /creators supports pagination."""
         response = client.get("/creators?limit=10&offset=0")
         assert response.status_code == 200
-        data = response.get_json()
+        data = response.json()
 
         assert data["limit"] == 10
         assert data["offset"] == 0
