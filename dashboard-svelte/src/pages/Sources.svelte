@@ -45,6 +45,7 @@
       clip: d.clip ?? false,
       face: d.face ?? false,
       sum: d.sum || '',
+      gen_prompt_format: r.gen_prompt_format || '',
       // ponytail: youtube_url carried for frames drawer; absent from /dash/table/sources SELECT (blocker noted)
       youtube_url: r.youtube_url || null
     }
@@ -95,7 +96,7 @@
 <div class="card">
   <table>
     <thead>
-      <tr><th>Judul</th><th>Niche</th><th>Platform</th><th>Tags</th><th style="text-align:right">Views</th><th>Status</th></tr>
+      <tr><th>Judul</th><th>Niche</th><th>Platform</th><th>Tags</th><th>Prompt</th><th style="text-align:right">Views</th><th>Status</th></tr>
     </thead>
     <tbody>
       {#each filtered as s}
@@ -114,12 +115,13 @@
             {/if}
           </td>
           <td>{#each s.tags.slice(0, 3) as t}<span class="tag">{t}</span>{/each}</td>
+          <td>{#if s.gen_prompt_format === 'prompt_json'}<span class="chip c-prompt-json">JSON</span>{:else if s.gen_prompt_format === 'prompt_video'}<span class="chip c-prompt-text">Text</span>{:else}<span class="mut">—</span>{/if}</td>
           <td class="num" style="text-align:right">{s.viewsLabel}</td>
           <td><span class="chip {s.status === 'used' ? 'c-used' : 'c-analyzed'}">{s.status}</span></td>
         </tr>
       {/each}
       {#if !filtered.length}
-        <tr><td colspan="6" class="mut">Belum ada source di DB.</td></tr>
+        <tr><td colspan="7" class="mut">Belum ada source di DB.</td></tr>
       {/if}
     </tbody>
   </table>

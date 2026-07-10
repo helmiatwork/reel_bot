@@ -22,12 +22,16 @@
   let selectedFile = $state(null)
   let fileIntent = $state('')
 
+  // Output format (shared across both tabs)
+  let outputFormat = $state('none')
+
   function openModal() {
     triggerEl = document.activeElement
     urlInput = ''
     urlIntent = ''
     selectedFile = null
     fileIntent = ''
+    outputFormat = 'none'
     error = null
     loading = false
     activeTab = 'url'
@@ -70,7 +74,7 @@
     loading = true
     error = null
     try {
-      const result = await api.analyzeClaude(urlInput.trim(), { intent: urlIntent })
+      const result = await api.analyzeClaude(urlInput.trim(), { intent: urlIntent, output_format: outputFormat })
       closeModal()
       onSuccess()
     } catch (e) {
@@ -87,7 +91,7 @@
     loading = true
     error = null
     try {
-      const result = await api.uploadSource(selectedFile, { intent: fileIntent })
+      const result = await api.uploadSource(selectedFile, { intent: fileIntent, output_format: outputFormat })
       closeModal()
       onSuccess()
     } catch (e) {
@@ -190,6 +194,19 @@
               rows="3"
             ></textarea>
           </label>
+
+          <label class="field">
+            <span class="field-label">Output <span class="opt">(opsional)</span></span>
+            <select
+              class="inp"
+              bind:value={outputFormat}
+              disabled={loading}
+            >
+              <option value="none">None</option>
+              <option value="prompt_video">Prompt video</option>
+              <option value="prompt_json">Prompt JSON</option>
+            </select>
+          </label>
         </div>
       {/if}
 
@@ -223,6 +240,19 @@
               disabled={loading}
               rows="3"
             ></textarea>
+          </label>
+
+          <label class="field">
+            <span class="field-label">Output <span class="opt">(opsional)</span></span>
+            <select
+              class="inp"
+              bind:value={outputFormat}
+              disabled={loading}
+            >
+              <option value="none">None</option>
+              <option value="prompt_video">Prompt video</option>
+              <option value="prompt_json">Prompt JSON</option>
+            </select>
           </label>
         </div>
       {/if}

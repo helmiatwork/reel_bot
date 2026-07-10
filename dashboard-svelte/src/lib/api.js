@@ -91,11 +91,12 @@ export const api = {
   sourceFrames: (youtube_url) => getJSON('/sources/frames?youtube_url=' + encodeURIComponent(youtube_url)),
 
   // Upload source video file
-  uploadSource: async (file, { intent = '' } = {}) => {
+  uploadSource: async (file, { intent = '', output_format = 'none' } = {}) => {
     try {
       const fd = new FormData()
       fd.append('file', file)
       if (intent) fd.append('intent', intent)
+      if (output_format) fd.append('output_format', output_format)
       const r = await fetch('/sources/upload', { method: 'POST', body: fd })
       const data = await r.json().catch(() => ({}))
       if (!r.ok) throw new Error(data.detail || ('HTTP ' + r.status))
@@ -138,7 +139,7 @@ export const api = {
   generateScript: (topic, niche = '', top_n = 5) => postJSON('/generate/script', { topic, niche, top_n }),
   discoverCorpus: (niche, count = 5) => postJSON('/discover/corpus', { niche, count }),
   discoverCorpusStatus: (run_id) => getJSON('/discover/corpus/status/' + run_id),
-  analyzeClaude: (youtube_url, { intent = '', force = false } = {}) => postJSON('/analyze/claude', { youtube_url, intent, force }),
+  analyzeClaude: (youtube_url, { intent = '', force = false, output_format = 'none' } = {}) => postJSON('/analyze/claude', { youtube_url, intent, force, output_format }),
 
   // Scheduled posts
   scheduleList: () => getJSON('/schedule'),

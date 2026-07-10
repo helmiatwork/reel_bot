@@ -522,7 +522,7 @@ def dash_table(name: str, limit: int = 25, offset: int = 0):
     allowed = {
         "sources": {
             "select": "SELECT id, COALESCE(title,'-') title, COALESCE(niche,'-') niche, COALESCE(platform,'-') platform, "
-                      "COALESCE(channel,'-') channel, COALESCE(views_at_analysis,0) views, status, youtube_url "
+                      "COALESCE(channel,'-') channel, COALESCE(views_at_analysis,0) views, status, youtube_url, COALESCE(gen_prompt_format, '') gen_prompt_format "
                       "FROM sources ORDER BY id DESC",
             "table": "sources",
         },
@@ -3545,9 +3545,31 @@ Format JSON yang harus dikembalikan:
   "structure": "<string: struktur naratif/penyampaian konten video secara keseluruhan>",
   "retention": "<string: teknik yang digunakan untuk mempertahankan penonton sampai akhir>",
   "retention_score": <integer 1-10: seberapa kuat video ini menahan penonton sampai akhir; 1=lemah, 10=sangat kuat>,
-  "tags": ["<tag1>", "<tag2>", "<tag3>", ...]
+  "tags": ["<tag1>", "<tag2>", "<tag3>", ...]{gen_prompt_field}
 }}
 """
+
+# ponytail: gen_prompt sections added to the main prompt (single bridge call); if parse fails, we store raw string, not 500-error
+_GEN_PROMPT_VIDEO_ADDITION = """,
+  "gen_prompt": "<ONE concise text-to-video prompt (2-3 sentences) capturing the video's concept, cinematic style, subjects, and structure for a text-to-video model like Veo 3>"
+"""
+
+_GEN_PROMPT_JSON_ADDITION = """,
+  "gen_prompt_storyboard": {
+    "scene_order": [
+      {"scene": 1, "description": "<1 sentence scene description>", "camera_angle": "<e.g. wide, close-up, overhead>", "lighting": "<e.g. bright, dim, cinematic>", "objects": ["<obj1>", "<obj2>"], "style": "<visual style>"}
+    ]
+  }
+"""
+
+def _build_claude_prompt(intent: str, output_format: str = "none") -> str:
+    """Build the Claude analysis prompt with optional gen_prompt sections."""
+    gen_prompt_field = ""
+    if output_format == "prompt_video":
+        gen_prompt_field = _GEN_PROMPT_VIDEO_ADDITION
+    elif output_format == "prompt_json":
+        gen_prompt_field = _GEN_PROMPT_JSON_ADDITION
+    return _CLAUDE_RE_PROMPT_TEMPLATE.format(intent=intent, gen_prompt_field=gen_prompt_field)
 
 _CLAUDE_CLIPPER_PROMPT_TEMPLATE = """\
 Anda adalah asisten ahli dalam mengidentifikasi momen-momen viral dari video panjang untuk diubah menjadi clip short-form.
@@ -4299,6 +4321,8 @@ def _sources_init_db():
             cur.execute("""CREATE INDEX IF NOT EXISTS sources_created_at_idx
                 ON sources (created_at DESC)""")
             cur.execute("ALTER TABLE sources ADD COLUMN IF NOT EXISTS niche TEXT")
+            cur.execute("ALTER TABLE sources ADD COLUMN IF NOT EXISTS gen_prompt TEXT")
+            cur.execute("ALTER TABLE sources ADD COLUMN IF NOT EXISTS gen_prompt_format TEXT")
         conn.commit()
     except Exception as e:
         print(f"[sources] init db error: {e}")
@@ -4812,6 +4836,7 @@ class AnalyzeClaudeRequest(BaseModel):
     intent: Optional[str] = None
     model: Optional[str] = None
     force: bool = False
+    output_format: str = "none"
 
 
 @app.post("/analyze/claude")
@@ -4820,13 +4845,18 @@ def analyze_claude(req: AnalyzeClaudeRequest):
     Extract keyframes from a YouTube video, send them to the host claude bridge
     for vision-based analysis, and persist the result to video_analysis table.
 
-    Body: {youtube_url, intent?: str, model?: str}
-    Returns: {youtube_url, hook, structure, retention, tags, model, cost_usd}
+    Body: {youtube_url, intent?: str, model?: str, output_format?: 'none'|'prompt_video'|'prompt_json'}
+    Returns: {youtube_url, hook, structure, retention, tags, model, cost_usd, gen_prompt?, gen_prompt_format?}
     """
     import uuid
     import re
 
     _validate_source_url(req.youtube_url)
+
+    # Validate output_format
+    output_format = (req.output_format or "none").lower()
+    if output_format not in ("none", "prompt_video", "prompt_json"):
+        raise HTTPException(status_code=400, detail=f"Invalid output_format '{output_format}'. Must be one of: none, prompt_video, prompt_json")
 
     model = req.model or "claude-sonnet-4-6"
     intent = (req.intent or "").strip()
@@ -4917,8 +4947,8 @@ def analyze_claude(req: AnalyzeClaudeRequest):
         # Non-fatal: frame persistence failure should not break analyze
         print(f"[analyze/claude] frame persistence failed (non-fatal): {exc}")
 
-    # Step 2: Build prompt — intent as DATA, wrapped safely
-    prompt = _CLAUDE_RE_PROMPT_TEMPLATE.format(intent=safe_intent)
+    # Step 2: Build prompt — intent as DATA, wrapped safely; include gen_prompt sections if output_format requests it
+    prompt = _build_claude_prompt(safe_intent, output_format)
 
     # Frame basenames only — the bridge resolves them under its ANALYZE_FRAME_DIR
     frame_names = [Path(p).name for p in frame_paths]
@@ -4991,6 +5021,26 @@ def analyze_claude(req: AnalyzeClaudeRequest):
     if not isinstance(tags, list):
         tags = []
 
+    # Extract gen_prompt based on output_format (non-fatal if missing or unparseable)
+    gen_prompt = None
+    gen_prompt_format = None
+    if output_format == "prompt_video":
+        gen_prompt = parsed.get("gen_prompt", "")
+        gen_prompt_format = "prompt_video" if gen_prompt else None
+    elif output_format == "prompt_json":
+        # For JSON format, extract the storyboard and re-serialize it
+        storyboard = parsed.get("gen_prompt_storyboard", {})
+        if storyboard and isinstance(storyboard, dict):
+            try:
+                gen_prompt = json.dumps(storyboard)
+                gen_prompt_format = "prompt_json"
+            except Exception:
+                gen_prompt = None
+                gen_prompt_format = None
+        else:
+            gen_prompt = None
+            gen_prompt_format = None
+
     # Validity gate: only CACHE a real analysis. If claude refused / got no usable
     # frames (empty or refusal text), do NOT persist — so the next attempt retries
     # instead of returning a cached failure.
@@ -5040,6 +5090,25 @@ def analyze_claude(req: AnalyzeClaudeRequest):
     _save_creator(req.youtube_url)
     _save_source(req.youtube_url)
 
+    # Step 6b: Persist gen_prompt to sources row if present (non-fatal)
+    if gen_prompt:
+        try:
+            conn = _db_conn()
+            if conn:
+                try:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            "UPDATE sources SET gen_prompt=%s, gen_prompt_format=%s WHERE youtube_url=%s",
+                            (gen_prompt, gen_prompt_format, req.youtube_url)
+                        )
+                    conn.commit()
+                except Exception as exc:
+                    print(f"[analyze/claude] UPDATE gen_prompt failed (non-fatal): {exc}")
+                finally:
+                    conn.close()
+        except Exception as exc:
+            print(f"[analyze/claude] gen_prompt persistence error (non-fatal): {exc}")
+
     # Build steps trace for fresh analysis path (niche inference included)
     try:
         video_id_for_steps = _extract_video_id_from_youtube_url(req.youtube_url)
@@ -5047,7 +5116,7 @@ def analyze_claude(req: AnalyzeClaudeRequest):
         video_id_for_steps = ""
     steps = _build_analyze_steps(cached=False, video_id=video_id_for_steps, model=model, niche_done=True)
 
-    return _json({
+    result = {
         "youtube_url": req.youtube_url,
         "summary": summary,
         "detail": detail,
@@ -5060,7 +5129,11 @@ def analyze_claude(req: AnalyzeClaudeRequest):
         "cost_usd": cost_usd,
         "cached": False,
         "steps": steps,
-    })
+    }
+    if gen_prompt:
+        result["gen_prompt"] = gen_prompt
+        result["gen_prompt_format"] = gen_prompt_format
+    return _json(result)
 
 
 @app.get("/sources/frames")
@@ -5237,7 +5310,7 @@ def get_source_analysis(source_id: int):
             # Join sources → video_analysis by youtube_url, get latest analysis
             cur.execute("""
                 SELECT va.hook, va.structure, va.retention, va.retention_score,
-                       va.content_summary, va.content_detail, va.tags
+                       va.content_summary, va.content_detail, va.tags, s.gen_prompt, s.gen_prompt_format
                 FROM sources s
                 LEFT JOIN video_analysis va ON s.youtube_url = va.youtube_url
                 WHERE s.id = %s
@@ -5254,7 +5327,7 @@ def get_source_analysis(source_id: int):
                     "summary": "", "detail": "", "tags": []
                 })
 
-            hook, structure, retention, retention_score, summary, detail, tags = row
+            hook, structure, retention, retention_score, summary, detail, tags, gen_prompt, gen_prompt_format = row
 
             # Parse tags JSON (psycopg may return it pre-parsed or as string)
             parsed_tags = []
@@ -5269,7 +5342,7 @@ def get_source_analysis(source_id: int):
                 elif isinstance(tags, list):
                     parsed_tags = tags
 
-            return _json({
+            resp = {
                 "hook": hook or "",
                 "structure": structure or "",
                 "retention": retention or "",
@@ -5277,7 +5350,11 @@ def get_source_analysis(source_id: int):
                 "summary": summary or "",
                 "detail": detail or "",
                 "tags": parsed_tags
-            })
+            }
+            if gen_prompt:
+                resp["gen_prompt"] = gen_prompt
+                resp["gen_prompt_format"] = gen_prompt_format
+            return _json(resp)
     except Exception as e:
         print(f"[get_source_analysis] error for source_id {source_id}: {e}")
         return _json({
@@ -5666,6 +5743,7 @@ async def import_song(
 async def upload_source(
     file: UploadFile = File(...),
     intent: str = Form(default=""),
+    output_format: str = Form(default="none"),
     request: Request = None,
 ):
     """
@@ -5676,6 +5754,11 @@ async def upload_source(
     """
     video_path = None
     import re
+
+    # Validate output_format
+    output_format = (output_format or "none").lower()
+    if output_format not in ("none", "prompt_video", "prompt_json"):
+        raise HTTPException(status_code=400, detail=f"Invalid output_format '{output_format}'. Must be one of: none, prompt_video, prompt_json")
 
     original_name = file.filename or ""
     ext = Path(original_name).suffix.lower()
@@ -5741,7 +5824,7 @@ async def upload_source(
             print(f"[sources/upload] frame persistence failed (non-fatal): {exc}")
 
         # Build prompt and call claude bridge
-        prompt = _CLAUDE_RE_PROMPT_TEMPLATE.format(intent=safe_intent)
+        prompt = _build_claude_prompt(safe_intent, output_format)
         frame_names = [Path(p).name for p in frame_paths]
         model = "claude-sonnet-4-6"
 
@@ -5806,6 +5889,26 @@ async def upload_source(
         if not isinstance(tags, list):
             tags = []
 
+        # Extract gen_prompt based on output_format (non-fatal if missing or unparseable)
+        gen_prompt = None
+        gen_prompt_format = None
+        if output_format == "prompt_video":
+            gen_prompt = parsed.get("gen_prompt", "")
+            gen_prompt_format = "prompt_video" if gen_prompt else None
+        elif output_format == "prompt_json":
+            # For JSON format, extract the storyboard and re-serialize it
+            storyboard = parsed.get("gen_prompt_storyboard", {})
+            if storyboard and isinstance(storyboard, dict):
+                try:
+                    gen_prompt = json.dumps(storyboard)
+                    gen_prompt_format = "prompt_json"
+                except Exception:
+                    gen_prompt = None
+                    gen_prompt_format = None
+            else:
+                gen_prompt = None
+                gen_prompt_format = None
+
         # Validity gate: only persist if analysis is valid
         _blob = f"{hook} {structure} {retention}".lower()
         _refusal = any(p in _blob for p in (
@@ -5863,6 +5966,13 @@ async def upload_source(
                             detail or None,
                         ),
                     )
+
+                    # Persist gen_prompt to sources row if present
+                    if gen_prompt:
+                        cur.execute(
+                            "UPDATE sources SET gen_prompt=%s, gen_prompt_format=%s WHERE youtube_url=%s",
+                            (gen_prompt, gen_prompt_format, source_key)
+                        )
                 conn.commit()
             except Exception as exc:
                 print(f"[sources/upload] DB insert failed: {exc}")
@@ -5884,7 +5994,7 @@ async def upload_source(
         print(f"[sources/upload] unexpected error: {exc}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-    return _json({
+    result = {
         "source_id": source_id,
         "youtube_url": source_key,
         "summary": summary,
@@ -5896,7 +6006,11 @@ async def upload_source(
         "tags": tags,
         "model": model,
         "cost_usd": cost_usd,
-    })
+    }
+    if gen_prompt:
+        result["gen_prompt"] = gen_prompt
+        result["gen_prompt_format"] = gen_prompt_format
+    return _json(result)
 
 
 @app.post("/clips/find-claude")

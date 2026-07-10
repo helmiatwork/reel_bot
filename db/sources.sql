@@ -19,3 +19,5 @@ CREATE TABLE IF NOT EXISTS sources (
 
 CREATE INDEX IF NOT EXISTS sources_created_at_idx ON sources (created_at DESC);
 ALTER TABLE sources ADD COLUMN IF NOT EXISTS niche TEXT;
+ALTER TABLE sources ADD COLUMN IF NOT EXISTS gen_prompt TEXT;
+ALTER TABLE sources ADD COLUMN IF NOT EXISTS gen_prompt_format TEXT;
