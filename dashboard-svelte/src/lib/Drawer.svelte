@@ -70,7 +70,7 @@
     reanalyzeLoading = true
     reanalyzeError = ''
     reanalyzeDone = false
-    const r = await api.analyzeClaude(s.youtube_url, true)
+    const r = await api.analyzeClaude(s.youtube_url, { force: true })
     reanalyzeLoading = false
     if (!r || r.error || r.detail) {
       reanalyzeError = r?.error || r?.detail || 'Re-analyze failed.'

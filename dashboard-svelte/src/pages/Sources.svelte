@@ -4,6 +4,7 @@
   import { SOURCE_DETAIL } from '../lib/data.js'
   import { openDrawer } from '../lib/stores.js'
   import Pagination from '../lib/Pagination.svelte'
+  import SourceUploadModal from '../lib/SourceUploadModal.svelte'
 
   let rows = $state([])
   let total = $state(0)
@@ -11,6 +12,7 @@
   const limit = 25
   let q = $state('')
   let niche = $state('')
+  let modalOpen = $state(false)
 
   const PLATFORM_ICON = {
     youtube: 'i-yt', tiktok: 'i-tt', instagram: 'i-ig', xiaohongshu: 'i-xhs'
@@ -72,7 +74,13 @@
 </script>
 
 <div class="top">
-  <div><h1>Sources</h1><div class="sub">Library riset — klik baris buat detail</div></div>
+  <div class="top-row">
+    <div><h1>Sources</h1><div class="sub">Library riset — klik baris buat detail</div></div>
+    <button class="btn-primary" onclick={() => modalOpen = true}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>
+      Tambah source
+    </button>
+  </div>
   <div class="pill">{total || rows.length} source</div>
 </div>
 
@@ -118,3 +126,34 @@
 </div>
 
 <Pagination {offset} {limit} {total} onprev={prev} onnext={next} />
+
+<SourceUploadModal bind:isOpen={modalOpen} onSuccess={() => { modalOpen = false; load() }} />
+
+<style>
+  .top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .btn-primary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-primary:hover {
+    opacity: 0.9;
+  }
+</style>
