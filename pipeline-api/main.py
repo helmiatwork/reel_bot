@@ -65,6 +65,10 @@ def startup_event():
         _prep_bundles_init_db()
     except Exception as e:
         print(f"[startup] prep_bundles db init failed (non-fatal): {e}")
+    try:
+        _studio_init_db()
+    except Exception as e:
+        print(f"[startup] studio db init failed (non-fatal): {e}")
 
 # ── SSRF guard: blocked networks (module-level constant) ────────────────────
 # Extra ranges beyond ipaddress.ip_address check (0.0.0.0/8, CGNAT, etc)
@@ -7637,3 +7641,340 @@ def prep_zip(source_id: int):
         media_type="application/zip",
         headers={"Content-Disposition": f"attachment; filename=prep_{source_id}.zip"},
     )
+
+
+# ── Studio — batch script generation + Kanban content pipeline ─────────────────
+
+_VALID_STAGES = frozenset({"idea", "script", "prep", "scheduled", "posted"})
+
+
+def _studio_init_db():
+    """Create content_items table at startup (non-fatal on failure)."""
+    conn = _db_conn()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""CREATE TABLE IF NOT EXISTS content_items (
+                id                BIGSERIAL PRIMARY KEY,
+                title             TEXT NOT NULL,
+                niche             TEXT,
+                topic             TEXT,
+                script            TEXT,
+                based_on          JSONB,
+                source_id         BIGINT,
+                scheduled_post_id BIGINT,
+                stage             TEXT NOT NULL DEFAULT 'script',
+                created_at        TIMESTAMPTZ DEFAULT now(),
+                updated_at        TIMESTAMPTZ DEFAULT now()
+            )""")
+        conn.commit()
+    except Exception as e:
+        print(f"[studio] init db error: {e}")
+    finally:
+        conn.close()
+
+
+def _studio_row(row, cols) -> dict:
+    """Serialize a content_items DB row to a safe dict (datetimes → ISO, JSONB passthrough)."""
+    import datetime as _dt
+    d = dict(zip(cols, row))
+    for k in ("created_at", "updated_at"):
+        v = d.get(k)
+        if isinstance(v, (_dt.datetime, _dt.date)):
+            d[k] = v.isoformat()
+    return d
+
+
+class BatchGenerateRequest(BaseModel):
+    niche: str
+    topic: Optional[str] = None
+    count: int = 10
+
+
+class StudioItemCreate(BaseModel):
+    title: str
+    niche: Optional[str] = None
+    stage: str = "idea"
+    topic: Optional[str] = None
+    script: Optional[str] = None
+
+
+class StudioItemUpdate(BaseModel):
+    stage: Optional[str] = None
+    title: Optional[str] = None
+    script: Optional[str] = None
+    source_id: Optional[int] = None
+    scheduled_post_id: Optional[int] = None
+
+
+@app.post("/generate/batch")
+def generate_batch(req: BatchGenerateRequest, bg: BackgroundTasks):
+    """
+    Batch-generate `count` scripts for `niche` and persist each as a content_item.
+    Background job — returns {status, run_id} immediately.
+    Poll GET /generate/batch/status/{run_id} for progress.
+    """
+    import uuid
+    if not req.niche.strip():
+        raise HTTPException(status_code=400, detail="niche is required")
+    n = max(1, min(req.count, 20))
+
+    run_id = str(uuid.uuid4())
+    _save_run(run_id, {"status": "running", "done": 0, "total": n, "created_ids": []})
+
+    def _job():
+        created_ids = []
+        try:
+            # Fetch winners once; derive per-script topics from them when topic omitted
+            winners = _fetch_corpus_winners(req.niche, req.topic or req.niche, top_n=min(n, 20))
+            if not winners:
+                _save_run(run_id, {
+                    "status": "error",
+                    "done": 0, "total": n, "created_ids": [],
+                    "error": "no analyzed winners in corpus — analyze some videos first",
+                })
+                return
+
+            import httpx as _httpx
+            bridge_timeout = _httpx.Timeout(connect=10.0, read=180.0, write=10.0, pool=5.0)
+
+            for i in range(n):
+                # Derive topic: explicit > winner content_summary > niche
+                if req.topic:
+                    topic_i = req.topic
+                else:
+                    w = winners[i % len(winners)]
+                    topic_i = (w.get("content_summary") or req.niche)[:80]
+
+                prompt = _build_script_prompt(topic_i, winners)
+                try:
+                    resp = _httpx.post(
+                        f"{CLAUDE_BRIDGE_URL}/run",
+                        json={"prompt": prompt, "frames": [], "model": "claude-sonnet-4-6"},
+                        timeout=bridge_timeout,
+                    )
+                    data = resp.json()
+                except Exception as e:
+                    print(f"[generate_batch] bridge error on item {i}: {e}")
+                    _save_run(run_id, {
+                        "status": "running", "done": i, "total": n,
+                        "created_ids": created_ids,
+                    })
+                    continue
+
+                if not data.get("ok"):
+                    print(f"[generate_batch] bridge returned not-ok on item {i}: {data.get('error')}")
+                    _save_run(run_id, {
+                        "status": "running", "done": i, "total": n,
+                        "created_ids": created_ids,
+                    })
+                    continue
+
+                script_text = data.get("result", "")
+                based_on = [w.get("youtube_url") for w in winners]
+                # Derive a short title from the topic (first 80 chars, trim whitespace)
+                title = topic_i[:80].strip() or req.niche
+
+                conn = _db_conn()
+                if conn:
+                    try:
+                        with conn.cursor() as cur:
+                            cur.execute(
+                                """INSERT INTO content_items (title, niche, topic, script, based_on, stage)
+                                   VALUES (%s, %s, %s, %s, %s::jsonb, 'script')
+                                   RETURNING id""",
+                                (title, req.niche, topic_i, script_text, json.dumps(based_on)),
+                            )
+                            row = cur.fetchone()
+                            if row:
+                                created_ids.append(row[0])
+                        conn.commit()
+                    except Exception as e:
+                        print(f"[generate_batch] db insert error on item {i}: {e}")
+                    finally:
+                        conn.close()
+
+                _log_api_usage(
+                    agent="generate_batch",
+                    model=data.get("model", "claude-sonnet-4-6"),
+                    raw_usage=data.get("raw_usage", {}),
+                    cost_usd=data.get("cost_usd"),
+                )
+
+                _save_run(run_id, {
+                    "status": "running",
+                    "done": i + 1,
+                    "total": n,
+                    "created_ids": created_ids,
+                })
+
+            _save_run(run_id, {
+                "status": "done",
+                "done": n,
+                "total": n,
+                "created_ids": created_ids,
+            })
+        except Exception as e:
+            run = _load_run(run_id) or {}
+            run.update({"status": "error", "error": str(e)[:500]})
+            _save_run(run_id, run)
+
+    bg.add_task(_job)
+    return {"status": "started", "run_id": run_id}
+
+
+@app.get("/generate/batch/status/{run_id}")
+def generate_batch_status(run_id: str):
+    """Poll batch generation progress."""
+    run = _load_run(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="run not found")
+    return run
+
+
+@app.get("/studio/board")
+def studio_board():
+    """All content_items grouped by stage. Never 500 — returns empty groups on DB error."""
+    groups: dict = {s: [] for s in ("idea", "script", "prep", "scheduled", "posted")}
+    try:
+        conn = _db_conn()
+        if not conn:
+            return _json(groups)
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT id, title, niche, topic, stage, source_id, scheduled_post_id, created_at,
+                           LEFT(script, 200) AS script_preview
+                    FROM content_items
+                    ORDER BY id DESC
+                """)
+                cols = [c.name for c in cur.description]
+                for row in cur.fetchall():
+                    item = _studio_row(row, cols)
+                    stage = item.get("stage", "script")
+                    if stage in groups:
+                        groups[stage].append(item)
+        finally:
+            conn.close()
+    except Exception as e:
+        print(f"[studio] board error: {e}")
+    return _json(groups)
+
+
+@app.get("/studio/{item_id}")
+def studio_get(item_id: int):
+    """Full content_item including complete script."""
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=503, detail="db unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM content_items WHERE id = %s", (item_id,))
+            cols = [c.name for c in cur.description]
+            row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="item not found")
+        return _json(_studio_row(row, cols))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+
+
+@app.post("/studio")
+def studio_create(body: StudioItemCreate):
+    """Manually add a content_item (e.g. an idea card)."""
+    if body.stage not in _VALID_STAGES:
+        raise HTTPException(status_code=400, detail=f"stage must be one of {sorted(_VALID_STAGES)}")
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=503, detail="db unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO content_items (title, niche, topic, script, stage)
+                   VALUES (%s, %s, %s, %s, %s)
+                   RETURNING *""",
+                (body.title, body.niche, body.topic, body.script, body.stage),
+            )
+            cols = [c.name for c in cur.description]
+            row = cur.fetchone()
+            conn.commit()
+        return _json(_studio_row(row, cols))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+
+
+@app.patch("/studio/{item_id}")
+def studio_update(item_id: int, body: StudioItemUpdate):
+    """Update stage, title, script, source_id, or scheduled_post_id."""
+    if body.stage is not None and body.stage not in _VALID_STAGES:
+        raise HTTPException(status_code=400, detail=f"stage must be one of {sorted(_VALID_STAGES)}")
+
+    sets, vals = [], []
+    if body.stage is not None:
+        sets.append("stage = %s"); vals.append(body.stage)
+    if body.title is not None:
+        sets.append("title = %s"); vals.append(body.title)
+    if body.script is not None:
+        sets.append("script = %s"); vals.append(body.script)
+    if body.source_id is not None:
+        sets.append("source_id = %s"); vals.append(body.source_id)
+    if body.scheduled_post_id is not None:
+        sets.append("scheduled_post_id = %s"); vals.append(body.scheduled_post_id)
+    if not sets:
+        raise HTTPException(status_code=400, detail="no fields to update")
+
+    sets.append("updated_at = now()")
+    vals.append(item_id)
+
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=503, detail="db unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"UPDATE content_items SET {', '.join(sets)} WHERE id = %s RETURNING *",
+                vals,
+            )
+            cols = [c.name for c in cur.description]
+            row = cur.fetchone()
+            conn.commit()
+        if not row:
+            raise HTTPException(status_code=404, detail="item not found")
+        return _json(_studio_row(row, cols))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+
+
+@app.delete("/studio/{item_id}")
+def studio_delete(item_id: int):
+    """Remove a content_item."""
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=503, detail="db unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM content_items WHERE id = %s RETURNING id", (item_id,))
+            row = cur.fetchone()
+            conn.commit()
+        if not row:
+            raise HTTPException(status_code=404, detail="item not found")
+        return {"status": "ok", "deleted_id": item_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
