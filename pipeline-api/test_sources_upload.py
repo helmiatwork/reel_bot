@@ -462,3 +462,41 @@ class TestSourcesUploadP1Fixes:
                 assert len(uploaded_files) == 0, f"Uploaded file not cleaned up: {uploaded_files}"
             finally:
                 m._REPO_ROOT = orig_repo_root
+
+    def test_file_cleanup_on_frame_extraction_failure(self, client_with_db):
+        """Upload file is removed from data/sources/uploaded/ when frame extraction fails."""
+        import main as m
+        import tempfile
+        from pathlib import Path as PathlibPath
+
+        tc, _, _ = client_with_db
+
+        # Use a real temp dir to verify file cleanup
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Patch _REPO_ROOT to use temp dir
+            orig_repo_root = m._REPO_ROOT
+            m._REPO_ROOT = PathlibPath(tmpdir)
+
+            try:
+                # Create upload dir
+                upload_dir = PathlibPath(tmpdir) / "data" / "sources" / "uploaded"
+                upload_dir.mkdir(parents=True, exist_ok=True)
+
+                # Make frame extraction fail
+                with patch.object(m, "_extract_frames_from_file", side_effect=RuntimeError("ffmpeg failed")), \
+                     patch.object(m, "_REPO_ROOT", PathlibPath(tmpdir)):
+                    r = tc.post(
+                        "/sources/upload",
+                        data={},
+                        files={"file": ("video.mp4", BytesIO(_make_valid_mp4_content()), "video/mp4")},
+                    )
+
+                # Verify 502 response
+                assert r.status_code == 502
+                assert "Frame extraction failed" in r.json()["detail"]
+
+                # Verify file was cleaned up (no files in upload_dir)
+                uploaded_files = list(upload_dir.glob("*"))
+                assert len(uploaded_files) == 0, f"Uploaded file not cleaned up: {uploaded_files}"
+            finally:
+                m._REPO_ROOT = orig_repo_root

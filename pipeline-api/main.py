@@ -15,7 +15,7 @@ import zipfile
 import asyncio
 from pathlib import Path
 from urllib.parse import urlparse
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Header, Depends, UploadFile, Form, File
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Header, Depends, UploadFile, Form, File, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -5666,7 +5666,7 @@ async def import_song(
 async def upload_source(
     file: UploadFile = File(...),
     intent: str = Form(default=""),
-    request = None,
+    request: Request = None,
 ):
     """
     Upload a video file and analyze it like /analyze/claude does.
@@ -5674,7 +5674,7 @@ async def upload_source(
     Saves to data/sources/uploaded/<uuid>.<ext>, extracts frames, runs Claude vision analysis.
     Returns the created source id + analysis summary.
     """
-    from fastapi import Request
+    video_path = None
     import re
 
     original_name = file.filename or ""
@@ -5875,9 +5875,12 @@ async def upload_source(
             video_path.unlink(missing_ok=True)
             raise HTTPException(status_code=500, detail="Failed to persist source to DB")
     except HTTPException:
+        if video_path is not None:
+            video_path.unlink(missing_ok=True)
         raise
     except Exception as exc:
-        video_path.unlink(missing_ok=True)
+        if video_path is not None:
+            video_path.unlink(missing_ok=True)
         print(f"[sources/upload] unexpected error: {exc}")
         raise HTTPException(status_code=500, detail="Internal server error")
 

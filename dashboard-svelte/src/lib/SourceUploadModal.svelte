@@ -3,9 +3,8 @@
   import { cubicOut } from 'svelte/easing'
   import { api } from './api.js'
 
-  // Props
-  export let isOpen = false
-  export let onSuccess = () => {}
+  // Props (runes mode — isOpen is bound by parent)
+  let { isOpen = $bindable(false), onSuccess = () => {} } = $props()
 
   // Modal state
   let activeTab = $state('url')
