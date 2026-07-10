@@ -54,10 +54,12 @@
   }
 
   function autoScrollConsole() {
-    if (consoleEl) {
-      setTimeout(() => {
-        consoleEl.scrollTop = consoleEl.scrollHeight
-      }, 0)
+    if (!consoleEl) return
+    // Only auto-scroll if the user is already pinned near the bottom — don't yank
+    // them back down if they scrolled up to read an earlier log line.
+    const atBottom = consoleEl.scrollTop + consoleEl.clientHeight >= consoleEl.scrollHeight - 20
+    if (atBottom) {
+      setTimeout(() => { consoleEl.scrollTop = consoleEl.scrollHeight }, 0)
     }
   }
 
@@ -79,6 +81,11 @@
       }
     } catch (e) {
       console.error('[poll] error:', e)
+      // Network/backend failure mid-poll: stop polling and surface it instead of
+      // spinning forever on a frozen console.
+      if (pollInterval) clearInterval(pollInterval)
+      error = 'Koneksi terputus. Coba tutup dan buka kembali.'
+      loading = false
     }
   }
 

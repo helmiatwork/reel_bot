@@ -1438,6 +1438,10 @@ class ResearchRequest(BaseModel):
     topic: str = ""            # optional topic context for script generation
 
 
+# run_id is a server-generated uuid4; reject anything else so a URL path param
+# (e.g. "../../secret") can never traverse out of research_runs/.
+_SAFE_RUN_ID = _re.compile(r'^[a-f0-9\-]{8,64}$')
+
 def _runs_path(run_id: str) -> Path:
     # P1b: default to repo-relative output/ instead of Docker /output/
     return _REPO_ROOT / "output" / "research_runs" / f"{run_id}.json"
@@ -1448,6 +1452,8 @@ def _save_run(run_id: str, data: dict):
     p.write_text(json.dumps(data))
 
 def _load_run(run_id: str):
+    if not _SAFE_RUN_ID.match(run_id or ""):
+        return None
     p = _runs_path(run_id)
     return json.loads(p.read_text()) if p.exists() else None
 
@@ -6185,6 +6191,7 @@ async def upload_source_async(
 
     def _job():
         """Background job for file upload analysis."""
+        success = False
         try:
             # Extract frames
             _log_run(run_id, "🎞 Ekstrak frame…", start_time)
@@ -6428,12 +6435,17 @@ async def upload_source_async(
             run["status"] = "done"
             run["result"] = result
             _save_run(run_id, run)
+            success = True
 
         except Exception as e:
             run = _load_run(run_id) or {"status": "running", "log": []}
             run["status"] = "error"
             run["error"] = str(e)[:300]
             _save_run(run_id, run)
+        finally:
+            # Orphan cleanup: keep the uploaded file only on success (it's the source asset)
+            if not success and video_path and video_path.exists():
+                video_path.unlink(missing_ok=True)
 
     if bg:
         bg.add_task(_job)

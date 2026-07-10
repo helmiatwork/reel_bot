@@ -86,6 +86,16 @@ def test_analyze_claude_status_404():
     assert response.status_code == 404
 
 
+def test_analyze_status_rejects_path_traversal():
+    """A traversal run_id must not read files outside research_runs/ (returns 404, no leak)."""
+    response = client.get("/analyze/claude/status/..%2F..%2F..%2Fetc%2Fpasswd")
+    assert response.status_code in (400, 404)
+    # and a bare non-uuid token is rejected by the safe-id guard
+    import main as m
+    assert m._load_run("../../secret") is None
+    assert m._load_run("not a uuid!") is None
+
+
 def test_log_run_appends_messages():
     """_log_run appends timestamped log lines."""
     run_id = str(uuid.uuid4())
