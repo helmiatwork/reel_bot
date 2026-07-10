@@ -7,6 +7,8 @@ missing fields, totals, video_count, series ordering.
 Run:
     cd pipeline-api && pytest tests/test_performance.py -v
 """
+import inspect
+import re
 import sys
 import datetime as dt
 from pathlib import Path
@@ -15,7 +17,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from main import _build_performance_view  # noqa: E402
+from main import _build_performance_view, _performance_init_db, _collect_performance_snapshots  # noqa: E402
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -330,3 +332,55 @@ class TestBuildPerformanceViewAccounts:
         assert len(r["accounts"]) == 4
         tanpa = next(a for a in r["accounts"] if a["account_id"] is None)
         assert tanpa["handle"] == "Tanpa akun"
+
+
+# ── DDL / ON CONFLICT consistency tests ──────────────────────────────────────
+# These check that the index expression and the upsert arbiter match exactly,
+# and that the old broken form (bare captured_at::date) is gone everywhere.
+
+_IMMUTABLE_EXPR = "(captured_at AT TIME ZONE 'UTC')::date"
+_BROKEN_EXPR = re.compile(r"\(captured_at::date\)")  # the IMMUTABLE-violating form
+
+
+def _source(fn) -> str:
+    return inspect.getsource(fn)
+
+
+class TestPerformanceDDLConsistency:
+
+    def test_init_db_uses_immutable_index_expr(self):
+        src = _source(_performance_init_db)
+        assert _IMMUTABLE_EXPR in src, (
+            "_performance_init_db must use the IMMUTABLE expression "
+            f"'{_IMMUTABLE_EXPR}' for the unique index"
+        )
+
+    def test_init_db_has_no_broken_timestamptz_cast(self):
+        src = _source(_performance_init_db)
+        assert not _BROKEN_EXPR.search(src), (
+            "_performance_init_db still contains bare (captured_at::date) "
+            "which is not IMMUTABLE and will fail on Postgres"
+        )
+
+    def test_collector_on_conflict_uses_immutable_expr(self):
+        src = _source(_collect_performance_snapshots)
+        assert _IMMUTABLE_EXPR in src, (
+            "_collect_performance_snapshots ON CONFLICT must use "
+            f"'{_IMMUTABLE_EXPR}' to match the unique index arbiter"
+        )
+
+    def test_collector_has_no_broken_timestamptz_cast(self):
+        src = _source(_collect_performance_snapshots)
+        assert not _BROKEN_EXPR.search(src), (
+            "_collect_performance_snapshots still contains bare (captured_at::date) "
+            "which won't match the fixed index and will error on upsert"
+        )
+
+    def test_index_expr_and_on_conflict_are_identical(self):
+        """The exact expression in the CREATE INDEX and the ON CONFLICT must match."""
+        init_src = _source(_performance_init_db)
+        coll_src = _source(_collect_performance_snapshots)
+        assert _IMMUTABLE_EXPR in init_src and _IMMUTABLE_EXPR in coll_src, (
+            "Both _performance_init_db and _collect_performance_snapshots must "
+            f"contain the identical expression: '{_IMMUTABLE_EXPR}'"
+        )
