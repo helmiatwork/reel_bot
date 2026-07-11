@@ -4351,12 +4351,12 @@ def _extract_keyframes(youtube_url: str, out_dir: str, n: int = 20) -> list:
 def _extract_frames_timed(video_path: str, out_dir: str, n: int = 20) -> list:
     """
     Extract keyframes with timestamps from a local video file using scene detection.
+    Captures timestamps AT EXTRACTION TIME via ffmpeg showinfo filter.
     Falls back to evenly-spaced extraction if scene detection yields < 6 frames.
     Caps frames at _SCENE_FRAMES_CAP to keep analysis manageable.
 
     Returns: list of dicts [{"name": "frame_000.jpg", "path": "/abs/path", "t": 1.5}, ...]
     where t is timestamp in seconds (rounded to 0.1s).
-    On timestamp extraction failure, timestamps are evenly interpolated across video duration.
     """
     import subprocess
     import re
@@ -4380,18 +4380,18 @@ def _extract_frames_timed(video_path: str, out_dir: str, n: int = 20) -> list:
         except Exception:
             pass
 
-    # Try scene detection first
+    # Try scene detection first with showinfo to capture pts_time at extraction time
     try:
         ff = subprocess.run(
             [
                 "ffmpeg", "-i", video_path,
-                "-vf", f"select='gt(scene,{_SCENE_DETECT_THRESHOLD})',scale=-1:480",
+                "-vf", f"select='gt(scene,{_SCENE_DETECT_THRESHOLD})',showinfo,scale=-1:480",
                 "-vsync", "vfr",
                 "-frames:v", str(_SCENE_FRAMES_CAP),
                 "-q:v", "3",
                 "-y", f"{out_dir}/frame_%03d.jpg",
             ],
-            capture_output=True, timeout=60,
+            capture_output=True, text=True, timeout=60,
         )
 
         if ff.returncode == 0:
@@ -4399,8 +4399,21 @@ def _extract_frames_timed(video_path: str, out_dir: str, n: int = 20) -> list:
             frame_names = [str(f.name) for f in frame_files]
 
             if len(frame_names) >= _SCENE_FRAMES_MIN_FALLBACK:
-                # Extract timestamps for detected frames via ffprobe
-                frame_timestamps = _extract_frame_timestamps(video_path, out_dir, frame_names, duration_s)
+                # Parse pts_time from ffmpeg stderr (showinfo filter outputs "pts_time:<N>")
+                frame_timestamps = {}
+                pts_times = re.findall(r'pts_time=([\d.]+)', ff.stderr)
+                for i, name in enumerate(frame_names):
+                    if i < len(pts_times):
+                        try:
+                            t = float(pts_times[i])
+                            frame_timestamps[name] = round(t, 1)
+                        except (ValueError, IndexError):
+                            # Fallback to even interpolation for this frame
+                            frame_timestamps[name] = round((i / max(len(frame_names) - 1, 1)) * duration_s, 1)
+                    else:
+                        # Interpolate if we didn't capture enough pts_time values
+                        frame_timestamps[name] = round((i / max(len(frame_names) - 1, 1)) * duration_s, 1)
+
                 for name in frame_names:
                     path = str(Path(out_dir) / name)
                     t = frame_timestamps.get(name, 0.0)
@@ -4440,58 +4453,11 @@ def _extract_frames_timed(video_path: str, out_dir: str, n: int = 20) -> list:
     return frame_dicts
 
 
-def _extract_frame_timestamps(video_path: str, out_dir: str, frame_names: list, duration_s: float) -> dict:
-    """
-    Extract PTS timestamps for extracted frames using ffprobe.
-    Returns dict {frame_name: timestamp_in_seconds}.
-    Falls back to even interpolation if extraction fails.
-    """
-    import subprocess
-    import re
-
-    result = {}
-    try:
-        # Run ffprobe to get frame info
-        probe = subprocess.run(
-            [
-                "ffprobe", "-v", "error",
-                "-select_streams", "v:0",
-                "-show_frames",
-                "-show_entries", "frame=best_effort_timestamp_time,index",
-                video_path,
-            ],
-            capture_output=True, text=True, timeout=30,
-        )
-
-        if probe.returncode == 0:
-            # Parse ffprobe output for timestamps
-            frame_idx = 0
-            for line in probe.stdout.split('\n'):
-                if 'best_effort_timestamp_time=' in line:
-                    try:
-                        ts_str = line.split('=')[1].strip()
-                        ts = float(ts_str)
-                        if frame_idx < len(frame_names):
-                            result[frame_names[frame_idx]] = round(ts, 1)
-                        frame_idx += 1
-                    except (ValueError, IndexError):
-                        pass
-    except Exception:
-        pass
-
-    # Fallback: if we didn't get timestamps, interpolate evenly
-    if not result and frame_names:
-        step = duration_s / max(len(frame_names) - 1, 1)
-        for i, name in enumerate(frame_names):
-            result[name] = round(i * step, 1)
-
-    return result
-
-
-def _extract_keyframes_timed(youtube_url: str, out_dir: str, n: int = 20) -> list:
+def _extract_keyframes_timed(youtube_url: str, out_dir: str, n: int = 20) -> tuple:
     """
     Download a video from youtube_url and extract n keyframes with timestamps.
-    Returns list of dicts [{"name": "frame_000.jpg", "path": "/abs/path", "t": 1.5}, ...].
+    Returns: (frames_list, video_path) where frames_list is [{"name":..., "path":..., "t":...}, ...]
+    and video_path is the path to the downloaded video file (for aspect_ratio/audio analysis).
     See _extract_frames_timed for timestamp behavior.
     """
     import subprocess
@@ -4536,7 +4502,8 @@ def _extract_keyframes_timed(youtube_url: str, out_dir: str, n: int = 20) -> lis
             raise RuntimeError("Downloaded video file not found after yt-dlp")
         video_path = str(video_files[0])
 
-    return _extract_frames_timed(video_path, out_dir, n)
+    frames = _extract_frames_timed(video_path, out_dir, n)
+    return (frames, video_path)
 
 
 def _creators_init_db():
@@ -5167,7 +5134,7 @@ def _enforce_scene_duration_cap(scene_order: list, max_duration_sec: float = 8.0
     current_scene_num = 1
 
     for orig_scene in scene_order:
-        duration = orig_scene.get("duration_sec", 0)
+        duration = orig_scene.get("duration_sec") or 0  # Guard against None values
 
         if duration <= max_duration_sec:
             # Scene is within duration cap, keep as-is
@@ -5211,10 +5178,10 @@ def _enforce_scene_duration_cap(scene_order: list, max_duration_sec: float = 8.0
 
 
 def _time_str_to_seconds(time_str: str) -> float:
-    """Convert 'm:ss' or 'mm:ss' format to seconds."""
+    """Convert 'm:ss', 'mm:ss', or 'm:ss.s' format to seconds."""
     parts = time_str.split(":")
     if len(parts) == 2:
-        return int(parts[0]) * 60 + int(parts[1])
+        return int(parts[0]) * 60 + float(parts[1])
     return 0.0
 
 
@@ -5587,8 +5554,9 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
 
     run_id = re.sub(r"[^A-Za-z0-9_-]", "", str(uuid.uuid4())[:8])
     out_dir = f"{ANALYZE_FRAME_DIR}/{run_id}"
+    video_file_path = None  # Will be set from download
     try:
-        frame_dicts = _extract_keyframes_timed(req.youtube_url, out_dir, n=20)
+        frame_dicts, video_file_path = _extract_keyframes_timed(req.youtube_url, out_dir, n=20)
     except Exception as exc:
         if progress_id:
             _log_run(progress_id, f"✗ Gagal download: {str(exc)[:100]}", start_time)
@@ -5679,14 +5647,6 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
         """Helper to log progress during sequential analysis."""
         if progress_id:
             _log_run(progress_id, msg, start_time)
-
-    # Find the downloaded video file for aspect_ratio computation
-    video_file_path = None
-    for pattern in ["source_video.mp4", "source_video.mkv", "source_video.webm", "source_video.mov"]:
-        candidate = Path(f"{ANALYZE_FRAME_DIR}/{run_id}") / pattern
-        if candidate.exists():
-            video_file_path = str(candidate)
-            break
 
     try:
         parsed = _analyze_frames_sequential(

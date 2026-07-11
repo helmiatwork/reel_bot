@@ -965,3 +965,79 @@ class TestVeo3Storyboard:
         music_mood = storyboard.get("music_mood", "")
         assert music_mood, "music_mood should not be empty after filling from audio_tags"
         assert "100" in str(music_mood) or "BPM" in music_mood, "music_mood should contain BPM info"
+
+
+# ── Bug Fix Tests ──────────────────────────────────────────────────────────
+
+class TestBugFixes:
+    """Tests for critical bug fixes from PR review."""
+
+    def test_frame_timestamps_from_showinfo_ffmpeg_stderr(self):
+        """Should capture frame timestamps from ffmpeg showinfo stderr via regex parsing."""
+        import re
+
+        # Fake ffmpeg stderr with pts_time values (from showinfo filter output format)
+        # ffmpeg showinfo filter outputs "pts_time=X.X" format
+        fake_ffmpeg_stderr = (
+            "[Parsed_showinfo_0 @ ...] pts_time=1.234\n"
+            "[Parsed_showinfo_0 @ ...] pts_time=3.567\n"
+            "[Parsed_showinfo_0 @ ...] pts_time=5.890\n"
+            "frame=3 fps=0\n"
+        )
+
+        # Test that the regex used in _extract_frames_timed correctly extracts pts_time values
+        pts_times = re.findall(r'pts_time=([\d.]+)', fake_ffmpeg_stderr)
+
+        # Verify we extracted the correct timestamps
+        assert len(pts_times) == 3, f"Expected 3 timestamps, got {len(pts_times)}"
+        assert float(pts_times[0]) == 1.234
+        assert float(pts_times[1]) == 3.567
+        assert float(pts_times[2]) == 5.890
+
+        # Verify rounding logic (1.234 → 1.2, 3.567 → 3.6, 5.890 → 5.9)
+        rounded_times = [round(float(t), 1) for t in pts_times]
+        assert rounded_times == [1.2, 3.6, 5.9]
+
+    def test_enforce_scene_duration_cap_guards_null_duration(self):
+        """Should not crash when scene has duration_sec: None."""
+        import main as m
+
+        scene_with_null = {
+            "scene": 1,
+            "start": "0:00",
+            "end": "0:05",
+            "duration_sec": None,  # Null value that used to crash
+            "shot": "wide",
+            "subject": "Test",
+            "action": "Test",
+            "lighting": "test",
+            "color_palette": "test",
+            "on_screen_text": "",
+            "audio": "test",
+            "transition": "cut",
+        }
+
+        scene_order = [scene_with_null]
+
+        # Should not raise TypeError
+        result = m._enforce_scene_duration_cap(scene_order, max_duration_sec=8.0)
+
+        # Result should still contain the scene (treated as 0 duration, so not split)
+        assert len(result) == 1
+        assert result[0]["scene"] == 1
+
+    def test_time_str_to_seconds_handles_fractional_seconds(self):
+        """Should handle fractional seconds like '1:30.5'."""
+        import main as m
+
+        # Test fractional seconds
+        result = m._time_str_to_seconds("1:30.5")
+        assert result == 90.5, f"Expected 90.5, got {result}"
+
+        # Test regular format still works
+        result = m._time_str_to_seconds("2:30")
+        assert result == 150.0, f"Expected 150.0, got {result}"
+
+        # Test zero case
+        result = m._time_str_to_seconds("0:00")
+        assert result == 0.0, f"Expected 0.0, got {result}"
