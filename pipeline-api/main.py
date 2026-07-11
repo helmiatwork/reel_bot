@@ -3588,8 +3588,9 @@ def _build_claude_prompt(intent: str, output_format: str = "none") -> str:
         "duration_sec": <number>,
         "shot": "<wide|medium|close-up|...>",
         "camera_movement": "<static|pan|tilt|push-in|handheld|...>",
-        "subject": "<who/what + appearance>",
-        "action": "<what happens>",
+        "subject": "<who/what with PRECISE, generation-locking appearance. For PEOPLE: apparent ethnicity/region (e.g. East Asian, South Asian, Caucasian, Black), skin tone, hair style+color, approx age, body build, and EXACT clothing — say t-shirt vs shirt vs dress + color + notable details. For a CHARACTER/animal: species, fur/color/markings, and any costume. ALWAYS state facial EXPRESSION/emotion (e.g. cheerful wide smile, bright eyes) so it is not rendered neutral or grumpy>",
+        "action": "<what the subject is doing + their body POSE/POSTURE and orientation (e.g. leaning forward over the counter, holding the bouquet with both paws, facing left)>",
+        "image_prompt": "<ONE dense, self-contained text-to-image prompt that reproduces THIS exact frame: the subject(s) with the full appearance + expression + wardrobe + pose from above, the setting/background, composition/framing, lighting, and art style. Detailed enough that a text-to-image model recreates the frame closely without a reference image>",
         "lighting": "<...>",
         "color_palette": "<dominant colors>",
         "on_screen_text": "<text or ''>",
@@ -3597,7 +3598,8 @@ def _build_claude_prompt(intent: str, output_format: str = "none") -> str:
         "transition": "<cut|fade|match-cut|...>"
       }
     ]
-  }"""
+  }
+  IMPORTANT for the storyboard: fill "subject", "action", and "image_prompt" with concrete, specific visual detail taken from the frames — never generic ("a man", "a cat"). Lock each person's apparent ethnicity, age, hair, skin, build, exact clothing type/color, body pose, and facial expression; lock each character/animal's exact look and costume. This is what lets the scenes be regenerated to match the source."""
     return _CLAUDE_RE_PROMPT_TEMPLATE.format(intent=intent, gen_prompt_field=gen_prompt_field)
 
 _CLAUDE_CLIPPER_PROMPT_TEMPLATE = """\
