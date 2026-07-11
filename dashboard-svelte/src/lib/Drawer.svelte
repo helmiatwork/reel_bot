@@ -26,6 +26,9 @@
 
   // copy state
   let copiedPrompt = $state(false)
+
+  // tab state
+  let activeTab = $state('analisa')
   // Display + copy share one string: pretty-printed JSON for prompt_json, raw otherwise
   function promptDisplay(a) {
     if (a?.gen_prompt_format === 'prompt_json') {
@@ -60,6 +63,7 @@
     reanalyzeError = ''
     reanalyzeDone = false
     lightboxSrc = null
+    activeTab = 'analisa'
     d = v
     frames = []
     segments = []
@@ -185,124 +189,163 @@
       <span class="x" onclick={closeDrawer} role="button" tabindex="0" aria-label="Tutup">✕</span>
     </div>
 
+    <!-- Tab Bar (for source type only) -->
+    {#if d.type === 'source'}
+      <div class="tab-bar">
+        <button
+          class="tab-btn {activeTab === 'analisa' ? 'active' : ''}"
+          onclick={() => activeTab = 'analisa'}
+        >
+          Analisa
+        </button>
+        <button
+          class="tab-btn {activeTab === 'frames' ? 'active' : ''}"
+          onclick={() => activeTab = 'frames'}
+        >
+          Frames
+        </button>
+        <button
+          class="tab-btn {activeTab === 'prompt' ? 'active' : ''}"
+          onclick={() => activeTab = 'prompt'}
+        >
+          Generated Prompt
+        </button>
+      </div>
+    {/if}
+
     <!-- Content Container (scrollable) -->
     <div class="modal-content">
       {#if d.type === 'source'}
       {@const s = d.data}
       <h2>{s.title}</h2>
       <div class="mut" style="font-size:12px;margin-bottom:8px">{s.channel || '-'} · {s.id}</div>
-      <div class="frames">
-        {#if framesLoading}
-          <div class="mut" style="font-size:12px;padding:8px 0">Memuat frames…</div>
-        {:else if frames.length}
-          {#each frames as src}
-            <button class="frame-thumb-btn" onclick={() => openLightbox(src)} title="Klik untuk perbesar" aria-label="Perbesar frame">
-              <img {src} alt="frame" loading="lazy" class="frame-thumb" />
-            </button>
-          {/each}
-        {:else if s.youtube_url}
-          <div class="mut" style="font-size:12px;padding:8px 0">No frames tersimpan untuk video ini.</div>
-        {:else}
-          <div class="mut" style="font-size:12px;padding:8px 0">youtube_url tidak tersedia di baris ini — frames tidak dapat dimuat. (Lihat blocker note di kode.)</div>
-        {/if}
-      </div>
-      {#if s.youtube_url}
-        <div class="kv"><span>URL</span><a href={s.youtube_url} target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;cursor:pointer">buka video ↗</a></div>
-      {/if}
-      <div class="kv"><span>Views</span><span class="num">{s.viewsLabel}</span></div>
-      <div class="kv"><span>Niche</span><span>{s.niche}</span></div>
-      <div class="kv"><span>Status</span><span>{s.status}</span></div>
-      {#if analysis.hook}
-        <div class="kv"><span>Hook</span><span style="text-align:right;max-width:60%">{analysis.hook}</span></div>
-      {/if}
-      {#if analysis.retention}
-        <div class="kv"><span>Retention</span><span style="text-align:right;max-width:60%">{analysis.retention}{analysis.retention_score ? ` (${analysis.retention_score}/10)` : ''}</span></div>
-      {/if}
-      {#if analysis.structure}
-        <div class="kv"><span>Struktur</span><span style="text-align:right;max-width:60%">{analysis.structure}</span></div>
-      {/if}
-      {#if analysis.summary}
-        <div class="kv-text"><span>Ringkas</span><div class="ana-text">{analysis.summary}</div></div>
-      {/if}
-      {#if analysis.detail}
-        <div class="kv-text"><span>Detail</span><div class="ana-text">{analysis.detail}</div></div>
-      {/if}
-      {#if analysis.tags?.length}
-        <div class="kv"><span>Tags</span><span style="text-align:right;max-width:60%">{#each analysis.tags as t}<span class="tag">{t}</span>{/each}</span></div>
-      {/if}
 
-      <!-- Generated prompt section -->
-      {#if analysis.gen_prompt}
-        <h3 style="margin:16px 0 8px;font-size:13px;font-weight:600">Generated prompt</h3>
-        <div class="gen-prompt-box">
-          {#if analysis.gen_prompt_format === 'prompt_json'}
-            <pre class="gen-prompt-json">{promptDisplay(analysis)}</pre>
-          {:else}
-            <div class="gen-prompt-text">{analysis.gen_prompt}</div>
+      <!-- ANALISA TAB -->
+      {#if activeTab === 'analisa'}
+        <div class="tab-panel">
+          <div class="kv"><span>URL</span><a href={s.youtube_url} target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;cursor:pointer">buka video ↗</a></div>
+          <div class="kv"><span>Views</span><span class="num">{s.viewsLabel}</span></div>
+          <div class="kv"><span>Niche</span><span>{s.niche}</span></div>
+          <div class="kv"><span>Status</span><span>{s.status}</span></div>
+          {#if analysis.hook}
+            <div class="kv"><span>Hook</span><span style="text-align:right;max-width:60%">{analysis.hook}</span></div>
           {/if}
-        </div>
-        <button class="copy-btn" onclick={() => copyPrompt(promptDisplay(analysis))}>
-          {copiedPrompt ? '✓ Copied!' : 'Copy'}
-        </button>
-      {/if}
+          {#if analysis.retention}
+            <div class="kv"><span>Retention</span><span style="text-align:right;max-width:60%">{analysis.retention}{analysis.retention_score ? ` (${analysis.retention_score}/10)` : ''}</span></div>
+          {/if}
+          {#if analysis.structure}
+            <div class="kv"><span>Struktur</span><span style="text-align:right;max-width:60%">{analysis.structure}</span></div>
+          {/if}
+          {#if analysis.summary}
+            <div class="kv-text"><span>Ringkas</span><div class="ana-text">{analysis.summary}</div></div>
+          {/if}
+          {#if analysis.detail}
+            <div class="kv-text"><span>Detail</span><div class="ana-text">{analysis.detail}</div></div>
+          {/if}
+          {#if analysis.tags?.length}
+            <div class="kv"><span>Tags</span><span style="text-align:right;max-width:60%">{#each analysis.tags as t}<span class="tag">{t}</span>{/each}</span></div>
+          {/if}
 
-      <!-- Re-analyze button -->
-      {#if s.youtube_url}
-        <div class="reana-wrap">
-          <button
-            class="reana-btn"
-            disabled={reanalyzeLoading}
-            onclick={reanalyze}
-            aria-label="Re-analyze this video"
-          >
-            {reanalyzeLoading ? '⏳ Analyzing…' : 'Re-analyze'}
-          </button>
-          {#if reanalyzeDone}
-            <span class="reana-ok">done</span>
-          {/if}
-          {#if reanalyzeError}
-            <span class="reana-err">{reanalyzeError}</span>
-          {/if}
-        </div>
-      {/if}
-
-      <!-- Pecah button -->
-      {#if s.youtube_url}
-        <div class="pecah-wrap">
-          <button
-            class="pecah-btn"
-            disabled={decomposeRunning}
-            onclick={startDecompose}
-          >
-            {decomposeRunning ? '⏳ Memecah…' : segments.length ? 'Pecah ulang' : 'Pecah kompilasi'}
-          </button>
-          {#if decomposeRunning && decomposeStage}
-            <span class="pecah-stage">{decomposeStage}</span>
-          {/if}
-          {#if decomposeError}
-            <span class="pecah-err">{decomposeError}</span>
-          {/if}
-        </div>
-      {:else}
-        <div class="mut" style="font-size:12px;margin-top:10px">youtube_url tidak ada — tidak bisa decompose.</div>
-      {/if}
-
-      {#if segments.length}
-        <h3 style="margin:16px 0 8px;font-size:13px;font-weight:600">Segmen</h3>
-        <div class="seg-list">
-          {#each segments as seg}
-            <div class="seg-row">
-              <span class="seg-idx">Klip {seg.clip_index}</span>
-              <span class="seg-time">{seg.start_sec?.toFixed(1)}–{seg.end_sec?.toFixed(1)} dtk</span>
-              <span class="badge-sm {seg.origin_status === 'found' ? 'b-found' : 'b-grey'}">{seg.origin_status}</span>
-              <span class="seg-credit">{seg.credit_handle || '—'}</span>
-              {#if seg.original_url}
-                <a href={seg.original_url} target="_blank" rel="noopener noreferrer" style="font-size:12px">asli</a>
-              {:else}
-                <span class="mut" style="font-size:12px">belum ketemu</span>
+          <!-- Re-analyze button -->
+          {#if s.youtube_url}
+            <div class="reana-wrap">
+              <button
+                class="reana-btn"
+                disabled={reanalyzeLoading}
+                onclick={reanalyze}
+                aria-label="Re-analyze this video"
+              >
+                {reanalyzeLoading ? '⏳ Analyzing…' : 'Re-analyze'}
+              </button>
+              {#if reanalyzeDone}
+                <span class="reana-ok">done</span>
+              {/if}
+              {#if reanalyzeError}
+                <span class="reana-err">{reanalyzeError}</span>
               {/if}
             </div>
-          {/each}
+          {/if}
+
+          <!-- Pecah button -->
+          {#if s.youtube_url}
+            <div class="pecah-wrap">
+              <button
+                class="pecah-btn"
+                disabled={decomposeRunning}
+                onclick={startDecompose}
+              >
+                {decomposeRunning ? '⏳ Memecah…' : segments.length ? 'Pecah ulang' : 'Pecah kompilasi'}
+              </button>
+              {#if decomposeRunning && decomposeStage}
+                <span class="pecah-stage">{decomposeStage}</span>
+              {/if}
+              {#if decomposeError}
+                <span class="pecah-err">{decomposeError}</span>
+              {/if}
+            </div>
+          {:else}
+            <div class="mut" style="font-size:12px;margin-top:10px">youtube_url tidak ada — tidak bisa decompose.</div>
+          {/if}
+
+          {#if segments.length}
+            <h3 style="margin:16px 0 8px;font-size:13px;font-weight:600">Segmen</h3>
+            <div class="seg-list">
+              {#each segments as seg}
+                <div class="seg-row">
+                  <span class="seg-idx">Klip {seg.clip_index}</span>
+                  <span class="seg-time">{seg.start_sec?.toFixed(1)}–{seg.end_sec?.toFixed(1)} dtk</span>
+                  <span class="badge-sm {seg.origin_status === 'found' ? 'b-found' : 'b-grey'}">{seg.origin_status}</span>
+                  <span class="seg-credit">{seg.credit_handle || '—'}</span>
+                  {#if seg.original_url}
+                    <a href={seg.original_url} target="_blank" rel="noopener noreferrer" style="font-size:12px">asli</a>
+                  {:else}
+                    <span class="mut" style="font-size:12px">belum ketemu</span>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      {/if}
+
+      <!-- FRAMES TAB -->
+      {#if activeTab === 'frames'}
+        <div class="tab-panel">
+          <div class="frames">
+            {#if framesLoading}
+              <div class="mut" style="font-size:12px;padding:8px 0">Memuat frames…</div>
+            {:else if frames.length}
+              {#each frames as src}
+                <button class="frame-thumb-btn" onclick={() => openLightbox(src)} title="Klik untuk perbesar" aria-label="Perbesar frame">
+                  <img {src} alt="frame" loading="lazy" class="frame-thumb" />
+                </button>
+              {/each}
+            {:else if s.youtube_url}
+              <div class="mut" style="font-size:12px;padding:8px 0">No frames tersimpan untuk video ini.</div>
+            {:else}
+              <div class="mut" style="font-size:12px;padding:8px 0">youtube_url tidak tersedia di baris ini — frames tidak dapat dimuat. (Lihat blocker note di kode.)</div>
+            {/if}
+          </div>
+        </div>
+      {/if}
+
+      <!-- GENERATED PROMPT TAB -->
+      {#if activeTab === 'prompt'}
+        <div class="tab-panel">
+          {#if analysis.gen_prompt}
+            <div class="gen-prompt-box">
+              {#if analysis.gen_prompt_format === 'prompt_json'}
+                <pre class="gen-prompt-json">{promptDisplay(analysis)}</pre>
+              {:else}
+                <div class="gen-prompt-text">{analysis.gen_prompt}</div>
+              {/if}
+            </div>
+            <button class="copy-btn" onclick={() => copyPrompt(promptDisplay(analysis))}>
+              {copiedPrompt ? '✓ Copied!' : 'Copy'}
+            </button>
+          {:else}
+            <div class="mut" style="font-size:12px;padding:8px 0">No generated prompt tersedia.</div>
+          {/if}
         </div>
       {/if}
 
@@ -518,4 +561,25 @@
     border-radius: 4px; cursor: pointer; color: #333; transition: background .15s;
   }
   .copy-btn:hover { background: #e0e0e0; }
+
+  /* Tab bar */
+  .tab-bar {
+    display: flex; gap: 0; border-bottom: 1px solid var(--border);
+    flex-shrink: 0; background: var(--bg); padding: 0;
+  }
+  .tab-btn {
+    flex: 1; padding: 10px 12px; border: none; background: transparent;
+    color: var(--mut); font-size: 13px; font-weight: 500; cursor: pointer;
+    border-bottom: 2px solid transparent; transition: all .15s;
+    position: relative; bottom: -1px; white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--fg); }
+  .tab-btn.active {
+    color: var(--accent); border-bottom-color: var(--accent);
+  }
+
+  /* Tab panel */
+  .tab-panel {
+    display: flex; flex-direction: column; gap: 8px;
+  }
 </style>
