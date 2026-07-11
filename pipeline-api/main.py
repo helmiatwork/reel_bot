@@ -5205,6 +5205,29 @@ def _seconds_to_time_str(seconds: float) -> str:
     return f"{minutes}:{secs:02d}"
 
 
+def _build_frame_analysis(normalized_frames: list, frame_descriptions: list) -> list:
+    """Zip per-frame name + timestamp + description into sidecar entries. name MUST equal the served frame basename."""
+    out = []
+    for frame_info, desc in zip(normalized_frames, frame_descriptions):
+        name = frame_info.get("name") if isinstance(frame_info, dict) else frame_info
+        t = frame_info.get("t") if isinstance(frame_info, dict) else None
+        if isinstance(name, str):
+            out.append({"name": name, "t": t, "desc": desc})
+    return out
+
+
+def _persist_frame_analysis(video_id: str, parsed: dict) -> None:
+    """Write per-frame {name,t,desc} sidecar so /sources/frames can return timestamps + descriptions. Non-fatal."""
+    try:
+        frame_analysis = parsed.get("frame_analysis", []) if isinstance(parsed, dict) else []
+        if frame_analysis and video_id:
+            frames_json_path = _REPO_ROOT / "data" / "frames" / video_id / "frames.json"
+            frames_json_path.parent.mkdir(parents=True, exist_ok=True)
+            frames_json_path.write_text(json.dumps(frame_analysis, ensure_ascii=False), encoding="utf-8")
+    except Exception as exc:
+        print(f"[frame_analysis] persistence failed (non-fatal): {exc}")
+
+
 def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: str, model: str, log_fn=None, transcript_text: str = "", audio_tags: dict = None, video_path: str = None) -> dict:
     """
     Analyze frames sequentially (1 per call), then synthesize with no images.
@@ -5338,10 +5361,10 @@ def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: 
     parsed = None
     for attempt in range(2):
         try:
-            bridge_timeout = _httpx.Timeout(connect=10.0, read=200.0, write=10.0, pool=5.0)
+            bridge_timeout = _httpx.Timeout(connect=10.0, read=330.0, write=10.0, pool=5.0)
             bridge_resp = _httpx.post(
                 f"{CLAUDE_BRIDGE_URL}/run",
-                json={"prompt": full_synthesis_prompt, "frames": [], "model": model, "subdir": subdir},
+                json={"prompt": full_synthesis_prompt, "frames": [], "model": model, "subdir": subdir, "timeout_s": 300},
                 timeout=bridge_timeout,
             )
             bridge_data = bridge_resp.json()
@@ -5399,7 +5422,13 @@ def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: 
                 # Second attempt failed, raise
                 raise HTTPException(status_code=502, detail=f"Could not parse claude result as JSON: {exc}")
 
-    return parsed or {}
+    # Assemble per-frame analysis for sidecar persistence (even if synthesis failed)
+    frame_analysis = _build_frame_analysis(normalized_frames, frame_descriptions)
+    result = parsed if isinstance(parsed, dict) else {}
+    if frame_analysis:
+        result["frame_analysis"] = frame_analysis
+
+    return result
 
 
 def _generate_gen_prompt(frame_descriptions: str, subdir: str, output_format: str, model: str) -> tuple:
@@ -5698,6 +5727,9 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
     tags = parsed.get("tags", [])
     if not isinstance(tags, list):
         tags = []
+
+    # Persist per-frame analysis sidecar for YouTube sources
+    _persist_frame_analysis(video_id, parsed)
 
     # Reconstruct raw_result for DB storage (remove gen_prompt_storyboard if present)
     raw_result_dict = {k: v for k, v in parsed.items() if k != "gen_prompt_storyboard"}
@@ -7010,6 +7042,9 @@ async def upload_source_async(
                     run["status"] = "error"
                     _save_run(run_id, run)
                 return
+
+            # Persist per-frame analysis sidecar for upload sources
+            _persist_frame_analysis(file_id, parsed)
 
             # Extract fields from parsed result
             summary = parsed.get("summary", "")

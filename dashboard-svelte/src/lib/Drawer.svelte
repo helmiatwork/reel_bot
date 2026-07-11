@@ -426,9 +426,9 @@
             {#if framesLoading}
               <div class="mut" style="font-size:12px;padding:8px 0">Memuat frames…</div>
             {:else if frames.length}
-              {#each frames as src, i}
-                <button class="frame-thumb-btn" onclick={() => openLightbox(src, i)} title="Klik untuk detail" aria-label="Detail frame">
-                  <img {src} alt="frame" loading="lazy" class="frame-thumb" />
+              {#each frames as f, i}
+                <button class="frame-thumb-btn" onclick={() => openLightbox(f.url, i)} title={f.desc || 'Klik untuk detail'} aria-label="Detail frame">
+                  <img src={f.url} alt={f.desc || 'frame'} loading="lazy" class="frame-thumb" />
                   <span class="frame-no">{i + 1}</span>
                 </button>
               {/each}
