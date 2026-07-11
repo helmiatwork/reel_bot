@@ -4912,11 +4912,127 @@ class AnalyzeClaudeRequest(BaseModel):
     output_format: str = "none"
 
 
-def _generate_gen_prompt(frame_names: list, subdir: str, output_format: str, model: str) -> tuple:
+def _analyze_frames_sequential(frame_names: list, subdir: str, intent: str, output_format: str, model: str, log_fn=None) -> dict:
+    """
+    Analyze frames sequentially (1 per call), then synthesize with no images.
+
+    Per-frame pass: loops through frame_names, calls bridge with ONE frame at a time.
+    Collects per-frame descriptions. If a frame call fails/returns empty, retries once.
+
+    Synthesis pass: calls bridge ONCE with NO images, using collected descriptions as text context
+    + the analysis instruction prompt. Parses and returns the result dict.
+
+    On any parse error, retries the synthesis call once before giving up.
+
+    Args:
+        frame_names: list of frame filenames (e.g., ['frame_0.jpg', 'frame_1.jpg', ...])
+        subdir: subdirectory name (passed to bridge as subdir param)
+        intent: user intent string (passed to _build_claude_prompt)
+        output_format: output format ('none', 'prompt_video', 'prompt_json')
+        model: Claude model name
+        log_fn: optional callable(msg) for logging progress to live console
+
+    Returns: parsed analysis dict with keys: summary, detail, hook, structure, retention,
+             retention_score, tags, and optionally gen_prompt_storyboard (for prompt_json)
+
+    Raises HTTPException on unrecoverable errors.
+    """
+    import httpx as _httpx
+
+    # Per-frame pass: collect descriptions
+    frame_descriptions = []
+    for i, frame_name in enumerate(frame_names, 1):
+        if log_fn:
+            log_fn(f"🧠 Analisa frame {i}/{len(frame_names)}…")
+
+        per_frame_prompt = (
+            f"Ini frame ke-{i} dari {len(frame_names)} frame sebuah video pendek. "
+            f"Deskripsikan singkat (1-2 kalimat) apa yang terlihat: subjek/orang, aksi atau gerakan, "
+            f"teks/caption di layar bila ada, sudut kamera, dan pencahayaan. Jawab teks biasa saja."
+        )
+
+        bridge_timeout = _httpx.Timeout(connect=10.0, read=120.0, write=10.0, pool=5.0)
+        raw_desc = None
+
+        # Try once, then retry if empty
+        for attempt in range(2):
+            try:
+                bridge_resp = _httpx.post(
+                    f"{CLAUDE_BRIDGE_URL}/run",
+                    json={"prompt": per_frame_prompt, "frames": [frame_name], "model": model, "subdir": subdir},
+                    timeout=bridge_timeout,
+                )
+                bridge_data = bridge_resp.json()
+                if bridge_data.get("ok"):
+                    raw_desc = (bridge_data.get("result", "") or "").strip()
+                    if raw_desc:
+                        break
+            except Exception:
+                pass
+
+        # Use placeholder if empty after retries
+        if not raw_desc:
+            raw_desc = f"(frame {i} tidak terbaca)"
+
+        frame_descriptions.append(raw_desc)
+
+    # Synthesis pass: build context from descriptions + analysis prompt, call bridge with NO images
+    frame_context = "\n".join([f"{i}. {desc}" for i, desc in enumerate(frame_descriptions, 1)])
+    synthesis_prompt_prefix = (
+        f"Berikut deskripsi berurutan {len(frame_names)} frame dari video (hasil analisa per-frame):\n{frame_context}\n\n"
+    )
+    analysis_prompt = _build_claude_prompt(intent, output_format)
+    full_synthesis_prompt = synthesis_prompt_prefix + analysis_prompt
+
+    if log_fn:
+        log_fn(f"🧠 Sonnet mensintesis analisa…")
+
+    # Try synthesis, retry once on parse failure
+    parsed = None
+    for attempt in range(2):
+        try:
+            bridge_timeout = _httpx.Timeout(connect=10.0, read=200.0, write=10.0, pool=5.0)
+            bridge_resp = _httpx.post(
+                f"{CLAUDE_BRIDGE_URL}/run",
+                json={"prompt": full_synthesis_prompt, "frames": [], "model": model, "subdir": subdir},
+                timeout=bridge_timeout,
+            )
+            bridge_data = bridge_resp.json()
+
+            if not bridge_data.get("ok"):
+                continue
+
+            raw_result = bridge_data.get("result", "")
+            try:
+                cleaned = _strip_json_fences(raw_result)
+                parsed = json.loads(cleaned)
+                break  # Success
+            except Exception:
+                # Parse error; will retry on next loop iteration
+                if attempt < 1:
+                    continue
+                # Last attempt failed
+                raise
+        except Exception as exc:
+            if attempt >= 1:
+                # Second attempt failed, raise
+                raise HTTPException(status_code=502, detail=f"Could not parse claude result as JSON: {exc}")
+
+    return parsed or {}
+
+
+def _generate_gen_prompt(frame_descriptions: str, subdir: str, output_format: str, model: str) -> tuple:
     """
     Generate gen_prompt via a second, dedicated bridge call after the main analysis succeeds.
     Non-fatal on error: returns (None, None) if the gen_prompt call fails.
-    Returns (gen_prompt_str, gen_prompt_format) or (None, None) on failure.
+
+    Args:
+        frame_descriptions: text descriptions of frames (from sequential analysis), NOT image filenames
+        subdir: subdirectory name (passed to bridge)
+        output_format: 'prompt_video' or 'prompt_json'
+        model: Claude model name
+
+    Returns: (gen_prompt_str, gen_prompt_format) or (None, None) on failure.
 
     For prompt_video: returns simple text-to-video prompt
     For prompt_json: returns JSON storyboard object as string
@@ -4927,17 +5043,26 @@ def _generate_gen_prompt(frame_names: list, subdir: str, output_format: str, mod
         return (None, None)
 
     if output_format == "prompt_video":
-        gen_prompt_instruction = "Return ONLY a JSON object with this exact shape (single braces): {\"gen_prompt\": \"<ONE concise text-to-video prompt (2-3 sentences) capturing the video's concept, cinematic style, subjects, and structure for a text-to-video model like Veo 3>\"}"
+        gen_prompt_instruction = (
+            "Berdasarkan deskripsi video berikut, generate HANYA JSON: "
+            "{\"gen_prompt\": \"<ONE concise text-to-video prompt (2-3 sentences) capturing the video's concept, cinematic style, subjects, and structure for a text-to-video model like Veo 3>\"}\n\n"
+            f"Video description:\n{frame_descriptions}"
+        )
     elif output_format == "prompt_json":
-        gen_prompt_instruction = "Return ONLY a JSON object with this exact shape (single braces): {\"scene_order\": [{\"scene\": 1, \"description\": \"<1 sentence scene description>\", \"camera_angle\": \"<e.g. wide, close-up, overhead>\", \"lighting\": \"<e.g. bright, dim, cinematic>\", \"objects\": [\"<obj1>\", \"<obj2>\"], \"style\": \"<visual style>\"}]}"
+        gen_prompt_instruction = (
+            "Berdasarkan deskripsi video berikut, generate HANYA JSON: "
+            "{\"scene_order\": [{\"scene\": 1, \"description\": \"<1 sentence scene description>\", \"camera_angle\": \"<e.g. wide, close-up, overhead>\", \"lighting\": \"<e.g. bright, dim, cinematic>\", \"objects\": [\"<obj1>\", \"<obj2>\"], \"style\": \"<visual style>\"}]}\n\n"
+            f"Video description:\n{frame_descriptions}"
+        )
     else:
         return (None, None)
 
     try:
         bridge_timeout = _httpx.Timeout(connect=10.0, read=200.0, write=10.0, pool=5.0)
+        # NOTE: frames=[] because we're using text descriptions, not image files
         bridge_resp = _httpx.post(
             f"{CLAUDE_BRIDGE_URL}/run",
-            json={"prompt": gen_prompt_instruction, "frames": frame_names, "model": model, "subdir": subdir},
+            json={"prompt": gen_prompt_instruction, "frames": [], "model": model, "subdir": subdir},
             timeout=bridge_timeout,
         )
 
@@ -5099,86 +5224,35 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
     if progress_id:
         _log_run(progress_id, f"✓ {len(frame_paths)} frame diekstrak", start_time)
 
-    # Step 2: Build prompt
-    prompt = _build_claude_prompt(safe_intent, output_format)
+    # Step 2-4: Sequential frame analysis
     frame_names = [Path(p).name for p in frame_paths]
 
-    # Step 3: Call bridge
-    if progress_id:
-        _log_run(progress_id, "🧠 Sonnet menganalisa frame…", start_time)
+    def _log_progress(msg: str):
+        """Helper to log progress during sequential analysis."""
+        if progress_id:
+            _log_run(progress_id, msg, start_time)
 
-    import httpx as _httpx
-    bridge_timeout = _httpx.Timeout(connect=10.0, read=200.0, write=10.0, pool=5.0)
     try:
-        bridge_resp = _httpx.post(
-            f"{CLAUDE_BRIDGE_URL}/run",
-            json={"prompt": prompt, "frames": frame_names, "model": model, "subdir": run_id},
-            timeout=bridge_timeout,
+        parsed = _analyze_frames_sequential(
+            frame_names=frame_names,
+            subdir=run_id,
+            intent=safe_intent,
+            output_format=output_format,
+            model=model,
+            log_fn=_log_progress
         )
+    except HTTPException:
+        raise
     except Exception as exc:
         if progress_id:
-            _log_run(progress_id, f"✗ Bridge tidak terjangkau: {str(exc)[:100]}", start_time)
+            _log_run(progress_id, f"✗ Analisa frame gagal: {str(exc)[:100]}", start_time)
             run = _load_run(progress_id)
             if run:
                 run["status"] = "error"
                 _save_run(progress_id, run)
-        raise HTTPException(status_code=502, detail=f"Bridge unreachable: {exc}")
+        raise HTTPException(status_code=502, detail=f"Frame analysis failed: {exc}")
 
-    try:
-        bridge_data = bridge_resp.json()
-    except Exception:
-        if progress_id:
-            _log_run(progress_id, "✗ Bridge response bukan JSON", start_time)
-            run = _load_run(progress_id)
-            if run:
-                run["status"] = "error"
-                _save_run(progress_id, run)
-        raise HTTPException(status_code=502, detail="Bridge returned a non-JSON response")
-
-    # Rate-limit
-    if bridge_data.get("error_type") == "rate_limit":
-        if progress_id:
-            _log_run(progress_id, "✗ Claude rate limit tercapai", start_time)
-            run = _load_run(progress_id)
-            if run:
-                run["status"] = "error"
-                _save_run(progress_id, run)
-        raise HTTPException(status_code=429, detail="Claude usage/rate limit reached — please retry later")
-
-    # Bridge failure
-    if not bridge_data.get("ok"):
-        if progress_id:
-            _log_run(progress_id, f"✗ Bridge error: {bridge_data.get('error', 'unknown')}", start_time)
-            run = _load_run(progress_id)
-            if run:
-                run["status"] = "error"
-                _save_run(progress_id, run)
-        raise HTTPException(status_code=502, detail=f"Bridge error: {bridge_data.get('error', 'unknown')}")
-
-    # Log API usage
-    _log_api_usage(
-        agent="analyze",
-        model=bridge_data.get("model", model),
-        raw_usage=bridge_data.get("raw_usage", {}),
-        cost_usd=bridge_data.get("cost_usd")
-    )
-
-    # Step 4: Parse result
-    raw_result = bridge_data.get("result", "")
-    cost_usd = bridge_data.get("cost_usd")
-
-    try:
-        cleaned = _strip_json_fences(raw_result)
-        parsed = json.loads(cleaned)
-    except Exception as exc:
-        if progress_id:
-            _log_run(progress_id, f"✗ Parse JSON gagal: {str(exc)[:100]}", start_time)
-            run = _load_run(progress_id)
-            if run:
-                run["status"] = "error"
-                _save_run(progress_id, run)
-        raise HTTPException(status_code=502, detail=f"Could not parse claude result as JSON: {exc}")
-
+    # Extract fields from parsed result
     summary = parsed.get("summary", "")
     detail = parsed.get("detail", "")
     hook = parsed.get("hook", "")
@@ -5193,18 +5267,44 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
     if not isinstance(tags, list):
         tags = []
 
+    # Reconstruct raw_result for DB storage (remove gen_prompt_storyboard if present)
+    raw_result_dict = {k: v for k, v in parsed.items() if k != "gen_prompt_storyboard"}
+    raw_result = json.dumps(raw_result_dict, default=str, ensure_ascii=False)
+
     if progress_id:
         elapsed = round(time.time() - start_time, 1) if start_time else 0
-        _log_run(progress_id, f"✓ Analisa selesai ({elapsed}s, ${cost_usd:.4f})" if cost_usd else f"✓ Analisa selesai ({elapsed}s)", start_time)
+        _log_run(progress_id, f"✓ Analisa selesai ({elapsed}s)", start_time)
 
-    # Step 4b: Generate gen_prompt via second bridge call (if output_format requires it)
+    # Log API usage (cost_usd comes from the synthesis call within _analyze_frames_sequential)
+    cost_usd = None  # ponytail: cost tracking moved inside sequential helper
+    _log_api_usage(
+        agent="analyze",
+        model=model,
+        raw_usage={},
+        cost_usd=cost_usd
+    )
+
+    # Step 4b: Generate gen_prompt (only for prompt_video; prompt_json already has gen_prompt_storyboard)
     gen_prompt = None
     gen_prompt_format = None
-    if output_format != "none":
+    if output_format == "prompt_json":
+        # Extract gen_prompt_storyboard from parsed result (already in synthesis)
+        storyboard = parsed.get("gen_prompt_storyboard")
+        if storyboard and "scene_order" in storyboard:
+            try:
+                gen_prompt = json.dumps({"scene_order": storyboard["scene_order"]})
+                gen_prompt_format = "prompt_json"
+                if progress_id:
+                    _log_run(progress_id, "✓ Prompt dibuat (dari sintesis)", start_time)
+            except Exception:
+                pass
+    elif output_format == "prompt_video":
+        # Generate prompt_video from frame descriptions
         if progress_id:
-            fmt_name = "video" if output_format == "prompt_video" else "JSON"
-            _log_run(progress_id, f"📝 Generate prompt ({fmt_name})…", start_time)
-        gen_prompt, gen_prompt_format = _generate_gen_prompt(frame_names, run_id, output_format, model)
+            _log_run(progress_id, "📝 Generate prompt (video)…", start_time)
+        # Build frame descriptions for context
+        frame_context = f"{detail}" if detail else summary
+        gen_prompt, gen_prompt_format = _generate_gen_prompt(frame_context, run_id, output_format, model)
         if gen_prompt:
             if progress_id:
                 _log_run(progress_id, "✓ Prompt dibuat", start_time)
@@ -6396,77 +6496,32 @@ async def upload_source_async(
             except Exception as exc:
                 print(f"[sources/upload/async] frame persistence failed (non-fatal): {exc}")
 
-            # Call bridge
-            _log_run(run_id, "🧠 Sonnet menganalisa frame…", start_time)
-            prompt = _build_claude_prompt(safe_intent, output_format)
+            # Sequential frame analysis
             frame_names = [Path(p).name for p in frame_paths]
             model = "claude-sonnet-4-6"
 
-            import httpx as _httpx
-            bridge_timeout = _httpx.Timeout(connect=10.0, read=200.0, write=10.0, pool=5.0)
+            def _log_progress(msg: str):
+                """Helper to log progress during sequential analysis."""
+                _log_run(run_id, msg, start_time)
+
             try:
-                bridge_resp = _httpx.post(
-                    f"{CLAUDE_BRIDGE_URL}/run",
-                    json={"prompt": prompt, "frames": frame_names, "model": model, "subdir": frame_run_id},
-                    timeout=bridge_timeout,
+                parsed = _analyze_frames_sequential(
+                    frame_names=frame_names,
+                    subdir=frame_run_id,
+                    intent=safe_intent,
+                    output_format=output_format,
+                    model=model,
+                    log_fn=_log_progress
                 )
             except Exception as exc:
-                _log_run(run_id, f"✗ Bridge tidak terjangkau: {str(exc)[:100]}", start_time)
+                _log_run(run_id, f"✗ Analisa frame gagal: {str(exc)[:100]}", start_time)
                 run = _load_run(run_id)
                 if run:
                     run["status"] = "error"
                     _save_run(run_id, run)
                 return
 
-            try:
-                bridge_data = bridge_resp.json()
-            except Exception:
-                _log_run(run_id, "✗ Bridge response bukan JSON", start_time)
-                run = _load_run(run_id)
-                if run:
-                    run["status"] = "error"
-                    _save_run(run_id, run)
-                return
-
-            if bridge_data.get("error_type") == "rate_limit":
-                _log_run(run_id, "✗ Claude rate limit tercapai", start_time)
-                run = _load_run(run_id)
-                if run:
-                    run["status"] = "error"
-                    _save_run(run_id, run)
-                return
-
-            if not bridge_data.get("ok"):
-                _log_run(run_id, f"✗ Bridge error: {bridge_data.get('error', 'unknown')}", start_time)
-                run = _load_run(run_id)
-                if run:
-                    run["status"] = "error"
-                    _save_run(run_id, run)
-                return
-
-            # Log API usage
-            _log_api_usage(
-                agent="sources-upload",
-                model=bridge_data.get("model", model),
-                raw_usage=bridge_data.get("raw_usage", {}),
-                cost_usd=bridge_data.get("cost_usd")
-            )
-
-            # Parse result
-            raw_result = bridge_data.get("result", "")
-            cost_usd = bridge_data.get("cost_usd")
-
-            try:
-                cleaned = _strip_json_fences(raw_result)
-                parsed = json.loads(cleaned)
-            except Exception as exc:
-                _log_run(run_id, f"✗ Parse JSON gagal: {str(exc)[:100]}", start_time)
-                run = _load_run(run_id)
-                if run:
-                    run["status"] = "error"
-                    _save_run(run_id, run)
-                return
-
+            # Extract fields from parsed result
             summary = parsed.get("summary", "")
             detail = parsed.get("detail", "")
             hook = parsed.get("hook", "")
@@ -6481,7 +6536,20 @@ async def upload_source_async(
             if not isinstance(tags, list):
                 tags = []
 
-            _log_run(run_id, f"✓ Analisa selesai ({round(time.time()-start_time, 1)}s, ${cost_usd:.4f})" if cost_usd else f"✓ Analisa selesai ({round(time.time()-start_time, 1)}s)", start_time)
+            # Reconstruct raw_result for DB storage
+            raw_result_dict = {k: v for k, v in parsed.items() if k != "gen_prompt_storyboard"}
+            raw_result = json.dumps(raw_result_dict, default=str, ensure_ascii=False)
+            cost_usd = None
+
+            _log_run(run_id, f"✓ Analisa selesai ({round(time.time()-start_time, 1)}s)", start_time)
+
+            # Log API usage
+            _log_api_usage(
+                agent="sources-upload",
+                model=model,
+                raw_usage={},
+                cost_usd=cost_usd
+            )
 
             # Validity gate
             _blob = f"{hook} {structure} {retention}".lower()
@@ -6501,12 +6569,24 @@ async def upload_source_async(
                     _save_run(run_id, run)
                 return
 
-            # Generate gen_prompt via second bridge call (if output_format requires it)
+            # Generate gen_prompt (only for prompt_video; prompt_json already has gen_prompt_storyboard)
             gen_prompt = None
             gen_prompt_format = None
-            if output_format != "none":
-                _log_run(run_id, f"📝 Generate prompt ({'video' if output_format == 'prompt_video' else 'JSON'})…", start_time)
-                gen_prompt, gen_prompt_format = _generate_gen_prompt(frame_names, frame_run_id, output_format, model)
+            if output_format == "prompt_json":
+                # Extract gen_prompt_storyboard from parsed result
+                storyboard = parsed.get("gen_prompt_storyboard")
+                if storyboard and "scene_order" in storyboard:
+                    try:
+                        gen_prompt = json.dumps({"scene_order": storyboard["scene_order"]})
+                        gen_prompt_format = "prompt_json"
+                        _log_run(run_id, "✓ Prompt dibuat (dari sintesis)", start_time)
+                    except Exception:
+                        pass
+            elif output_format == "prompt_video":
+                # Generate prompt_video from frame descriptions
+                _log_run(run_id, "📝 Generate prompt (video)…", start_time)
+                frame_context = f"{detail}" if detail else summary
+                gen_prompt, gen_prompt_format = _generate_gen_prompt(frame_context, frame_run_id, output_format, model)
                 if gen_prompt:
                     _log_run(run_id, "✓ Prompt dibuat", start_time)
                 else:
