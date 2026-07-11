@@ -5229,7 +5229,10 @@ def _persist_frame_analysis(video_id: str, parsed: dict) -> None:
 
 
 # ── Frame analysis batching ──────────────────────────────────────────────────
-FRAMES_PER_BATCH = int(os.environ.get("ANALYZE_FRAMES_PER_BATCH", "5"))
+FRAMES_PER_BATCH = max(1, int(os.environ.get("ANALYZE_FRAMES_PER_BATCH", "5")))
+
+# Per-frame analysis uses Haiku (cheap, batched). Synthesis (storyboard JSON) routes to Sonnet for better quality.
+ANALYZE_SYNTHESIS_MODEL = os.environ.get("ANALYZE_SYNTHESIS_MODEL", "claude-sonnet-4-6")
 
 # Audio tagging runs through cliproxy→SumoPod→gemini (paid credit). Off by default
 # to preserve SumoPod credit; set ANALYZE_AUDIO_TAGS=1 to re-enable music_mood tags.
@@ -5472,7 +5475,7 @@ def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: 
     full_synthesis_prompt = synthesis_prompt_prefix + analysis_prompt
 
     if log_fn:
-        log_fn(f"🧠 Sonnet mensintesis analisa…")
+        log_fn(f"🧠 Sintesis analisa ({ANALYZE_SYNTHESIS_MODEL})…")
 
     # Try synthesis, retry once on parse failure
     parsed = None
@@ -5481,7 +5484,7 @@ def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: 
             bridge_timeout = _httpx.Timeout(connect=10.0, read=330.0, write=10.0, pool=5.0)
             bridge_resp = _httpx.post(
                 f"{CLAUDE_BRIDGE_URL}/run",
-                json={"prompt": full_synthesis_prompt, "frames": [], "model": model, "subdir": subdir, "timeout_s": 300},
+                json={"prompt": full_synthesis_prompt, "frames": [], "model": ANALYZE_SYNTHESIS_MODEL, "subdir": subdir, "timeout_s": 300},
                 timeout=bridge_timeout,
             )
             bridge_data = bridge_resp.json()
