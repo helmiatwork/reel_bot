@@ -369,3 +369,85 @@ def test_existing_upload_async_tests_still_pass():
     assert run["url"].startswith("file://")
     assert run["output_format"] == "none"
     assert "created" in run
+
+
+def test_analyze_runs_includes_title_from_sources():
+    """GET /analyze/claude/runs includes title field from sources table."""
+    from unittest.mock import MagicMock
+
+    run_id = str(uuid.uuid4())
+    test_url = "https://youtube.com/watch?v=title-lookup-test"
+    test_title = "Test Video Title"
+
+    # Create a run with the test URL
+    _save_run(run_id, {
+        "kind": "analyze_source",
+        "url": test_url,
+        "status": "done",
+        "output_format": "none",
+        "created": time.time(),
+        "log": []
+    })
+
+    # Mock _db_conn to return a connection that has the source URL->title mapping
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_conn.cursor.return_value.__exit__.return_value = None
+
+    # Mock the SELECT query to return our URL->title mapping
+    mock_cursor.fetchall.return_value = [(test_url, test_title)]
+
+    with patch("main._db_conn", return_value=mock_conn):
+        # Fetch and verify
+        response = client.get("/analyze/claude/runs?limit=50")
+        assert response.status_code == 200
+        data = response.json()
+
+        our_run = next((r for r in data if r["run_id"] == run_id), None)
+        assert our_run is not None
+
+        # Verify title field exists and matches
+        assert "title" in our_run
+        assert our_run["title"] == test_title
+
+        # Verify the SELECT was called
+        mock_cursor.execute.assert_called_once()
+        call_args = mock_cursor.execute.call_args[0]
+        assert "SELECT youtube_url, title FROM sources" in call_args[0]
+
+
+def test_analyze_runs_title_null_for_unmatched_url():
+    """GET /analyze/claude/runs returns null title if URL not in sources."""
+    from unittest.mock import MagicMock
+
+    run_id = str(uuid.uuid4())
+    unmatched_url = "https://youtube.com/watch?v=nonexistent-unmatched-" + str(uuid.uuid4())
+
+    _save_run(run_id, {
+        "kind": "analyze_source",
+        "url": unmatched_url,
+        "status": "done",
+        "output_format": "none",
+        "created": time.time(),
+        "log": []
+    })
+
+    # Mock _db_conn to return empty results (no matching source)
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_conn.cursor.return_value.__exit__.return_value = None
+    mock_cursor.fetchall.return_value = []  # No sources found
+
+    with patch("main._db_conn", return_value=mock_conn):
+        response = client.get("/analyze/claude/runs?limit=50")
+        assert response.status_code == 200
+        data = response.json()
+
+        our_run = next((r for r in data if r["run_id"] == run_id), None)
+        assert our_run is not None
+
+        # Verify title field exists but is None
+        assert "title" in our_run
+        assert our_run["title"] is None

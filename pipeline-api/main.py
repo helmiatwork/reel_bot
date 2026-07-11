@@ -5916,12 +5916,26 @@ def analyze_claude_status(run_id: str):
 def analyze_claude_runs(limit: int = 20):
     """List all analyze_source runs, sorted by created desc.
 
-    Returns: [{run_id, url, status, output_format, created, last_msg, log_count}]
+    Returns: [{run_id, url, title, status, output_format, created, last_msg, log_count}]
     ponytail: linear dir scan; index if dir grows large.
     """
     runs_dir = _REPO_ROOT / "output" / "research_runs"
     if not runs_dir.exists():
         return []
+
+    # Build url → title map from sources table (one query for all)
+    url_to_title = {}
+    conn = _db_conn()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT youtube_url, title FROM sources WHERE youtube_url IS NOT NULL")
+                for row in cur.fetchall():
+                    url_to_title[row[0]] = row[1]
+        except Exception:
+            pass  # Non-fatal; continue without title mapping
+        finally:
+            conn.close()
 
     summaries = []
     for run_file in runs_dir.glob("*.json"):
@@ -5938,9 +5952,11 @@ def analyze_claude_runs(limit: int = 20):
             if run.get("log") and len(run["log"]) > 0:
                 last_msg = run["log"][-1].get("msg", "")
 
+            run_url = run.get("url", "")
             summaries.append({
                 "run_id": run_id,
-                "url": run.get("url", ""),
+                "url": run_url,
+                "title": url_to_title.get(run_url),  # null if not found
                 "status": run.get("status", "unknown"),
                 "output_format": run.get("output_format", ""),
                 "created": run.get("created", 0),

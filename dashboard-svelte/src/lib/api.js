@@ -288,3 +288,12 @@ export function fmtViews(n) {
   if (n >= 1e3) return (n / 1e3).toFixed(1).replace('.0', '') + ' rb'
   return String(n)
 }
+
+// Job status helper: a job is "active running" if status=running AND created < 30 min ago.
+// Real analyze jobs finish in minutes; anything running >30 min is stale/crashed/test.
+export function isActiveRunning(job) {
+  if (job.status !== 'running') return false
+  const now = Date.now() / 1000
+  const age = now - job.created
+  return age < 1800  // 30 minutes in seconds
+}
