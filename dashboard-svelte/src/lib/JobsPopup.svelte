@@ -2,6 +2,7 @@
   import { fade, scale } from 'svelte/transition'
   import { cubicOut } from 'svelte/easing'
   import { api } from './api.js'
+  import { onDestroy } from 'svelte'
 
   // Props (runes mode — isOpen is bound by parent)
   let { isOpen = $bindable(false) } = $props()
@@ -10,8 +11,8 @@
   let jobs = $state([])
   let selectedRunId = $state(null)
   let selectedJobDetail = $state(null)
-  let pollListInterval = $state(null)
-  let pollDetailInterval = $state(null)
+  let pollListInterval = null
+  let pollDetailInterval = null
   let panelEl = $state(null)
   let consoleEl = $state(null)
   let detailLoading = $state(false)
@@ -22,6 +23,12 @@
     } else {
       closeModal()
     }
+  })
+
+  // Clear polls if the component is destroyed while open (e.g. navigate away)
+  onDestroy(() => {
+    if (pollListInterval) clearInterval(pollListInterval)
+    if (pollDetailInterval) clearInterval(pollDetailInterval)
   })
 
   function openModal() {

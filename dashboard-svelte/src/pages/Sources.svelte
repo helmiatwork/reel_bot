@@ -16,7 +16,7 @@
   let modalOpen = $state(false)
   let jobsOpen = $state(false)
   let jobs = $state([])
-  let jobsPollInterval = $state(null)
+  let jobsPollInterval = null
 
   const PLATFORM_ICON = {
     youtube: 'i-yt', tiktok: 'i-tt', instagram: 'i-ig', xiaohongshu: 'i-xhs'
@@ -84,8 +84,12 @@
   })
 
   async function pollJobs() {
-    const data = await api.analyzeRuns(50)
-    if (data) jobs = data
+    try {
+      const data = await api.analyzeRuns(50)
+      if (data) jobs = data
+    } catch (e) {
+      // polling recovers next tick; swallow transient errors
+    }
   }
 
   function prev() { offset = Math.max(0, offset - limit); load() }

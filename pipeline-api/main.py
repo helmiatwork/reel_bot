@@ -1464,6 +1464,9 @@ def _log_run(run_id: str, msg: str, start_time: float = None):
         run["log"] = []
     elapsed = round(time.time() - start_time, 1) if start_time else 0
     run["log"].append({"msg": msg, "t": elapsed})
+    # ponytail: bound log growth so run files (read by the /runs list endpoint) stay small
+    if len(run["log"]) > 200:
+        run["log"] = run["log"][-200:]
     _save_run(run_id, run)
 
 
