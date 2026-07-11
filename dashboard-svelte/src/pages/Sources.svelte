@@ -2,7 +2,7 @@
   import { onMount } from 'svelte'
   import { api, fmtViews } from '../lib/api.js'
   import { SOURCE_DETAIL } from '../lib/data.js'
-  import { openDrawer } from '../lib/stores.js'
+  import { openDrawer, jobs } from '../lib/stores.js'
   import Pagination from '../lib/Pagination.svelte'
   import SourceUploadModal from '../lib/SourceUploadModal.svelte'
   import JobsPopup from '../lib/JobsPopup.svelte'
@@ -15,8 +15,6 @@
   let niche = $state('')
   let modalOpen = $state(false)
   let jobsOpen = $state(false)
-  let jobs = $state([])
-  let jobsPollInterval = null
 
   const PLATFORM_ICON = {
     youtube: 'i-yt', tiktok: 'i-tt', instagram: 'i-ig', xiaohongshu: 'i-xhs'
@@ -72,25 +70,11 @@
   )
   let niches = $derived([...new Set(rows.map((r) => r.niche))].filter((n) => n && n !== '-'))
 
-  let runningCount = $derived(jobs.filter(j => j.status === 'running').length)
+  let runningCount = $derived($jobs.filter(j => j.status === 'running').length)
 
   onMount(() => {
     load()
-    pollJobs()
-    jobsPollInterval = setInterval(pollJobs, 5000)
-    return () => {
-      if (jobsPollInterval) clearInterval(jobsPollInterval)
-    }
   })
-
-  async function pollJobs() {
-    try {
-      const data = await api.analyzeRuns(50)
-      if (data) jobs = data
-    } catch (e) {
-      // polling recovers next tick; swallow transient errors
-    }
-  }
 
   function prev() { offset = Math.max(0, offset - limit); load() }
   function next() { offset = offset + limit; load() }
@@ -146,7 +130,7 @@
           <td>{#each s.tags.slice(0, 3) as t}<span class="tag">{t}</span>{/each}</td>
           <td>{#if s.gen_prompt_format === 'prompt_json'}<span class="chip c-prompt-json">JSON</span>{:else if s.gen_prompt_format === 'prompt_video'}<span class="chip c-prompt-text">Text</span>{:else}<span class="mut">—</span>{/if}</td>
           <td class="num" style="text-align:right">{s.viewsLabel}</td>
-          <td><span class="chip {s.status === 'used' ? 'c-used' : 'c-analyzed'}">{s.status}</span></td>
+          <td><span class="chip {s.status === 'error' ? 'c-error' : s.status === 'used' ? 'c-used' : 'c-done'}">{s.status}</span></td>
         </tr>
       {/each}
       {#if !filtered.length}

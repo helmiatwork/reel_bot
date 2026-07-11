@@ -164,8 +164,8 @@
       {#if !selectedRunId}
         <!-- Jobs List View -->
         <div class="jobs-list" transition:fade={{ duration: 150 }}>
-          {#if jobs.length > 0}
-            {#each jobs as job (job.run_id)}
+          {#if jobs.filter(j => j.status === 'running').length > 0}
+            {#each jobs.filter(j => j.status === 'running') as job (job.run_id)}
               <div
                 class="job-row"
                 onclick={() => selectJob(job)}
