@@ -86,6 +86,7 @@ function getAudioContext() {
 function beep(freq, duration) {
   const ctx = getAudioContext()
   if (!ctx) return
+  if (ctx.state === 'suspended') ctx.resume().catch(() => {})
   try {
     const now = ctx.currentTime
     const osc = ctx.createOscillator()
