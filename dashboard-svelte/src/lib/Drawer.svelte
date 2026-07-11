@@ -10,6 +10,15 @@
   let segments = $state([])
   let analysis = $state({})
 
+  // Total scenes in the generated storyboard (prompt_json), for the tab label
+  let sceneCount = $derived.by(() => {
+    try {
+      const o = JSON.parse(analysis?.gen_prompt || '{}')
+      const sb = o.scene_order || o.gen_prompt_storyboard?.scene_order || []
+      return Array.isArray(sb) ? sb.length : 0
+    } catch { return 0 }
+  })
+
   // decompose state
   let decomposeRunning = $state(false)
   let decomposeStage = $state('')
@@ -202,13 +211,13 @@
           class="tab-btn {activeTab === 'frames' ? 'active' : ''}"
           onclick={() => activeTab = 'frames'}
         >
-          Frames
+          Frames{frames.length ? ` (${frames.length})` : ''}
         </button>
         <button
           class="tab-btn {activeTab === 'prompt' ? 'active' : ''}"
           onclick={() => activeTab = 'prompt'}
         >
-          Generated Prompt
+          Generated Prompt{sceneCount ? ` (${sceneCount})` : ''}
         </button>
       </div>
     {/if}
