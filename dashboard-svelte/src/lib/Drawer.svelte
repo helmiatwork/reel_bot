@@ -19,10 +19,45 @@
     } catch { return [] }
   })
   let sceneCount = $derived(scenes.length)
+  // Convert "m:ss" or "m:ss.s" to seconds (preserve fractional seconds)
+  function timeToSeconds(timeStr) {
+    if (!timeStr) return 0
+    const parts = timeStr.split(':')
+    const m = parseInt(parts[0]) || 0
+    const s = parseFloat(parts[1]) || 0
+    return m * 60 + s
+  }
+
   // Map a frame index to its best-matching storyboard scene:
-  // 1:1 when counts match, otherwise proportional by position.
+  // 1: exact timestamp match if frame has .t and scenes have start/end
+  // 2: 1:1 when counts match (fallback)
+  // 3: proportional by position (fallback for old sources with no .t)
   function matchedScene(i) {
     if (!scenes.length || !frames.length) return null
+
+    // Try exact timestamp match (frames have .t, scenes have start/end)
+    const frame = frames[i]
+    if (frame && typeof frame === 'object' && frame.t != null && scenes.length > 0) {
+      // Parse scene times (format "m:ss") to seconds
+      for (const scene of scenes) {
+        if (scene.start && scene.end) {
+          const start_s = timeToSeconds(scene.start)
+          const end_s = timeToSeconds(scene.end)
+          if (frame.t >= start_s && frame.t < end_s) {
+            return scene
+          }
+        }
+      }
+      // No exact match: find nearest scene by time
+      const nearest = scenes.reduce((best, curr) => {
+        const curr_start = timeToSeconds(curr.start || '0:00')
+        const best_start = timeToSeconds(best.start || '0:00')
+        return Math.abs(frame.t - curr_start) < Math.abs(frame.t - best_start) ? curr : best
+      })
+      if (nearest) return nearest
+    }
+
+    // Fallback: proportional (for old sources without .t)
     if (scenes.length === frames.length) return scenes[i]
     const idx = frames.length > 1 ? Math.round((i / (frames.length - 1)) * (scenes.length - 1)) : 0
     return scenes[Math.min(Math.max(idx, 0), scenes.length - 1)]

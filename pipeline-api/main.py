@@ -5960,8 +5960,9 @@ def list_source_frames(youtube_url: str):
     """List persisted analysis frames for a video.
 
     Query param: youtube_url
-    Returns: {video_id: str, frames: ["/frames/<video_id>/frame_00.jpg", ...]}
+    Returns: {video_id: str, frames: [{url: "/frames/<video_id>/frame_00.jpg", t: <float|null>, desc: <str|null>}, ...]}
     If frames dir doesn't exist, returns empty frames list (no crash).
+    For images without matching frames.json entry (old sources), returns t and desc as null.
     """
     try:
         video_id = _extract_video_id_from_youtube_url(youtube_url)
@@ -5973,8 +5974,33 @@ def list_source_frames(youtube_url: str):
 
     if frames_dir.is_dir():
         try:
+            # Load frame_analysis from sidecar if it exists (ponytail: non-fatal if missing)
+            frame_analysis_map = {}
+            frames_json_path = frames_dir / "frames.json"
+            if frames_json_path.exists():
+                try:
+                    frame_analysis_list = json.loads(frames_json_path.read_text(encoding="utf-8"))
+                    if isinstance(frame_analysis_list, list):
+                        for entry in frame_analysis_list:
+                            if isinstance(entry, dict):
+                                # Map by name for lookup below
+                                frame_analysis_map[entry.get("name")] = entry
+                except Exception as exc:
+                    print(f"[list_source_frames] failed to load frames.json for {video_id}: {exc}")
+
+            # List image files and build richer frame objects
             frame_files = sorted([f.name for f in frames_dir.glob("frame_*.jpg")])
-            frames = [f"/frames/{video_id}/{name}" for name in frame_files]
+            for name in frame_files:
+                frame_obj = {"url": f"/frames/{video_id}/{name}"}
+                # Match against frames.json entry by name (ponytail: fall back to null if missing)
+                analysis_entry = frame_analysis_map.get(name)
+                if analysis_entry:
+                    frame_obj["t"] = analysis_entry.get("t")
+                    frame_obj["desc"] = analysis_entry.get("desc")
+                else:
+                    frame_obj["t"] = None
+                    frame_obj["desc"] = None
+                frames.append(frame_obj)
         except Exception as exc:
             print(f"[list_source_frames] failed to list frames for {video_id}: {exc}")
 
@@ -6623,76 +6649,66 @@ async def upload_source(
     out_dir = f"{ANALYZE_FRAME_DIR}/{run_id}"
     try:
         try:
-            frame_paths = _extract_frames_from_file(str(video_path), out_dir, n=20)
+            frame_dicts = _extract_frames_timed(str(video_path), out_dir, n=20)
         except Exception as exc:
             print(f"[sources/upload] frame extraction failed: {exc}")
             raise HTTPException(status_code=502, detail=f"Frame extraction failed: {exc}")
 
-        if not frame_paths:
+        if not frame_dicts:
             raise HTTPException(status_code=502, detail="No frames could be extracted from the video")
 
         # Persist frames for later serving
         try:
             persist_dir = _REPO_ROOT / "data" / "frames" / file_id
             persist_dir.mkdir(parents=True, exist_ok=True)
-            for src_path in frame_paths:
-                dst_name = Path(src_path).name
-                dst_path = persist_dir / dst_name
-                shutil.copy(src_path, dst_path)
+            for frame_dict in frame_dicts:
+                src_path = frame_dict.get("path")
+                if src_path and Path(src_path).exists():
+                    dst_name = Path(src_path).name
+                    dst_path = persist_dir / dst_name
+                    shutil.copy(src_path, dst_path)
         except Exception as exc:
             print(f"[sources/upload] frame persistence failed (non-fatal): {exc}")
 
-        # Build prompt and call claude bridge
-        prompt = _build_claude_prompt(safe_intent, output_format)
-        frame_names = [Path(p).name for p in frame_paths]
+        # Sequential frame-by-frame analysis with timestamps (migrate to match async flow)
+        audio_tags = None
+        try:
+            audio_tags = _analyze_audio(str(video_path))
+        except Exception as exc:
+            print(f"[sources/upload] audio analysis failed (non-fatal): {exc}")
+
         model = "claude-sonnet-4-6"
-
-        import httpx as _httpx
-        bridge_timeout = _httpx.Timeout(connect=10.0, read=200.0, write=10.0, pool=5.0)
         try:
-            bridge_resp = _httpx.post(
-                f"{CLAUDE_BRIDGE_URL}/run",
-                json={"prompt": prompt, "frames": frame_names, "model": model, "subdir": run_id},
-                timeout=bridge_timeout,
+            parsed = _analyze_frames_sequential(
+                frames=frame_dicts,
+                subdir=run_id,
+                intent=safe_intent,
+                output_format=output_format,
+                model=model,
+                log_fn=None,  # no logging for sync endpoint
+                transcript_text="",  # uploads don't have transcripts
+                audio_tags=audio_tags,
+                video_path=str(video_path)
             )
+        except HTTPException:
+            raise
         except Exception as exc:
-            print(f"[sources/upload] bridge unreachable: {exc}")
-            raise HTTPException(status_code=502, detail=f"Bridge unreachable: {exc}")
+            print(f"[sources/upload] sequential analysis failed: {exc}")
+            video_path.unlink(missing_ok=True)
+            raise HTTPException(status_code=502, detail=f"Frame analysis failed: {exc}")
 
-        # Wrap json() call to catch JSONDecodeError
+        # Persist per-frame descriptions from sequential analysis
         try:
-            bridge_data = bridge_resp.json()
-        except Exception:
-            video_path.unlink(missing_ok=True)
-            raise HTTPException(status_code=502, detail="Bridge returned a non-JSON response")
-
-        if bridge_data.get("error_type") == "rate_limit":
-            video_path.unlink(missing_ok=True)
-            raise HTTPException(status_code=429, detail="Claude usage/rate limit reached — please retry later")
-
-        if not bridge_data.get("ok"):
-            video_path.unlink(missing_ok=True)
-            raise HTTPException(status_code=502, detail=f"Bridge error: {bridge_data.get('error', 'unknown')}")
-
-        # Log API usage
-        _log_api_usage(
-            agent="sources-upload",
-            model=bridge_data.get("model", model),
-            raw_usage=bridge_data.get("raw_usage", {}),
-            cost_usd=bridge_data.get("cost_usd")
-        )
-
-        # Parse claude result
-        raw_result = bridge_data.get("result", "")
-        cost_usd = bridge_data.get("cost_usd")
-
-        try:
-            cleaned = _strip_json_fences(raw_result)
-            parsed = json.loads(cleaned)
+            frame_analysis = parsed.get("frame_analysis", [])
+            if frame_analysis:
+                frames_json_path = _REPO_ROOT / "data" / "frames" / file_id / "frames.json"
+                frames_json_path.parent.mkdir(parents=True, exist_ok=True)
+                frames_json_path.write_text(json.dumps(frame_analysis, ensure_ascii=False), encoding="utf-8")
         except Exception as exc:
-            print(f"[sources/upload] JSON parse failed: {exc}")
-            video_path.unlink(missing_ok=True)
-            raise HTTPException(status_code=502, detail=f"Could not parse claude result as JSON: {exc}")
+            print(f"[sources/upload] frame_analysis persistence failed (non-fatal): {exc}")
+
+        raw_result = ""
+        cost_usd = None
 
         summary = parsed.get("summary", "")
         detail = parsed.get("detail", "")
