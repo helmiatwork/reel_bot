@@ -295,12 +295,12 @@
             </div>
           {/if}
           {#if analysis.retention}
+            {@const rp = toPoints(analysis.retention)}
             <div class="ana-card">
               <div class="ana-label">
                 Retention
                 {#if analysis.retention_score}<span class="score-badge">{analysis.retention_score}/10</span>{/if}
               </div>
-              {@const rp = toPoints(analysis.retention)}
               {#if rp}
                 {#if rp.lead}<div class="ana-lead">{rp.lead}</div>{/if}
                 <ol class="ana-points">{#each rp.items as it}<li>{it}</li>{/each}</ol>
@@ -310,9 +310,9 @@
             </div>
           {/if}
           {#if analysis.structure}
+            {@const sp = toPoints(analysis.structure)}
             <div class="ana-card">
               <div class="ana-label">Struktur</div>
-              {@const sp = toPoints(analysis.structure)}
               {#if sp}
                 {#if sp.lead}<div class="ana-lead">{sp.lead}</div>{/if}
                 <ol class="ana-points">{#each sp.items as it}<li>{it}</li>{/each}</ol>
