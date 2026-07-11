@@ -3567,26 +3567,26 @@ Format JSON yang harus dikembalikan:
 }}
 """
 
-# ponytail: gen_prompt sections added to the main prompt (single bridge call); if parse fails, we store raw string, not 500-error
-_GEN_PROMPT_VIDEO_ADDITION = """,
-  "gen_prompt": "<ONE concise text-to-video prompt (2-3 sentences) capturing the video's concept, cinematic style, subjects, and structure for a text-to-video model like Veo 3>"
-"""
-
-_GEN_PROMPT_JSON_ADDITION = """,
+def _build_claude_prompt(intent: str, output_format: str = "none") -> str:
+    """
+    Build the main Claude analysis prompt.
+    Gen_prompt generation is now handled separately via a second bridge call to avoid JSON parse failures.
+    """
+    gen_prompt_field = ""
+    if output_format == "prompt_json":
+        gen_prompt_field = """,
   "gen_prompt_storyboard": {
     "scene_order": [
-      {"scene": 1, "description": "<1 sentence scene description>", "camera_angle": "<e.g. wide, close-up, overhead>", "lighting": "<e.g. bright, dim, cinematic>", "objects": ["<obj1>", "<obj2>"], "style": "<visual style>"}
+      {
+        "scene": <int>,
+        "description": "<1 sentence scene description>",
+        "camera_angle": "<e.g. wide, close-up, overhead>",
+        "lighting": "<e.g. bright, dim, cinematic>",
+        "objects": ["<obj1>", "<obj2>"],
+        "style": "<visual style>"
+      }
     ]
-  }
-"""
-
-def _build_claude_prompt(intent: str, output_format: str = "none") -> str:
-    """Build the Claude analysis prompt with optional gen_prompt sections."""
-    gen_prompt_field = ""
-    if output_format == "prompt_video":
-        gen_prompt_field = _GEN_PROMPT_VIDEO_ADDITION
-    elif output_format == "prompt_json":
-        gen_prompt_field = _GEN_PROMPT_JSON_ADDITION
+  }"""
     return _CLAUDE_RE_PROMPT_TEMPLATE.format(intent=intent, gen_prompt_field=gen_prompt_field)
 
 _CLAUDE_CLIPPER_PROMPT_TEMPLATE = """\
@@ -4172,11 +4172,16 @@ def download_render(render_id: str):
     return FileResponse(path=str(mp4_file), media_type="video/mp4", filename=f"{render_id}.mp4")
 
 
-def _extract_frames_from_file(video_path: str, out_dir: str, n: int = 20) -> list:
+# ponytail: scene-detection constants for frame extraction
+_SCENE_DETECT_THRESHOLD = 0.3  # Scene change threshold (0.0-1.0); tune if needed
+_SCENE_FRAMES_CAP = 30  # Cap extracted frames at max 30 to keep analysis response manageable
+_SCENE_FRAMES_MIN_FALLBACK = 6  # If < 6 frames from scene detection, fall back to evenly-spaced
+
+
+def _extract_frames_evenly(video_path: str, out_dir: str, n: int = 20) -> list:
     """
-    Extract n evenly-spaced keyframes from a local video file using ffmpeg.
-    Returns a list of absolute frame file paths.
-    ponytail: shared by both URL-based (/analyze/claude) and file-based (/sources/upload) paths
+    Extract n evenly-spaced frames from video (fallback when scene detection yields too few).
+    Returns list of absolute frame file paths.
     """
     import subprocess
 
@@ -4220,6 +4225,55 @@ def _extract_frames_from_file(video_path: str, out_dir: str, n: int = 20) -> lis
         )
         if ff.returncode == 0 and Path(out_file).exists():
             frame_paths.append(out_file)
+
+    return frame_paths
+
+
+def _extract_frames_from_file(video_path: str, out_dir: str, n: int = 20) -> list:
+    """
+    Extract keyframes from a local video file using scene detection via ffmpeg.
+    Falls back to evenly-spaced extraction if scene detection yields < 6 frames.
+    Caps frames at _SCENE_FRAMES_CAP (30) to keep analysis manageable.
+    Returns a list of absolute frame file paths.
+    ponytail: shared by both URL-based (/analyze/claude) and file-based (/sources/upload) paths;
+    scene detection trades quality for smaller, more robust JSON responses; per-account locks if throughput matters
+    """
+    import subprocess
+
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
+    frame_paths = []
+
+    # Try scene detection first
+    try:
+        # Use ffmpeg scene filter to extract frames at scene cuts
+        # select='gt(scene,threshold)' detects scene cuts above threshold
+        ff = subprocess.run(
+            [
+                "ffmpeg", "-i", video_path,
+                "-vf", f"select='gt(scene,{_SCENE_DETECT_THRESHOLD})',scale=-1:480",
+                "-vsync", "vfr",
+                "-frames:v", str(_SCENE_FRAMES_CAP),
+                "-q:v", "3",
+                "-y", f"{out_dir}/frame_%03d.jpg",
+            ],
+            capture_output=True, timeout=60,
+        )
+
+        if ff.returncode == 0:
+            # Collect extracted frames
+            from pathlib import Path
+            frame_files = sorted(Path(out_dir).glob("frame_*.jpg"))
+            frame_paths = [str(f) for f in frame_files]
+
+        # If scene detection returned too few frames, fall back to evenly-spaced
+        if len(frame_paths) < _SCENE_FRAMES_MIN_FALLBACK:
+            # Clean up partial results from scene detection
+            for f in frame_paths:
+                Path(f).unlink(missing_ok=True)
+            frame_paths = _extract_frames_evenly(video_path, out_dir, n)
+    except Exception:
+        # Fallback on any exception during scene detection
+        frame_paths = _extract_frames_evenly(video_path, out_dir, n)
 
     return frame_paths
 
@@ -4857,6 +4911,67 @@ class AnalyzeClaudeRequest(BaseModel):
     output_format: str = "none"
 
 
+def _generate_gen_prompt(frame_names: list, subdir: str, output_format: str, model: str) -> tuple:
+    """
+    Generate gen_prompt via a second, dedicated bridge call after the main analysis succeeds.
+    Non-fatal on error: returns (None, None) if the gen_prompt call fails.
+    Returns (gen_prompt_str, gen_prompt_format) or (None, None) on failure.
+
+    For prompt_video: returns simple text-to-video prompt
+    For prompt_json: returns JSON storyboard object as string
+    """
+    import httpx as _httpx
+
+    if output_format == "none":
+        return (None, None)
+
+    if output_format == "prompt_video":
+        gen_prompt_instruction = "Return ONLY a JSON object with this exact shape (single braces): {\"gen_prompt\": \"<ONE concise text-to-video prompt (2-3 sentences) capturing the video's concept, cinematic style, subjects, and structure for a text-to-video model like Veo 3>\"}"
+    elif output_format == "prompt_json":
+        gen_prompt_instruction = "Return ONLY a JSON object with this exact shape (single braces): {\"scene_order\": [{\"scene\": 1, \"description\": \"<1 sentence scene description>\", \"camera_angle\": \"<e.g. wide, close-up, overhead>\", \"lighting\": \"<e.g. bright, dim, cinematic>\", \"objects\": [\"<obj1>\", \"<obj2>\"], \"style\": \"<visual style>\"}]}"
+    else:
+        return (None, None)
+
+    try:
+        bridge_timeout = _httpx.Timeout(connect=10.0, read=200.0, write=10.0, pool=5.0)
+        bridge_resp = _httpx.post(
+            f"{CLAUDE_BRIDGE_URL}/run",
+            json={"prompt": gen_prompt_instruction, "frames": frame_names, "model": model, "subdir": subdir},
+            timeout=bridge_timeout,
+        )
+
+        bridge_data = bridge_resp.json()
+        if not bridge_data.get("ok"):
+            return (None, None)
+
+        raw_result = bridge_data.get("result", "")
+        try:
+            cleaned = _strip_json_fences(raw_result)
+            parsed = json.loads(cleaned)
+        except Exception:
+            return (None, None)
+
+        if output_format == "prompt_video":
+            gen_prompt = parsed.get("gen_prompt", "")
+            return (gen_prompt if gen_prompt else None, "prompt_video" if gen_prompt else None)
+        elif output_format == "prompt_json":
+            scene_order = parsed.get("scene_order")
+            if not scene_order:
+                storyboard = parsed.get("gen_prompt_storyboard")
+                if storyboard:
+                    scene_order = storyboard.get("scene_order")
+            if scene_order:
+                try:
+                    gen_prompt = json.dumps({"scene_order": scene_order})
+                    return (gen_prompt, "prompt_json")
+                except Exception:
+                    return (None, None)
+            return (None, None)
+    except Exception:
+        # Non-fatal: log and return None
+        return (None, None)
+
+
 def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = None, start_time: Optional[float] = None) -> dict:
     """
     Core analyze logic, reusable by both sync and async endpoints.
@@ -4867,6 +4982,11 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
     import re
 
     _validate_source_url(req.youtube_url)
+
+    # Validate that URL is from a known platform
+    platform = _detect_platform(req.youtube_url)
+    if platform == "unknown":
+        raise HTTPException(status_code=400, detail="URL must be from YouTube, TikTok, Instagram, or XiaoHongShu")
 
     # Validate output_format
     output_format = (req.output_format or "none").lower()
@@ -5072,28 +5192,25 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
     if not isinstance(tags, list):
         tags = []
 
-    # Extract gen_prompt
-    gen_prompt = None
-    gen_prompt_format = None
-    if output_format == "prompt_video":
-        gen_prompt = parsed.get("gen_prompt", "")
-        gen_prompt_format = "prompt_video" if gen_prompt else None
-    elif output_format == "prompt_json":
-        storyboard = parsed.get("gen_prompt_storyboard", {})
-        if storyboard and isinstance(storyboard, dict):
-            try:
-                gen_prompt = json.dumps(storyboard)
-                gen_prompt_format = "prompt_json"
-            except Exception:
-                gen_prompt = None
-                gen_prompt_format = None
-        else:
-            gen_prompt = None
-            gen_prompt_format = None
-
     if progress_id:
         elapsed = round(time.time() - start_time, 1) if start_time else 0
         _log_run(progress_id, f"✓ Analisa selesai ({elapsed}s, ${cost_usd:.4f})" if cost_usd else f"✓ Analisa selesai ({elapsed}s)", start_time)
+
+    # Step 4b: Generate gen_prompt via second bridge call (if output_format requires it)
+    gen_prompt = None
+    gen_prompt_format = None
+    if output_format != "none":
+        if progress_id:
+            fmt_name = "video" if output_format == "prompt_video" else "JSON"
+            _log_run(progress_id, f"📝 Generate prompt ({fmt_name})…", start_time)
+        gen_prompt, gen_prompt_format = _generate_gen_prompt(frame_names, run_id, output_format, model)
+        if gen_prompt:
+            if progress_id:
+                _log_run(progress_id, "✓ Prompt dibuat", start_time)
+        else:
+            # Non-fatal: if gen_prompt generation fails, log warning but continue
+            if progress_id:
+                _log_run(progress_id, "⚠ Prompt gagal (non-fatal)", start_time)
 
     # Validity gate
     _blob = f"{hook} {structure} {retention}".lower()
@@ -6057,26 +6174,6 @@ async def upload_source(
         if not isinstance(tags, list):
             tags = []
 
-        # Extract gen_prompt based on output_format (non-fatal if missing or unparseable)
-        gen_prompt = None
-        gen_prompt_format = None
-        if output_format == "prompt_video":
-            gen_prompt = parsed.get("gen_prompt", "")
-            gen_prompt_format = "prompt_video" if gen_prompt else None
-        elif output_format == "prompt_json":
-            # For JSON format, extract the storyboard and re-serialize it
-            storyboard = parsed.get("gen_prompt_storyboard", {})
-            if storyboard and isinstance(storyboard, dict):
-                try:
-                    gen_prompt = json.dumps(storyboard)
-                    gen_prompt_format = "prompt_json"
-                except Exception:
-                    gen_prompt = None
-                    gen_prompt_format = None
-            else:
-                gen_prompt = None
-                gen_prompt_format = None
-
         # Validity gate: only persist if analysis is valid
         _blob = f"{hook} {structure} {retention}".lower()
         _refusal = any(p in _blob for p in (
@@ -6089,6 +6186,12 @@ async def upload_source(
         if not analysis_ok:
             video_path.unlink(missing_ok=True)
             raise HTTPException(status_code=422, detail="Claude could not analyze this video — try a clearer video or different intent")
+
+        # Generate gen_prompt via second bridge call (if output_format requires it)
+        gen_prompt = None
+        gen_prompt_format = None
+        if output_format != "none":
+            gen_prompt, gen_prompt_format = _generate_gen_prompt(frame_names, run_id, output_format, model)
 
         # Persist source and analysis to DB
         source_id = None
@@ -6375,25 +6478,6 @@ async def upload_source_async(
             if not isinstance(tags, list):
                 tags = []
 
-            # Extract gen_prompt
-            gen_prompt = None
-            gen_prompt_format = None
-            if output_format == "prompt_video":
-                gen_prompt = parsed.get("gen_prompt", "")
-                gen_prompt_format = "prompt_video" if gen_prompt else None
-            elif output_format == "prompt_json":
-                storyboard = parsed.get("gen_prompt_storyboard", {})
-                if storyboard and isinstance(storyboard, dict):
-                    try:
-                        gen_prompt = json.dumps(storyboard)
-                        gen_prompt_format = "prompt_json"
-                    except Exception:
-                        gen_prompt = None
-                        gen_prompt_format = None
-                else:
-                    gen_prompt = None
-                    gen_prompt_format = None
-
             _log_run(run_id, f"✓ Analisa selesai ({round(time.time()-start_time, 1)}s, ${cost_usd:.4f})" if cost_usd else f"✓ Analisa selesai ({round(time.time()-start_time, 1)}s)", start_time)
 
             # Validity gate
@@ -6413,6 +6497,17 @@ async def upload_source_async(
                     run["error"] = "Claude could not analyze this video — try a clearer video or different intent"
                     _save_run(run_id, run)
                 return
+
+            # Generate gen_prompt via second bridge call (if output_format requires it)
+            gen_prompt = None
+            gen_prompt_format = None
+            if output_format != "none":
+                _log_run(run_id, f"📝 Generate prompt ({'video' if output_format == 'prompt_video' else 'JSON'})…", start_time)
+                gen_prompt, gen_prompt_format = _generate_gen_prompt(frame_names, frame_run_id, output_format, model)
+                if gen_prompt:
+                    _log_run(run_id, "✓ Prompt dibuat", start_time)
+                else:
+                    _log_run(run_id, "⚠ Prompt gagal (non-fatal)", start_time)
 
             # Persist to DB
             _log_run(run_id, "💾 Simpan ke database…", start_time)

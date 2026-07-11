@@ -274,20 +274,26 @@ class TestDbInsert:
                 "intent": "cek hook",
             })
         assert r.status_code == 200
-        # Verify INSERT was called
+        # Verify INSERT was called (may be one of multiple execute calls)
         assert mock_cursor.execute.called
-        call_args = mock_cursor.execute.call_args
-        sql = call_args[0][0]
-        params = call_args[0][1]
-        assert "INSERT INTO video_analysis" in sql
-        # INSERT column order: youtube_url, intent, hook, structure, retention, tags, raw_result, model, cost_usd
+        # Find the INSERT INTO video_analysis call
+        insert_call = None
+        for call in mock_cursor.execute.call_args_list:
+            sql = call[0][0]
+            if "INSERT INTO video_analysis" in sql:
+                insert_call = call
+                break
+        assert insert_call is not None, "INSERT INTO video_analysis was not called"
+        sql = insert_call[0][0]
+        params = insert_call[0][1]
+        # INSERT column order: youtube_url, intent, hook, structure, retention, tags, raw_result, model, cost_usd, retention_score, content_summary, content_detail
         assert params[0] == "https://www.youtube.com/watch?v=dQw4w9WgXcQ"  # youtube_url
         assert params[2] == _SAMPLE_RESULT["hook"]                          # hook
         assert params[3] == _SAMPLE_RESULT["structure"]                     # structure
         assert params[4] == _SAMPLE_RESULT["retention"]                     # retention
         assert params[7] == "claude-sonnet-4-6"                            # model
-        # commit was called
-        mock_conn.commit.assert_called_once()
+        # commit was called at least once (may be called multiple times for INSERT + _save_source)
+        assert mock_conn.commit.called
 
     def test_db_unavailable_does_not_crash(self, client):
         """If DB is down (_db_conn returns None) the endpoint still returns 200."""
