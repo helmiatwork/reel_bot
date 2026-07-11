@@ -220,6 +220,36 @@ def test_build_frame_analysis_basic():
     assert result[2]["desc"] == "Wide shot"
 
 
+def test_synthesis_resilience_frame_analysis_on_failure():
+    """Test that frame_analysis is attached to result even when synthesis (parsed) is None.
+
+    Simulates the resilience logic: when synthesis bridge times out, parsed=None,
+    but we still want to preserve the per-frame analysis collected so far.
+    """
+    # Simulate the resilience merge logic from _analyze_frames_sequential
+    normalized_frames = [
+        {"name": "frame_000.jpg", "t": 0.0},
+        {"name": "frame_001.jpg", "t": 2.5},
+    ]
+    frame_descriptions = ["First description", "Second description"]
+
+    # Synthesis failed, so parsed is None
+    parsed = None
+
+    # Apply the resilience logic
+    frame_analysis = _build_frame_analysis(normalized_frames, frame_descriptions)
+    result = parsed if isinstance(parsed, dict) else {}
+    if frame_analysis:
+        result["frame_analysis"] = frame_analysis
+
+    # Verify frame_analysis is in result even though synthesis failed
+    assert "frame_analysis" in result
+    assert len(result["frame_analysis"]) == 2
+    assert result["frame_analysis"][0]["name"] == "frame_000.jpg"
+    assert result["frame_analysis"][0]["desc"] == "First description"
+    assert result["frame_analysis"][1]["t"] == 2.5
+
+
 def test_build_frame_analysis_with_null_timestamps():
     """Test _build_frame_analysis handles null timestamps."""
     normalized_frames = [

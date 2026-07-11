@@ -5361,10 +5361,10 @@ def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: 
     parsed = None
     for attempt in range(2):
         try:
-            bridge_timeout = _httpx.Timeout(connect=10.0, read=200.0, write=10.0, pool=5.0)
+            bridge_timeout = _httpx.Timeout(connect=10.0, read=330.0, write=10.0, pool=5.0)
             bridge_resp = _httpx.post(
                 f"{CLAUDE_BRIDGE_URL}/run",
-                json={"prompt": full_synthesis_prompt, "frames": [], "model": model, "subdir": subdir},
+                json={"prompt": full_synthesis_prompt, "frames": [], "model": model, "subdir": subdir, "timeout_s": 300},
                 timeout=bridge_timeout,
             )
             bridge_data = bridge_resp.json()
@@ -5422,12 +5422,13 @@ def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: 
                 # Second attempt failed, raise
                 raise HTTPException(status_code=502, detail=f"Could not parse claude result as JSON: {exc}")
 
-    # Assemble per-frame analysis for sidecar persistence
+    # Assemble per-frame analysis for sidecar persistence (even if synthesis failed)
     frame_analysis = _build_frame_analysis(normalized_frames, frame_descriptions)
-    if isinstance(parsed, dict) and frame_analysis:
-        parsed["frame_analysis"] = frame_analysis
+    result = parsed if isinstance(parsed, dict) else {}
+    if frame_analysis:
+        result["frame_analysis"] = frame_analysis
 
-    return parsed or {}
+    return result
 
 
 def _generate_gen_prompt(frame_descriptions: str, subdir: str, output_format: str, model: str) -> tuple:
