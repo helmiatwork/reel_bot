@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte'
-  import { api, fmtViews } from '../lib/api.js'
+  import { api, fmtViews, isActiveRunning } from '../lib/api.js'
   import { SOURCE_DETAIL } from '../lib/data.js'
   import { openDrawer, jobs } from '../lib/stores.js'
   import Pagination from '../lib/Pagination.svelte'
@@ -70,7 +70,7 @@
   )
   let niches = $derived([...new Set(rows.map((r) => r.niche))].filter((n) => n && n !== '-'))
 
-  let runningCount = $derived($jobs.filter(j => j.status === 'running').length)
+  let runningCount = $derived($jobs.filter(isActiveRunning).length)
 
   onMount(() => {
     load()
