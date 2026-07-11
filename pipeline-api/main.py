@@ -5424,7 +5424,7 @@ def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: 
         batch_size = len(batch_frames)
 
         if log_fn:
-            log_fn(f"🧠 Analisa frame {batch_start_idx + 1}-{batch_end_idx}/{len(normalized_frames)}…")
+            log_fn(f"🧠 Analisa frame {batch_start_idx + 1}-{batch_end_idx}/{len(normalized_frames)} ({model})…")
 
         # Build frame-list description for batch prompt
         frame_lines = []
