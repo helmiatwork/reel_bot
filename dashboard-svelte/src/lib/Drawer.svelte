@@ -223,27 +223,64 @@
       <!-- ANALISA TAB -->
       {#if activeTab === 'analisa'}
         <div class="tab-panel">
-          <div class="kv"><span>URL</span><a href={s.youtube_url} target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;cursor:pointer">buka video ↗</a></div>
-          <div class="kv"><span>Views</span><span class="num">{s.viewsLabel}</span></div>
-          <div class="kv"><span>Niche</span><span>{s.niche}</span></div>
-          <div class="kv"><span>Status</span><span>{s.status}</span></div>
+          <!-- Meta block: URL, Views, Niche, Status -->
+          <div class="meta-block">
+            <div class="meta-row">
+              <span class="meta-label">URL</span>
+              <a href={s.youtube_url} target="_blank" rel="noopener noreferrer" class="meta-link">buka video ↗</a>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Views</span>
+              <span class="meta-val num">{s.viewsLabel}</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Niche</span>
+              <span class="meta-val">{s.niche}</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Status</span>
+              <span class="status-chip {s.status === 'analyzed' ? 'chip-green' : s.status === 'error' ? 'chip-red' : 'chip-mut'}">{s.status}</span>
+            </div>
+          </div>
+
+          <!-- Analysis section cards -->
           {#if analysis.hook}
-            <div class="kv"><span>Hook</span><span style="text-align:right;max-width:60%">{analysis.hook}</span></div>
+            <div class="ana-card">
+              <div class="ana-label">Hook</div>
+              <div class="ana-body">{analysis.hook}</div>
+            </div>
           {/if}
           {#if analysis.retention}
-            <div class="kv"><span>Retention</span><span style="text-align:right;max-width:60%">{analysis.retention}{analysis.retention_score ? ` (${analysis.retention_score}/10)` : ''}</span></div>
+            <div class="ana-card">
+              <div class="ana-label">
+                Retention
+                {#if analysis.retention_score}<span class="score-badge">{analysis.retention_score}/10</span>{/if}
+              </div>
+              <div class="ana-body">{analysis.retention}</div>
+            </div>
           {/if}
           {#if analysis.structure}
-            <div class="kv"><span>Struktur</span><span style="text-align:right;max-width:60%">{analysis.structure}</span></div>
+            <div class="ana-card">
+              <div class="ana-label">Struktur</div>
+              <div class="ana-body">{analysis.structure}</div>
+            </div>
           {/if}
           {#if analysis.summary}
-            <div class="kv-text"><span>Ringkas</span><div class="ana-text">{analysis.summary}</div></div>
+            <div class="ana-card">
+              <div class="ana-label">Ringkas</div>
+              <div class="ana-body">{analysis.summary}</div>
+            </div>
           {/if}
           {#if analysis.detail}
-            <div class="kv-text"><span>Detail</span><div class="ana-text">{analysis.detail}</div></div>
+            <div class="ana-card">
+              <div class="ana-label">Detail</div>
+              <div class="ana-body">{analysis.detail}</div>
+            </div>
           {/if}
           {#if analysis.tags?.length}
-            <div class="kv"><span>Tags</span><span style="text-align:right;max-width:60%">{#each analysis.tags as t}<span class="tag">{t}</span>{/each}</span></div>
+            <div class="tags-row">
+              {#each analysis.tags as t}<span class="tag">{t}</span>{/each}
+            </div>
           {/if}
 
           <!-- Re-analyze button -->
@@ -457,60 +494,100 @@
     }
   }
 
-  .kv-text {
-    display: flex; flex-direction: column; gap: 4px;
-    padding: 8px 0; border-bottom: 1px solid #eee;
+  /* Local .kv — global .drawer .kv doesn't reach .modal-panel; define here for agent/formula/piece types */
+  .kv {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; gap: 12px;
   }
-  .kv-text span { font-weight: 600; color: #333; font-size: 12px; }
-  .ana-text {
-    font-size: 12px; color: #555; line-height: 1.5;
-    max-height: 120px; overflow-y: auto; padding: 6px; background: #f9f9f9;
-    border-radius: 4px; white-space: pre-wrap; word-break: break-word;
+  .kv span:first-child { color: var(--mut); flex-shrink: 0; }
+
+  /* Meta block (source Analisa tab) */
+  .meta-block {
+    background: var(--soft); border: 1px solid var(--line);
+    border-radius: 8px; overflow: hidden; margin-bottom: 12px;
   }
+  .meta-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; padding: 9px 14px; border-bottom: 1px solid var(--line); font-size: 13px;
+  }
+  .meta-row:last-child { border-bottom: none; }
+  .meta-label {
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--mut); flex-shrink: 0;
+  }
+  .meta-val { color: var(--txt); }
+  .meta-link { color: var(--accent); text-decoration: underline; font-size: 13px; }
+
+  /* Status chip */
+  .status-chip { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+  .chip-green { background: rgba(10,179,156,.12); color: var(--green); }
+  .chip-red   { background: rgba(240,101,72,.12);  color: var(--red);   }
+  .chip-mut   { background: rgba(148,163,184,.16); color: var(--mut);   }
+
+  /* Analysis section cards */
+  .ana-card {
+    background: var(--soft); border: 1px solid var(--line);
+    border-radius: 8px; padding: 12px 14px;
+  }
+  .ana-label {
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--mut);
+    margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
+  }
+  .ana-body {
+    font-size: 13px; color: var(--txt); line-height: 1.65;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .score-badge {
+    font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 8px;
+    background: rgba(64,81,137,.12); color: var(--accent);
+    text-transform: none; letter-spacing: 0;
+  }
+  .tags-row { display: flex; flex-wrap: wrap; gap: 4px; }
   .seg-list { display: flex; flex-direction: column; gap: 6px; }
   .seg-row {
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-    font-size: 12px; padding: 6px 8px;
-    background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;
+    font-size: 12px; padding: 6px 10px;
+    background: var(--soft); border-radius: 6px; border: 1px solid var(--line);
   }
-  .seg-idx { font-weight: 600; color: #333; }
-  .seg-time { color: #666; }
-  .seg-credit { color: #444; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .seg-idx { font-weight: 600; color: var(--txt); }
+  .seg-time { color: var(--mut); }
+  .seg-credit { color: var(--txt); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .badge-sm {
     font-size: 10px; font-weight: 600; padding: 1px 6px;
     border-radius: 8px; text-transform: lowercase; white-space: nowrap;
   }
-  .b-found { background: #dcfce7; color: #166534; }
-  .b-grey { background: #f0f0f0; color: #666; }
+  .b-found { background: rgba(10,179,156,.12); color: var(--green); }
+  .b-grey  { background: rgba(148,163,184,.14); color: var(--mut); }
 
   .reana-wrap {
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-    margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line, #1f2937);
+    margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line);
   }
   .reana-btn {
     font-size: 12px; font-weight: 600; padding: 5px 12px;
     border-radius: 6px; cursor: pointer;
-    background: rgba(110,168,254,.12); color: #6ea8fe;
-    border: 1px solid rgba(110,168,254,.3); transition: opacity .15s;
+    background: rgba(64,81,137,.1); color: var(--accent);
+    border: 1px solid rgba(64,81,137,.25); transition: opacity .15s;
   }
   .reana-btn:disabled { opacity: .55; cursor: default; }
-  .reana-btn:not(:disabled):hover { background: rgba(110,168,254,.22); }
-  .reana-ok  { font-size: 11px; color: #34d399; }
-  .reana-err { font-size: 11px; color: #f87171; }
+  .reana-btn:not(:disabled):hover { background: rgba(64,81,137,.18); }
+  .reana-ok  { font-size: 11px; color: var(--green); }
+  .reana-err { font-size: 11px; color: var(--red); }
 
   .pecah-wrap {
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-    margin-top: 12px;
+    margin-top: 8px;
   }
   .pecah-btn {
     font-size: 12px; font-weight: 600; padding: 5px 12px;
     border-radius: 6px; border: none; cursor: pointer;
-    background: #2563eb; color: #fff; transition: opacity .15s;
+    background: var(--accent); color: #fff; transition: opacity .15s;
   }
   .pecah-btn:disabled { opacity: .55; cursor: default; }
   .pecah-btn:not(:disabled):hover { opacity: .85; }
-  .pecah-stage { font-size: 11px; color: #555; font-style: italic; }
-  .pecah-err { font-size: 11px; color: #dc2626; }
+  .pecah-stage { font-size: 11px; color: var(--mut); font-style: italic; }
+  .pecah-err   { font-size: 11px; color: var(--red); }
 
   /* frame thumbnails — clickable zoom cue */
   .frame-thumb-btn {
@@ -545,16 +622,16 @@
   }
 
   .gen-prompt-box {
-    padding: 10px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;
-    margin-bottom: 8px; max-height: 200px; overflow-y: auto; overflow-x: auto;
+    padding: 12px 14px; background: var(--soft); border-radius: 8px; border: 1px solid var(--line);
+    margin-bottom: 10px; max-height: 420px; overflow-y: auto; overflow-x: auto;
     min-width: 0; word-break: break-word;
   }
   .gen-prompt-json {
-    font-size: 11px; margin: 0; line-height: 1.4; font-family: monospace;
-    color: #333; white-space: pre-wrap; word-break: break-word; min-width: 0;
+    font-size: 11px; margin: 0; line-height: 1.5; font-family: monospace;
+    color: var(--txt); white-space: pre-wrap; word-break: break-word; min-width: 0;
   }
   .gen-prompt-text {
-    font-size: 12px; color: #555; line-height: 1.5; white-space: pre-wrap; word-break: break-word; min-width: 0;
+    font-size: 13px; color: var(--txt); line-height: 1.65; white-space: pre-wrap; word-break: break-word; min-width: 0;
   }
   .copy-btn {
     font-size: 11px; padding: 4px 10px; background: #f0f0f0; border: 1px solid #ddd;
@@ -580,6 +657,6 @@
 
   /* Tab panel */
   .tab-panel {
-    display: flex; flex-direction: column; gap: 8px;
+    display: flex; flex-direction: column; gap: 10px;
   }
 </style>
