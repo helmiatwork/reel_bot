@@ -253,7 +253,7 @@
             {#if s.niche && s.niche !== '-'}<span class="hm-item">{s.niche}</span>{/if}
             <span class="hm-item num">{s.viewsLabel} views</span>
           </div>
-          <div class="mut" style="font-size:12px">{s.channel || '-'} · {s.id}</div>
+          <div class="mut" style="font-size:12px"><span class="sub-cap">Channel</span> {s.channel || '-'} <span class="sub-sep">·</span> <span class="sub-cap">ID</span> {s.id}</div>
         </div>
         {#if s.youtube_url}
           <div class="header-right">
@@ -549,6 +549,9 @@
     font-size: 12px; color: var(--mut); font-weight: 500;
     padding: 2px 9px; background: var(--soft); border: 1px solid var(--line); border-radius: 20px;
   }
+
+  .sub-cap { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--mut); opacity: 0.75; }
+  .sub-sep { opacity: 0.5; margin: 0 2px; }
 
   /* Header 80/20: title+meta left, action buttons right */
   .header-row { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 12px; }
