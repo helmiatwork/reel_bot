@@ -217,7 +217,16 @@
     <div class="modal-content">
       {#if d.type === 'source'}
       {@const s = d.data}
-      <h2>{s.title}</h2>
+      <h2 class="src-title">
+        {#if s.youtube_url}
+          <a href={s.youtube_url} target="_blank" rel="noopener noreferrer" class="title-link">{s.title} <span class="ext">↗</span></a>
+        {:else}{s.title}{/if}
+      </h2>
+      <div class="header-meta">
+        <span class="status-chip {s.status === 'analyzed' ? 'chip-green' : s.status === 'error' ? 'chip-red' : 'chip-mut'}">{s.status}</span>
+        {#if s.niche && s.niche !== '-'}<span class="hm-item">{s.niche}</span>{/if}
+        <span class="hm-item num">{s.viewsLabel} views</span>
+      </div>
       <div class="mut" style="font-size:12px;margin-bottom:8px">{s.channel || '-'} · {s.id}</div>
 
       <!-- ANALISA TAB -->
@@ -253,26 +262,6 @@
           {:else}
             <div class="mut" style="font-size:12px;margin-bottom:12px">youtube_url tidak ada — tidak bisa decompose.</div>
           {/if}
-
-          <!-- Meta block: URL, Views, Niche, Status -->
-          <div class="meta-block">
-            <div class="meta-row">
-              <span class="meta-label">URL</span>
-              <a href={s.youtube_url} target="_blank" rel="noopener noreferrer" class="meta-link">buka video ↗</a>
-            </div>
-            <div class="meta-row">
-              <span class="meta-label">Views</span>
-              <span class="meta-val num">{s.viewsLabel}</span>
-            </div>
-            <div class="meta-row">
-              <span class="meta-label">Niche</span>
-              <span class="meta-val">{s.niche}</span>
-            </div>
-            <div class="meta-row">
-              <span class="meta-label">Status</span>
-              <span class="status-chip {s.status === 'analyzed' ? 'chip-green' : s.status === 'error' ? 'chip-red' : 'chip-mut'}">{s.status}</span>
-            </div>
-          </div>
 
           <!-- Analysis section cards -->
           {#if analysis.hook}
@@ -513,6 +502,17 @@
   .chip-green { background: rgba(10,179,156,.12); color: var(--green); }
   .chip-red   { background: rgba(240,101,72,.12);  color: var(--red);   }
   .chip-mut   { background: rgba(148,163,184,.16); color: var(--mut);   }
+
+  /* Header: clickable title + inline meta (status / niche / views) */
+  .src-title { margin: 0 0 6px; }
+  .title-link { color: var(--txt); text-decoration: none; }
+  .title-link:hover { color: var(--accent); text-decoration: underline; }
+  .title-link .ext { color: var(--accent); font-size: 0.8em; }
+  .header-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .hm-item {
+    font-size: 12px; color: var(--mut); font-weight: 500;
+    padding: 2px 9px; background: var(--soft); border: 1px solid var(--line); border-radius: 20px;
+  }
 
   /* Analysis section cards */
   .ana-card {
