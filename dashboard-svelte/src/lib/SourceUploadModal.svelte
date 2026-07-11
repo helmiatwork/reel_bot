@@ -218,14 +218,6 @@
         </div>
       {/if}
 
-      <!-- Live log console (shown during async operations) -->
-      {#if runId && logs.length > 0}
-        <div class="console-container" transition:fade={{ duration: 150 }}>
-          <pre class="log-console" bind:this={consoleEl}>{#each logs as entry, i (i)}[{entry.t}s] {entry.msg}
-{/each}</pre>
-        </div>
-      {/if}
-
       <!-- URL Tab -->
       {#if activeTab === 'url'}
         <div class="tab-content" role="tabpanel" transition:fade={{ duration: 150 }}>
@@ -313,6 +305,14 @@
         </div>
       {/if}
     </div>
+
+    <!-- Live log console (shown during async operations) — below the fields -->
+    {#if runId && logs.length > 0}
+      <div class="console-container" transition:fade={{ duration: 150 }}>
+        <pre class="log-console" bind:this={consoleEl}>{#each logs as entry, i (i)}[{entry.t}s] {entry.msg}
+{/each}</pre>
+      </div>
+    {/if}
 
     <!-- Footer -->
     <div class="m-footer">
