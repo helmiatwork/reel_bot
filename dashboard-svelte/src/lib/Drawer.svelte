@@ -1,4 +1,6 @@
 <script>
+  import { fade, scale } from 'svelte/transition'
+  import { cubicOut } from 'svelte/easing'
   import { drawer, closeDrawer } from './stores.js'
   import { api } from './api.js'
 
@@ -163,11 +165,29 @@
 {/if}
 
 {#if d}
-  <div class="scrim" onclick={closeDrawer} role="presentation"></div>
-  <aside class="drawer">
-    <span class="x" onclick={closeDrawer} role="button" tabindex="0">✕</span>
+  <!-- Backdrop -->
+  <div
+    class="scrim"
+    transition:fade={{ duration: 200 }}
+    onclick={closeDrawer}
+    aria-hidden="true"
+  ></div>
 
-    {#if d.type === 'source'}
+  <!-- Modal Panel -->
+  <div
+    class="modal-panel"
+    role="dialog"
+    aria-modal="true"
+    transition:scale={{ duration: 230, start: 0.94, easing: cubicOut }}
+  >
+    <!-- Header -->
+    <div class="modal-header">
+      <span class="x" onclick={closeDrawer} role="button" tabindex="0" aria-label="Tutup">✕</span>
+    </div>
+
+    <!-- Content Container (scrollable) -->
+    <div class="modal-content">
+      {#if d.type === 'source'}
       {@const s = d.data}
       <h2>{s.title}</h2>
       <div class="mut" style="font-size:12px;margin-bottom:8px">{s.channel || '-'} · {s.id}</div>
@@ -323,10 +343,77 @@
       {/each}
       <p class="mut" style="font-size:12.5px;margin-top:12px">{p.note}</p>
     {/if}
-  </aside>
+    </div>
+  </div>
 {/if}
 
 <style>
+  /* Centered modal overlay and backdrop */
+  .scrim {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+
+  .modal-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    width: 80vw;
+    height: 80vh;
+    max-width: 80vw;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .x {
+    cursor: pointer;
+    font-size: 20px;
+    color: var(--mut);
+    transition: color 0.15s;
+    padding: 0.25rem;
+    user-select: none;
+  }
+
+  .x:hover {
+    color: var(--fg);
+  }
+
+  .modal-content {
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1;
+    padding: 1.5rem;
+  }
+
+  /* Responsive fallback for mobile/narrow screens */
+  @media (max-width: 768px) {
+    .modal-panel {
+      width: 95vw;
+      height: 90vh;
+      max-width: 95vw;
+      max-height: 90vh;
+    }
+  }
+
   .kv-text {
     display: flex; flex-direction: column; gap: 4px;
     padding: 8px 0; border-bottom: 1px solid #eee;
@@ -416,14 +503,15 @@
 
   .gen-prompt-box {
     padding: 10px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;
-    margin-bottom: 8px; max-height: 200px; overflow-y: auto;
+    margin-bottom: 8px; max-height: 200px; overflow-y: auto; overflow-x: auto;
+    min-width: 0; word-break: break-word;
   }
   .gen-prompt-json {
     font-size: 11px; margin: 0; line-height: 1.4; font-family: monospace;
-    color: #333; white-space: pre-wrap; word-break: break-word;
+    color: #333; white-space: pre-wrap; word-break: break-word; min-width: 0;
   }
   .gen-prompt-text {
-    font-size: 12px; color: #555; line-height: 1.5; white-space: pre-wrap; word-break: break-word;
+    font-size: 12px; color: #555; line-height: 1.5; white-space: pre-wrap; word-break: break-word; min-width: 0;
   }
   .copy-btn {
     font-size: 11px; padding: 4px 10px; background: #f0f0f0; border: 1px solid #ddd;
