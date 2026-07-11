@@ -31,7 +31,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS tool_kb_unique_feature_idx
 CREATE INDEX IF NOT EXISTS tool_kb_lookup_idx
     ON tool_kb (tool, version, platform);
 
--- Full-text-ish search on feature names / notes (guide matching by keyword).
+-- Fast case-insensitive lookup on feature names (guide matching by keyword).
 CREATE INDEX IF NOT EXISTS tool_kb_name_idx ON tool_kb (lower(name));
 
 -- Keep updated_at fresh on upsert.

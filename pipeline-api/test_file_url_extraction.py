@@ -46,6 +46,18 @@ def test_extract_file_url_mixed_sanitization():
     assert result == "upload-id_2024test"
 
 
+def test_extract_file_url_naked_raises():
+    """Bare file:// (no id) must raise, not silently yield ''."""
+    with pytest.raises(ValueError):
+        _extract_video_id_from_youtube_url("file://")
+
+
+def test_extract_file_url_all_special_chars_raises():
+    """file:// whose id is entirely special chars sanitizes to '' -> raise."""
+    with pytest.raises(ValueError):
+        _extract_video_id_from_youtube_url("file://!@#$%^")
+
+
 def test_extract_youtube_url_still_works():
     """Verify YouTube URL extraction still works after file:// addition."""
     result = _extract_video_id_from_youtube_url("https://www.youtube.com/watch?v=dQw4w9WgXcQ")

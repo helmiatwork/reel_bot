@@ -63,6 +63,7 @@
     reanalyzeError = ''
     reanalyzeDone = false
     lightboxSrc = null
+    activeTab = 'analisa'
     d = v
     frames = []
     segments = []

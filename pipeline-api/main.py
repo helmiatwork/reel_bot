@@ -3765,6 +3765,8 @@ def _extract_video_id_from_youtube_url(url: str) -> str:
     if url.startswith("file://"):
         file_id = url[len("file://"):]
         video_id = re.sub(r"[^a-zA-Z0-9_-]", "", file_id)
+        if not video_id:
+            raise ValueError(f"file:// URL yields empty id after sanitization: {url}")
         return video_id
 
     platform = _detect_platform(url)
