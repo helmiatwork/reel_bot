@@ -39,6 +39,21 @@
   // tab state
   let activeTab = $state('analisa')
   // Display + copy share one string: pretty-printed JSON for prompt_json, raw otherwise
+  // Split a prose string with "(1)… (2)…" markers into a lead + bullet points.
+  // Returns null when there are no numbered markers (render as prose instead).
+  function toPoints(text) {
+    if (!text) return null
+    const t = String(text)
+    if (!/\(\d+\)/.test(t)) return null
+    const first = t.search(/\(\d+\)/)
+    const lead = t.slice(0, first).replace(/[\s:；;–—-]+$/, '').trim()
+    const items = t.slice(first)
+      .split(/\(\d+\)/)
+      .map((s) => s.replace(/^[\s.]+/, '').replace(/[\s;；→\-–—]+$/, '').trim())
+      .filter(Boolean)
+    return items.length ? { lead, items } : null
+  }
+
   function promptDisplay(a) {
     if (a?.gen_prompt_format === 'prompt_json') {
       try { return JSON.stringify(JSON.parse(a.gen_prompt), null, 2) } catch { return a.gen_prompt }
@@ -285,13 +300,25 @@
                 Retention
                 {#if analysis.retention_score}<span class="score-badge">{analysis.retention_score}/10</span>{/if}
               </div>
-              <div class="ana-body">{analysis.retention}</div>
+              {@const rp = toPoints(analysis.retention)}
+              {#if rp}
+                {#if rp.lead}<div class="ana-lead">{rp.lead}</div>{/if}
+                <ol class="ana-points">{#each rp.items as it}<li>{it}</li>{/each}</ol>
+              {:else}
+                <div class="ana-body">{analysis.retention}</div>
+              {/if}
             </div>
           {/if}
           {#if analysis.structure}
             <div class="ana-card">
               <div class="ana-label">Struktur</div>
-              <div class="ana-body">{analysis.structure}</div>
+              {@const sp = toPoints(analysis.structure)}
+              {#if sp}
+                {#if sp.lead}<div class="ana-lead">{sp.lead}</div>{/if}
+                <ol class="ana-points">{#each sp.items as it}<li>{it}</li>{/each}</ol>
+              {:else}
+                <div class="ana-body">{analysis.structure}</div>
+              {/if}
             </div>
           {/if}
           {#if analysis.summary}
@@ -553,6 +580,16 @@
     font-size: 13px; color: var(--txt); line-height: 1.65;
     white-space: pre-wrap; word-break: break-word;
   }
+  .ana-lead {
+    font-size: 13px; color: var(--txt); line-height: 1.6; margin-bottom: 8px;
+  }
+  .ana-points {
+    margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .ana-points li {
+    font-size: 13px; color: var(--txt); line-height: 1.55; word-break: break-word;
+  }
+  .ana-points li::marker { color: var(--mut); font-weight: 600; }
   .score-badge {
     font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 8px;
     background: rgba(64,81,137,.12); color: var(--accent);
