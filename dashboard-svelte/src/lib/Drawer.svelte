@@ -223,6 +223,37 @@
       <!-- ANALISA TAB -->
       {#if activeTab === 'analisa'}
         <div class="tab-panel">
+          <!-- Actions (top) -->
+          {#if s.youtube_url}
+            <div class="top-actions">
+              <div class="reana-wrap">
+                <button
+                  class="reana-btn"
+                  disabled={reanalyzeLoading}
+                  onclick={reanalyze}
+                  aria-label="Re-analyze this video"
+                >
+                  {reanalyzeLoading ? '⏳ Analyzing…' : 'Re-analyze'}
+                </button>
+                {#if reanalyzeDone}<span class="reana-ok">done</span>{/if}
+                {#if reanalyzeError}<span class="reana-err">{reanalyzeError}</span>{/if}
+              </div>
+              <div class="pecah-wrap">
+                <button
+                  class="pecah-btn"
+                  disabled={decomposeRunning}
+                  onclick={startDecompose}
+                >
+                  {decomposeRunning ? '⏳ Memecah…' : segments.length ? 'Pecah ulang' : 'Pecah kompilasi'}
+                </button>
+                {#if decomposeRunning && decomposeStage}<span class="pecah-stage">{decomposeStage}</span>{/if}
+                {#if decomposeError}<span class="pecah-err">{decomposeError}</span>{/if}
+              </div>
+            </div>
+          {:else}
+            <div class="mut" style="font-size:12px;margin-bottom:12px">youtube_url tidak ada — tidak bisa decompose.</div>
+          {/if}
+
           <!-- Meta block: URL, Views, Niche, Status -->
           <div class="meta-block">
             <div class="meta-row">
@@ -281,47 +312,6 @@
             <div class="tags-row">
               {#each analysis.tags as t}<span class="tag">{t}</span>{/each}
             </div>
-          {/if}
-
-          <!-- Re-analyze button -->
-          {#if s.youtube_url}
-            <div class="reana-wrap">
-              <button
-                class="reana-btn"
-                disabled={reanalyzeLoading}
-                onclick={reanalyze}
-                aria-label="Re-analyze this video"
-              >
-                {reanalyzeLoading ? '⏳ Analyzing…' : 'Re-analyze'}
-              </button>
-              {#if reanalyzeDone}
-                <span class="reana-ok">done</span>
-              {/if}
-              {#if reanalyzeError}
-                <span class="reana-err">{reanalyzeError}</span>
-              {/if}
-            </div>
-          {/if}
-
-          <!-- Pecah button -->
-          {#if s.youtube_url}
-            <div class="pecah-wrap">
-              <button
-                class="pecah-btn"
-                disabled={decomposeRunning}
-                onclick={startDecompose}
-              >
-                {decomposeRunning ? '⏳ Memecah…' : segments.length ? 'Pecah ulang' : 'Pecah kompilasi'}
-              </button>
-              {#if decomposeRunning && decomposeStage}
-                <span class="pecah-stage">{decomposeStage}</span>
-              {/if}
-              {#if decomposeError}
-                <span class="pecah-err">{decomposeError}</span>
-              {/if}
-            </div>
-          {:else}
-            <div class="mut" style="font-size:12px;margin-top:10px">youtube_url tidak ada — tidak bisa decompose.</div>
           {/if}
 
           {#if segments.length}
@@ -560,6 +550,13 @@
   .b-found { background: rgba(10,179,156,.12); color: var(--green); }
   .b-grey  { background: rgba(148,163,184,.14); color: var(--mut); }
 
+  .top-actions {
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px;
+  }
+  .top-actions .reana-wrap,
+  .top-actions .pecah-wrap {
+    margin-top: 0; padding-top: 0; border-top: none;
+  }
   .reana-wrap {
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
     margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line);
