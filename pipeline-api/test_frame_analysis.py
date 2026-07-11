@@ -8,13 +8,14 @@ import tempfile
 import shutil
 from pathlib import Path
 import sys
+from unittest.mock import patch
 
 # Add parent to path
 sys.path.insert(0, str(Path(__file__).parent))
 
 import pytest
 from fastapi.testclient import TestClient
-from main import app, _REPO_ROOT
+from main import app, _REPO_ROOT, _persist_frame_analysis, _build_frame_analysis
 
 
 @pytest.fixture
@@ -196,6 +197,205 @@ def test_analyze_frames_sequential_builds_frame_analysis():
     deserialized = json.loads(serialized)
     assert len(deserialized) == 3
     assert deserialized[0]["desc"] == "Description of frame_000.jpg"
+
+
+def test_build_frame_analysis_basic():
+    """Test _build_frame_analysis correctly zips frames with descriptions."""
+    normalized_frames = [
+        {"name": "frame_000.jpg", "t": 0.0},
+        {"name": "frame_001.jpg", "t": 2.5},
+        {"name": "frame_002.jpg", "t": 5.0},
+    ]
+    frame_descriptions = ["Opening shot", "Close-up", "Wide shot"]
+
+    result = _build_frame_analysis(normalized_frames, frame_descriptions)
+
+    assert len(result) == 3
+    assert result[0]["name"] == "frame_000.jpg"
+    assert result[0]["t"] == 0.0
+    assert result[0]["desc"] == "Opening shot"
+    assert result[1]["t"] == 2.5
+    assert result[1]["desc"] == "Close-up"
+    assert result[2]["t"] == 5.0
+    assert result[2]["desc"] == "Wide shot"
+
+
+def test_synthesis_resilience_frame_analysis_on_failure():
+    """Test that frame_analysis is attached to result even when synthesis (parsed) is None.
+
+    Simulates the resilience logic: when synthesis bridge times out, parsed=None,
+    but we still want to preserve the per-frame analysis collected so far.
+    """
+    # Simulate the resilience merge logic from _analyze_frames_sequential
+    normalized_frames = [
+        {"name": "frame_000.jpg", "t": 0.0},
+        {"name": "frame_001.jpg", "t": 2.5},
+    ]
+    frame_descriptions = ["First description", "Second description"]
+
+    # Synthesis failed, so parsed is None
+    parsed = None
+
+    # Apply the resilience logic
+    frame_analysis = _build_frame_analysis(normalized_frames, frame_descriptions)
+    result = parsed if isinstance(parsed, dict) else {}
+    if frame_analysis:
+        result["frame_analysis"] = frame_analysis
+
+    # Verify frame_analysis is in result even though synthesis failed
+    assert "frame_analysis" in result
+    assert len(result["frame_analysis"]) == 2
+    assert result["frame_analysis"][0]["name"] == "frame_000.jpg"
+    assert result["frame_analysis"][0]["desc"] == "First description"
+    assert result["frame_analysis"][1]["t"] == 2.5
+
+
+def test_build_frame_analysis_with_null_timestamps():
+    """Test _build_frame_analysis handles null timestamps."""
+    normalized_frames = [
+        {"name": "frame_000.jpg", "t": 1.0},
+        {"name": "frame_001.jpg", "t": None},
+        {"name": "frame_002.jpg", "t": 5.0},
+    ]
+    frame_descriptions = ["Has time", "No time", "Has time again"]
+
+    result = _build_frame_analysis(normalized_frames, frame_descriptions)
+
+    assert result[0]["t"] == 1.0
+    assert result[1]["t"] is None
+    assert result[1]["desc"] == "No time"
+    assert result[2]["t"] == 5.0
+
+
+def test_build_frame_analysis_mismatched_lengths():
+    """Test _build_frame_analysis handles mismatched list lengths (zip behavior)."""
+    normalized_frames = [
+        {"name": "frame_000.jpg", "t": 0.0},
+        {"name": "frame_001.jpg", "t": 2.5},
+        {"name": "frame_002.jpg", "t": 5.0},
+    ]
+    # Fewer descriptions than frames
+    frame_descriptions = ["First", "Second"]
+
+    result = _build_frame_analysis(normalized_frames, frame_descriptions)
+
+    # zip stops at the shorter list
+    assert len(result) == 2
+    assert result[0]["name"] == "frame_000.jpg"
+    assert result[1]["name"] == "frame_001.jpg"
+
+
+def test_build_frame_analysis_non_dict_frames():
+    """Test _build_frame_analysis handles backward-compat string names gracefully."""
+    normalized_frames = [
+        {"name": "frame_000.jpg", "t": 0.0},
+        "frame_001.jpg",  # Old format fallback (string)
+        {"name": "frame_002.jpg", "t": 5.0},
+    ]
+    frame_descriptions = ["First", "Second", "Third"]
+
+    result = _build_frame_analysis(normalized_frames, frame_descriptions)
+
+    # All entries are processed, including string names (backward compat)
+    assert len(result) == 3
+    assert result[0]["name"] == "frame_000.jpg"
+    assert result[0]["t"] == 0.0
+    assert result[1]["name"] == "frame_001.jpg"
+    assert result[1]["t"] is None  # string entry has no timestamp
+    assert result[2]["name"] == "frame_002.jpg"
+
+
+def test_persist_frame_analysis_writes_sidecar(tmp_path):
+    """Test that _persist_frame_analysis writes frames.json with correct data."""
+    video_id = "test_persist_001"
+
+    # Mock _REPO_ROOT to use tmp_path
+    with patch("main._REPO_ROOT", tmp_path):
+        frame_analysis = [
+            {"name": "frame_000.jpg", "t": 0.0, "desc": "Opening shot"},
+            {"name": "frame_001.jpg", "t": 2.5, "desc": "Close-up"},
+            {"name": "frame_002.jpg", "t": 5.0, "desc": "Wide shot"},
+        ]
+        parsed = {"frame_analysis": frame_analysis}
+
+        # Call the persistence helper
+        _persist_frame_analysis(video_id, parsed)
+
+        # Verify the sidecar file exists
+        frames_json_path = tmp_path / "data" / "frames" / video_id / "frames.json"
+        assert frames_json_path.exists(), f"Expected {frames_json_path} to exist"
+
+        # Verify the content
+        data = json.loads(frames_json_path.read_text(encoding="utf-8"))
+        assert len(data) == 3
+        assert data[0]["name"] == "frame_000.jpg"
+        assert data[0]["t"] == 0.0
+        assert data[0]["desc"] == "Opening shot"
+        assert data[2]["t"] == 5.0
+
+
+def test_persist_frame_analysis_empty_frame_list(tmp_path):
+    """Test that empty frame_analysis list doesn't write a sidecar (non-fatal)."""
+    video_id = "test_persist_empty"
+
+    with patch("main._REPO_ROOT", tmp_path):
+        parsed = {"frame_analysis": []}
+
+        # Call the persistence helper
+        _persist_frame_analysis(video_id, parsed)
+
+        # Verify no sidecar was written
+        frames_json_path = tmp_path / "data" / "frames" / video_id / "frames.json"
+        assert not frames_json_path.exists(), "Empty frame_analysis should not write sidecar"
+
+
+def test_persist_frame_analysis_missing_video_id(tmp_path):
+    """Test that missing video_id doesn't cause exception (non-fatal)."""
+    with patch("main._REPO_ROOT", tmp_path):
+        frame_analysis = [
+            {"name": "frame_000.jpg", "t": 0.0, "desc": "Test frame"},
+        ]
+        parsed = {"frame_analysis": frame_analysis}
+
+        # Call with None video_id - should not raise
+        _persist_frame_analysis(None, parsed)
+        _persist_frame_analysis("", parsed)
+
+        # No crash = success
+
+
+def test_persist_frame_analysis_malformed_parsed(tmp_path):
+    """Test that malformed parsed dict doesn't cause exception (non-fatal)."""
+    video_id = "test_persist_malformed"
+
+    with patch("main._REPO_ROOT", tmp_path):
+        # Call with non-dict parsed
+        _persist_frame_analysis(video_id, None)
+        _persist_frame_analysis(video_id, "not a dict")
+        _persist_frame_analysis(video_id, [])
+
+        # No crash = success
+
+
+def test_persist_frame_analysis_with_null_timestamps(tmp_path):
+    """Test that frame_analysis with null timestamps persists correctly."""
+    video_id = "test_persist_null_t"
+
+    with patch("main._REPO_ROOT", tmp_path):
+        frame_analysis = [
+            {"name": "frame_000.jpg", "t": 1.5, "desc": "Has timestamp"},
+            {"name": "frame_001.jpg", "t": None, "desc": "No timestamp"},
+        ]
+        parsed = {"frame_analysis": frame_analysis}
+
+        _persist_frame_analysis(video_id, parsed)
+
+        frames_json_path = tmp_path / "data" / "frames" / video_id / "frames.json"
+        assert frames_json_path.exists()
+
+        data = json.loads(frames_json_path.read_text(encoding="utf-8"))
+        assert data[1]["t"] is None
+        assert data[1]["desc"] == "No timestamp"
 
 
 if __name__ == "__main__":
