@@ -4260,8 +4260,9 @@ def _extract_frames_from_file(video_path: str, out_dir: str, n: int = 20) -> lis
         )
 
         if ff.returncode == 0:
-            # Collect extracted frames
-            from pathlib import Path
+            # Collect extracted frames (Path is imported module-level; a local
+            # re-import here shadowed it and made every earlier Path() use in
+            # this function raise UnboundLocalError)
             frame_files = sorted(Path(out_dir).glob("frame_*.jpg"))
             frame_paths = [str(f) for f in frame_files]
 
