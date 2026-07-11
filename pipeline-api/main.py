@@ -5000,6 +5000,7 @@ def _analyze_frames_sequential(frame_names: list, subdir: str, intent: str, outp
             bridge_data = bridge_resp.json()
 
             if not bridge_data.get("ok"):
+                print(f"[sequential] synthesis bridge error: {bridge_data.get('error')}")
                 continue
 
             raw_result = bridge_data.get("result", "")
@@ -6293,8 +6294,19 @@ async def upload_source(
         # Generate gen_prompt via second bridge call (if output_format requires it)
         gen_prompt = None
         gen_prompt_format = None
-        if output_format != "none":
-            gen_prompt, gen_prompt_format = _generate_gen_prompt(frame_names, run_id, output_format, model)
+        if output_format == "prompt_json":
+            # Extract gen_prompt_storyboard from parsed result
+            storyboard = parsed.get("gen_prompt_storyboard")
+            if storyboard and "scene_order" in storyboard:
+                try:
+                    gen_prompt = json.dumps({"scene_order": storyboard["scene_order"]})
+                    gen_prompt_format = "prompt_json"
+                except Exception:
+                    pass
+        elif output_format == "prompt_video":
+            # Generate prompt_video from frame descriptions
+            frame_context = detail if detail else summary
+            gen_prompt, gen_prompt_format = _generate_gen_prompt(frame_context, run_id, output_format, model)
 
         # Persist source and analysis to DB
         source_id = None

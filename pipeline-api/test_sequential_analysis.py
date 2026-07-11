@@ -399,3 +399,30 @@ class TestNoRegressionExistingTests:
             assert response.status_code == 200
             data = response.json()
             assert "run_id" in data
+
+    def test_gen_prompt_receives_string_context_not_list(self):
+        """Verify _generate_gen_prompt correctly handles string context (not list)."""
+        import main as m
+
+        # Mock httpx.post to capture the call and verify frames=[]
+        with patch("httpx.post") as mock_post:
+            video_prompt_result = {
+                "gen_prompt": "A compelling video prompt for text-to-video generation"
+            }
+            mock_post.return_value = _make_bridge_response(video_prompt_result)
+
+            # Call with text description (the correct way)
+            frame_context = "Frame 1: scene opens. Frame 2: action occurs. Frame 3: conclusion."
+            gen_prompt, gen_prompt_format = m._generate_gen_prompt(
+                frame_descriptions=frame_context,
+                subdir="test",
+                output_format="prompt_video",
+                model="claude-sonnet-4-6"
+            )
+
+            # Verify the call was made and frames=[] (no images)
+            assert mock_post.called
+            call_args = mock_post.call_args
+            assert call_args[1]["json"]["frames"] == []
+            assert frame_context in call_args[1]["json"]["prompt"]
+            assert gen_prompt is not None
