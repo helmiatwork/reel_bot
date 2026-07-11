@@ -17,7 +17,7 @@ import pytest
 import os
 import importlib
 from fastapi.testclient import TestClient
-from main import app, _REPO_ROOT, _persist_frame_analysis, _build_frame_analysis, _parse_batch_descriptions, ANALYZE_SYNTHESIS_MODEL
+from main import app, _REPO_ROOT, _persist_frame_analysis, _build_frame_analysis, _parse_batch_descriptions, ANALYZE_SYNTHESIS_MODEL, _pick_scene_frame_times
 
 
 @pytest.fixture
@@ -548,6 +548,50 @@ def test_parse_batch_descriptions_json_with_markdown_fences_variations():
     raw_result3 = '```["First", "Second"]```'
     result3 = _parse_batch_descriptions(raw_result3, 2)
     assert result3 == ["First", "Second"]
+
+
+# --- _pick_scene_frame_times unit tests (pure function, no IO) ---
+
+def test_pick_scene_frame_times_short_scene():
+    """dur < 2 → exactly 1 timestamp, strictly inside (start, end)."""
+    times = _pick_scene_frame_times(10.0, 11.0)
+    assert len(times) == 1
+    assert 10.0 < times[0] < 11.0
+
+
+def test_pick_scene_frame_times_medium_scene():
+    """dur = 4 → 2 timestamps, both strictly inside, ascending."""
+    times = _pick_scene_frame_times(10.0, 14.0)
+    assert len(times) == 2
+    assert times[0] < times[1]
+    assert all(10.0 < t < 14.0 for t in times)
+
+
+def test_pick_scene_frame_times_long_scene():
+    """dur = 20 → 3 timestamps, ascending, all strictly inside."""
+    times = _pick_scene_frame_times(5.0, 25.0)
+    assert len(times) == 3
+    assert times == sorted(times)
+    assert all(5.0 < t < 25.0 for t in times)
+
+
+def test_pick_scene_frame_times_very_long_scene():
+    """dur = 75 → 4–5 timestamps, ascending, inside, none within 0.3s of each other."""
+    times = _pick_scene_frame_times(0.0, 75.0)
+    assert 4 <= len(times) <= 5
+    assert times == sorted(times)
+    assert all(0.0 < t < 75.0 for t in times)
+    for i in range(len(times) - 1):
+        assert times[i + 1] - times[i] >= 0.3
+
+
+def test_pick_scene_frame_times_all_inside_bounds():
+    """All timestamps satisfy start < t < end across varied durations."""
+    cases = [(0.0, 1.5), (0.0, 4.0), (0.0, 15.0), (100.0, 145.0), (0.0, 90.0)]
+    for start, end in cases:
+        times = _pick_scene_frame_times(start, end)
+        assert len(times) >= 1, f"Expected ≥1 timestamp for ({start}, {end})"
+        assert all(start < t < end for t in times), f"Time out of bounds for ({start}, {end}): {times}"
 
 
 if __name__ == "__main__":

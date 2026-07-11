@@ -4466,6 +4466,97 @@ def _extract_frames_timed(video_path: str, out_dir: str, n: int = 20) -> list:
     return frame_dicts
 
 
+def _pick_scene_frame_times(start_sec: float, end_sec: float) -> list:
+    """
+    Adaptive frame timestamps within a single scene.
+    Returns sorted, de-duplicated timestamps (rounded to 2 decimals).
+
+    # ponytail: duration-proxy heuristic — times are proportional offsets inside
+    # the scene; upgrade to motion-aware sampling (scene score curve) if per-scene
+    # output proves too coarse.
+    """
+    dur = end_sec - start_sec
+    if dur <= 0:
+        return []
+
+    if dur < 2:
+        fracs = [0.5]
+    elif dur < 6:
+        fracs = [0.15, 0.85]
+    elif dur <= 30:
+        fracs = [0.15, 0.5, 0.85]
+    else:
+        # 3 base + 1 extra per full 15s beyond 30s, capped at 5 total
+        extra = min(int((dur - 30) / 15), 2)
+        n = 3 + extra
+        fracs = [0.15 + k * 0.7 / (n - 1) for k in range(n)]
+
+    times = [round(start_sec + f * dur, 2) for f in fracs]
+
+    # Drop any timestamp within 0.3s of the previous (sorted order)
+    deduped = []
+    for t in sorted(times):
+        if not deduped or t - deduped[-1] >= 0.3:
+            deduped.append(t)
+
+    return deduped
+
+
+def _extract_scene_frames(video_path: str, out_dir: str, cap: int = None) -> list:
+    """
+    Extract frames from a video using PySceneDetect scene boundaries, sampling
+    adaptively per scene duration via _pick_scene_frame_times.
+
+    Falls back to _extract_frames_timed if scene detection returns no scenes.
+    Env: ANALYZE_SCENE_CAP (default 20) — max scenes to sample from.
+
+    Returns: flat list of {"name": str, "path": str, "t": float} dicts in temporal order.
+    """
+    import subprocess
+
+    if cap is None:
+        cap = max(1, int(os.environ.get("ANALYZE_SCENE_CAP", "20")))
+    else:
+        cap = max(1, cap)
+
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
+    scenes = _detect_scene_cuts(video_path)
+
+    if not scenes:
+        print("[_extract_scene_frames] no scenes detected, falling back to _extract_frames_timed")
+        return _extract_frames_timed(video_path, out_dir, 20)
+
+    # Evenly sample by index if more scenes than cap
+    if len(scenes) > cap:
+        if cap == 1:
+            kept = [scenes[0]]
+        else:
+            kept = [scenes[round(i * (len(scenes) - 1) / (cap - 1))] for i in range(cap)]
+    else:
+        kept = scenes
+
+    frame_dicts = []
+    idx = 1
+    for scene in kept:
+        times = _pick_scene_frame_times(scene["start_sec"], scene["end_sec"])
+        for t in times:
+            name = f"frame_{idx:04d}.jpg"
+            out_path = str(Path(out_dir) / name)
+            ff = subprocess.run(
+                [
+                    "ffmpeg", "-ss", str(t), "-i", video_path,
+                    "-frames:v", "1", "-vf", "scale=-1:480",
+                    "-q:v", "3", "-y", out_path,
+                ],
+                capture_output=True, timeout=30,
+            )
+            if ff.returncode == 0 and Path(out_path).exists():
+                frame_dicts.append({"name": name, "path": out_path, "t": round(t, 1)})
+            idx += 1
+
+    return frame_dicts
+
+
 def _extract_keyframes_timed(youtube_url: str, out_dir: str, n: int = 20) -> tuple:
     """
     Download a video from youtube_url and extract n keyframes with timestamps.
@@ -4515,7 +4606,7 @@ def _extract_keyframes_timed(youtube_url: str, out_dir: str, n: int = 20) -> tup
             raise RuntimeError("Downloaded video file not found after yt-dlp")
         video_path = str(video_files[0])
 
-    frames = _extract_frames_timed(video_path, out_dir, n)
+    frames = _extract_scene_frames(video_path, out_dir)
     return (frames, video_path)
 
 
