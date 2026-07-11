@@ -1,7 +1,7 @@
 <script>
   import { fade, scale } from 'svelte/transition'
   import { cubicOut } from 'svelte/easing'
-  import { api } from './api.js'
+  import { api, isActiveRunning } from './api.js'
   import { onDestroy } from 'svelte'
 
   // Props (runes mode — isOpen is bound by parent)
@@ -164,14 +164,14 @@
       {#if !selectedRunId}
         <!-- Jobs List View -->
         <div class="jobs-list" transition:fade={{ duration: 150 }}>
-          {#if jobs.filter(j => j.status === 'running').length > 0}
-            {#each jobs.filter(j => j.status === 'running') as job (job.run_id)}
+          {#if jobs.filter(isActiveRunning).length > 0}
+            {#each jobs.filter(isActiveRunning) as job (job.run_id)}
               <div
                 class="job-row"
                 onclick={() => selectJob(job)}
               >
                 <div class="job-main">
-                  <div class="job-url">{truncateUrl(job.url)}</div>
+                  <div class="job-url">{job.title || truncateUrl(job.url)}</div>
                   <div class="job-meta">
                     <span class={`status-chip status-${getStatusColor(job.status)}`}>
                       {job.status}

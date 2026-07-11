@@ -158,14 +158,14 @@
           const prev = prevJobsSnapshot.get(job.run_id)
           if (!isFirstPoll && prev && prev.status === 'running') {
             if (job.status === 'done') {
-              const title = 'Analisa selesai'
-              const url = job.url ? (job.url.startsWith('file://') ? 'Upload file' : job.url.substring(0, 45) + '…') : '—'
-              pushToast('success', title, url)
+              const toastTitle = 'Analisa selesai'
+              const toastSub = job.title || (job.url ? (job.url.startsWith('file://') ? 'Upload file' : job.url.substring(0, 45) + '…') : '—')
+              pushToast('success', toastTitle, toastSub)
               beepSuccess()
             } else if (job.status === 'error') {
-              const title = 'Analisa gagal'
+              const toastTitle = 'Analisa gagal'
               const msg = job.last_msg || job.error || '—'
-              pushToast('error', title, msg.substring(0, 60))
+              pushToast('error', toastTitle, msg.substring(0, 60))
               beepError()
             }
           }
