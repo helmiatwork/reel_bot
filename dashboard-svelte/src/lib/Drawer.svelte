@@ -161,16 +161,15 @@
     reanalyzeLoading = true
     reanalyzeError = ''
     reanalyzeDone = false
-    const r = await api.analyzeClaude(s.youtube_url, { force: true })
+    // Use the ASYNC endpoint so the job is tracked, shows in the Proses popup,
+    // and fires a toast when done. Keep the source's output format so the
+    // storyboard regenerates the same kind (prompt_json/prompt_video).
+    const fmt = s.gen_prompt_format || analysis?.gen_prompt_format || 'none'
+    const r = await api.analyzeClaudeAsync(s.youtube_url, { force: true, output_format: fmt })
     reanalyzeLoading = false
-    if (!r || r.error || r.detail) {
-      reanalyzeError = r?.error || r?.detail || 'Re-analyze failed.'
+    if (!r || r.error || r.detail || !r.run_id) {
+      reanalyzeError = r?.error || r?.detail || 'Re-analyze gagal.'
       return
-    }
-    // refresh analysis display from canonical source
-    if (s.id) {
-      const fresh = await api.sourceAnalysis(s.id)
-      if (fresh) analysis = fresh
     }
     reanalyzeDone = true
   }
@@ -326,7 +325,7 @@
               >
                 {reanalyzeLoading ? '⏳ Analyzing…' : 'Re-analyze'}
               </button>
-              {#if reanalyzeDone}<span class="reana-ok">done</span>{/if}
+              {#if reanalyzeDone}<span class="reana-ok">✓ masuk antrean — lihat Proses</span>{/if}
               {#if reanalyzeError}<span class="reana-err">{reanalyzeError}</span>{/if}
             </div>
             <div class="pecah-wrap">
