@@ -5785,7 +5785,7 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
 
     # Fetch audio analysis for all platforms that provide downloaded video
     try:
-        if progress_id:
+        if progress_id and ANALYZE_AUDIO_TAGS:
             _log_run(progress_id, f"🎵 Analisa audio…", start_time)
         # Use the downloaded video file from frame extraction
         tmp_video_dir = f"{ANALYZE_FRAME_DIR}/{run_id}"
