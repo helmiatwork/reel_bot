@@ -11,13 +11,22 @@
   let analysis = $state({})
 
   // Total scenes in the generated storyboard (prompt_json), for the tab label
-  let sceneCount = $derived.by(() => {
+  let scenes = $derived.by(() => {
     try {
       const o = JSON.parse(analysis?.gen_prompt || '{}')
       const sb = o.scene_order || o.gen_prompt_storyboard?.scene_order || []
-      return Array.isArray(sb) ? sb.length : 0
-    } catch { return 0 }
+      return Array.isArray(sb) ? sb : []
+    } catch { return [] }
   })
+  let sceneCount = $derived(scenes.length)
+  // Map a frame index to its best-matching storyboard scene:
+  // 1:1 when counts match, otherwise proportional by position.
+  function matchedScene(i) {
+    if (!scenes.length || !frames.length) return null
+    if (scenes.length === frames.length) return scenes[i]
+    const idx = frames.length > 1 ? Math.round((i / (frames.length - 1)) * (scenes.length - 1)) : 0
+    return scenes[Math.min(Math.max(idx, 0), scenes.length - 1)]
+  }
 
   // decompose state
   let decomposeRunning = $state(false)
@@ -32,6 +41,7 @@
 
   // lightbox state
   let lightboxSrc = $state(null)
+  let lightboxIndex = $state(0)
 
   // copy state
   let copiedPrompt = $state(false)
@@ -71,7 +81,7 @@
     if (pollInterval) { clearInterval(pollInterval); pollInterval = null }
   }
 
-  function openLightbox(src) { lightboxSrc = src }
+  function openLightbox(src, i = 0) { lightboxSrc = src; lightboxIndex = i }
   function closeLightbox() { lightboxSrc = null }
 
   function onLightboxKey(e) {
@@ -175,20 +185,35 @@
 
 <!-- Lightbox overlay -->
 {#if lightboxSrc}
+  {@const sc = matchedScene(lightboxIndex)}
   <div
     class="lb-overlay"
     onclick={closeLightbox}
     onkeydown={onLightboxKey}
     role="dialog"
     aria-modal="true"
-    aria-label="Preview gambar"
+    aria-label="Detail frame"
     tabindex="-1"
   >
     <button class="lb-close" onclick={closeLightbox} aria-label="Tutup">✕</button>
-    <!-- ponytail: button wrapper keeps img non-interactive (a11y), stopPropagation prevents overlay close on img click -->
-    <button class="lb-img-btn" onclick={(e) => e.stopPropagation()} aria-label="Gambar diperbesar">
-      <img src={lightboxSrc} alt="preview besar" class="lb-img" />
-    </button>
+    <!-- ponytail: stopPropagation on the card keeps clicks inside from closing the overlay -->
+    <div class="lb-card" onclick={(e) => e.stopPropagation()} role="document">
+      <img src={lightboxSrc} alt="frame diperbesar" class="lb-img" />
+      <div class="lb-info">
+        <div class="lb-frame-no">Frame {lightboxIndex + 1}{frames.length ? ` / ${frames.length}` : ''}</div>
+        {#if sc}
+          {#if sc.description || sc.action}
+            <div class="lb-desc">{sc.description || sc.action}</div>
+          {/if}
+          <div class="lb-scene-cap">
+            Scene cocok (dari Generated Prompt){sc.scene != null ? ` · #${sc.scene}` : ''}{sc.start ? ` · ${sc.start}${sc.end ? '–' + sc.end : ''}` : ''}
+          </div>
+          <pre class="lb-json">{JSON.stringify(sc, null, 2)}</pre>
+        {:else}
+          <div class="mut" style="font-size:12px">Belum ada storyboard buat dicocokkan — jalankan analisa dengan output Prompt JSON dulu.</div>
+        {/if}
+      </div>
+    </div>
   </div>
 {/if}
 
@@ -367,9 +392,10 @@
             {#if framesLoading}
               <div class="mut" style="font-size:12px;padding:8px 0">Memuat frames…</div>
             {:else if frames.length}
-              {#each frames as src}
-                <button class="frame-thumb-btn" onclick={() => openLightbox(src)} title="Klik untuk perbesar" aria-label="Perbesar frame">
+              {#each frames as src, i}
+                <button class="frame-thumb-btn" onclick={() => openLightbox(src, i)} title="Klik untuk detail" aria-label="Detail frame">
                   <img {src} alt="frame" loading="lazy" class="frame-thumb" />
+                  <span class="frame-no">{i + 1}</span>
                 </button>
               {/each}
             {:else if s.youtube_url}
@@ -653,6 +679,7 @@
 
   /* frame thumbnails — clickable zoom cue */
   .frame-thumb-btn {
+    position: relative;
     display: block; width: 100%; padding: 0; border: none; background: none;
     cursor: zoom-in; border-radius: 4px; transition: opacity .15s;
   }
@@ -665,10 +692,33 @@
     background: rgba(0,0,0,.82);
     display: flex; align-items: center; justify-content: center;
   }
+  .lb-card {
+    display: flex; flex-direction: column; gap: 12px;
+    width: min(860px, 92vw); max-height: 88vh; overflow-y: auto;
+    background: var(--bg); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px; box-shadow: 0 12px 48px rgba(0,0,0,.5);
+  }
   .lb-img {
-    max-width: 90vw; max-height: 90vh;
-    object-fit: contain; border-radius: 6px;
-    box-shadow: 0 8px 40px rgba(0,0,0,.6);
+    width: 100%; max-height: 56vh; object-fit: contain;
+    border-radius: 8px; background: var(--soft);
+  }
+  .lb-info { text-align: left; }
+  .lb-frame-no {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+    color: var(--mut); margin-bottom: 6px;
+  }
+  .lb-desc { font-size: 14px; color: var(--txt); line-height: 1.6; margin-bottom: 8px; }
+  .lb-scene-cap { font-size: 11px; color: var(--mut); margin-bottom: 8px; }
+  .lb-json {
+    font-size: 12px; margin: 0; font-family: monospace; line-height: 1.5;
+    background: var(--soft); border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px; color: var(--txt); white-space: pre; overflow-x: auto;
+    max-height: 300px; overflow-y: auto;
+  }
+  .frame-no {
+    position: absolute; top: 4px; left: 4px;
+    font-size: 10px; font-weight: 700; color: #fff;
+    background: rgba(0,0,0,.6); border-radius: 4px; padding: 1px 6px; line-height: 1.4;
   }
   .lb-close {
     position: absolute; top: 16px; right: 20px;
