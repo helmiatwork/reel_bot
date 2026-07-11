@@ -90,7 +90,7 @@ class TestSequentialAnalysis:
 
         with patch("httpx.post", side_effect=mock_post):
             result = m._analyze_frames_sequential(
-                frame_names=_SAMPLE_FRAMES,
+                frames=_SAMPLE_FRAMES,
                 subdir="test_subdir",
                 intent="test intent",
                 output_format="none",
@@ -121,7 +121,7 @@ class TestSequentialAnalysis:
 
         with patch("httpx.post", side_effect=mock_post):
             result = m._analyze_frames_sequential(
-                frame_names=_SAMPLE_FRAMES,
+                frames=_SAMPLE_FRAMES,
                 subdir="test_subdir",
                 intent="test",
                 output_format="none",
@@ -164,7 +164,7 @@ class TestSequentialAnalysis:
 
         with patch("httpx.post", side_effect=mock_post):
             result = m._analyze_frames_sequential(
-                frame_names=_SAMPLE_FRAMES,
+                frames=_SAMPLE_FRAMES,
                 subdir="test_subdir",
                 intent="test",
                 output_format="none",
@@ -196,7 +196,7 @@ class TestSequentialAnalysis:
 
         with patch("httpx.post", side_effect=mock_post):
             result = m._analyze_frames_sequential(
-                frame_names=_SAMPLE_FRAMES,
+                frames=_SAMPLE_FRAMES,
                 subdir="test_subdir",
                 intent="test",
                 output_format="none",
@@ -232,7 +232,7 @@ class TestSequentialAnalysis:
 
         with patch("httpx.post", side_effect=mock_post):
             result = m._analyze_frames_sequential(
-                frame_names=_SAMPLE_FRAMES,
+                frames=_SAMPLE_FRAMES,
                 subdir="test_subdir",
                 intent="test",
                 output_format="none",
@@ -267,7 +267,7 @@ class TestSequentialAnalysis:
         with patch("httpx.post", side_effect=mock_post):
             with pytest.raises(HTTPException) as exc_info:
                 m._analyze_frames_sequential(
-                    frame_names=_SAMPLE_FRAMES,
+                    frames=_SAMPLE_FRAMES,
                     subdir="test_subdir",
                     intent="test",
                     output_format="none",
@@ -302,7 +302,7 @@ class TestSequentialAnalysis:
 
         with patch("httpx.post", side_effect=mock_post):
             result = m._analyze_frames_sequential(
-                frame_names=_SAMPLE_FRAMES,
+                frames=_SAMPLE_FRAMES,
                 subdir="test_subdir",
                 intent="test",
                 output_format="prompt_json",
@@ -337,7 +337,7 @@ class TestSequentialAnalysis:
 
         with patch("httpx.post", side_effect=mock_post):
             result = m._analyze_frames_sequential(
-                frame_names=_SAMPLE_FRAMES,
+                frames=_SAMPLE_FRAMES,
                 subdir="test_subdir",
                 intent="test",
                 output_format="none",
@@ -357,7 +357,7 @@ class TestSequentialAnalysis:
 
         with patch("httpx.post", return_value=synthesis_response):
             result = m._analyze_frames_sequential(
-                frame_names=[],
+                frames=[],
                 subdir="test_subdir",
                 intent="test",
                 output_format="none",
@@ -426,3 +426,618 @@ class TestNoRegressionExistingTests:
             assert call_args[1]["json"]["frames"] == []
             assert frame_context in call_args[1]["json"]["prompt"]
             assert gen_prompt is not None
+
+
+# ── Tests for Veo3 Storyboard (Timestamps + Transcript + Audio) ──────────────
+
+class TestVeo3Storyboard:
+    """Tests for Veo3 storyboard enrichment with timestamps, transcript, and audio."""
+
+    def test_timed_frames_include_timestamp_in_per_frame_prompt(self):
+        """Should include timestamp in per-frame prompt when timed frames are provided."""
+        import main as m
+
+        # Provide timed frames (dicts with t field)
+        timed_frames = [
+            {"name": "frame_000.jpg", "path": "/tmp/frame_000.jpg", "t": 1.5},
+            {"name": "frame_001.jpg", "path": "/tmp/frame_001.jpg", "t": 3.2},
+            {"name": "frame_002.jpg", "path": "/tmp/frame_002.jpg", "t": 5.0},
+        ]
+
+        frame_responses = [
+            _make_bridge_response({"description": "Frame"})
+            for _ in timed_frames
+        ]
+        synthesis_response = _make_bridge_response(_SAMPLE_ANALYSIS_RESULT)
+        all_responses = frame_responses + [synthesis_response]
+        call_count = [0]
+        captured_prompts = []
+
+        def mock_post(*args, **kwargs):
+            captured_prompts.append(kwargs["json"]["prompt"])
+            resp = all_responses[call_count[0]]
+            call_count[0] += 1
+            return resp
+
+        with patch("httpx.post", side_effect=mock_post):
+            result = m._analyze_frames_sequential(
+                frames=timed_frames,
+                subdir="test_subdir",
+                intent="test",
+                output_format="none",
+                model="claude-sonnet-4-6",
+            )
+
+        # Verify per-frame prompts include timestamps
+        assert len(captured_prompts) >= 3
+        for i, prompt in enumerate(captured_prompts[:3]):
+            # Should include "detik X.X" (second X.X in Indonesian)
+            assert "detik" in prompt.lower() or "ke-" in prompt
+
+    def test_transcript_included_in_synthesis_prompt(self):
+        """Should include transcript text in synthesis prompt when provided."""
+        import main as m
+
+        transcript_text = "[0:00] Pembukaan\n[0:05] Konten utama\n[0:10] Penutup"
+
+        frame_responses = [
+            _make_bridge_response({"description": "Frame"})
+            for _ in _SAMPLE_FRAMES
+        ]
+        synthesis_response = _make_bridge_response(_SAMPLE_ANALYSIS_RESULT)
+        all_responses = frame_responses + [synthesis_response]
+        call_count = [0]
+        captured_synthesis_prompt = [None]
+
+        def mock_post(*args, **kwargs):
+            # Capture the synthesis prompt (last call, no frames)
+            if "frames" in kwargs["json"] and kwargs["json"]["frames"] == []:
+                captured_synthesis_prompt[0] = kwargs["json"]["prompt"]
+            resp = all_responses[call_count[0]]
+            call_count[0] += 1
+            return resp
+
+        with patch("httpx.post", side_effect=mock_post):
+            result = m._analyze_frames_sequential(
+                frames=_SAMPLE_FRAMES,
+                subdir="test_subdir",
+                intent="test",
+                output_format="none",
+                model="claude-sonnet-4-6",
+                transcript_text=transcript_text,
+            )
+
+        # Verify transcript is in synthesis prompt
+        assert captured_synthesis_prompt[0] is not None
+        assert "Transkrip:" in captured_synthesis_prompt[0]
+        assert "[0:00] Pembukaan" in captured_synthesis_prompt[0]
+
+    def test_audio_tags_included_in_synthesis_prompt(self):
+        """Should include audio tags in synthesis prompt when provided."""
+        import main as m
+
+        audio_tags = {
+            "bpm": 120.5,
+            "music_key": "A",
+            "energy": 0.75,
+            "duration_sec": 30.0,
+        }
+
+        frame_responses = [
+            _make_bridge_response({"description": "Frame"})
+            for _ in _SAMPLE_FRAMES
+        ]
+        synthesis_response = _make_bridge_response(_SAMPLE_ANALYSIS_RESULT)
+        all_responses = frame_responses + [synthesis_response]
+        call_count = [0]
+        captured_synthesis_prompt = [None]
+
+        def mock_post(*args, **kwargs):
+            if "frames" in kwargs["json"] and kwargs["json"]["frames"] == []:
+                captured_synthesis_prompt[0] = kwargs["json"]["prompt"]
+            resp = all_responses[call_count[0]]
+            call_count[0] += 1
+            return resp
+
+        with patch("httpx.post", side_effect=mock_post):
+            result = m._analyze_frames_sequential(
+                frames=_SAMPLE_FRAMES,
+                subdir="test_subdir",
+                intent="test",
+                output_format="none",
+                model="claude-sonnet-4-6",
+                audio_tags=audio_tags,
+            )
+
+        # Verify audio tags are in synthesis prompt
+        assert captured_synthesis_prompt[0] is not None
+        assert "Audio/Musik:" in captured_synthesis_prompt[0] or "BPM:" in captured_synthesis_prompt[0]
+
+    def test_rich_veo3_storyboard_schema(self):
+        """Should return rich Veo3 storyboard with new fields for prompt_json."""
+        import main as m
+
+        rich_storyboard = {
+            "scene_order": [
+                {
+                    "scene": 1,
+                    "start": "0:00",
+                    "end": "0:05",
+                    "duration_sec": 5.0,
+                    "shot": "wide",
+                    "camera_movement": "static",
+                    "subject": "Person on beach",
+                    "action": "Walking toward camera",
+                    "lighting": "bright",
+                    "color_palette": "blues and golds",
+                    "on_screen_text": "",
+                    "audio": "Ocean waves sound",
+                    "transition": "cut",
+                }
+            ]
+        }
+
+        result_with_rich_storyboard = _SAMPLE_ANALYSIS_RESULT.copy()
+        result_with_rich_storyboard["gen_prompt_storyboard"] = {
+            "aspect_ratio": "9:16",
+            "overall_style": "cinematic",
+            "music_mood": "uplifting",
+            "scene_order": rich_storyboard["scene_order"],
+        }
+
+        frame_responses = [
+            _make_bridge_response({"description": "Frame"})
+            for _ in _SAMPLE_FRAMES
+        ]
+        synthesis_response = _make_bridge_response(result_with_rich_storyboard)
+        all_responses = frame_responses + [synthesis_response]
+        call_count = [0]
+
+        def mock_post(*args, **kwargs):
+            resp = all_responses[call_count[0]]
+            call_count[0] += 1
+            return resp
+
+        with patch("httpx.post", side_effect=mock_post):
+            result = m._analyze_frames_sequential(
+                frames=_SAMPLE_FRAMES,
+                subdir="test_subdir",
+                intent="test",
+                output_format="prompt_json",
+                model="claude-sonnet-4-6",
+            )
+
+        # Verify rich storyboard fields are present
+        assert "gen_prompt_storyboard" in result
+        storyboard = result["gen_prompt_storyboard"]
+        assert "aspect_ratio" in storyboard
+        assert "overall_style" in storyboard
+        assert "music_mood" in storyboard
+        assert "scene_order" in storyboard
+
+        scene = storyboard["scene_order"][0]
+        assert "start" in scene
+        assert "end" in scene
+        assert "duration_sec" in scene
+        assert "shot" in scene
+        assert "camera_movement" in scene
+        assert "subject" in scene
+        assert "action" in scene
+        assert "lighting" in scene
+        assert "color_palette" in scene
+        assert "on_screen_text" in scene
+        assert "audio" in scene
+        assert "transition" in scene
+
+    def test_backward_compat_with_frame_names_strings(self):
+        """Should still accept plain string frame names for backward compatibility."""
+        import main as m
+
+        # Pass old-style plain strings instead of dicts
+        plain_frames = ["frame_000.jpg", "frame_001.jpg", "frame_002.jpg"]
+
+        frame_responses = [
+            _make_bridge_response({"description": "Frame"})
+            for _ in plain_frames
+        ]
+        synthesis_response = _make_bridge_response(_SAMPLE_ANALYSIS_RESULT)
+        all_responses = frame_responses + [synthesis_response]
+        call_count = [0]
+
+        def mock_post(*args, **kwargs):
+            resp = all_responses[call_count[0]]
+            call_count[0] += 1
+            return resp
+
+        with patch("httpx.post", side_effect=mock_post):
+            result = m._analyze_frames_sequential(
+                frames=plain_frames,
+                subdir="test_subdir",
+                intent="test",
+                output_format="none",
+                model="claude-sonnet-4-6",
+            )
+
+        # Should still work and return valid result
+        assert "hook" in result
+        assert result["hook"] == _SAMPLE_ANALYSIS_RESULT["hook"]
+
+    def test_transcript_and_audio_combined(self):
+        """Should handle both transcript and audio in the same call."""
+        import main as m
+
+        transcript_text = "[0:00] Intro\n[0:05] Main content"
+        audio_tags = {"bpm": 128, "music_key": "C", "energy": 0.8}
+
+        frame_responses = [
+            _make_bridge_response({"description": "Frame"})
+            for _ in _SAMPLE_FRAMES
+        ]
+        synthesis_response = _make_bridge_response(_SAMPLE_ANALYSIS_RESULT)
+        all_responses = frame_responses + [synthesis_response]
+        call_count = [0]
+        captured_synthesis_prompt = [None]
+
+        def mock_post(*args, **kwargs):
+            if "frames" in kwargs["json"] and kwargs["json"]["frames"] == []:
+                captured_synthesis_prompt[0] = kwargs["json"]["prompt"]
+            resp = all_responses[call_count[0]]
+            call_count[0] += 1
+            return resp
+
+        with patch("httpx.post", side_effect=mock_post):
+            result = m._analyze_frames_sequential(
+                frames=_SAMPLE_FRAMES,
+                subdir="test_subdir",
+                intent="test",
+                output_format="none",
+                model="claude-sonnet-4-6",
+                transcript_text=transcript_text,
+                audio_tags=audio_tags,
+            )
+
+        # Verify both are in synthesis prompt
+        assert captured_synthesis_prompt[0] is not None
+        assert "Transkrip:" in captured_synthesis_prompt[0]
+        assert "Audio/Musik:" in captured_synthesis_prompt[0]
+        assert "[0:00] Intro" in captured_synthesis_prompt[0]
+        assert "128" in captured_synthesis_prompt[0] or "BPM" in captured_synthesis_prompt[0]
+
+    def test_scene_duration_cap_enforcement(self):
+        """Should enforce 8-second max duration per scene for Veo3."""
+        import main as m
+
+        # Create a storyboard with one scene that exceeds 8 seconds
+        long_scene_storyboard = {
+            "aspect_ratio": "9:16",
+            "overall_style": "cinematic",
+            "music_mood": "uplifting",
+            "scene_order": [
+                {
+                    "scene": 1,
+                    "start": "0:00",
+                    "end": "0:15",  # 15 seconds — exceeds 8s cap
+                    "duration_sec": 15.0,
+                    "shot": "wide",
+                    "camera_movement": "pan",
+                    "subject": "Landscape",
+                    "action": "Camera pans across",
+                    "lighting": "bright",
+                    "color_palette": "greens and blues",
+                    "on_screen_text": "",
+                    "audio": "Wind sound",
+                    "transition": "cut",
+                }
+            ]
+        }
+
+        result_with_long_scene = _SAMPLE_ANALYSIS_RESULT.copy()
+        result_with_long_scene["gen_prompt_storyboard"] = long_scene_storyboard
+
+        frame_responses = [
+            _make_bridge_response({"description": "Frame"})
+            for _ in _SAMPLE_FRAMES
+        ]
+        synthesis_response = _make_bridge_response(result_with_long_scene)
+        all_responses = frame_responses + [synthesis_response]
+        call_count = [0]
+
+        def mock_post(*args, **kwargs):
+            resp = all_responses[call_count[0]]
+            call_count[0] += 1
+            return resp
+
+        with patch("httpx.post", side_effect=mock_post):
+            result = m._analyze_frames_sequential(
+                frames=_SAMPLE_FRAMES,
+                subdir="test_subdir",
+                intent="test",
+                output_format="prompt_json",
+                model="claude-sonnet-4-6",
+            )
+
+        # Verify scene duration cap is enforced
+        assert "gen_prompt_storyboard" in result
+        storyboard = result["gen_prompt_storyboard"]
+        scenes = storyboard.get("scene_order", [])
+
+        # Original had 1 scene of 15s, should be split into 2 scenes of ~7.5s each
+        assert len(scenes) == 2, f"Expected 2 split scenes, got {len(scenes)}"
+
+        # Verify each scene is ≤ 8 seconds
+        for scene in scenes:
+            duration = scene.get("duration_sec", 0)
+            assert duration <= 8.0, f"Scene {scene.get('scene')} has duration {duration} > 8.0s"
+
+        # Verify scenes are renumbered correctly
+        assert scenes[0].get("scene") == 1
+        assert scenes[1].get("scene") == 2
+
+        # Verify visual content is preserved in both splits
+        assert scenes[0].get("subject") == "Landscape"
+        assert scenes[1].get("subject") == "Landscape"
+        assert scenes[0].get("action") == "Camera pans across"
+        assert scenes[1].get("action") == "Camera pans across"
+
+    def test_no_scene_split_when_under_cap(self):
+        """Should not split scenes that are already under 8 seconds."""
+        import main as m
+
+        short_scene_storyboard = {
+            "aspect_ratio": "9:16",
+            "overall_style": "cinematic",
+            "music_mood": "uplifting",
+            "scene_order": [
+                {
+                    "scene": 1,
+                    "start": "0:00",
+                    "end": "0:05",  # 5 seconds — under 8s cap
+                    "duration_sec": 5.0,
+                    "shot": "close-up",
+                    "camera_movement": "static",
+                    "subject": "Person",
+                    "action": "Speaking",
+                    "lighting": "soft",
+                    "color_palette": "warm tones",
+                    "on_screen_text": "Hello",
+                    "audio": "Voice speaking",
+                    "transition": "cut",
+                }
+            ]
+        }
+
+        result_with_short_scene = _SAMPLE_ANALYSIS_RESULT.copy()
+        result_with_short_scene["gen_prompt_storyboard"] = short_scene_storyboard
+
+        frame_responses = [
+            _make_bridge_response({"description": "Frame"})
+            for _ in _SAMPLE_FRAMES
+        ]
+        synthesis_response = _make_bridge_response(result_with_short_scene)
+        all_responses = frame_responses + [synthesis_response]
+        call_count = [0]
+
+        def mock_post(*args, **kwargs):
+            resp = all_responses[call_count[0]]
+            call_count[0] += 1
+            return resp
+
+        with patch("httpx.post", side_effect=mock_post):
+            result = m._analyze_frames_sequential(
+                frames=_SAMPLE_FRAMES,
+                subdir="test_subdir",
+                intent="test",
+                output_format="prompt_json",
+                model="claude-sonnet-4-6",
+            )
+
+        # Verify scene is NOT split
+        storyboard = result.get("gen_prompt_storyboard", {})
+        scenes = storyboard.get("scene_order", [])
+        assert len(scenes) == 1
+        assert scenes[0].get("duration_sec") == 5.0
+        assert scenes[0].get("scene") == 1
+
+    def test_global_storyboard_fields_preserved_in_storage(self):
+        """Should preserve global storyboard fields (aspect_ratio, music_mood, overall_style) in stored gen_prompt."""
+        import main as m
+
+        # Storyboard with all global fields filled
+        full_storyboard = {
+            "aspect_ratio": "9:16",
+            "overall_style": "cinematic",
+            "music_mood": "uplifting, ~120 BPM",
+            "scene_order": [
+                {
+                    "scene": 1,
+                    "start": "0:00",
+                    "end": "0:05",
+                    "duration_sec": 5.0,
+                    "shot": "wide",
+                    "camera_movement": "static",
+                    "subject": "Person",
+                    "action": "Speaking",
+                    "lighting": "bright",
+                    "color_palette": "warm",
+                    "on_screen_text": "",
+                    "audio": "Voice",
+                    "transition": "cut",
+                }
+            ]
+        }
+
+        result_with_full_storyboard = _SAMPLE_ANALYSIS_RESULT.copy()
+        result_with_full_storyboard["gen_prompt_storyboard"] = full_storyboard
+
+        frame_responses = [
+            _make_bridge_response({"description": "Frame"})
+            for _ in _SAMPLE_FRAMES
+        ]
+        synthesis_response = _make_bridge_response(result_with_full_storyboard)
+        all_responses = frame_responses + [synthesis_response]
+        call_count = [0]
+
+        def mock_post(*args, **kwargs):
+            resp = all_responses[call_count[0]]
+            call_count[0] += 1
+            return resp
+
+        with patch("httpx.post", side_effect=mock_post):
+            result = m._analyze_frames_sequential(
+                frames=_SAMPLE_FRAMES,
+                subdir="test_subdir",
+                intent="test",
+                output_format="prompt_json",
+                model="claude-sonnet-4-6",
+            )
+
+        # Get the storyboard from result
+        storyboard = result.get("gen_prompt_storyboard", {})
+
+        # Verify all global fields are present and preserved
+        assert "aspect_ratio" in storyboard, "aspect_ratio missing from storyboard"
+        assert storyboard["aspect_ratio"] == "9:16", f"aspect_ratio should be '9:16', got {storyboard['aspect_ratio']}"
+        assert "overall_style" in storyboard, "overall_style missing from storyboard"
+        assert storyboard["overall_style"] == "cinematic"
+        assert "music_mood" in storyboard, "music_mood missing from storyboard"
+        assert storyboard["music_mood"] == "uplifting, ~120 BPM"
+        assert "scene_order" in storyboard, "scene_order missing from storyboard"
+        assert len(storyboard["scene_order"]) > 0
+
+    def test_aspect_ratio_filled_from_audio_tags(self):
+        """Should fill music_mood from audio_tags when LLM doesn't provide it."""
+        import main as m
+
+        # Storyboard without music_mood (LLM didn't fill it)
+        incomplete_storyboard = {
+            "aspect_ratio": "16:9",
+            "overall_style": "documentary",
+            "music_mood": None,  # Empty, should be filled from audio_tags
+            "scene_order": [
+                {
+                    "scene": 1,
+                    "start": "0:00",
+                    "end": "0:05",
+                    "duration_sec": 5.0,
+                    "shot": "medium",
+                    "camera_movement": "pan",
+                    "subject": "Landscape",
+                    "action": "Panning",
+                    "lighting": "natural",
+                    "color_palette": "greens",
+                    "on_screen_text": "",
+                    "audio": "Nature sounds",
+                    "transition": "cut",
+                }
+            ]
+        }
+
+        result_with_incomplete = _SAMPLE_ANALYSIS_RESULT.copy()
+        result_with_incomplete["gen_prompt_storyboard"] = incomplete_storyboard
+
+        frame_responses = [
+            _make_bridge_response({"description": "Frame"})
+            for _ in _SAMPLE_FRAMES
+        ]
+        synthesis_response = _make_bridge_response(result_with_incomplete)
+        all_responses = frame_responses + [synthesis_response]
+        call_count = [0]
+
+        def mock_post(*args, **kwargs):
+            resp = all_responses[call_count[0]]
+            call_count[0] += 1
+            return resp
+
+        audio_tags = {"bpm": 100.0, "energy": 0.6, "music_key": "A"}
+
+        with patch("httpx.post", side_effect=mock_post):
+            result = m._analyze_frames_sequential(
+                frames=_SAMPLE_FRAMES,
+                subdir="test_subdir",
+                intent="test",
+                output_format="prompt_json",
+                model="claude-sonnet-4-6",
+                audio_tags=audio_tags,
+            )
+
+        # Verify music_mood was filled from audio_tags
+        storyboard = result.get("gen_prompt_storyboard", {})
+        music_mood = storyboard.get("music_mood", "")
+        assert music_mood, "music_mood should not be empty after filling from audio_tags"
+        assert "100" in str(music_mood) or "BPM" in music_mood, "music_mood should contain BPM info"
+
+
+# ── Bug Fix Tests ──────────────────────────────────────────────────────────
+
+class TestBugFixes:
+    """Tests for critical bug fixes from PR review."""
+
+    def test_frame_timestamps_from_showinfo_ffmpeg_stderr(self):
+        """Should capture frame timestamps from ffmpeg showinfo stderr via regex parsing."""
+        import re
+
+        # Fake ffmpeg stderr with pts_time values (from showinfo filter output format)
+        # ffmpeg showinfo filter outputs "pts_time=X.X" format
+        fake_ffmpeg_stderr = (
+            "[Parsed_showinfo_0 @ ...] pts_time=1.234\n"
+            "[Parsed_showinfo_0 @ ...] pts_time=3.567\n"
+            "[Parsed_showinfo_0 @ ...] pts_time=5.890\n"
+            "frame=3 fps=0\n"
+        )
+
+        # Test that the regex used in _extract_frames_timed correctly extracts pts_time values
+        pts_times = re.findall(r'pts_time=([\d.]+)', fake_ffmpeg_stderr)
+
+        # Verify we extracted the correct timestamps
+        assert len(pts_times) == 3, f"Expected 3 timestamps, got {len(pts_times)}"
+        assert float(pts_times[0]) == 1.234
+        assert float(pts_times[1]) == 3.567
+        assert float(pts_times[2]) == 5.890
+
+        # Verify rounding logic (1.234 → 1.2, 3.567 → 3.6, 5.890 → 5.9)
+        rounded_times = [round(float(t), 1) for t in pts_times]
+        assert rounded_times == [1.2, 3.6, 5.9]
+
+    def test_enforce_scene_duration_cap_guards_null_duration(self):
+        """Should not crash when scene has duration_sec: None."""
+        import main as m
+
+        scene_with_null = {
+            "scene": 1,
+            "start": "0:00",
+            "end": "0:05",
+            "duration_sec": None,  # Null value that used to crash
+            "shot": "wide",
+            "subject": "Test",
+            "action": "Test",
+            "lighting": "test",
+            "color_palette": "test",
+            "on_screen_text": "",
+            "audio": "test",
+            "transition": "cut",
+        }
+
+        scene_order = [scene_with_null]
+
+        # Should not raise TypeError
+        result = m._enforce_scene_duration_cap(scene_order, max_duration_sec=8.0)
+
+        # Result should still contain the scene (treated as 0 duration, so not split)
+        assert len(result) == 1
+        assert result[0]["scene"] == 1
+
+    def test_time_str_to_seconds_handles_fractional_seconds(self):
+        """Should handle fractional seconds like '1:30.5'."""
+        import main as m
+
+        # Test fractional seconds
+        result = m._time_str_to_seconds("1:30.5")
+        assert result == 90.5, f"Expected 90.5, got {result}"
+
+        # Test regular format still works
+        result = m._time_str_to_seconds("2:30")
+        assert result == 150.0, f"Expected 150.0, got {result}"
+
+        # Test zero case
+        result = m._time_str_to_seconds("0:00")
+        assert result == 0.0, f"Expected 0.0, got {result}"
