@@ -5247,6 +5247,7 @@ def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: 
 
     # Per-frame pass: collect descriptions
     frame_descriptions = []
+    frame_analysis = []  # ponytail: persist per-frame {name, t, desc} for frontend
     for i, frame_info in enumerate(normalized_frames, 1):
         frame_name = frame_info.get("name") or frame_info  # fallback for old-style
         timestamp_s = frame_info.get("t")
@@ -5287,6 +5288,7 @@ def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: 
             raw_desc = f"(frame {i} tidak terbaca)"
 
         frame_descriptions.append(raw_desc)
+        frame_analysis.append({"name": frame_name, "t": timestamp_s, "desc": raw_desc})
 
     # Synthesis pass: build context from descriptions + transcript + audio + analysis prompt, call bridge with NO images
     frame_context = "\n".join([f"{i}. {desc}" for i, desc in enumerate(frame_descriptions, 1)])
@@ -5397,7 +5399,13 @@ def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: 
                 # Second attempt failed, raise
                 raise HTTPException(status_code=502, detail=f"Could not parse claude result as JSON: {exc}")
 
-    return parsed or {}
+    # Add frame_analysis to result (ponytail: non-fatal metadata, guard so failure never breaks analysis)
+    result = parsed or {}
+    try:
+        result["frame_analysis"] = frame_analysis
+    except Exception:
+        pass
+    return result
 
 
 def _generate_gen_prompt(frame_descriptions: str, subdir: str, output_format: str, model: str) -> tuple:
@@ -5794,6 +5802,17 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
     _save_creator(req.youtube_url)
     _save_source(req.youtube_url)
 
+    # Step 6a: Persist per-frame descriptions (ponytail: non-fatal metadata)
+    try:
+        frame_analysis = parsed.get("frame_analysis", [])
+        if frame_analysis:
+            video_id = _extract_video_id_from_youtube_url(req.youtube_url)
+            frames_json_path = _REPO_ROOT / "data" / "frames" / video_id / "frames.json"
+            frames_json_path.parent.mkdir(parents=True, exist_ok=True)
+            frames_json_path.write_text(json.dumps(frame_analysis, ensure_ascii=False), encoding="utf-8")
+    except Exception as exc:
+        print(f"[analyze/claude] frame_analysis persistence failed (non-fatal): {exc}")
+
     # Step 6b: Persist gen_prompt
     if gen_prompt:
         try:
@@ -5960,8 +5979,9 @@ def list_source_frames(youtube_url: str):
     """List persisted analysis frames for a video.
 
     Query param: youtube_url
-    Returns: {video_id: str, frames: ["/frames/<video_id>/frame_00.jpg", ...]}
+    Returns: {video_id: str, frames: [{url: "/frames/<video_id>/frame_00.jpg", t: <float|null>, desc: <str|null>}, ...]}
     If frames dir doesn't exist, returns empty frames list (no crash).
+    For images without matching frames.json entry (old sources), returns t and desc as null.
     """
     try:
         video_id = _extract_video_id_from_youtube_url(youtube_url)
@@ -5973,8 +5993,33 @@ def list_source_frames(youtube_url: str):
 
     if frames_dir.is_dir():
         try:
+            # Load frame_analysis from sidecar if it exists (ponytail: non-fatal if missing)
+            frame_analysis_map = {}
+            frames_json_path = frames_dir / "frames.json"
+            if frames_json_path.exists():
+                try:
+                    frame_analysis_list = json.loads(frames_json_path.read_text(encoding="utf-8"))
+                    if isinstance(frame_analysis_list, list):
+                        for entry in frame_analysis_list:
+                            if isinstance(entry, dict):
+                                # Map by name for lookup below
+                                frame_analysis_map[entry.get("name")] = entry
+                except Exception as exc:
+                    print(f"[list_source_frames] failed to load frames.json for {video_id}: {exc}")
+
+            # List image files and build richer frame objects
             frame_files = sorted([f.name for f in frames_dir.glob("frame_*.jpg")])
-            frames = [f"/frames/{video_id}/{name}" for name in frame_files]
+            for name in frame_files:
+                frame_obj = {"url": f"/frames/{video_id}/{name}"}
+                # Match against frames.json entry by name (ponytail: fall back to null if missing)
+                analysis_entry = frame_analysis_map.get(name)
+                if analysis_entry:
+                    frame_obj["t"] = analysis_entry.get("t")
+                    frame_obj["desc"] = analysis_entry.get("desc")
+                else:
+                    frame_obj["t"] = None
+                    frame_obj["desc"] = None
+                frames.append(frame_obj)
         except Exception as exc:
             print(f"[list_source_frames] failed to list frames for {video_id}: {exc}")
 
@@ -6694,6 +6739,16 @@ async def upload_source(
             video_path.unlink(missing_ok=True)
             raise HTTPException(status_code=502, detail=f"Could not parse claude result as JSON: {exc}")
 
+        # Persist per-frame descriptions (ponytail: non-fatal metadata)
+        try:
+            frame_analysis = parsed.get("frame_analysis", [])
+            if frame_analysis:
+                frames_json_path = _REPO_ROOT / "data" / "frames" / file_id / "frames.json"
+                frames_json_path.parent.mkdir(parents=True, exist_ok=True)
+                frames_json_path.write_text(json.dumps(frame_analysis, ensure_ascii=False), encoding="utf-8")
+        except Exception as exc:
+            print(f"[sources/upload] frame_analysis persistence failed (non-fatal): {exc}")
+
         summary = parsed.get("summary", "")
         detail = parsed.get("detail", "")
         hook = parsed.get("hook", "")
@@ -6976,6 +7031,16 @@ async def upload_source_async(
                     run["status"] = "error"
                     _save_run(run_id, run)
                 return
+
+            # Persist per-frame descriptions (ponytail: non-fatal metadata)
+            try:
+                frame_analysis = parsed.get("frame_analysis", [])
+                if frame_analysis:
+                    frames_json_path = _REPO_ROOT / "data" / "frames" / file_id / "frames.json"
+                    frames_json_path.parent.mkdir(parents=True, exist_ok=True)
+                    frames_json_path.write_text(json.dumps(frame_analysis, ensure_ascii=False), encoding="utf-8")
+            except Exception as exc:
+                print(f"[sources/upload/async] frame_analysis persistence failed (non-fatal): {exc}")
 
             # Extract fields from parsed result
             summary = parsed.get("summary", "")

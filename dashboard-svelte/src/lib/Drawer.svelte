@@ -20,12 +20,47 @@
   })
   let sceneCount = $derived(scenes.length)
   // Map a frame index to its best-matching storyboard scene:
-  // 1:1 when counts match, otherwise proportional by position.
+  // 1: exact timestamp match if frame has .t and scenes have start/end
+  // 2: 1:1 when counts match (fallback)
+  // 3: proportional by position (fallback for old sources with no .t)
   function matchedScene(i) {
     if (!scenes.length || !frames.length) return null
+
+    // Try exact timestamp match (frames have .t, scenes have start/end)
+    const frame = frames[i]
+    if (frame && typeof frame === 'object' && frame.t != null && scenes.length > 0) {
+      // Parse scene times (format "m:ss") to seconds
+      for (const scene of scenes) {
+        if (scene.start && scene.end) {
+          const start_s = timeToSeconds(scene.start)
+          const end_s = timeToSeconds(scene.end)
+          if (frame.t >= start_s && frame.t < end_s) {
+            return scene
+          }
+        }
+      }
+      // No exact match: find nearest scene by time
+      const nearest = scenes.reduce((best, curr) => {
+        const curr_start = timeToSeconds(curr.start || '0:00')
+        const best_start = timeToSeconds(best.start || '0:00')
+        return Math.abs(frame.t - curr_start) < Math.abs(frame.t - best_start) ? curr : best
+      })
+      if (nearest) return nearest
+    }
+
+    // Fallback: proportional (for old sources without .t)
     if (scenes.length === frames.length) return scenes[i]
     const idx = frames.length > 1 ? Math.round((i / (frames.length - 1)) * (scenes.length - 1)) : 0
     return scenes[Math.min(Math.max(idx, 0), scenes.length - 1)]
+  }
+
+  // Convert "m:ss" to seconds
+  function timeToSeconds(timeStr) {
+    if (!timeStr) return 0
+    const parts = timeStr.split(':')
+    const m = parseInt(parts[0]) || 0
+    const s = parseInt(parts[1]) || 0
+    return m * 60 + s
   }
 
   // decompose state
@@ -81,7 +116,11 @@
     if (pollInterval) { clearInterval(pollInterval); pollInterval = null }
   }
 
-  function openLightbox(src, i = 0) { lightboxSrc = src; lightboxIndex = i }
+  function openLightbox(frame, i = 0) {
+    // frame can be string (legacy) or object with .url
+    lightboxSrc = typeof frame === 'string' ? frame : (frame?.url || '')
+    lightboxIndex = i
+  }
   function closeLightbox() { lightboxSrc = null }
 
   function onLightboxKey(e) {
@@ -186,6 +225,7 @@
 <!-- Lightbox overlay -->
 {#if lightboxSrc}
   {@const sc = matchedScene(lightboxIndex)}
+  {@const frameObj = typeof frames[lightboxIndex] === 'object' ? frames[lightboxIndex] : null}
   <div
     class="lb-overlay"
     onclick={closeLightbox}
@@ -198,9 +238,14 @@
     <button class="lb-close" onclick={closeLightbox} aria-label="Tutup">✕</button>
     <!-- ponytail: stopPropagation on the card keeps clicks inside from closing the overlay -->
     <div class="lb-card" onclick={(e) => e.stopPropagation()} role="document">
-      <img src={lightboxSrc} alt="frame diperbesar" class="lb-img" />
-      <div class="lb-info">
+      <div class="lb-img-col">
+        <img src={lightboxSrc} alt="frame diperbesar" class="lb-img" />
+      </div>
+      <div class="lb-info-col">
         <div class="lb-frame-no">Frame {lightboxIndex + 1}{frames.length ? ` / ${frames.length}` : ''}</div>
+        {#if frameObj?.desc}
+          <div class="lb-frame-desc">{frameObj.desc}</div>
+        {/if}
         {#if sc}
           {#if sc.description || sc.action}
             <div class="lb-desc">{sc.description || sc.action}</div>
@@ -392,9 +437,10 @@
             {#if framesLoading}
               <div class="mut" style="font-size:12px;padding:8px 0">Memuat frames…</div>
             {:else if frames.length}
-              {#each frames as src, i}
-                <button class="frame-thumb-btn" onclick={() => openLightbox(src, i)} title="Klik untuk detail" aria-label="Detail frame">
-                  <img {src} alt="frame" loading="lazy" class="frame-thumb" />
+              {#each frames as frame, i}
+                {@const frameUrl = typeof frame === 'string' ? frame : (frame?.url || '')}
+                <button class="frame-thumb-btn" onclick={() => openLightbox(frame, i)} title="Klik untuk detail" aria-label="Detail frame">
+                  <img src={frameUrl} alt="frame" loading="lazy" class="frame-thumb" />
                   <span class="frame-no">{i + 1}</span>
                 </button>
               {/each}
@@ -693,19 +739,35 @@
     display: flex; align-items: center; justify-content: center;
   }
   .lb-card {
-    display: flex; flex-direction: column; gap: 12px;
-    width: min(860px, 92vw); max-height: 88vh; overflow-y: auto;
+    display: flex; flex-direction: row; gap: 12px;
+    width: min(900px, 92vw); max-height: 88vh;
     background: var(--bg); border: 1px solid var(--line); border-radius: 12px;
     padding: 14px; box-shadow: 0 12px 48px rgba(0,0,0,.5);
   }
+  .lb-img-col {
+    flex: 0 0 50%;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
   .lb-img {
-    width: 100%; max-height: 56vh; object-fit: contain;
+    width: 100%; max-height: 78vh; object-fit: contain;
     border-radius: 8px; background: var(--soft);
+  }
+  .lb-info-col {
+    flex: 0 0 50%;
+    display: flex; flex-direction: column; gap: 12px;
+    overflow-y: auto;
+    padding-right: 8px;
   }
   .lb-info { text-align: left; }
   .lb-frame-no {
     font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
     color: var(--mut); margin-bottom: 6px;
+  }
+  .lb-frame-desc {
+    font-size: 13px; color: var(--txt); line-height: 1.6;
+    padding: 10px; background: var(--soft); border-radius: 6px;
+    border-left: 3px solid var(--accent);
   }
   .lb-desc { font-size: 14px; color: var(--txt); line-height: 1.6; margin-bottom: 8px; }
   .lb-scene-cap { font-size: 11px; color: var(--mut); margin-bottom: 8px; }
@@ -731,6 +793,21 @@
   .lb-img-btn {
     padding: 0; border: none; background: none; cursor: default;
     display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Responsive lightbox: collapse to column on mobile */
+  @media (max-width: 768px) {
+    .lb-card {
+      flex-direction: column;
+      width: min(90vw, 500px);
+    }
+    .lb-img-col {
+      flex: 0 0 auto;
+    }
+    .lb-info-col {
+      flex: 1;
+      padding-right: 0;
+    }
   }
 
   .gen-prompt-box {
