@@ -5228,6 +5228,58 @@ def _persist_frame_analysis(video_id: str, parsed: dict) -> None:
         print(f"[frame_analysis] persistence failed (non-fatal): {exc}")
 
 
+# ── Frame analysis batching ──────────────────────────────────────────────────
+FRAMES_PER_BATCH = max(1, int(os.environ.get("ANALYZE_FRAMES_PER_BATCH", "5")))
+
+# Per-frame analysis uses Haiku (cheap, batched). Synthesis (storyboard JSON) routes to Sonnet for better quality.
+ANALYZE_SYNTHESIS_MODEL = os.environ.get("ANALYZE_SYNTHESIS_MODEL", "claude-sonnet-4-6")
+
+# Audio tagging runs through cliproxy→SumoPod→gemini (paid credit). Off by default
+# to preserve SumoPod credit; set ANALYZE_AUDIO_TAGS=1 to re-enable music_mood tags.
+ANALYZE_AUDIO_TAGS = os.environ.get("ANALYZE_AUDIO_TAGS", "0") == "1"
+
+
+def _parse_batch_descriptions(raw_result: str, expected_count: int) -> list[str] | None:
+    """
+    Parse a JSON array of frame descriptions from a batch analysis result.
+
+    Returns a list of strings in order if valid, or None if parsing failed or array size mismatched.
+    Handles JSON wrapped in ```json fences.
+
+    Args:
+        raw_result: raw string result from Claude bridge
+        expected_count: expected number of descriptions in the array
+
+    Returns:
+        list of N strings in order, or None if parse failed / count mismatch
+    """
+    if not raw_result or not isinstance(raw_result, str):
+        return None
+
+    # Strip markdown json fences if present
+    cleaned = raw_result.strip()
+    if cleaned.startswith("```json"):
+        cleaned = cleaned[7:]
+    if cleaned.startswith("```"):
+        cleaned = cleaned[3:]
+    if cleaned.endswith("```"):
+        cleaned = cleaned[:-3]
+    cleaned = cleaned.strip()
+
+    try:
+        parsed = json.loads(cleaned)
+        if not isinstance(parsed, list):
+            return None
+        if len(parsed) != expected_count:
+            return None
+        # Verify all elements are strings
+        if not all(isinstance(s, str) for s in parsed):
+            return None
+        return parsed
+    except (json.JSONDecodeError, ValueError):
+        return None
+
+
 def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: str, model: str, log_fn=None, transcript_text: str = "", audio_tags: dict = None, video_path: str = None) -> dict:
     """
     Analyze frames sequentially (1 per call), then synthesize with no images.
@@ -5270,48 +5322,116 @@ def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: 
             # Backward compat: plain string filename
             normalized_frames.append({"name": item, "path": None, "t": None})
 
-    # Per-frame pass: collect descriptions
+    # Per-frame pass: collect descriptions (batch 5 frames per bridge call)
     frame_descriptions = []
-    for i, frame_info in enumerate(normalized_frames, 1):
-        frame_name = frame_info.get("name") or frame_info  # fallback for old-style
-        timestamp_s = frame_info.get("t")
+    bridge_timeout = _httpx.Timeout(connect=10.0, read=180.0, write=10.0, pool=5.0)
+
+    # Process frames in batches
+    for batch_start_idx in range(0, len(normalized_frames), FRAMES_PER_BATCH):
+        batch_end_idx = min(batch_start_idx + FRAMES_PER_BATCH, len(normalized_frames))
+        batch_frames = normalized_frames[batch_start_idx:batch_end_idx]
+        batch_size = len(batch_frames)
 
         if log_fn:
-            log_fn(f"🧠 Analisa frame {i}/{len(normalized_frames)}…")
+            log_fn(f"🧠 Analisa frame {batch_start_idx + 1}-{batch_end_idx}/{len(normalized_frames)}…")
 
-        # Build per-frame prompt with timestamp if available
-        timestamp_line = f"Frame pada detik {timestamp_s:.1f} (ke-{i}/{len(normalized_frames)})." if timestamp_s is not None else f"Frame ke-{i} dari {len(normalized_frames)}."
-        per_frame_prompt = (
-            f"Ini {timestamp_line} "
-            f"Deskripsikan singkat (2-3 kalimat): subjek & penampilannya, aksi/gerakan yang terlihat, jenis shot (wide/medium/close-up), "
-            f"gerak kamera yang tersirat (static/pan/tilt/push-in/handheld), pencahayaan, palet warna dominan, latar/setting, "
-            f"teks di layar bila ada, mood. Jawab teks biasa saja."
+        # Build frame-list description for batch prompt
+        frame_lines = []
+        frame_names_list = []
+        for frame_idx, frame_info in enumerate(batch_frames, 1):
+            frame_name = frame_info.get("name") or frame_info
+            timestamp_s = frame_info.get("t")
+            frame_names_list.append(frame_name)
+
+            if timestamp_s is not None:
+                frame_lines.append(f"Frame {frame_idx}: detik {timestamp_s:.1f}")
+            else:
+                frame_lines.append(f"Frame {frame_idx}")
+
+        # Batch prompt asks for JSON array of descriptions
+        batch_prompt = (
+            f"Ada {batch_size} frame dari video (urut). Untuk TIAP frame, deskripsikan singkat (2-3 kalimat): "
+            f"subjek & penampilannya, aksi/gerakan, jenis shot (wide/medium/close-up), gerak kamera tersirat, "
+            f"pencahayaan, palet warna, latar, teks di layar bila ada, mood. Fokus ke JALAN CERITA — tak perlu baca angka/huruf kecil dengan presisi.\n"
+            f"{chr(10).join(frame_lines)}.\n"
+            f"Jawab HANYA dengan JSON array of string, {batch_size} elemen, urut sesuai frame: "
+            f'["desc frame 1", "desc frame 2", ...]. Tanpa teks lain.'
         )
 
-        bridge_timeout = _httpx.Timeout(connect=10.0, read=120.0, write=10.0, pool=5.0)
-        raw_desc = None
+        raw_batch_result = None
+        batch_descriptions = None
 
-        # Try once, then retry if empty
+        # Try once, then retry if empty (same as before)
         for attempt in range(2):
             try:
                 bridge_resp = _httpx.post(
                     f"{CLAUDE_BRIDGE_URL}/run",
-                    json={"prompt": per_frame_prompt, "frames": [frame_name], "model": model, "subdir": subdir},
+                    json={
+                        "prompt": batch_prompt,
+                        "frames": frame_names_list,
+                        "model": model,
+                        "subdir": subdir,
+                        "timeout_s": 180,
+                    },
                     timeout=bridge_timeout,
                 )
                 bridge_data = bridge_resp.json()
                 if bridge_data.get("ok"):
-                    raw_desc = (bridge_data.get("result", "") or "").strip()
-                    if raw_desc:
+                    raw_batch_result = (bridge_data.get("result", "") or "").strip()
+                    if raw_batch_result:
                         break
             except Exception:
                 pass
 
-        # Use placeholder if empty after retries
-        if not raw_desc:
-            raw_desc = f"(frame {i} tidak terbaca)"
+        # Try to parse as JSON array
+        if raw_batch_result:
+            batch_descriptions = _parse_batch_descriptions(raw_batch_result, batch_size)
 
-        frame_descriptions.append(raw_desc)
+        # If parsing failed, fall back to single-frame analysis for this batch
+        if batch_descriptions is None:
+            if log_fn:
+                log_fn(f"⚠️ Batch parse gagal, fallback ke per-frame…")
+            batch_descriptions = []
+            for frame_idx_in_batch, frame_info in enumerate(batch_frames, 1):
+                frame_name = frame_info.get("name") or frame_info
+                timestamp_s = frame_info.get("t")
+                global_frame_idx = batch_start_idx + frame_idx_in_batch
+
+                # Single-frame fallback prompt
+                timestamp_line = (
+                    f"Frame pada detik {timestamp_s:.1f} (ke-{global_frame_idx}/{len(normalized_frames)})."
+                    if timestamp_s is not None
+                    else f"Frame ke-{global_frame_idx} dari {len(normalized_frames)}."
+                )
+                single_prompt = (
+                    f"Ini {timestamp_line} "
+                    f"Deskripsikan singkat (2-3 kalimat): subjek & penampilannya, aksi/gerakan yang terlihat, jenis shot (wide/medium/close-up), "
+                    f"gerak kamera yang tersirat (static/pan/tilt/push-in/handheld), pencahayaan, palet warna dominan, latar/setting, "
+                    f"teks di layar bila ada, mood. Jawab teks biasa saja."
+                )
+
+                raw_desc = None
+                for attempt in range(2):
+                    try:
+                        bridge_resp = _httpx.post(
+                            f"{CLAUDE_BRIDGE_URL}/run",
+                            json={"prompt": single_prompt, "frames": [frame_name], "model": model, "subdir": subdir},
+                            timeout=bridge_timeout,
+                        )
+                        bridge_data = bridge_resp.json()
+                        if bridge_data.get("ok"):
+                            raw_desc = (bridge_data.get("result", "") or "").strip()
+                            if raw_desc:
+                                break
+                    except Exception:
+                        pass
+
+                if not raw_desc:
+                    raw_desc = f"(frame {global_frame_idx} tidak terbaca)"
+                batch_descriptions.append(raw_desc)
+
+        # Extend frame_descriptions with batch results (maintains order)
+        frame_descriptions.extend(batch_descriptions)
 
     # Synthesis pass: build context from descriptions + transcript + audio + analysis prompt, call bridge with NO images
     frame_context = "\n".join([f"{i}. {desc}" for i, desc in enumerate(frame_descriptions, 1)])
@@ -5355,7 +5475,7 @@ def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: 
     full_synthesis_prompt = synthesis_prompt_prefix + analysis_prompt
 
     if log_fn:
-        log_fn(f"🧠 Sonnet mensintesis analisa…")
+        log_fn(f"🧠 Sintesis analisa ({ANALYZE_SYNTHESIS_MODEL})…")
 
     # Try synthesis, retry once on parse failure
     parsed = None
@@ -5364,7 +5484,7 @@ def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: 
             bridge_timeout = _httpx.Timeout(connect=10.0, read=330.0, write=10.0, pool=5.0)
             bridge_resp = _httpx.post(
                 f"{CLAUDE_BRIDGE_URL}/run",
-                json={"prompt": full_synthesis_prompt, "frames": [], "model": model, "subdir": subdir, "timeout_s": 300},
+                json={"prompt": full_synthesis_prompt, "frames": [], "model": ANALYZE_SYNTHESIS_MODEL, "subdir": subdir, "timeout_s": 300},
                 timeout=bridge_timeout,
             )
             bridge_data = bridge_resp.json()
@@ -5530,7 +5650,7 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
     if output_format not in ("none", "prompt_video", "prompt_json"):
         raise HTTPException(status_code=400, detail=f"Invalid output_format '{output_format}'. Must be one of: none, prompt_video, prompt_json")
 
-    model = req.model or "claude-sonnet-4-6"
+    model = req.model or "claude-haiku-4-5"
     intent = (req.intent or "").strip()
 
     # Sanitize intent — only use as data, never as instructions
@@ -5665,7 +5785,7 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
 
     # Fetch audio analysis for all platforms that provide downloaded video
     try:
-        if progress_id:
+        if progress_id and ANALYZE_AUDIO_TAGS:
             _log_run(progress_id, f"🎵 Analisa audio…", start_time)
         # Use the downloaded video file from frame extraction
         tmp_video_dir = f"{ANALYZE_FRAME_DIR}/{run_id}"
@@ -5676,7 +5796,7 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
             if candidate.exists():
                 video_file = str(candidate)
                 break
-        if video_file:
+        if video_file and ANALYZE_AUDIO_TAGS:
             audio_tags = _analyze_audio(video_file)
             if audio_tags and any(v is not None for v in audio_tags.values()):
                 if progress_id:
@@ -6723,11 +6843,12 @@ async def upload_source(
         # Sequential frame-by-frame analysis with timestamps (migrate to match async flow)
         audio_tags = None
         try:
-            audio_tags = _analyze_audio(str(video_path))
+            if ANALYZE_AUDIO_TAGS:
+                audio_tags = _analyze_audio(str(video_path))
         except Exception as exc:
             print(f"[sources/upload] audio analysis failed (non-fatal): {exc}")
 
-        model = "claude-sonnet-4-6"
+        model = "claude-haiku-4-5"
         try:
             parsed = _analyze_frames_sequential(
                 frames=frame_dicts,
@@ -7009,15 +7130,16 @@ async def upload_source_async(
             # Analyze audio (uploads don't have transcripts, only audio)
             audio_tags = None
             try:
-                _log_run(run_id, f"🎵 Analisa audio…", start_time)
-                audio_tags = _analyze_audio(str(video_path))
-                if audio_tags and any(v is not None for v in audio_tags.values()):
-                    _log_run(run_id, f"✓ Audio dianalisis", start_time)
+                if ANALYZE_AUDIO_TAGS:
+                    _log_run(run_id, f"🎵 Analisa audio…", start_time)
+                    audio_tags = _analyze_audio(str(video_path))
+                    if audio_tags and any(v is not None for v in audio_tags.values()):
+                        _log_run(run_id, f"✓ Audio dianalisis", start_time)
             except Exception as exc:
                 print(f"[sources/upload/async] audio analysis failed (non-fatal): {exc}")
 
             # Sequential frame analysis
-            model = "claude-sonnet-4-6"
+            model = "claude-haiku-4-5"
 
             def _log_progress(msg: str):
                 """Helper to log progress during sequential analysis."""

@@ -14,8 +14,10 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).parent))
 
 import pytest
+import os
+import importlib
 from fastapi.testclient import TestClient
-from main import app, _REPO_ROOT, _persist_frame_analysis, _build_frame_analysis
+from main import app, _REPO_ROOT, _persist_frame_analysis, _build_frame_analysis, _parse_batch_descriptions, ANALYZE_SYNTHESIS_MODEL
 
 
 @pytest.fixture
@@ -396,6 +398,156 @@ def test_persist_frame_analysis_with_null_timestamps(tmp_path):
         data = json.loads(frames_json_path.read_text(encoding="utf-8"))
         assert data[1]["t"] is None
         assert data[1]["desc"] == "No timestamp"
+
+
+def test_analyze_synthesis_model_defaults_to_sonnet():
+    """Test that ANALYZE_SYNTHESIS_MODEL defaults to claude-sonnet-4-6."""
+    # Import directly from main to verify the constant exists and has correct default
+    import main
+
+    # When ANALYZE_SYNTHESIS_MODEL is not set in env, should default to sonnet
+    if "ANALYZE_SYNTHESIS_MODEL" not in os.environ:
+        assert main.ANALYZE_SYNTHESIS_MODEL == "claude-sonnet-4-6"
+        assert isinstance(main.ANALYZE_SYNTHESIS_MODEL, str)
+        assert len(main.ANALYZE_SYNTHESIS_MODEL) > 0
+
+
+def test_analyze_synthesis_model_honors_env_override(monkeypatch):
+    """Test that ANALYZE_SYNTHESIS_MODEL honors environment variable override."""
+    # Set a custom model via environment variable
+    monkeypatch.setenv("ANALYZE_SYNTHESIS_MODEL", "claude-opus-4-1")
+
+    # Reload the main module to pick up the new env var
+    import main
+    importlib.reload(main)
+
+    assert main.ANALYZE_SYNTHESIS_MODEL == "claude-opus-4-1"
+
+    # Clean up by resetting to default
+    monkeypatch.delenv("ANALYZE_SYNTHESIS_MODEL", raising=False)
+    importlib.reload(main)
+
+
+def test_parse_batch_descriptions_valid_json():
+    """Test parsing valid JSON array of frame descriptions."""
+    raw_result = '["Opening shot with bright lighting", "Person enters frame from left", "Static shot of background"]'
+    expected_count = 3
+
+    result = _parse_batch_descriptions(raw_result, expected_count)
+
+    assert result is not None
+    assert len(result) == 3
+    assert result[0] == "Opening shot with bright lighting"
+    assert result[1] == "Person enters frame from left"
+    assert result[2] == "Static shot of background"
+
+
+def test_parse_batch_descriptions_json_with_fences():
+    """Test parsing JSON array wrapped in ```json markdown fences."""
+    raw_result = '```json\n["First description", "Second description", "Third description"]\n```'
+    expected_count = 3
+
+    result = _parse_batch_descriptions(raw_result, expected_count)
+
+    assert result is not None
+    assert len(result) == 3
+    assert result[0] == "First description"
+    assert result[1] == "Second description"
+    assert result[2] == "Third description"
+
+
+def test_parse_batch_descriptions_wrong_count():
+    """Test that wrong count (array size mismatch) returns None (triggers fallback)."""
+    raw_result = '["First", "Second", "Third"]'
+    expected_count = 5  # Expect 5, got 3
+
+    result = _parse_batch_descriptions(raw_result, expected_count)
+
+    assert result is None
+
+
+def test_parse_batch_descriptions_non_json_garbage():
+    """Test that non-JSON garbage returns None (triggers fallback)."""
+    raw_result = "This is not JSON at all, just plain text"
+    expected_count = 2
+
+    result = _parse_batch_descriptions(raw_result, expected_count)
+
+    assert result is None
+
+
+def test_parse_batch_descriptions_empty_string():
+    """Test that empty string returns None."""
+    raw_result = ""
+    expected_count = 3
+
+    result = _parse_batch_descriptions(raw_result, expected_count)
+
+    assert result is None
+
+
+def test_parse_batch_descriptions_not_an_array():
+    """Test that a JSON object (not array) returns None."""
+    raw_result = '{"desc1": "First", "desc2": "Second"}'
+    expected_count = 2
+
+    result = _parse_batch_descriptions(raw_result, expected_count)
+
+    assert result is None
+
+
+def test_parse_batch_descriptions_array_with_non_strings():
+    """Test that array with non-string elements returns None."""
+    raw_result = '["Valid string", 42, "Another string"]'
+    expected_count = 3
+
+    result = _parse_batch_descriptions(raw_result, expected_count)
+
+    assert result is None
+
+
+def test_parse_batch_descriptions_single_item():
+    """Test parsing a single-item array."""
+    raw_result = '["Single frame description"]'
+    expected_count = 1
+
+    result = _parse_batch_descriptions(raw_result, expected_count)
+
+    assert result is not None
+    assert len(result) == 1
+    assert result[0] == "Single frame description"
+
+
+def test_parse_batch_descriptions_with_special_chars():
+    """Test parsing descriptions with special characters and unicode."""
+    raw_result = '["Frame dengan emoji 🎬", "Teks dengan 中文", "Quote \\"escaped\\""]'
+    expected_count = 3
+
+    result = _parse_batch_descriptions(raw_result, expected_count)
+
+    assert result is not None
+    assert len(result) == 3
+    assert result[0] == "Frame dengan emoji 🎬"
+    assert result[1] == "Teks dengan 中文"
+    assert result[2] == 'Quote "escaped"'
+
+
+def test_parse_batch_descriptions_json_with_markdown_fences_variations():
+    """Test parsing JSON with different markdown fence formats."""
+    # Fence with newlines
+    raw_result1 = '```json\n["First", "Second"]\n```'
+    result1 = _parse_batch_descriptions(raw_result1, 2)
+    assert result1 == ["First", "Second"]
+
+    # Fence without language identifier
+    raw_result2 = '```\n["First", "Second"]\n```'
+    result2 = _parse_batch_descriptions(raw_result2, 2)
+    assert result2 == ["First", "Second"]
+
+    # Just code fence markers
+    raw_result3 = '```["First", "Second"]```'
+    result3 = _parse_batch_descriptions(raw_result3, 2)
+    assert result3 == ["First", "Second"]
 
 
 if __name__ == "__main__":
