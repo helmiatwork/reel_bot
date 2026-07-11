@@ -226,52 +226,52 @@
     <div class="modal-content">
       {#if d.type === 'source'}
       {@const s = d.data}
-      <h2 class="src-title">
+      <div class="header-row">
+        <div class="header-left">
+          <h2 class="src-title">
+            {#if s.youtube_url}
+              <a href={s.youtube_url} target="_blank" rel="noopener noreferrer" class="title-link">{s.title} <span class="ext">↗</span></a>
+            {:else}{s.title}{/if}
+          </h2>
+          <div class="header-meta">
+            <span class="status-chip {s.status === 'analyzed' ? 'chip-green' : s.status === 'error' ? 'chip-red' : 'chip-mut'}">{s.status}</span>
+            {#if s.niche && s.niche !== '-'}<span class="hm-item">{s.niche}</span>{/if}
+            <span class="hm-item num">{s.viewsLabel} views</span>
+          </div>
+          <div class="mut" style="font-size:12px">{s.channel || '-'} · {s.id}</div>
+        </div>
         {#if s.youtube_url}
-          <a href={s.youtube_url} target="_blank" rel="noopener noreferrer" class="title-link">{s.title} <span class="ext">↗</span></a>
-        {:else}{s.title}{/if}
-      </h2>
-      <div class="header-meta">
-        <span class="status-chip {s.status === 'analyzed' ? 'chip-green' : s.status === 'error' ? 'chip-red' : 'chip-mut'}">{s.status}</span>
-        {#if s.niche && s.niche !== '-'}<span class="hm-item">{s.niche}</span>{/if}
-        <span class="hm-item num">{s.viewsLabel} views</span>
+          <div class="header-right">
+            <div class="reana-wrap">
+              <button
+                class="reana-btn"
+                disabled={reanalyzeLoading}
+                onclick={reanalyze}
+                aria-label="Re-analyze this video"
+              >
+                {reanalyzeLoading ? '⏳ Analyzing…' : 'Re-analyze'}
+              </button>
+              {#if reanalyzeDone}<span class="reana-ok">done</span>{/if}
+              {#if reanalyzeError}<span class="reana-err">{reanalyzeError}</span>{/if}
+            </div>
+            <div class="pecah-wrap">
+              <button
+                class="pecah-btn"
+                disabled={decomposeRunning}
+                onclick={startDecompose}
+              >
+                {decomposeRunning ? '⏳ Memecah…' : segments.length ? 'Pecah ulang' : 'Pecah kompilasi'}
+              </button>
+              {#if decomposeRunning && decomposeStage}<span class="pecah-stage">{decomposeStage}</span>{/if}
+              {#if decomposeError}<span class="pecah-err">{decomposeError}</span>{/if}
+            </div>
+          </div>
+        {/if}
       </div>
-      <div class="mut" style="font-size:12px;margin-bottom:8px">{s.channel || '-'} · {s.id}</div>
 
       <!-- ANALISA TAB -->
       {#if activeTab === 'analisa'}
         <div class="tab-panel">
-          <!-- Actions (top) -->
-          {#if s.youtube_url}
-            <div class="top-actions">
-              <div class="reana-wrap">
-                <button
-                  class="reana-btn"
-                  disabled={reanalyzeLoading}
-                  onclick={reanalyze}
-                  aria-label="Re-analyze this video"
-                >
-                  {reanalyzeLoading ? '⏳ Analyzing…' : 'Re-analyze'}
-                </button>
-                {#if reanalyzeDone}<span class="reana-ok">done</span>{/if}
-                {#if reanalyzeError}<span class="reana-err">{reanalyzeError}</span>{/if}
-              </div>
-              <div class="pecah-wrap">
-                <button
-                  class="pecah-btn"
-                  disabled={decomposeRunning}
-                  onclick={startDecompose}
-                >
-                  {decomposeRunning ? '⏳ Memecah…' : segments.length ? 'Pecah ulang' : 'Pecah kompilasi'}
-                </button>
-                {#if decomposeRunning && decomposeStage}<span class="pecah-stage">{decomposeStage}</span>{/if}
-                {#if decomposeError}<span class="pecah-err">{decomposeError}</span>{/if}
-              </div>
-            </div>
-          {:else}
-            <div class="mut" style="font-size:12px;margin-bottom:12px">youtube_url tidak ada — tidak bisa decompose.</div>
-          {/if}
-
           <!-- Analysis section cards -->
           {#if analysis.hook}
             <div class="ana-card">
@@ -521,6 +521,22 @@
   .hm-item {
     font-size: 12px; color: var(--mut); font-weight: 500;
     padding: 2px 9px; background: var(--soft); border: 1px solid var(--line); border-radius: 20px;
+  }
+
+  /* Header 80/20: title+meta left, action buttons right */
+  .header-row { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 12px; }
+  .header-left { flex: 1 1 80%; min-width: 0; }
+  .header-right { flex: 0 0 20%; display: flex; flex-direction: column; gap: 8px; }
+  .header-right .reana-wrap,
+  .header-right .pecah-wrap {
+    margin-top: 0; padding-top: 0; border-top: none;
+    flex-direction: column; align-items: stretch; gap: 4px;
+  }
+  .header-right .reana-btn, .header-right .pecah-btn { width: 100%; text-align: center; }
+  @media (max-width: 768px) {
+    .header-row { flex-direction: column; }
+    .header-right { flex-basis: auto; width: 100%; flex-direction: row; }
+    .header-right .reana-wrap, .header-right .pecah-wrap { flex: 1; }
   }
 
   /* Analysis section cards */
