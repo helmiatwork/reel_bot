@@ -5114,6 +5114,40 @@ class AnalyzeClaudeRequest(BaseModel):
     output_format: str = "none"
 
 
+def _compute_aspect_ratio(video_path: str) -> str:
+    """
+    Compute aspect ratio from video dimensions using ffprobe.
+    Returns ratio string like "9:16", "16:9", "1:1". Falls back to "16:9" on error.
+    """
+    import subprocess
+    from math import gcd
+
+    try:
+        probe = subprocess.run(
+            [
+                "ffprobe", "-v", "error",
+                "-select_streams", "v:0",
+                "-show_entries", "stream=width,height",
+                "-of", "csv=p=0",
+                video_path,
+            ],
+            capture_output=True, text=True, timeout=10,
+        )
+        if probe.returncode == 0 and probe.stdout.strip():
+            parts = probe.stdout.strip().split(",")
+            if len(parts) >= 2:
+                width = int(parts[0])
+                height = int(parts[1])
+                # Reduce to simplest ratio
+                g = gcd(width, height)
+                ratio_w = width // g
+                ratio_h = height // g
+                return f"{ratio_w}:{ratio_h}"
+    except Exception:
+        pass
+    return "16:9"  # fallback
+
+
 def _enforce_scene_duration_cap(scene_order: list, max_duration_sec: float = 8.0) -> list:
     """
     Post-process scene_order to enforce max duration per scene.
@@ -5191,7 +5225,7 @@ def _seconds_to_time_str(seconds: float) -> str:
     return f"{minutes}:{secs:02d}"
 
 
-def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: str, model: str, log_fn=None, transcript_text: str = "", audio_tags: dict = None) -> dict:
+def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: str, model: str, log_fn=None, transcript_text: str = "", audio_tags: dict = None, video_path: str = None) -> dict:
     """
     Analyze frames sequentially (1 per call), then synthesize with no images.
 
@@ -5215,6 +5249,7 @@ def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: 
         log_fn: optional callable(msg) for logging progress to live console
         transcript_text: optional transcript as joined "[m:ss] text" lines
         audio_tags: optional dict of audio analysis results (from _analyze_audio)
+        video_path: optional path to source video (used to compute aspect_ratio for prompt_json)
 
     Returns: parsed analysis dict with keys: summary, detail, hook, structure, retention,
              retention_score, tags, and optionally gen_prompt_storyboard (for prompt_json)
@@ -5340,12 +5375,37 @@ def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: 
                 cleaned = _strip_json_fences(raw_result)
                 parsed = json.loads(cleaned)
 
-                # Post-process: enforce scene duration cap for prompt_json
+                # Post-process: enforce scene duration cap and fill missing fields for prompt_json
                 if output_format == "prompt_json" and parsed and "gen_prompt_storyboard" in parsed:
                     storyboard = parsed.get("gen_prompt_storyboard", {})
                     scene_order = storyboard.get("scene_order", [])
                     if scene_order:
                         storyboard["scene_order"] = _enforce_scene_duration_cap(scene_order, max_duration_sec=8.0)
+
+                    # Fill aspect_ratio deterministically from video file if available
+                    if video_path and (not storyboard.get("aspect_ratio") or storyboard.get("aspect_ratio") == ""):
+                        storyboard["aspect_ratio"] = _compute_aspect_ratio(video_path)
+
+                    # Fill music_mood from audio tags if empty
+                    if audio_tags and (not storyboard.get("music_mood") or storyboard.get("music_mood") == ""):
+                        bpm = audio_tags.get("bpm")
+                        energy = audio_tags.get("energy")
+                        if bpm or energy:
+                            mood_parts = []
+                            if bpm:
+                                mood_parts.append(f"~{int(bpm)} BPM")
+                            if energy:
+                                if energy > 0.7:
+                                    mood_parts.append("energetic")
+                                elif energy > 0.4:
+                                    mood_parts.append("moderate")
+                                else:
+                                    mood_parts.append("calm")
+                            storyboard["music_mood"] = ", ".join(mood_parts)
+                        else:
+                            storyboard["music_mood"] = "none"
+                    elif not storyboard.get("music_mood") or storyboard.get("music_mood") == "":
+                        storyboard["music_mood"] = "none"
 
                 break  # Success
             except Exception:
@@ -5422,14 +5482,15 @@ def _generate_gen_prompt(frame_descriptions: str, subdir: str, output_format: st
             gen_prompt = parsed.get("gen_prompt", "")
             return (gen_prompt if gen_prompt else None, "prompt_video" if gen_prompt else None)
         elif output_format == "prompt_json":
-            scene_order = parsed.get("scene_order")
-            if not scene_order:
-                storyboard = parsed.get("gen_prompt_storyboard")
-                if storyboard:
-                    scene_order = storyboard.get("scene_order")
-            if scene_order:
+            storyboard = parsed.get("gen_prompt_storyboard")
+            if not storyboard:
+                # Fallback: if no storyboard, try to build one from scene_order
+                scene_order = parsed.get("scene_order")
+                if scene_order:
+                    storyboard = {"scene_order": scene_order}
+            if storyboard and storyboard.get("scene_order"):
                 try:
-                    gen_prompt = json.dumps({"scene_order": scene_order})
+                    gen_prompt = json.dumps(storyboard)  # Preserve full storyboard
                     return (gen_prompt, "prompt_json")
                 except Exception:
                     return (None, None)
@@ -5619,6 +5680,14 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
         if progress_id:
             _log_run(progress_id, msg, start_time)
 
+    # Find the downloaded video file for aspect_ratio computation
+    video_file_path = None
+    for pattern in ["source_video.mp4", "source_video.mkv", "source_video.webm", "source_video.mov"]:
+        candidate = Path(f"{ANALYZE_FRAME_DIR}/{run_id}") / pattern
+        if candidate.exists():
+            video_file_path = str(candidate)
+            break
+
     try:
         parsed = _analyze_frames_sequential(
             frames=frame_dicts,
@@ -5628,7 +5697,8 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
             model=model,
             log_fn=_log_progress,
             transcript_text=transcript_text,
-            audio_tags=audio_tags
+            audio_tags=audio_tags,
+            video_path=video_file_path
         )
     except HTTPException:
         raise
@@ -5677,11 +5747,12 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
     gen_prompt = None
     gen_prompt_format = None
     if output_format == "prompt_json":
-        # Extract gen_prompt_storyboard from parsed result (already in synthesis)
+        # Extract FULL gen_prompt_storyboard from parsed result (with aspect_ratio, music_mood, etc.)
         storyboard = parsed.get("gen_prompt_storyboard")
         if storyboard and "scene_order" in storyboard:
             try:
-                gen_prompt = json.dumps({"scene_order": storyboard["scene_order"]})
+                # Preserve all storyboard fields: aspect_ratio, overall_style, music_mood, scene_order
+                gen_prompt = json.dumps(storyboard)
                 gen_prompt_format = "prompt_json"
                 if progress_id:
                     _log_run(progress_id, "✓ Prompt dibuat (dari sintesis)", start_time)
@@ -6683,11 +6754,11 @@ async def upload_source(
         gen_prompt = None
         gen_prompt_format = None
         if output_format == "prompt_json":
-            # Extract gen_prompt_storyboard from parsed result
+            # Extract FULL gen_prompt_storyboard from parsed result (preserve all fields)
             storyboard = parsed.get("gen_prompt_storyboard")
             if storyboard and "scene_order" in storyboard:
                 try:
-                    gen_prompt = json.dumps({"scene_order": storyboard["scene_order"]})
+                    gen_prompt = json.dumps(storyboard)  # Preserve full storyboard with aspect_ratio, music_mood, etc.
                     gen_prompt_format = "prompt_json"
                 except Exception:
                     pass
@@ -6924,7 +6995,8 @@ async def upload_source_async(
                     model=model,
                     log_fn=_log_progress,
                     transcript_text="",  # uploads don't have transcripts
-                    audio_tags=audio_tags
+                    audio_tags=audio_tags,
+                    video_path=str(video_path)
                 )
             except Exception as exc:
                 _log_run(run_id, f"✗ Analisa frame gagal: {str(exc)[:100]}", start_time)
@@ -6986,11 +7058,11 @@ async def upload_source_async(
             gen_prompt = None
             gen_prompt_format = None
             if output_format == "prompt_json":
-                # Extract gen_prompt_storyboard from parsed result
+                # Extract FULL gen_prompt_storyboard from parsed result (preserve all fields)
                 storyboard = parsed.get("gen_prompt_storyboard")
                 if storyboard and "scene_order" in storyboard:
                     try:
-                        gen_prompt = json.dumps({"scene_order": storyboard["scene_order"]})
+                        gen_prompt = json.dumps(storyboard)  # Preserve full storyboard with aspect_ratio, music_mood, etc.
                         gen_prompt_format = "prompt_json"
                         _log_run(run_id, "✓ Prompt dibuat (dari sintesis)", start_time)
                     except Exception:

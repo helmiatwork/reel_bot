@@ -837,3 +837,131 @@ class TestVeo3Storyboard:
         assert len(scenes) == 1
         assert scenes[0].get("duration_sec") == 5.0
         assert scenes[0].get("scene") == 1
+
+    def test_global_storyboard_fields_preserved_in_storage(self):
+        """Should preserve global storyboard fields (aspect_ratio, music_mood, overall_style) in stored gen_prompt."""
+        import main as m
+
+        # Storyboard with all global fields filled
+        full_storyboard = {
+            "aspect_ratio": "9:16",
+            "overall_style": "cinematic",
+            "music_mood": "uplifting, ~120 BPM",
+            "scene_order": [
+                {
+                    "scene": 1,
+                    "start": "0:00",
+                    "end": "0:05",
+                    "duration_sec": 5.0,
+                    "shot": "wide",
+                    "camera_movement": "static",
+                    "subject": "Person",
+                    "action": "Speaking",
+                    "lighting": "bright",
+                    "color_palette": "warm",
+                    "on_screen_text": "",
+                    "audio": "Voice",
+                    "transition": "cut",
+                }
+            ]
+        }
+
+        result_with_full_storyboard = _SAMPLE_ANALYSIS_RESULT.copy()
+        result_with_full_storyboard["gen_prompt_storyboard"] = full_storyboard
+
+        frame_responses = [
+            _make_bridge_response({"description": "Frame"})
+            for _ in _SAMPLE_FRAMES
+        ]
+        synthesis_response = _make_bridge_response(result_with_full_storyboard)
+        all_responses = frame_responses + [synthesis_response]
+        call_count = [0]
+
+        def mock_post(*args, **kwargs):
+            resp = all_responses[call_count[0]]
+            call_count[0] += 1
+            return resp
+
+        with patch("httpx.post", side_effect=mock_post):
+            result = m._analyze_frames_sequential(
+                frames=_SAMPLE_FRAMES,
+                subdir="test_subdir",
+                intent="test",
+                output_format="prompt_json",
+                model="claude-sonnet-4-6",
+            )
+
+        # Get the storyboard from result
+        storyboard = result.get("gen_prompt_storyboard", {})
+
+        # Verify all global fields are present and preserved
+        assert "aspect_ratio" in storyboard, "aspect_ratio missing from storyboard"
+        assert storyboard["aspect_ratio"] == "9:16", f"aspect_ratio should be '9:16', got {storyboard['aspect_ratio']}"
+        assert "overall_style" in storyboard, "overall_style missing from storyboard"
+        assert storyboard["overall_style"] == "cinematic"
+        assert "music_mood" in storyboard, "music_mood missing from storyboard"
+        assert storyboard["music_mood"] == "uplifting, ~120 BPM"
+        assert "scene_order" in storyboard, "scene_order missing from storyboard"
+        assert len(storyboard["scene_order"]) > 0
+
+    def test_aspect_ratio_filled_from_audio_tags(self):
+        """Should fill music_mood from audio_tags when LLM doesn't provide it."""
+        import main as m
+
+        # Storyboard without music_mood (LLM didn't fill it)
+        incomplete_storyboard = {
+            "aspect_ratio": "16:9",
+            "overall_style": "documentary",
+            "music_mood": None,  # Empty, should be filled from audio_tags
+            "scene_order": [
+                {
+                    "scene": 1,
+                    "start": "0:00",
+                    "end": "0:05",
+                    "duration_sec": 5.0,
+                    "shot": "medium",
+                    "camera_movement": "pan",
+                    "subject": "Landscape",
+                    "action": "Panning",
+                    "lighting": "natural",
+                    "color_palette": "greens",
+                    "on_screen_text": "",
+                    "audio": "Nature sounds",
+                    "transition": "cut",
+                }
+            ]
+        }
+
+        result_with_incomplete = _SAMPLE_ANALYSIS_RESULT.copy()
+        result_with_incomplete["gen_prompt_storyboard"] = incomplete_storyboard
+
+        frame_responses = [
+            _make_bridge_response({"description": "Frame"})
+            for _ in _SAMPLE_FRAMES
+        ]
+        synthesis_response = _make_bridge_response(result_with_incomplete)
+        all_responses = frame_responses + [synthesis_response]
+        call_count = [0]
+
+        def mock_post(*args, **kwargs):
+            resp = all_responses[call_count[0]]
+            call_count[0] += 1
+            return resp
+
+        audio_tags = {"bpm": 100.0, "energy": 0.6, "music_key": "A"}
+
+        with patch("httpx.post", side_effect=mock_post):
+            result = m._analyze_frames_sequential(
+                frames=_SAMPLE_FRAMES,
+                subdir="test_subdir",
+                intent="test",
+                output_format="prompt_json",
+                model="claude-sonnet-4-6",
+                audio_tags=audio_tags,
+            )
+
+        # Verify music_mood was filled from audio_tags
+        storyboard = result.get("gen_prompt_storyboard", {})
+        music_mood = storyboard.get("music_mood", "")
+        assert music_mood, "music_mood should not be empty after filling from audio_tags"
+        assert "100" in str(music_mood) or "BPM" in music_mood, "music_mood should contain BPM info"
