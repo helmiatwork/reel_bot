@@ -86,6 +86,12 @@ def test_analyze_claude_status_404():
     assert response.status_code == 404
 
 
+def test_analyze_async_rejects_non_platform_url():
+    """Async endpoint must reject non-YouTube/TikTok/IG/XHS URLs (400), matching the sync path."""
+    r = client.post("/analyze/claude/async", json={"youtube_url": "https://evil.com/x"})
+    assert r.status_code == 400
+
+
 def test_analyze_status_rejects_path_traversal():
     """A traversal run_id must not read files outside research_runs/ (returns 404, no leak)."""
     response = client.get("/analyze/claude/status/..%2F..%2F..%2Fetc%2Fpasswd")

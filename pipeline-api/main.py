@@ -5330,6 +5330,8 @@ def analyze_claude_async(req: AnalyzeClaudeRequest, bg: BackgroundTasks):
     """Async variant — start background job, return run_id for polling."""
     # Validate upfront
     _validate_source_url(req.youtube_url)
+    if _detect_platform(req.youtube_url) == "unknown":
+        raise HTTPException(status_code=400, detail="URL must be from YouTube, TikTok, Instagram, or XiaoHongShu")
     output_format = (req.output_format or "none").lower()
     if output_format not in ("none", "prompt_video", "prompt_json"):
         raise HTTPException(status_code=400, detail=f"Invalid output_format '{output_format}'. Must be one of: none, prompt_video, prompt_json")
