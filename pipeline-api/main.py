@@ -5231,6 +5231,10 @@ def _persist_frame_analysis(video_id: str, parsed: dict) -> None:
 # ── Frame analysis batching ──────────────────────────────────────────────────
 FRAMES_PER_BATCH = int(os.environ.get("ANALYZE_FRAMES_PER_BATCH", "5"))
 
+# Audio tagging runs through cliproxy→SumoPod→gemini (paid credit). Off by default
+# to preserve SumoPod credit; set ANALYZE_AUDIO_TAGS=1 to re-enable music_mood tags.
+ANALYZE_AUDIO_TAGS = os.environ.get("ANALYZE_AUDIO_TAGS", "0") == "1"
+
 
 def _parse_batch_descriptions(raw_result: str, expected_count: int) -> list[str] | None:
     """
@@ -5789,7 +5793,7 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
             if candidate.exists():
                 video_file = str(candidate)
                 break
-        if video_file:
+        if video_file and ANALYZE_AUDIO_TAGS:
             audio_tags = _analyze_audio(video_file)
             if audio_tags and any(v is not None for v in audio_tags.values()):
                 if progress_id:
@@ -6836,7 +6840,8 @@ async def upload_source(
         # Sequential frame-by-frame analysis with timestamps (migrate to match async flow)
         audio_tags = None
         try:
-            audio_tags = _analyze_audio(str(video_path))
+            if ANALYZE_AUDIO_TAGS:
+                audio_tags = _analyze_audio(str(video_path))
         except Exception as exc:
             print(f"[sources/upload] audio analysis failed (non-fatal): {exc}")
 
@@ -7122,10 +7127,11 @@ async def upload_source_async(
             # Analyze audio (uploads don't have transcripts, only audio)
             audio_tags = None
             try:
-                _log_run(run_id, f"🎵 Analisa audio…", start_time)
-                audio_tags = _analyze_audio(str(video_path))
-                if audio_tags and any(v is not None for v in audio_tags.values()):
-                    _log_run(run_id, f"✓ Audio dianalisis", start_time)
+                if ANALYZE_AUDIO_TAGS:
+                    _log_run(run_id, f"🎵 Analisa audio…", start_time)
+                    audio_tags = _analyze_audio(str(video_path))
+                    if audio_tags and any(v is not None for v in audio_tags.values()):
+                        _log_run(run_id, f"✓ Audio dianalisis", start_time)
             except Exception as exc:
                 print(f"[sources/upload/async] audio analysis failed (non-fatal): {exc}")
 
