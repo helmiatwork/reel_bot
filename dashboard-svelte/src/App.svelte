@@ -1,8 +1,9 @@
 <script>
   import { onMount, onDestroy } from 'svelte'
-  import { page } from './lib/stores.js'
+  import { page, jobs, pushToast, beepSuccess, beepError } from './lib/stores.js'
   import { api } from './lib/api.js'
   import Drawer from './lib/Drawer.svelte'
+  import Toasts from './lib/Toasts.svelte'
   import HowItWorks from './components/HowItWorks.svelte'
   import OpenClaw from './pages/OpenClaw.svelte'
   import Dashboard from './pages/Dashboard.svelte'
@@ -81,6 +82,8 @@
   let live = $state(0)
   let total = $state(6)
   let timer
+  let jobPollTimer = null
+  let prevJobsSnapshot = new Map() // ponytail: track prev status for transition detection
 
   let rowState = $state({})
   let restartingAll = $state(false)
@@ -144,6 +147,36 @@
     await pollServices()
   }
 
+  async function pollJobs() {
+    try {
+      const data = await api.analyzeRuns(50)
+      if (data) {
+        jobs.set(data)
+        // Detect transitions: running → done/error
+        let isFirstPoll = prevJobsSnapshot.size === 0
+        data.forEach(job => {
+          const prev = prevJobsSnapshot.get(job.run_id)
+          if (!isFirstPoll && prev && prev.status === 'running') {
+            if (job.status === 'done') {
+              const title = 'Analisa selesai'
+              const url = job.url ? (job.url.startsWith('file://') ? 'Upload file' : job.url.substring(0, 45) + '…') : '—'
+              pushToast('success', title, url)
+              beepSuccess()
+            } else if (job.status === 'error') {
+              const title = 'Analisa gagal'
+              const msg = job.last_msg || job.error || '—'
+              pushToast('error', title, msg.substring(0, 60))
+              beepError()
+            }
+          }
+          prevJobsSnapshot.set(job.run_id, { status: job.status })
+        })
+      }
+    } catch (e) {
+      // polling recovers next tick
+    }
+  }
+
   onMount(() => {
     const saved = localStorage.getItem('reelbot-theme') || 'light'
     isDark = saved === 'dark'
@@ -152,11 +185,16 @@
     pollServices()
     timer = setInterval(pollServices, 8000)
 
+    // App-wide job poller
+    pollJobs()
+    jobPollTimer = setInterval(pollJobs, 5000)
+
     // Close notif panel on outside click
     document.addEventListener('click', closeNotif)
   })
   onDestroy(() => {
     clearInterval(timer)
+    if (jobPollTimer) clearInterval(jobPollTimer)
     document.removeEventListener('click', closeNotif)
   })
 </script>
@@ -336,6 +374,7 @@
 </div>
 
 <Drawer />
+<Toasts />
 <HowItWorks bind:open={tourOpen} />
 
 <style>
