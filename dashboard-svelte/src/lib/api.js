@@ -142,6 +142,7 @@ export const api = {
   analyzeClaude: (youtube_url, { intent = '', force = false, output_format = 'none' } = {}) => postJSON('/analyze/claude', { youtube_url, intent, force, output_format }),
   analyzeClaudeAsync: (youtube_url, { intent = '', force = false, output_format = 'none' } = {}) => postJSON('/analyze/claude/async', { youtube_url, intent, force, output_format }),
   analyzeClaudeStatus: (run_id) => getJSON('/analyze/claude/status/' + run_id),
+  analyzeRuns: (limit = 20) => getJSON('/analyze/claude/runs?limit=' + limit),
   uploadSourceAsync: async (file, { intent = '', output_format = 'none' } = {}) => {
     try {
       const fd = new FormData()
