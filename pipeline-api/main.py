@@ -5205,6 +5205,17 @@ def _seconds_to_time_str(seconds: float) -> str:
     return f"{minutes}:{secs:02d}"
 
 
+def _build_frame_analysis(normalized_frames: list, frame_descriptions: list) -> list:
+    """Zip per-frame name + timestamp + description into sidecar entries. name MUST equal the served frame basename."""
+    out = []
+    for frame_info, desc in zip(normalized_frames, frame_descriptions):
+        name = frame_info.get("name") if isinstance(frame_info, dict) else frame_info
+        t = frame_info.get("t") if isinstance(frame_info, dict) else None
+        if isinstance(name, str):
+            out.append({"name": name, "t": t, "desc": desc})
+    return out
+
+
 def _persist_frame_analysis(video_id: str, parsed: dict) -> None:
     """Write per-frame {name,t,desc} sidecar so /sources/frames can return timestamps + descriptions. Non-fatal."""
     try:
@@ -5410,6 +5421,11 @@ def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: 
             if attempt >= 1:
                 # Second attempt failed, raise
                 raise HTTPException(status_code=502, detail=f"Could not parse claude result as JSON: {exc}")
+
+    # Assemble per-frame analysis for sidecar persistence
+    frame_analysis = _build_frame_analysis(normalized_frames, frame_descriptions)
+    if isinstance(parsed, dict) and frame_analysis:
+        parsed["frame_analysis"] = frame_analysis
 
     return parsed or {}
 

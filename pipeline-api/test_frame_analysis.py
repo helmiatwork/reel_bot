@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 import pytest
 from fastapi.testclient import TestClient
-from main import app, _REPO_ROOT, _persist_frame_analysis
+from main import app, _REPO_ROOT, _persist_frame_analysis, _build_frame_analysis
 
 
 @pytest.fixture
@@ -197,6 +197,82 @@ def test_analyze_frames_sequential_builds_frame_analysis():
     deserialized = json.loads(serialized)
     assert len(deserialized) == 3
     assert deserialized[0]["desc"] == "Description of frame_000.jpg"
+
+
+def test_build_frame_analysis_basic():
+    """Test _build_frame_analysis correctly zips frames with descriptions."""
+    normalized_frames = [
+        {"name": "frame_000.jpg", "t": 0.0},
+        {"name": "frame_001.jpg", "t": 2.5},
+        {"name": "frame_002.jpg", "t": 5.0},
+    ]
+    frame_descriptions = ["Opening shot", "Close-up", "Wide shot"]
+
+    result = _build_frame_analysis(normalized_frames, frame_descriptions)
+
+    assert len(result) == 3
+    assert result[0]["name"] == "frame_000.jpg"
+    assert result[0]["t"] == 0.0
+    assert result[0]["desc"] == "Opening shot"
+    assert result[1]["t"] == 2.5
+    assert result[1]["desc"] == "Close-up"
+    assert result[2]["t"] == 5.0
+    assert result[2]["desc"] == "Wide shot"
+
+
+def test_build_frame_analysis_with_null_timestamps():
+    """Test _build_frame_analysis handles null timestamps."""
+    normalized_frames = [
+        {"name": "frame_000.jpg", "t": 1.0},
+        {"name": "frame_001.jpg", "t": None},
+        {"name": "frame_002.jpg", "t": 5.0},
+    ]
+    frame_descriptions = ["Has time", "No time", "Has time again"]
+
+    result = _build_frame_analysis(normalized_frames, frame_descriptions)
+
+    assert result[0]["t"] == 1.0
+    assert result[1]["t"] is None
+    assert result[1]["desc"] == "No time"
+    assert result[2]["t"] == 5.0
+
+
+def test_build_frame_analysis_mismatched_lengths():
+    """Test _build_frame_analysis handles mismatched list lengths (zip behavior)."""
+    normalized_frames = [
+        {"name": "frame_000.jpg", "t": 0.0},
+        {"name": "frame_001.jpg", "t": 2.5},
+        {"name": "frame_002.jpg", "t": 5.0},
+    ]
+    # Fewer descriptions than frames
+    frame_descriptions = ["First", "Second"]
+
+    result = _build_frame_analysis(normalized_frames, frame_descriptions)
+
+    # zip stops at the shorter list
+    assert len(result) == 2
+    assert result[0]["name"] == "frame_000.jpg"
+    assert result[1]["name"] == "frame_001.jpg"
+
+
+def test_build_frame_analysis_non_dict_frames():
+    """Test _build_frame_analysis handles backward-compat string names gracefully."""
+    normalized_frames = [
+        {"name": "frame_000.jpg", "t": 0.0},
+        "frame_001.jpg",  # Old format fallback (string)
+        {"name": "frame_002.jpg", "t": 5.0},
+    ]
+    frame_descriptions = ["First", "Second", "Third"]
+
+    result = _build_frame_analysis(normalized_frames, frame_descriptions)
+
+    # All entries are processed, including string names (backward compat)
+    assert len(result) == 3
+    assert result[0]["name"] == "frame_000.jpg"
+    assert result[0]["t"] == 0.0
+    assert result[1]["name"] == "frame_001.jpg"
+    assert result[1]["t"] is None  # string entry has no timestamp
+    assert result[2]["name"] == "frame_002.jpg"
 
 
 def test_persist_frame_analysis_writes_sidecar(tmp_path):
