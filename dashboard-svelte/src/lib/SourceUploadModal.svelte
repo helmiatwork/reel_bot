@@ -221,7 +221,7 @@
       <!-- Live log console (shown during async operations) -->
       {#if runId && logs.length > 0}
         <div class="console-container" transition:fade={{ duration: 150 }}>
-          <pre class="log-console" bind:this={consoleEl}>{#each logs as entry (entry.t)}[{entry.t}s] {entry.msg}
+          <pre class="log-console" bind:this={consoleEl}>{#each logs as entry, i (i)}[{entry.t}s] {entry.msg}
 {/each}</pre>
         </div>
       {/if}
