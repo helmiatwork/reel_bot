@@ -3571,19 +3571,30 @@ def _build_claude_prompt(intent: str, output_format: str = "none") -> str:
     """
     Build the main Claude analysis prompt.
     Gen_prompt generation is now handled separately via a second bridge call to avoid JSON parse failures.
+    For prompt_json, uses a richer Veo3-optimized storyboard schema with per-scene timing and detail.
     """
     gen_prompt_field = ""
     if output_format == "prompt_json":
         gen_prompt_field = """,
   "gen_prompt_storyboard": {
+    "aspect_ratio": "<e.g. 9:16, 16:9>",
+    "overall_style": "<visual style/tone of the whole video>",
+    "music_mood": "<from audio tags: genre/mood/tempo or 'none'>",
     "scene_order": [
       {
         "scene": <int>,
-        "description": "<1 sentence scene description>",
-        "camera_angle": "<e.g. wide, close-up, overhead>",
-        "lighting": "<e.g. bright, dim, cinematic>",
-        "objects": ["<obj1>", "<obj2>"],
-        "style": "<visual style>"
+        "start": "<m:ss>",
+        "end": "<m:ss>",
+        "duration_sec": <number>,
+        "shot": "<wide|medium|close-up|...>",
+        "camera_movement": "<static|pan|tilt|push-in|handheld|...>",
+        "subject": "<who/what + appearance>",
+        "action": "<what happens>",
+        "lighting": "<...>",
+        "color_palette": "<dominant colors>",
+        "on_screen_text": "<text or ''>",
+        "audio": "<dialog/narration line or SFX/music at this moment>",
+        "transition": "<cut|fade|match-cut|...>"
       }
     ]
   }"""
@@ -4174,7 +4185,7 @@ def download_render(render_id: str):
 
 # ponytail: scene-detection constants for frame extraction
 _SCENE_DETECT_THRESHOLD = 0.3  # Scene change threshold (0.0-1.0); tune if needed
-_SCENE_FRAMES_CAP = 30  # Cap extracted frames at max 30 to keep analysis response manageable
+_SCENE_FRAMES_CAP = 40  # Cap extracted frames at max 40 to keep analysis response manageable
 _SCENE_FRAMES_MIN_FALLBACK = 6  # If < 6 frames from scene detection, fall back to evenly-spaced
 
 
@@ -4335,6 +4346,164 @@ def _extract_keyframes(youtube_url: str, out_dir: str, n: int = 20) -> list:
 
     # ponytail: shared ffprobe + frame extraction logic now lives in _extract_frames_from_file
     return _extract_frames_from_file(video_path, out_dir, n)
+
+
+def _extract_frames_timed(video_path: str, out_dir: str, n: int = 20) -> list:
+    """
+    Extract keyframes with timestamps from a local video file using scene detection.
+    Captures timestamps AT EXTRACTION TIME via ffmpeg showinfo filter.
+    Falls back to evenly-spaced extraction if scene detection yields < 6 frames.
+    Caps frames at _SCENE_FRAMES_CAP to keep analysis manageable.
+
+    Returns: list of dicts [{"name": "frame_000.jpg", "path": "/abs/path", "t": 1.5}, ...]
+    where t is timestamp in seconds (rounded to 0.1s).
+    """
+    import subprocess
+    import re
+
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
+    frame_dicts = []
+
+    # Get video duration first
+    probe = subprocess.run(
+        [
+            "ffprobe", "-v", "quiet", "-print_format", "json",
+            "-show_format", video_path,
+        ],
+        capture_output=True, text=True, timeout=30,
+    )
+    duration_s = 60.0
+    if probe.returncode == 0:
+        try:
+            finfo = json.loads(probe.stdout)
+            duration_s = float(finfo.get("format", {}).get("duration", 60.0))
+        except Exception:
+            pass
+
+    # Try scene detection first with showinfo to capture pts_time at extraction time
+    try:
+        ff = subprocess.run(
+            [
+                "ffmpeg", "-i", video_path,
+                "-vf", f"select='gt(scene,{_SCENE_DETECT_THRESHOLD})',showinfo,scale=-1:480",
+                "-vsync", "vfr",
+                "-frames:v", str(_SCENE_FRAMES_CAP),
+                "-q:v", "3",
+                "-y", f"{out_dir}/frame_%03d.jpg",
+            ],
+            capture_output=True, text=True, timeout=60,
+        )
+
+        if ff.returncode == 0:
+            frame_files = sorted(Path(out_dir).glob("frame_*.jpg"))
+            frame_names = [str(f.name) for f in frame_files]
+
+            if len(frame_names) >= _SCENE_FRAMES_MIN_FALLBACK:
+                # Parse pts_time from ffmpeg stderr (showinfo filter outputs "pts_time:<N>")
+                frame_timestamps = {}
+                pts_times = re.findall(r'pts_time=([\d.]+)', ff.stderr)
+                for i, name in enumerate(frame_names):
+                    if i < len(pts_times):
+                        try:
+                            t = float(pts_times[i])
+                            frame_timestamps[name] = round(t, 1)
+                        except (ValueError, IndexError):
+                            # Fallback to even interpolation for this frame
+                            frame_timestamps[name] = round((i / max(len(frame_names) - 1, 1)) * duration_s, 1)
+                    else:
+                        # Interpolate if we didn't capture enough pts_time values
+                        frame_timestamps[name] = round((i / max(len(frame_names) - 1, 1)) * duration_s, 1)
+
+                for name in frame_names:
+                    path = str(Path(out_dir) / name)
+                    t = frame_timestamps.get(name, 0.0)
+                    frame_dicts.append({"name": name, "path": path, "t": t})
+                return frame_dicts
+            else:
+                # Too few frames, clean up and fall back
+                for f in frame_files:
+                    f.unlink(missing_ok=True)
+    except Exception:
+        pass
+
+    # Fallback: evenly-spaced frames
+    margin = max(1.0, duration_s * 0.02)
+    usable = duration_s - 2 * margin
+    if usable <= 0:
+        usable = duration_s
+        margin = 0.0
+    step = usable / max(n - 1, 1)
+    timestamps = [margin + i * step for i in range(n)]
+
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
+    for i, ts in enumerate(timestamps):
+        out_file = f"{out_dir}/frame_{i:03d}.jpg"
+        ff = subprocess.run(
+            [
+                "ffmpeg", "-ss", str(ts), "-i", video_path,
+                "-frames:v", "1", "-q:v", "3",
+                "-y", out_file,
+            ],
+            capture_output=True, timeout=30,
+        )
+        if ff.returncode == 0 and Path(out_file).exists():
+            name = Path(out_file).name
+            frame_dicts.append({"name": name, "path": out_file, "t": round(ts, 1)})
+
+    return frame_dicts
+
+
+def _extract_keyframes_timed(youtube_url: str, out_dir: str, n: int = 20) -> tuple:
+    """
+    Download a video from youtube_url and extract n keyframes with timestamps.
+    Returns: (frames_list, video_path) where frames_list is [{"name":..., "path":..., "t":...}, ...]
+    and video_path is the path to the downloaded video file (for aspect_ratio/audio analysis).
+    See _extract_frames_timed for timestamp behavior.
+    """
+    import subprocess
+    import tempfile
+
+    # Download video to a temp file (same logic as _extract_keyframes)
+    tmp_video_dir = tempfile.mkdtemp(prefix="analyze_vid_")
+    platform = _detect_platform(youtube_url)
+
+    if platform == "xiaohongshu":
+        cdn_url, _ = _xhs_resolve_video(youtube_url)
+        dest = Path(tmp_video_dir) / "source_video.mp4"
+        _download_direct(cdn_url, dest)
+        video_path = str(dest)
+    else:
+        output_template = f"{tmp_video_dir}/source_video.%(ext)s"
+        if platform == "youtube":
+            fmt = "bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/best[ext=mp4][height<=480]/best[height<=480]/best"
+        else:
+            fmt = "bestvideo+bestaudio/best[ext=mp4]/best"
+
+        dl_proc = subprocess.run(
+            [
+                "yt-dlp",
+                "-f", fmt,
+                "--merge-output-format", "mp4",
+                "--retries", "5",
+                "--fragment-retries", "5",
+                "--socket-timeout", "30",
+                "-o", output_template,
+                "--no-playlist",
+            ] + _ytdlp_source_args(platform=platform) + [
+                youtube_url,
+            ],
+            capture_output=True, text=True, timeout=300,
+        )
+        if dl_proc.returncode != 0:
+            raise RuntimeError(f"yt-dlp download failed: {dl_proc.stderr[:300]}")
+
+        video_files = list(Path(tmp_video_dir).glob("source_video.*"))
+        if not video_files:
+            raise RuntimeError("Downloaded video file not found after yt-dlp")
+        video_path = str(video_files[0])
+
+    frames = _extract_frames_timed(video_path, out_dir, n)
+    return (frames, video_path)
 
 
 def _creators_init_db():
@@ -4912,25 +5081,142 @@ class AnalyzeClaudeRequest(BaseModel):
     output_format: str = "none"
 
 
-def _analyze_frames_sequential(frame_names: list, subdir: str, intent: str, output_format: str, model: str, log_fn=None) -> dict:
+def _compute_aspect_ratio(video_path: str) -> str:
+    """
+    Compute aspect ratio from video dimensions using ffprobe.
+    Returns ratio string like "9:16", "16:9", "1:1". Falls back to "16:9" on error.
+    """
+    import subprocess
+    from math import gcd
+
+    try:
+        probe = subprocess.run(
+            [
+                "ffprobe", "-v", "error",
+                "-select_streams", "v:0",
+                "-show_entries", "stream=width,height",
+                "-of", "csv=p=0",
+                video_path,
+            ],
+            capture_output=True, text=True, timeout=10,
+        )
+        if probe.returncode == 0 and probe.stdout.strip():
+            parts = probe.stdout.strip().split(",")
+            if len(parts) >= 2:
+                width = int(parts[0])
+                height = int(parts[1])
+                # Reduce to simplest ratio
+                g = gcd(width, height)
+                ratio_w = width // g
+                ratio_h = height // g
+                return f"{ratio_w}:{ratio_h}"
+    except Exception:
+        pass
+    return "16:9"  # fallback
+
+
+def _enforce_scene_duration_cap(scene_order: list, max_duration_sec: float = 8.0) -> list:
+    """
+    Post-process scene_order to enforce max duration per scene.
+    If any scene exceeds max_duration_sec, split it into consecutive equal-duration sub-scenes.
+    Keeps all other scene fields (subject, action, etc.) and renumbers scenes.
+
+    Args:
+        scene_order: list of scene dicts with {scene, start, end, duration_sec, ...}
+        max_duration_sec: maximum allowed duration per scene (default 8.0s for Veo 3)
+
+    Returns: processed scene_order with all scenes ≤ max_duration_sec
+    """
+    if not scene_order:
+        return scene_order
+
+    result = []
+    current_scene_num = 1
+
+    for orig_scene in scene_order:
+        duration = orig_scene.get("duration_sec") or 0  # Guard against None values
+
+        if duration <= max_duration_sec:
+            # Scene is within duration cap, keep as-is
+            scene_copy = orig_scene.copy()
+            scene_copy["scene"] = current_scene_num
+            result.append(scene_copy)
+            current_scene_num += 1
+        else:
+            # Scene exceeds cap, split it
+            start_str = orig_scene.get("start", "0:00")
+            end_str = orig_scene.get("end", "0:00")
+
+            # Parse start/end times to get seconds
+            try:
+                start_secs = _time_str_to_seconds(start_str)
+                end_secs = _time_str_to_seconds(end_str)
+            except Exception:
+                # Fallback if parsing fails
+                start_secs = 0
+                end_secs = duration
+
+            # Calculate number of sub-scenes needed
+            import math
+            num_splits = math.ceil(duration / max_duration_sec)
+            sub_duration = duration / num_splits
+
+            for split_idx in range(num_splits):
+                sub_start_secs = start_secs + (split_idx * sub_duration)
+                sub_end_secs = start_secs + ((split_idx + 1) * sub_duration)
+
+                scene_copy = orig_scene.copy()
+                scene_copy["scene"] = current_scene_num
+                scene_copy["start"] = _seconds_to_time_str(sub_start_secs)
+                scene_copy["end"] = _seconds_to_time_str(sub_end_secs)
+                scene_copy["duration_sec"] = round(sub_end_secs - sub_start_secs, 1)
+                # Keep subject/action/etc unchanged
+                result.append(scene_copy)
+                current_scene_num += 1
+
+    return result
+
+
+def _time_str_to_seconds(time_str: str) -> float:
+    """Convert 'm:ss', 'mm:ss', or 'm:ss.s' format to seconds."""
+    parts = time_str.split(":")
+    if len(parts) == 2:
+        return int(parts[0]) * 60 + float(parts[1])
+    return 0.0
+
+
+def _seconds_to_time_str(seconds: float) -> str:
+    """Convert seconds to 'm:ss' format."""
+    minutes = int(seconds // 60)
+    secs = int(seconds % 60)
+    return f"{minutes}:{secs:02d}"
+
+
+def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: str, model: str, log_fn=None, transcript_text: str = "", audio_tags: dict = None, video_path: str = None) -> dict:
     """
     Analyze frames sequentially (1 per call), then synthesize with no images.
 
-    Per-frame pass: loops through frame_names, calls bridge with ONE frame at a time.
-    Collects per-frame descriptions. If a frame call fails/returns empty, retries once.
+    Per-frame pass: loops through frames, calls bridge with ONE frame at a time.
+    Collects per-frame descriptions WITH timestamps. If a frame call fails/returns empty, retries once.
 
-    Synthesis pass: calls bridge ONCE with NO images, using collected descriptions as text context
-    + the analysis instruction prompt. Parses and returns the result dict.
+    Synthesis pass: calls bridge ONCE with NO images, using collected descriptions as text context,
+    transcript, audio tags, and the analysis instruction prompt. Parses and returns the result dict.
 
     On any parse error, retries the synthesis call once before giving up.
 
     Args:
-        frame_names: list of frame filenames (e.g., ['frame_0.jpg', 'frame_1.jpg', ...])
+        frames: list of EITHER filenames (for backward compat) OR list of dicts with {name, path, t}
+                where t is timestamp in seconds. For callers providing dicts, timestamps are included
+                in per-frame prompts and synthesis context. For backward-compat callers providing
+                plain strings, t is set to None and timestamp lines skipped.
         subdir: subdirectory name (passed to bridge as subdir param)
         intent: user intent string (passed to _build_claude_prompt)
         output_format: output format ('none', 'prompt_video', 'prompt_json')
         model: Claude model name
         log_fn: optional callable(msg) for logging progress to live console
+        transcript_text: optional transcript as joined "[m:ss] text" lines
+        audio_tags: optional dict of audio analysis results (from _analyze_audio)
+        video_path: optional path to source video (used to compute aspect_ratio for prompt_json)
 
     Returns: parsed analysis dict with keys: summary, detail, hook, structure, retention,
              retention_score, tags, and optionally gen_prompt_storyboard (for prompt_json)
@@ -4939,16 +5225,31 @@ def _analyze_frames_sequential(frame_names: list, subdir: str, intent: str, outp
     """
     import httpx as _httpx
 
+    # Normalize frames: convert plain names to dicts if needed
+    normalized_frames = []
+    for item in frames:
+        if isinstance(item, dict):
+            normalized_frames.append(item)
+        else:
+            # Backward compat: plain string filename
+            normalized_frames.append({"name": item, "path": None, "t": None})
+
     # Per-frame pass: collect descriptions
     frame_descriptions = []
-    for i, frame_name in enumerate(frame_names, 1):
-        if log_fn:
-            log_fn(f"🧠 Analisa frame {i}/{len(frame_names)}…")
+    for i, frame_info in enumerate(normalized_frames, 1):
+        frame_name = frame_info.get("name") or frame_info  # fallback for old-style
+        timestamp_s = frame_info.get("t")
 
+        if log_fn:
+            log_fn(f"🧠 Analisa frame {i}/{len(normalized_frames)}…")
+
+        # Build per-frame prompt with timestamp if available
+        timestamp_line = f"Frame pada detik {timestamp_s:.1f} (ke-{i}/{len(normalized_frames)})." if timestamp_s is not None else f"Frame ke-{i} dari {len(normalized_frames)}."
         per_frame_prompt = (
-            f"Ini frame ke-{i} dari {len(frame_names)} frame sebuah video pendek. "
-            f"Deskripsikan singkat (1-2 kalimat) apa yang terlihat: subjek/orang, aksi atau gerakan, "
-            f"teks/caption di layar bila ada, sudut kamera, dan pencahayaan. Jawab teks biasa saja."
+            f"Ini {timestamp_line} "
+            f"Deskripsikan singkat (2-3 kalimat): subjek & penampilannya, aksi/gerakan yang terlihat, jenis shot (wide/medium/close-up), "
+            f"gerak kamera yang tersirat (static/pan/tilt/push-in/handheld), pencahayaan, palet warna dominan, latar/setting, "
+            f"teks di layar bila ada, mood. Jawab teks biasa saja."
         )
 
         bridge_timeout = _httpx.Timeout(connect=10.0, read=120.0, write=10.0, pool=5.0)
@@ -4976,12 +5277,45 @@ def _analyze_frames_sequential(frame_names: list, subdir: str, intent: str, outp
 
         frame_descriptions.append(raw_desc)
 
-    # Synthesis pass: build context from descriptions + analysis prompt, call bridge with NO images
+    # Synthesis pass: build context from descriptions + transcript + audio + analysis prompt, call bridge with NO images
     frame_context = "\n".join([f"{i}. {desc}" for i, desc in enumerate(frame_descriptions, 1)])
     synthesis_prompt_prefix = (
-        f"Berikut deskripsi berurutan {len(frame_names)} frame dari video (hasil analisa per-frame):\n{frame_context}\n\n"
+        f"Berikut deskripsi berurutan {len(normalized_frames)} frame dari video (hasil analisa per-frame):\n{frame_context}\n"
     )
+
+    # Append transcript if available
+    if transcript_text.strip():
+        if log_fn:
+            log_fn(f"📝 Ambil transkrip…")
+        synthesis_prompt_prefix += f"\nTranskrip:\n{transcript_text}\n"
+
+    # Append audio tags if available
+    if audio_tags:
+        if log_fn:
+            log_fn(f"🎵 Analisa audio…")
+        audio_summary = ""
+        if audio_tags.get("bpm"):
+            audio_summary += f"BPM: {audio_tags.get('bpm')}; "
+        if audio_tags.get("music_key"):
+            audio_summary += f"Kunci: {audio_tags.get('music_key')}; "
+        if audio_tags.get("energy"):
+            audio_summary += f"Energi: {audio_tags.get('energy')}; "
+        if audio_summary:
+            synthesis_prompt_prefix += f"\nAudio/Musik: {audio_summary.rstrip('; ')}\n"
+
+    synthesis_prompt_prefix += "\n"
     analysis_prompt = _build_claude_prompt(intent, output_format)
+
+    # For prompt_json, add instruction about fine-grained scene extraction and 8-second cap
+    if output_format == "prompt_json":
+        analysis_prompt += (
+            "\n\nIMPORTANT untuk output_format prompt_json:\n"
+            "- Produce ONE scene per distinct shot (matching the number of frames/shots shown above)\n"
+            "- Each scene MUST have duration_sec ≤ 8 seconds (Veo 3 generation limit)\n"
+            "- Do NOT merge consecutive frames into a single scene; preserve frame-level granularity\n"
+            "- Derive start/end from the extracted frame timestamps when available\n"
+        )
+
     full_synthesis_prompt = synthesis_prompt_prefix + analysis_prompt
 
     if log_fn:
@@ -5007,6 +5341,39 @@ def _analyze_frames_sequential(frame_names: list, subdir: str, intent: str, outp
             try:
                 cleaned = _strip_json_fences(raw_result)
                 parsed = json.loads(cleaned)
+
+                # Post-process: enforce scene duration cap and fill missing fields for prompt_json
+                if output_format == "prompt_json" and parsed and "gen_prompt_storyboard" in parsed:
+                    storyboard = parsed.get("gen_prompt_storyboard", {})
+                    scene_order = storyboard.get("scene_order", [])
+                    if scene_order:
+                        storyboard["scene_order"] = _enforce_scene_duration_cap(scene_order, max_duration_sec=8.0)
+
+                    # Fill aspect_ratio deterministically from video file if available
+                    if video_path and (not storyboard.get("aspect_ratio") or storyboard.get("aspect_ratio") == ""):
+                        storyboard["aspect_ratio"] = _compute_aspect_ratio(video_path)
+
+                    # Fill music_mood from audio tags if empty
+                    if audio_tags and (not storyboard.get("music_mood") or storyboard.get("music_mood") == ""):
+                        bpm = audio_tags.get("bpm")
+                        energy = audio_tags.get("energy")
+                        if bpm or energy:
+                            mood_parts = []
+                            if bpm:
+                                mood_parts.append(f"~{int(bpm)} BPM")
+                            if energy:
+                                if energy > 0.7:
+                                    mood_parts.append("energetic")
+                                elif energy > 0.4:
+                                    mood_parts.append("moderate")
+                                else:
+                                    mood_parts.append("calm")
+                            storyboard["music_mood"] = ", ".join(mood_parts)
+                        else:
+                            storyboard["music_mood"] = "none"
+                    elif not storyboard.get("music_mood") or storyboard.get("music_mood") == "":
+                        storyboard["music_mood"] = "none"
+
                 break  # Success
             except Exception:
                 # Parse error; will retry on next loop iteration
@@ -5082,14 +5449,15 @@ def _generate_gen_prompt(frame_descriptions: str, subdir: str, output_format: st
             gen_prompt = parsed.get("gen_prompt", "")
             return (gen_prompt if gen_prompt else None, "prompt_video" if gen_prompt else None)
         elif output_format == "prompt_json":
-            scene_order = parsed.get("scene_order")
-            if not scene_order:
-                storyboard = parsed.get("gen_prompt_storyboard")
-                if storyboard:
-                    scene_order = storyboard.get("scene_order")
-            if scene_order:
+            storyboard = parsed.get("gen_prompt_storyboard")
+            if not storyboard:
+                # Fallback: if no storyboard, try to build one from scene_order
+                scene_order = parsed.get("scene_order")
+                if scene_order:
+                    storyboard = {"scene_order": scene_order}
+            if storyboard and storyboard.get("scene_order"):
                 try:
-                    gen_prompt = json.dumps({"scene_order": scene_order})
+                    gen_prompt = json.dumps(storyboard)  # Preserve full storyboard
                     return (gen_prompt, "prompt_json")
                 except Exception:
                     return (None, None)
@@ -5180,14 +5548,15 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
             finally:
                 conn.close()
 
-    # Step 1: Extract keyframes
+    # Step 1: Extract keyframes with timestamps
     if progress_id:
         _log_run(progress_id, "⬇ Download video…", start_time)
 
     run_id = re.sub(r"[^A-Za-z0-9_-]", "", str(uuid.uuid4())[:8])
     out_dir = f"{ANALYZE_FRAME_DIR}/{run_id}"
+    video_file_path = None  # Will be set from download
     try:
-        frame_paths = _extract_keyframes(req.youtube_url, out_dir, n=20)
+        frame_dicts, video_file_path = _extract_keyframes_timed(req.youtube_url, out_dir, n=20)
     except Exception as exc:
         if progress_id:
             _log_run(progress_id, f"✗ Gagal download: {str(exc)[:100]}", start_time)
@@ -5197,7 +5566,7 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
                 _save_run(progress_id, run)
         raise HTTPException(status_code=502, detail=f"Frame extraction failed: {exc}")
 
-    if not frame_paths:
+    if not frame_dicts:
         if progress_id:
             _log_run(progress_id, "✗ Tidak ada frame yang diekstrak", start_time)
             run = _load_run(progress_id)
@@ -5207,27 +5576,73 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
         raise HTTPException(status_code=502, detail="No frames could be extracted from the video")
 
     if progress_id:
-        _log_run(progress_id, f"✓ Video terunduh: {len(frame_paths)} frame", start_time)
-        _log_run(progress_id, f"🎞 Ekstrak {len(frame_paths)} frame…", start_time)
+        _log_run(progress_id, f"✓ Video terunduh: {len(frame_dicts)} frame", start_time)
+        _log_run(progress_id, f"🎞 Ekstrak {len(frame_dicts)} frame…", start_time)
 
     # Step 1b: Persist frames
     try:
         video_id = _extract_video_id_from_youtube_url(req.youtube_url)
         persist_dir = _REPO_ROOT / "data" / "frames" / video_id
         persist_dir.mkdir(parents=True, exist_ok=True)
-        for src_path in frame_paths:
-            dst_name = Path(src_path).name
-            dst_path = persist_dir / dst_name
-            shutil.copy(src_path, dst_path)
+        for frame_dict in frame_dicts:
+            src_path = frame_dict.get("path")
+            if src_path and Path(src_path).exists():
+                dst_name = Path(src_path).name
+                dst_path = persist_dir / dst_name
+                shutil.copy(src_path, dst_path)
     except Exception as exc:
         print(f"[analyze/claude] frame persistence failed (non-fatal): {exc}")
 
     if progress_id:
-        _log_run(progress_id, f"✓ {len(frame_paths)} frame diekstrak", start_time)
+        _log_run(progress_id, f"✓ {len(frame_dicts)} frame diekstrak", start_time)
 
-    # Step 2-4: Sequential frame analysis
-    frame_names = [Path(p).name for p in frame_paths]
+    # Step 1c: Fetch transcript and audio (for Veo3 enrichment)
+    transcript_text = ""
+    audio_tags = None
+    if platform == "youtube":
+        # Only YouTube has transcript support
+        try:
+            if progress_id:
+                _log_run(progress_id, f"📝 Ambil transkrip…", start_time)
+            segments = _fetch_transcript(req.youtube_url)
+            if segments:
+                # Format as "[m:ss] text" lines
+                transcript_lines = []
+                for seg in segments:
+                    start = seg.get("start", 0)
+                    text = seg.get("text", "").strip()
+                    if text:
+                        m = int(start // 60)
+                        s = int(start % 60)
+                        transcript_lines.append(f"[{m}:{s:02d}] {text}")
+                transcript_text = "\n".join(transcript_lines)
+                if progress_id:
+                    _log_run(progress_id, f"✓ Transkrip diambil ({len(segments)} segments)", start_time)
+        except Exception as exc:
+            print(f"[analyze/claude] transcript fetch failed (non-fatal): {exc}")
 
+    # Fetch audio analysis for all platforms that provide downloaded video
+    try:
+        if progress_id:
+            _log_run(progress_id, f"🎵 Analisa audio…", start_time)
+        # Use the downloaded video file from frame extraction
+        tmp_video_dir = f"{ANALYZE_FRAME_DIR}/{run_id}"
+        # Find the video file (may have been cleaned up, so this is best-effort)
+        video_file = None
+        for pattern in ["source_video.mp4", "source_video.mkv", "source_video.webm"]:
+            candidate = Path(tmp_video_dir) / pattern
+            if candidate.exists():
+                video_file = str(candidate)
+                break
+        if video_file:
+            audio_tags = _analyze_audio(video_file)
+            if audio_tags and any(v is not None for v in audio_tags.values()):
+                if progress_id:
+                    _log_run(progress_id, f"✓ Audio dianalisis", start_time)
+    except Exception as exc:
+        print(f"[analyze/claude] audio analysis failed (non-fatal): {exc}")
+
+    # Step 2-4: Sequential frame analysis with transcript and audio context
     def _log_progress(msg: str):
         """Helper to log progress during sequential analysis."""
         if progress_id:
@@ -5235,12 +5650,15 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
 
     try:
         parsed = _analyze_frames_sequential(
-            frame_names=frame_names,
+            frames=frame_dicts,
             subdir=run_id,
             intent=safe_intent,
             output_format=output_format,
             model=model,
-            log_fn=_log_progress
+            log_fn=_log_progress,
+            transcript_text=transcript_text,
+            audio_tags=audio_tags,
+            video_path=video_file_path
         )
     except HTTPException:
         raise
@@ -5289,11 +5707,12 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
     gen_prompt = None
     gen_prompt_format = None
     if output_format == "prompt_json":
-        # Extract gen_prompt_storyboard from parsed result (already in synthesis)
+        # Extract FULL gen_prompt_storyboard from parsed result (with aspect_ratio, music_mood, etc.)
         storyboard = parsed.get("gen_prompt_storyboard")
         if storyboard and "scene_order" in storyboard:
             try:
-                gen_prompt = json.dumps({"scene_order": storyboard["scene_order"]})
+                # Preserve all storyboard fields: aspect_ratio, overall_style, music_mood, scene_order
+                gen_prompt = json.dumps(storyboard)
                 gen_prompt_format = "prompt_json"
                 if progress_id:
                     _log_run(progress_id, "✓ Prompt dibuat (dari sintesis)", start_time)
@@ -6295,11 +6714,11 @@ async def upload_source(
         gen_prompt = None
         gen_prompt_format = None
         if output_format == "prompt_json":
-            # Extract gen_prompt_storyboard from parsed result
+            # Extract FULL gen_prompt_storyboard from parsed result (preserve all fields)
             storyboard = parsed.get("gen_prompt_storyboard")
             if storyboard and "scene_order" in storyboard:
                 try:
-                    gen_prompt = json.dumps({"scene_order": storyboard["scene_order"]})
+                    gen_prompt = json.dumps(storyboard)  # Preserve full storyboard with aspect_ratio, music_mood, etc.
                     gen_prompt_format = "prompt_json"
                 except Exception:
                     pass
@@ -6473,12 +6892,12 @@ async def upload_source_async(
         """Background job for file upload analysis."""
         success = False
         try:
-            # Extract frames
+            # Extract frames with timestamps
             _log_run(run_id, "🎞 Ekstrak frame…", start_time)
             frame_run_id = re.sub(r"[^A-Za-z0-9_-]", "", str(uuid.uuid4())[:8])
             out_dir = f"{ANALYZE_FRAME_DIR}/{frame_run_id}"
             try:
-                frame_paths = _extract_frames_from_file(str(video_path), out_dir, n=20)
+                frame_dicts = _extract_frames_timed(str(video_path), out_dir, n=20)
             except Exception as exc:
                 _log_run(run_id, f"✗ Ekstrak frame gagal: {str(exc)[:100]}", start_time)
                 run = _load_run(run_id)
@@ -6487,7 +6906,7 @@ async def upload_source_async(
                     _save_run(run_id, run)
                 return
 
-            if not frame_paths:
+            if not frame_dicts:
                 _log_run(run_id, "✗ Tidak ada frame yang diekstrak", start_time)
                 run = _load_run(run_id)
                 if run:
@@ -6495,21 +6914,32 @@ async def upload_source_async(
                     _save_run(run_id, run)
                 return
 
-            _log_run(run_id, f"✓ {len(frame_paths)} frame diekstrak", start_time)
+            _log_run(run_id, f"✓ {len(frame_dicts)} frame diekstrak", start_time)
 
             # Persist frames
             try:
                 persist_dir = _REPO_ROOT / "data" / "frames" / file_id
                 persist_dir.mkdir(parents=True, exist_ok=True)
-                for src_path in frame_paths:
-                    dst_name = Path(src_path).name
-                    dst_path = persist_dir / dst_name
-                    shutil.copy(src_path, dst_path)
+                for frame_dict in frame_dicts:
+                    src_path = frame_dict.get("path")
+                    if src_path and Path(src_path).exists():
+                        dst_name = Path(src_path).name
+                        dst_path = persist_dir / dst_name
+                        shutil.copy(src_path, dst_path)
             except Exception as exc:
                 print(f"[sources/upload/async] frame persistence failed (non-fatal): {exc}")
 
+            # Analyze audio (uploads don't have transcripts, only audio)
+            audio_tags = None
+            try:
+                _log_run(run_id, f"🎵 Analisa audio…", start_time)
+                audio_tags = _analyze_audio(str(video_path))
+                if audio_tags and any(v is not None for v in audio_tags.values()):
+                    _log_run(run_id, f"✓ Audio dianalisis", start_time)
+            except Exception as exc:
+                print(f"[sources/upload/async] audio analysis failed (non-fatal): {exc}")
+
             # Sequential frame analysis
-            frame_names = [Path(p).name for p in frame_paths]
             model = "claude-sonnet-4-6"
 
             def _log_progress(msg: str):
@@ -6518,12 +6948,15 @@ async def upload_source_async(
 
             try:
                 parsed = _analyze_frames_sequential(
-                    frame_names=frame_names,
+                    frames=frame_dicts,
                     subdir=frame_run_id,
                     intent=safe_intent,
                     output_format=output_format,
                     model=model,
-                    log_fn=_log_progress
+                    log_fn=_log_progress,
+                    transcript_text="",  # uploads don't have transcripts
+                    audio_tags=audio_tags,
+                    video_path=str(video_path)
                 )
             except Exception as exc:
                 _log_run(run_id, f"✗ Analisa frame gagal: {str(exc)[:100]}", start_time)
@@ -6585,11 +7018,11 @@ async def upload_source_async(
             gen_prompt = None
             gen_prompt_format = None
             if output_format == "prompt_json":
-                # Extract gen_prompt_storyboard from parsed result
+                # Extract FULL gen_prompt_storyboard from parsed result (preserve all fields)
                 storyboard = parsed.get("gen_prompt_storyboard")
                 if storyboard and "scene_order" in storyboard:
                     try:
-                        gen_prompt = json.dumps({"scene_order": storyboard["scene_order"]})
+                        gen_prompt = json.dumps(storyboard)  # Preserve full storyboard with aspect_ratio, music_mood, etc.
                         gen_prompt_format = "prompt_json"
                         _log_run(run_id, "✓ Prompt dibuat (dari sintesis)", start_time)
                     except Exception:
