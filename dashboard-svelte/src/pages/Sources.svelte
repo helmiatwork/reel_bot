@@ -5,6 +5,7 @@
   import { openDrawer } from '../lib/stores.js'
   import Pagination from '../lib/Pagination.svelte'
   import SourceUploadModal from '../lib/SourceUploadModal.svelte'
+  import JobsPopup from '../lib/JobsPopup.svelte'
 
   let rows = $state([])
   let total = $state(0)
@@ -13,6 +14,9 @@
   let q = $state('')
   let niche = $state('')
   let modalOpen = $state(false)
+  let jobsOpen = $state(false)
+  let jobs = $state([])
+  let jobsPollInterval = $state(null)
 
   const PLATFORM_ICON = {
     youtube: 'i-yt', tiktok: 'i-tt', instagram: 'i-ig', xiaohongshu: 'i-xhs'
@@ -68,7 +72,21 @@
   )
   let niches = $derived([...new Set(rows.map((r) => r.niche))].filter((n) => n && n !== '-'))
 
-  onMount(load)
+  let runningCount = $derived(jobs.filter(j => j.status === 'running').length)
+
+  onMount(() => {
+    load()
+    pollJobs()
+    jobsPollInterval = setInterval(pollJobs, 5000)
+    return () => {
+      if (jobsPollInterval) clearInterval(jobsPollInterval)
+    }
+  })
+
+  async function pollJobs() {
+    const data = await api.analyzeRuns(50)
+    if (data) jobs = data
+  }
 
   function prev() { offset = Math.max(0, offset - limit); load() }
   function next() { offset = offset + limit; load() }
@@ -87,7 +105,14 @@
     {#each niches as n}<option value={n}>{n}</option>{/each}
   </select>
   <input placeholder="cari judul..." bind:value={q} />
-  <button class="btn-primary" style="margin-left:auto" onclick={() => modalOpen = true}>
+  <button class="btn-secondary" onclick={() => jobsOpen = true} title="Lihat daftar proses">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+    Proses
+    {#if runningCount > 0}
+      <span class="badge">{runningCount}</span>
+    {/if}
+  </button>
+  <button class="btn-primary" onclick={() => modalOpen = true}>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>
     Tambah source
   </button>
@@ -130,6 +155,7 @@
 <Pagination {offset} {limit} {total} onprev={prev} onnext={next} />
 
 <SourceUploadModal bind:isOpen={modalOpen} onSuccess={() => { modalOpen = false; load() }} />
+<JobsPopup bind:isOpen={jobsOpen} />
 
 <style>
   .top-row {
@@ -157,5 +183,41 @@
 
   .btn-primary:hover {
     opacity: 0.9;
+  }
+
+  .btn-secondary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    background: var(--bg-alt);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 0.375rem;
+    background: var(--accent);
+    color: white;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 0.25rem;
   }
 </style>

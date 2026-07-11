@@ -5216,7 +5216,14 @@ def analyze_claude_async(req: AnalyzeClaudeRequest, bg: BackgroundTasks):
 
     run_id = str(uuid.uuid4())
     start_time = time.time()
-    _save_run(run_id, {"status": "running", "log": [{"msg": "⏳ Antre…", "t": 0}]})
+    _save_run(run_id, {
+        "status": "running",
+        "kind": "analyze_source",
+        "url": req.youtube_url,
+        "output_format": output_format,
+        "created": start_time,
+        "log": [{"msg": "⏳ Antre…", "t": 0}]
+    })
 
     def _job():
         try:
@@ -5247,6 +5254,51 @@ def analyze_claude_status(run_id: str):
     if not run:
         raise HTTPException(status_code=404, detail="run not found")
     return run
+
+
+@app.get("/analyze/claude/runs")
+def analyze_claude_runs(limit: int = 20):
+    """List all analyze_source runs, sorted by created desc.
+
+    Returns: [{run_id, url, status, output_format, created, last_msg, log_count}]
+    ponytail: linear dir scan; index if dir grows large.
+    """
+    runs_dir = _REPO_ROOT / "output" / "research_runs"
+    if not runs_dir.exists():
+        return []
+
+    summaries = []
+    for run_file in runs_dir.glob("*.json"):
+        try:
+            run_id = run_file.stem  # filename without .json
+            run = json.loads(run_file.read_text())
+
+            # Filter for analyze_source runs only
+            if run.get("kind") != "analyze_source":
+                continue
+
+            # Extract summary fields
+            last_msg = ""
+            if run.get("log") and len(run["log"]) > 0:
+                last_msg = run["log"][-1].get("msg", "")
+
+            summaries.append({
+                "run_id": run_id,
+                "url": run.get("url", ""),
+                "status": run.get("status", "unknown"),
+                "output_format": run.get("output_format", ""),
+                "created": run.get("created", 0),
+                "last_msg": last_msg,
+                "log_count": len(run.get("log", []))
+            })
+        except Exception:
+            # Skip unparseable files
+            continue
+
+    # Sort by created desc
+    summaries.sort(key=lambda x: x["created"], reverse=True)
+
+    return summaries[:limit]
 
 
 @app.get("/sources/frames")
@@ -6187,7 +6239,14 @@ async def upload_source_async(
     # Start async job
     run_id = str(uuid.uuid4())
     start_time = time.time()
-    _save_run(run_id, {"status": "running", "log": [{"msg": "✓ File diterima", "t": 0}]})
+    _save_run(run_id, {
+        "status": "running",
+        "kind": "analyze_source",
+        "url": source_key,
+        "output_format": output_format,
+        "created": start_time,
+        "log": [{"msg": "✓ File diterima", "t": 0}]
+    })
 
     def _job():
         """Background job for file upload analysis."""

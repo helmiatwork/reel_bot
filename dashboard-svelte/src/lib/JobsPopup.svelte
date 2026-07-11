@@ -1,0 +1,661 @@
+<script>
+  import { fade, scale } from 'svelte/transition'
+  import { cubicOut } from 'svelte/easing'
+  import { api } from './api.js'
+
+  // Props (runes mode — isOpen is bound by parent)
+  let { isOpen = $bindable(false) } = $props()
+
+  // Modal state
+  let jobs = $state([])
+  let selectedRunId = $state(null)
+  let selectedJobDetail = $state(null)
+  let pollListInterval = $state(null)
+  let pollDetailInterval = $state(null)
+  let panelEl = $state(null)
+  let consoleEl = $state(null)
+  let detailLoading = $state(false)
+
+  $effect(() => {
+    if (isOpen) {
+      openModal()
+    } else {
+      closeModal()
+    }
+  })
+
+  function openModal() {
+    selectedRunId = null
+    selectedJobDetail = null
+    jobs = []
+    pollList()
+    pollListInterval = setInterval(pollList, 2000)
+  }
+
+  function closeModal() {
+    if (pollListInterval) clearInterval(pollListInterval)
+    if (pollDetailInterval) clearInterval(pollDetailInterval)
+    isOpen = false
+  }
+
+  function onBackdropClick(e) {
+    if (e.target === e.currentTarget) closeModal()
+  }
+
+  function onKey(e) {
+    if (!isOpen) return
+    if (e.key === 'Escape') closeModal()
+  }
+
+  async function pollList() {
+    try {
+      const data = await api.analyzeRuns(20)
+      if (data) jobs = data
+    } catch (e) {
+      console.error('[pollList] error:', e)
+    }
+  }
+
+  function selectJob(run) {
+    selectedRunId = run.run_id
+    selectedJobDetail = null
+    detailLoading = true
+    if (pollDetailInterval) clearInterval(pollDetailInterval)
+    pollJobDetail()
+    pollDetailInterval = setInterval(pollJobDetail, 1200)
+  }
+
+  async function pollJobDetail() {
+    if (!selectedRunId) return
+    try {
+      const data = await api.analyzeClaudeStatus(selectedRunId)
+      if (data) {
+        selectedJobDetail = data
+        detailLoading = false
+        autoScrollConsole()
+      }
+    } catch (e) {
+      console.error('[pollDetail] error:', e)
+    }
+  }
+
+  function autoScrollConsole() {
+    if (!consoleEl) return
+    const atBottom = consoleEl.scrollTop + consoleEl.clientHeight >= consoleEl.scrollHeight - 20
+    if (atBottom) {
+      setTimeout(() => { consoleEl.scrollTop = consoleEl.scrollHeight }, 0)
+    }
+  }
+
+  function getStatusColor(status) {
+    if (status === 'running') return 'accent'
+    if (status === 'done') return 'green'
+    if (status === 'error') return 'red'
+    return 'gray'
+  }
+
+  function truncateUrl(url) {
+    if (!url) return '—'
+    if (url.startsWith('file://')) return 'Uploaded file'
+    if (url.length > 50) return url.substring(0, 47) + '…'
+    return url
+  }
+
+  function formatRelativeTime(timestamp) {
+    if (!timestamp) return ''
+    const now = Date.now()
+    const then = timestamp * 1000
+    const diff = now - then
+    const secs = Math.floor(diff / 1000)
+    const mins = Math.floor(secs / 60)
+    const hours = Math.floor(mins / 60)
+
+    if (secs < 60) return `${secs}s ago`
+    if (mins < 60) return `${mins}m ago`
+    if (hours < 24) return `${hours}h ago`
+    return `${Math.floor(hours / 24)}d ago`
+  }
+
+  function copyPrompt() {
+    if (!selectedJobDetail?.result?.gen_prompt) return
+    const text = JSON.stringify(selectedJobDetail.result.gen_prompt, null, 2)
+    navigator.clipboard.writeText(text)
+  }
+</script>
+
+<svelte:window onkeydown={onKey} />
+
+{#if isOpen}
+  <!-- Backdrop -->
+  <div
+    class="backdrop"
+    transition:fade={{ duration: 200 }}
+    onclick={onBackdropClick}
+    aria-hidden="true"
+  ></div>
+
+  <!-- Modal Panel -->
+  <div
+    class="modal-panel"
+    bind:this={panelEl}
+    role="dialog"
+    aria-modal="true"
+    aria-label="Proses"
+    tabindex="-1"
+    transition:scale={{ duration: 230, start: 0.94, easing: cubicOut }}
+  >
+    <!-- Header -->
+    <div class="m-head">
+      <span class="m-title">Proses</span>
+      <button class="m-close" onclick={closeModal} aria-label="Tutup modal">
+        <svg class="ic"><use href="#i-x"/></svg>
+      </button>
+    </div>
+
+    <!-- Body: List + Detail split view -->
+    <div class="m-body">
+      {#if !selectedRunId}
+        <!-- Jobs List View -->
+        <div class="jobs-list" transition:fade={{ duration: 150 }}>
+          {#if jobs.length > 0}
+            {#each jobs as job (job.run_id)}
+              <div
+                class="job-row"
+                onclick={() => selectJob(job)}
+              >
+                <div class="job-main">
+                  <div class="job-url">{truncateUrl(job.url)}</div>
+                  <div class="job-meta">
+                    <span class={`status-chip status-${getStatusColor(job.status)}`}>
+                      {job.status}
+                    </span>
+                    {#if job.output_format && job.output_format !== 'none'}
+                      <span class={`format-badge format-${job.output_format}`}>
+                        {job.output_format === 'prompt_json' ? 'JSON' : 'Text'}
+                      </span>
+                    {/if}
+                    <span class="time">{formatRelativeTime(job.created)}</span>
+                  </div>
+                  <div class="job-msg">{job.last_msg}</div>
+                </div>
+              </div>
+            {/each}
+          {:else}
+            <div class="empty">Belum ada proses</div>
+          {/if}
+        </div>
+      {:else}
+        <!-- Job Detail View -->
+        <div class="job-detail" transition:fade={{ duration: 150 }}>
+          <!-- Back button + title -->
+          <div class="detail-header">
+            <button class="back-btn" onclick={() => { selectedRunId = null; if (pollDetailInterval) clearInterval(pollDetailInterval) }}>
+              ← Kembali
+            </button>
+            <div class="detail-status">
+              <span class={`status-chip status-${getStatusColor(selectedJobDetail?.status || 'unknown')}`}>
+                {selectedJobDetail?.status || 'unknown'}
+              </span>
+            </div>
+          </div>
+
+          <!-- Live log console -->
+          {#if selectedJobDetail?.log}
+            <div class="console-section">
+              <div class="console-title">Log</div>
+              <pre class="log-console" bind:this={consoleEl}>{#each selectedJobDetail.log as entry, i (i)}[{entry.t}s] {entry.msg}
+{/each}</pre>
+            </div>
+          {/if}
+
+          <!-- Result display (if done) -->
+          {#if selectedJobDetail?.result}
+            <div class="result-section">
+              <div class="result-title">Result</div>
+
+              <!-- Summary fields -->
+              {#if selectedJobDetail.result.hook}
+                <div class="result-field">
+                  <span class="field-label">Hook</span>
+                  <div class="field-value">{selectedJobDetail.result.hook}</div>
+                </div>
+              {/if}
+
+              {#if selectedJobDetail.result.tags && selectedJobDetail.result.tags.length > 0}
+                <div class="result-field">
+                  <span class="field-label">Tags</span>
+                  <div class="tags">
+                    {#each selectedJobDetail.result.tags as tag}
+                      <span class="tag">{tag}</span>
+                    {/each}
+                  </div>
+                </div>
+              {/if}
+
+              {#if selectedJobDetail.result.retention}
+                <div class="result-field">
+                  <span class="field-label">Retention</span>
+                  <div class="field-value">{selectedJobDetail.result.retention}</div>
+                </div>
+              {/if}
+
+              {#if selectedJobDetail.result.structure}
+                <div class="result-field">
+                  <span class="field-label">Structure</span>
+                  <div class="field-value">{selectedJobDetail.result.structure}</div>
+                </div>
+              {/if}
+
+              <!-- Gen prompt if present -->
+              {#if selectedJobDetail.result.gen_prompt}
+                <div class="result-field">
+                  <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem">
+                    <span class="field-label">Gen Prompt</span>
+                    <button class="copy-btn" onclick={copyPrompt} title="Copy prompt">
+                      <svg style="width: 14px; height: 14px"><use href="#i-copy"/></svg>
+                    </button>
+                  </div>
+                  <pre class="prompt-display">{JSON.stringify(selectedJobDetail.result.gen_prompt, null, 2)}</pre>
+                </div>
+              {/if}
+
+              <!-- Metadata -->
+              <div class="result-meta">
+                {#if selectedJobDetail.result.cost_usd}
+                  <span class="meta-item">Cost: ${selectedJobDetail.result.cost_usd.toFixed(3)}</span>
+                {/if}
+                {#if selectedJobDetail.result.model}
+                  <span class="meta-item">Model: {selectedJobDetail.result.model}</span>
+                {/if}
+              </div>
+            </div>
+          {/if}
+
+          <!-- Error display -->
+          {#if selectedJobDetail?.error}
+            <div class="error-section">
+              <div class="error-title">Error</div>
+              <div class="error-text">{selectedJobDetail.error}</div>
+            </div>
+          {/if}
+        </div>
+      {/if}
+    </div>
+
+    <!-- Footer -->
+    <div class="m-footer">
+      <button class="btn-close" onclick={closeModal}>
+        Tutup
+      </button>
+    </div>
+  </div>
+{/if}
+
+<style>
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+
+  .modal-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bg);
+    border-radius: 8px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    max-width: 700px;
+    width: 90%;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .m-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .m-title {
+    font-weight: 600;
+    font-size: 1.125rem;
+  }
+
+  .m-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--mut);
+    transition: color 0.2s;
+  }
+
+  .m-close:hover {
+    color: var(--fg);
+  }
+
+  .ic {
+    width: 20px;
+    height: 20px;
+  }
+
+  .m-body {
+    padding: 1rem;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .jobs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .job-row {
+    padding: 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  .job-row:hover {
+    background: var(--bg-alt);
+    border-color: var(--accent);
+  }
+
+  .job-main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .job-url {
+    font-weight: 500;
+    font-size: 0.9375rem;
+    color: var(--fg);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .job-meta {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 0.8125rem;
+  }
+
+  .status-chip {
+    padding: 0.25rem 0.625rem;
+    border-radius: 3px;
+    font-weight: 500;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .status-accent {
+    background: rgba(59, 130, 246, 0.2);
+    color: var(--accent);
+  }
+
+  .status-green {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+  }
+
+  .status-red {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+  }
+
+  .status-gray {
+    background: rgba(107, 114, 128, 0.2);
+    color: #6b7280;
+  }
+
+  .format-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .format-prompt_json {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--accent);
+  }
+
+  .format-prompt_video {
+    background: rgba(168, 85, 247, 0.1);
+    color: #a855f7;
+  }
+
+  .time {
+    color: var(--mut);
+    margin-left: auto;
+  }
+
+  .job-msg {
+    font-size: 0.8125rem;
+    color: var(--mut);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .empty {
+    padding: 2rem;
+    text-align: center;
+    color: var(--mut);
+  }
+
+  /* Detail view */
+  .job-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .detail-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .back-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--accent);
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: opacity 0.2s;
+  }
+
+  .back-btn:hover {
+    opacity: 0.8;
+  }
+
+  .detail-status {
+    margin-left: auto;
+  }
+
+  .console-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .console-title {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--fg);
+  }
+
+  .log-console {
+    display: block;
+    width: 100%;
+    height: 200px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.8);
+    color: #0f0;
+    font-family: 'Monaco', 'Courier New', monospace;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    padding: 0.75rem;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .result-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .result-title {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--fg);
+  }
+
+  .result-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .field-label {
+    font-weight: 500;
+    font-size: 0.8125rem;
+    color: var(--fg);
+  }
+
+  .field-value {
+    font-size: 0.875rem;
+    color: var(--fg);
+    line-height: 1.5;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 0.25rem 0.625rem;
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--accent);
+    border-radius: 3px;
+    font-size: 0.75rem;
+  }
+
+  .prompt-display {
+    max-height: 200px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.3);
+    color: #0f0;
+    font-family: 'Monaco', 'Courier New', monospace;
+    font-size: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 4px;
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .copy-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--accent);
+    padding: 0;
+    display: flex;
+    align-items: center;
+    transition: opacity 0.2s;
+  }
+
+  .copy-btn:hover {
+    opacity: 0.8;
+  }
+
+  .result-meta {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.8125rem;
+    color: var(--mut);
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .meta-item {
+    display: flex;
+    align-items: center;
+  }
+
+  .error-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid #ef4444;
+    border-radius: 4px;
+  }
+
+  .error-title {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #ef4444;
+  }
+
+  .error-text {
+    font-size: 0.8125rem;
+    color: #dc2626;
+    line-height: 1.4;
+  }
+
+  .m-footer {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    border-top: 1px solid var(--border);
+    justify-content: flex-end;
+  }
+
+  .btn-close {
+    padding: 0.625rem 1rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: var(--bg-alt);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+  }
+
+  .btn-close:hover {
+    background: var(--border);
+  }
+</style>
