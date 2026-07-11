@@ -5205,6 +5205,18 @@ def _seconds_to_time_str(seconds: float) -> str:
     return f"{minutes}:{secs:02d}"
 
 
+def _persist_frame_analysis(video_id: str, parsed: dict) -> None:
+    """Write per-frame {name,t,desc} sidecar so /sources/frames can return timestamps + descriptions. Non-fatal."""
+    try:
+        frame_analysis = parsed.get("frame_analysis", []) if isinstance(parsed, dict) else []
+        if frame_analysis and video_id:
+            frames_json_path = _REPO_ROOT / "data" / "frames" / video_id / "frames.json"
+            frames_json_path.parent.mkdir(parents=True, exist_ok=True)
+            frames_json_path.write_text(json.dumps(frame_analysis, ensure_ascii=False), encoding="utf-8")
+    except Exception as exc:
+        print(f"[frame_analysis] persistence failed (non-fatal): {exc}")
+
+
 def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: str, model: str, log_fn=None, transcript_text: str = "", audio_tags: dict = None, video_path: str = None) -> dict:
     """
     Analyze frames sequentially (1 per call), then synthesize with no images.
@@ -5698,6 +5710,9 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
     tags = parsed.get("tags", [])
     if not isinstance(tags, list):
         tags = []
+
+    # Persist per-frame analysis sidecar for YouTube sources
+    _persist_frame_analysis(video_id, parsed)
 
     # Reconstruct raw_result for DB storage (remove gen_prompt_storyboard if present)
     raw_result_dict = {k: v for k, v in parsed.items() if k != "gen_prompt_storyboard"}
@@ -7010,6 +7025,9 @@ async def upload_source_async(
                     run["status"] = "error"
                     _save_run(run_id, run)
                 return
+
+            # Persist per-frame analysis sidecar for upload sources
+            _persist_frame_analysis(file_id, parsed)
 
             # Extract fields from parsed result
             summary = parsed.get("summary", "")

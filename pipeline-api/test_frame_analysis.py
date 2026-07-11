@@ -8,13 +8,14 @@ import tempfile
 import shutil
 from pathlib import Path
 import sys
+from unittest.mock import patch
 
 # Add parent to path
 sys.path.insert(0, str(Path(__file__).parent))
 
 import pytest
 from fastapi.testclient import TestClient
-from main import app, _REPO_ROOT
+from main import app, _REPO_ROOT, _persist_frame_analysis
 
 
 @pytest.fixture
@@ -196,6 +197,99 @@ def test_analyze_frames_sequential_builds_frame_analysis():
     deserialized = json.loads(serialized)
     assert len(deserialized) == 3
     assert deserialized[0]["desc"] == "Description of frame_000.jpg"
+
+
+def test_persist_frame_analysis_writes_sidecar(tmp_path):
+    """Test that _persist_frame_analysis writes frames.json with correct data."""
+    video_id = "test_persist_001"
+
+    # Mock _REPO_ROOT to use tmp_path
+    with patch("main._REPO_ROOT", tmp_path):
+        frame_analysis = [
+            {"name": "frame_000.jpg", "t": 0.0, "desc": "Opening shot"},
+            {"name": "frame_001.jpg", "t": 2.5, "desc": "Close-up"},
+            {"name": "frame_002.jpg", "t": 5.0, "desc": "Wide shot"},
+        ]
+        parsed = {"frame_analysis": frame_analysis}
+
+        # Call the persistence helper
+        _persist_frame_analysis(video_id, parsed)
+
+        # Verify the sidecar file exists
+        frames_json_path = tmp_path / "data" / "frames" / video_id / "frames.json"
+        assert frames_json_path.exists(), f"Expected {frames_json_path} to exist"
+
+        # Verify the content
+        data = json.loads(frames_json_path.read_text(encoding="utf-8"))
+        assert len(data) == 3
+        assert data[0]["name"] == "frame_000.jpg"
+        assert data[0]["t"] == 0.0
+        assert data[0]["desc"] == "Opening shot"
+        assert data[2]["t"] == 5.0
+
+
+def test_persist_frame_analysis_empty_frame_list(tmp_path):
+    """Test that empty frame_analysis list doesn't write a sidecar (non-fatal)."""
+    video_id = "test_persist_empty"
+
+    with patch("main._REPO_ROOT", tmp_path):
+        parsed = {"frame_analysis": []}
+
+        # Call the persistence helper
+        _persist_frame_analysis(video_id, parsed)
+
+        # Verify no sidecar was written
+        frames_json_path = tmp_path / "data" / "frames" / video_id / "frames.json"
+        assert not frames_json_path.exists(), "Empty frame_analysis should not write sidecar"
+
+
+def test_persist_frame_analysis_missing_video_id(tmp_path):
+    """Test that missing video_id doesn't cause exception (non-fatal)."""
+    with patch("main._REPO_ROOT", tmp_path):
+        frame_analysis = [
+            {"name": "frame_000.jpg", "t": 0.0, "desc": "Test frame"},
+        ]
+        parsed = {"frame_analysis": frame_analysis}
+
+        # Call with None video_id - should not raise
+        _persist_frame_analysis(None, parsed)
+        _persist_frame_analysis("", parsed)
+
+        # No crash = success
+
+
+def test_persist_frame_analysis_malformed_parsed(tmp_path):
+    """Test that malformed parsed dict doesn't cause exception (non-fatal)."""
+    video_id = "test_persist_malformed"
+
+    with patch("main._REPO_ROOT", tmp_path):
+        # Call with non-dict parsed
+        _persist_frame_analysis(video_id, None)
+        _persist_frame_analysis(video_id, "not a dict")
+        _persist_frame_analysis(video_id, [])
+
+        # No crash = success
+
+
+def test_persist_frame_analysis_with_null_timestamps(tmp_path):
+    """Test that frame_analysis with null timestamps persists correctly."""
+    video_id = "test_persist_null_t"
+
+    with patch("main._REPO_ROOT", tmp_path):
+        frame_analysis = [
+            {"name": "frame_000.jpg", "t": 1.5, "desc": "Has timestamp"},
+            {"name": "frame_001.jpg", "t": None, "desc": "No timestamp"},
+        ]
+        parsed = {"frame_analysis": frame_analysis}
+
+        _persist_frame_analysis(video_id, parsed)
+
+        frames_json_path = tmp_path / "data" / "frames" / video_id / "frames.json"
+        assert frames_json_path.exists()
+
+        data = json.loads(frames_json_path.read_text(encoding="utf-8"))
+        assert data[1]["t"] is None
+        assert data[1]["desc"] == "No timestamp"
 
 
 if __name__ == "__main__":
