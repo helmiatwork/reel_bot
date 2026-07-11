@@ -3754,10 +3754,19 @@ def _extract_video_id_from_youtube_url(url: str) -> str:
     (Name kept for backwards-compat with existing callers; it now handles all
     three platforms.) Falls back to `yt-dlp --get-id` when the URL shape is
     unrecognized — note that fallback needs network + working auth for TT/IG.
+
+    Also handles file:// URLs for uploaded sources (returns sanitized file_id).
     """
     import re
     parsed = urlparse(url)
     video_id = None
+
+    # Handle file:// URLs (uploaded sources)
+    if url.startswith("file://"):
+        file_id = url[len("file://"):]
+        video_id = re.sub(r"[^a-zA-Z0-9_-]", "", file_id)
+        return video_id
+
     platform = _detect_platform(url)
 
     if platform == "youtube":
