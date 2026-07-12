@@ -16,8 +16,11 @@
   let modalOpen = $state(false)
   let jobsOpen = $state(false)
   let selectedJobRunId = $state(null)
+  // Optimistic rows for runs that just started (not yet persisted to the sources table)
+  let pendingRuns = $state([])
 
-  function handleAnalyzeStarted(run_id) {
+  function handleAnalyzeStarted(run_id, label) {
+    pendingRuns = [{ run_id, title: label || 'Analyzing…', status: 'running' }, ...pendingRuns]
     selectedJobRunId = run_id
     modalOpen = false
     jobsOpen = true
@@ -77,20 +80,34 @@
   )
   let niches = $derived([...new Set(rows.map((r) => r.niche))].filter((n) => n && n !== '-'))
 
+  // Optimistic pending rows shown on top of the real DB rows (hidden once persisted)
+  let pendingRows = $derived(
+    pendingRuns.map((p) => ({
+      title: p.title, niche: '-', platform: '-', tags: [], gen_prompt_format: '',
+      viewsLabel: '-', status: 'running', _pending: true
+    }))
+  )
+
   let runningCount = $derived($jobs.filter(isActiveRunning).length)
 
   onMount(() => {
     load()
   })
 
-  // Realtime: reload the table when an active analyze run finishes (persists a new source).
-  // ponytail: keys off runningCount dropping; a run that finishes inside one 5s job-poll
-  // window never registers as running, so reload it via the toast path if that ever matters.
-  let prevRunning = 0
+  // Realtime: when a pending run finishes (per the shared $jobs poll), drop its optimistic
+  // row and reload the table so the persisted source replaces it.
+  // ponytail: a run_id always shows up in analyzeRuns(50), so a pending row can't get stuck.
   $effect(() => {
-    const now = runningCount
-    if (now < prevRunning) load()
-    prevRunning = now
+    if (!pendingRuns.length) return
+    const status = new Map($jobs.map((j) => [j.run_id, j.status]))
+    const finished = pendingRuns.filter((p) => {
+      const st = status.get(p.run_id)
+      return st === 'done' || st === 'error'
+    })
+    if (finished.length) {
+      pendingRuns = pendingRuns.filter((p) => !finished.includes(p))
+      load()
+    }
   })
 
   function prev() { offset = Math.max(0, offset - limit); load() }
@@ -129,6 +146,17 @@
       <tr><th>Judul</th><th>Niche</th><th>Platform</th><th>Tags</th><th>Prompt</th><th style="text-align:right">Views</th><th>Status</th></tr>
     </thead>
     <tbody>
+      {#each pendingRows as s}
+        <tr class="pending-row" onclick={() => jobsOpen = true}>
+          <td>{s.title}</td>
+          <td>—</td>
+          <td>—</td>
+          <td><span class="mut">—</span></td>
+          <td><span class="mut">—</span></td>
+          <td class="num" style="text-align:right">—</td>
+          <td><span class="chip c-running"><span class="spin"></span>running</span></td>
+        </tr>
+      {/each}
       {#each filtered as s}
         {@const plat = fmtPlatform(s.platform)}
         <tr onclick={() => openDrawer('source', s)}>
@@ -150,7 +178,7 @@
           <td><span class="chip {s.status === 'error' ? 'c-error' : s.status === 'used' ? 'c-used' : 'c-done'}">{s.status}</span></td>
         </tr>
       {/each}
-      {#if !filtered.length}
+      {#if !filtered.length && !pendingRows.length}
         <tr><td colspan="7" class="mut">Belum ada source di DB.</td></tr>
       {/if}
     </tbody>

@@ -104,6 +104,10 @@ tbody tr{cursor:pointer} tbody tr:hover td{background:var(--soft)}
 .c-used{background:rgba(64,81,137,.12);color:var(--accent)}
 .c-done{background:rgba(10,179,156,.12);color:var(--green)}
 .c-error{background:rgba(239,68,68,.12);color:#ef4444}
+.c-running{background:rgba(64,81,137,.12);color:var(--accent);display:inline-flex;align-items:center;gap:5px}
+.c-running .spin{width:9px;height:9px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin .7s linear infinite}
+.pending-row{opacity:.85}
+@keyframes spin{to{transform:rotate(360deg)}}
 .c-prompt-json{background:rgba(10,179,156,.12);color:var(--green)}
 .c-prompt-text{background:rgba(64,81,137,.12);color:var(--accent)}
 .num{font-variant-numeric:tabular-nums}
