@@ -5084,6 +5084,36 @@ def _save_creator(youtube_url: str) -> None:
         print(f"[creators] _save_creator error (non-fatal): {e}")
 
 
+def _get_source_row(youtube_url: str) -> Optional[dict]:
+    """Return the existing sources row for a url (dict) or None. Used to short-circuit
+    a re-analyze and open the detail popup instead. Non-fatal (returns None on error)."""
+    try:
+        conn = _db_conn()
+        if not conn:
+            return None
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """SELECT id, youtube_url, title, platform, channel, views_at_analysis,
+                              status, niche, gen_prompt_format
+                       FROM sources WHERE youtube_url = %s""",
+                    (youtube_url,),
+                )
+                r = cur.fetchone()
+                if not r:
+                    return None
+                return {
+                    "id": r[0], "youtube_url": r[1], "title": r[2], "platform": r[3],
+                    "channel": r[4], "views": r[5], "status": r[6], "niche": r[7],
+                    "gen_prompt_format": r[8],
+                }
+        finally:
+            conn.close()
+    except Exception as e:
+        print(f"[sources] _get_source_row error (non-fatal): {e}")
+        return None
+
+
 def _stub_source(youtube_url: str, title: Optional[str] = None) -> None:
     """
     Insert a placeholder source row the moment analyze starts, so it shows in the
@@ -6145,6 +6175,12 @@ def analyze_claude_async(req: AnalyzeClaudeRequest, bg: BackgroundTasks):
     output_format = (req.output_format or "none").lower()
     if output_format not in ("none", "prompt_video", "prompt_json"):
         raise HTTPException(status_code=400, detail=f"Invalid output_format '{output_format}'. Must be one of: none, prompt_video, prompt_json")
+
+    # Already in the library? Don't re-analyze — tell the client so it can open the detail popup.
+    if not req.force:
+        existing = _get_source_row(req.youtube_url)
+        if existing:
+            return {"already_exists": True, "source": existing}
 
     run_id = str(uuid.uuid4())
     start_time = time.time()
