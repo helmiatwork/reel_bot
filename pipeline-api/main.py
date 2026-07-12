@@ -5084,11 +5084,39 @@ def _save_creator(youtube_url: str) -> None:
         print(f"[creators] _save_creator error (non-fatal): {e}")
 
 
+def _stub_source(youtube_url: str, title: Optional[str] = None) -> None:
+    """
+    Insert a placeholder source row the moment analyze starts, so it shows in the
+    library immediately with status 'running'. Enriched + flipped to 'analyzed' by
+    _save_source when the run finishes. Idempotent (skips if the url already exists).
+    Non-fatal: any error is logged but doesn't break analyze.
+    ponytail: check-then-insert; single background job per run so no real race.
+    """
+    try:
+        conn = _db_conn()
+        if not conn:
+            return
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT 1 FROM sources WHERE youtube_url = %s", (youtube_url,))
+                if cur.fetchone():
+                    return  # re-analyze or cached hit — leave the existing row alone
+                cur.execute(
+                    "INSERT INTO sources (youtube_url, title, platform, status) VALUES (%s, %s, %s, %s)",
+                    (youtube_url, title or youtube_url, _detect_platform(youtube_url), "running"),
+                )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception as e:
+        print(f"[sources] _stub_source error (non-fatal): {e}")
+
+
 def _save_source(youtube_url: str) -> None:
     """
-    Save the analyzed video to the sources library if not already stored
-    (check by youtube_url). For new sources, infer niche. For existing sources
-    with NULL niche, backfill niche. Non-fatal: any error is logged but doesn't break analyze.
+    Save the analyzed video to the sources library. For new sources, insert with
+    inferred niche. For existing rows (including the 'running' stub from _stub_source),
+    enrich metadata and flip status 'running' → 'analyzed'. Non-fatal.
     """
     try:
         if _detect_platform(youtube_url) == "xiaohongshu":
@@ -5112,16 +5140,21 @@ def _save_source(youtube_url: str) -> None:
                 existing = cur.fetchone()
 
                 if existing:
-                    # Source exists; backfill niche if NULL or empty
-                    existing_niche = existing[0]
-                    if not existing_niche:
-                        niche = _infer_niche(meta.get("title", ""), "", meta.get("channel", ""))
-                        cur.execute(
-                            "UPDATE sources SET niche = %s WHERE youtube_url = %s",
-                            (niche, youtube_url)
-                        )
-                        conn.commit()
-                    return  # already saved, skip further processing
+                    # Row exists (stub or prior analysis) — enrich metadata and mark analyzed.
+                    # Only the 'running' stub flips to 'analyzed'; a 'used' source keeps its status.
+                    niche = _infer_niche(meta.get("title", ""), "", meta.get("channel", ""))
+                    cur.execute(
+                        """UPDATE sources SET
+                             title = COALESCE(NULLIF(%s, ''), title),
+                             channel = COALESCE(%s, channel),
+                             views_at_analysis = COALESCE(%s, views_at_analysis),
+                             niche = COALESCE(NULLIF(niche, ''), %s),
+                             status = CASE WHEN status = 'running' THEN 'analyzed' ELSE status END
+                           WHERE youtube_url = %s""",
+                        (meta.get("title"), meta.get("channel"), meta.get("view_count"), niche, youtube_url)
+                    )
+                    conn.commit()
+                    return
 
                 # New source: infer niche and insert
                 niche = _infer_niche(meta.get("title", ""), "", meta.get("channel", ""))
@@ -6123,6 +6156,9 @@ def analyze_claude_async(req: AnalyzeClaudeRequest, bg: BackgroundTasks):
         "created": start_time,
         "log": [{"msg": "⏳ Antre…", "t": 0}]
     })
+
+    # Show it in the library immediately as a 'running' row; enriched when the job finishes
+    _stub_source(req.youtube_url)
 
     def _job():
         try:
@@ -7177,6 +7213,9 @@ async def upload_source_async(
         "log": [{"msg": "✓ File diterima", "t": 0}]
     })
 
+    # Show it in the library immediately as a 'running' row; enriched when the job finishes
+    _stub_source(source_key, title=original_name)
+
     def _job():
         """Background job for file upload analysis."""
         success = False
@@ -7341,6 +7380,10 @@ async def upload_source_async(
                             """INSERT INTO sources
                             (youtube_url, title, platform, channel, views_at_analysis, status, niche)
                             VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            ON CONFLICT (youtube_url) DO UPDATE SET
+                                title = COALESCE(NULLIF(EXCLUDED.title, ''), sources.title),
+                                platform = EXCLUDED.platform,
+                                status = CASE WHEN sources.status = 'running' THEN 'analyzed' ELSE sources.status END
                             RETURNING id""",
                             (
                                 source_key,
