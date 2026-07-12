@@ -302,6 +302,8 @@ def get_segments(source_id: int) -> dict:
 @server.tool()
 def generate_shot_prompts(script_text: str, style_note: str = "") -> dict:
     """
+    Not part of the Gemini storyboard flow (get_clips + save_storyboard). Only use if explicitly asked.
+
     Generate Gemini image→video prompts from a script.
 
     Reads shotprompt/SOUL.md, builds a prompt, calls Claude bridge.
@@ -341,6 +343,8 @@ def generate_shot_prompts(script_text: str, style_note: str = "") -> dict:
 @server.tool()
 def make_brief(analysis_json: str, target: str = "") -> dict:
     """
+    Not part of the Gemini storyboard flow (get_clips + save_storyboard). Only use if explicitly asked.
+
     Generate a Production Brief from video analysis.
 
     Reads director/SOUL.md, builds a prompt with analysis + target, calls Claude bridge.
@@ -379,6 +383,8 @@ def make_brief(analysis_json: str, target: str = "") -> dict:
 @server.tool()
 def analyze(youtube_url: str, intent: str = "") -> dict:
     """
+    DO NOT USE for the Gemini storyboard flow. This runs the separate CLAUDE vision pipeline (downloads + Claude analysis) and will incur cost and ignore your work. For building a storyboard from decomposed clips, use get_clips + save_storyboard instead.
+
     Run a fresh Claude-vision analysis of a YouTube video and save it to the corpus DB.
 
     POSTs to the running pipeline-api /analyze/claude endpoint. Synchronous call;
@@ -421,6 +427,139 @@ def analyze(youtube_url: str, intent: str = "") -> dict:
 
     # Return the full response (hook, structure, retention, retention_score, tags, model, cost_usd, cached)
     return data
+
+
+@server.tool()
+def save_storyboard(youtube_url: str, storyboard_json: str) -> dict:
+    """
+    STORYBOARD FLOW STEP 2 (final). Call this after analyzing the clips to persist the per-scene storyboard JSON to the database. This is the ONLY correct way to save a Gemini-produced storyboard.
+
+    Save a storyboard (scene-by-scene breakdown) to the sources table.
+
+    Args:
+        youtube_url: the YouTube URL to associate with the storyboard
+        storyboard_json: JSON string or dict with {aspect_ratio, overall_style, music_mood, scene_order: []}
+
+    Returns:
+        {"ok": true, "youtube_url": ..., "scenes": N} on success
+        {"error": "..."} on failure (invalid URL, bad JSON, empty scene_order)
+    """
+    # Validate URL
+    if not _valid_url(youtube_url):
+        return {"error": "invalid youtube_url"}
+
+    # Parse storyboard_json (accept string or dict)
+    if isinstance(storyboard_json, str):
+        try:
+            storyboard_dict = json.loads(storyboard_json)
+        except (json.JSONDecodeError, ValueError):
+            return {"error": "storyboard_json is not valid JSON"}
+    elif isinstance(storyboard_json, dict):
+        storyboard_dict = storyboard_json
+    else:
+        return {"error": "storyboard_json must be a JSON string or dict"}
+
+    # Validate scene_order
+    scene_order = storyboard_dict.get("scene_order")
+    if not isinstance(scene_order, list) or not scene_order:
+        return {"error": "storyboard must contain a non-empty scene_order array"}
+
+    # DB write: UPDATE or INSERT
+    if not DATABASE_URL:
+        return {"error": "DATABASE_URL not configured"}
+
+    try:
+        conn = psycopg.connect(DATABASE_URL, connect_timeout=5)
+    except Exception as e:
+        return {"error": f"database connection failed: {e}"}
+
+    try:
+        with conn.cursor() as cur:
+            # Compact JSON string for storage
+            gen_prompt_json = json.dumps(storyboard_dict, separators=(',', ':'))
+
+            # Try UPDATE first
+            cur.execute(
+                "UPDATE sources SET gen_prompt=%s, gen_prompt_format='prompt_json', status='analyzed' "
+                "WHERE youtube_url=%s",
+                (gen_prompt_json, youtube_url)
+            )
+            rows_updated = cur.rowcount
+
+            # If UPDATE didn't match, INSERT
+            if rows_updated == 0:
+                cur.execute(
+                    "INSERT INTO sources (youtube_url, platform, status, gen_prompt, gen_prompt_format) "
+                    "VALUES (%s, %s, %s, %s, %s)",
+                    (youtube_url, "youtube", "analyzed", gen_prompt_json, "prompt_json")
+                )
+
+            conn.commit()
+        return {"ok": True, "youtube_url": youtube_url, "scenes": len(scene_order)}
+    except Exception as e:
+        conn.rollback()
+        return {"error": f"database error: {e}"}
+    finally:
+        conn.close()
+
+
+@server.tool()
+def get_clips(youtube_url: str) -> dict:
+    """
+    STORYBOARD FLOW STEP 1. Use this to fetch the local video clip files (seg_NN.mp4) for a decomposed video. This is the FIRST tool to call when building a Gemini storyboard.
+
+    Get decomposed video clips (segments) for a source by youtube_url.
+
+    Convenience wrapper: resolves source_id from youtube_url, then returns all video_segments.
+
+    Args:
+        youtube_url: the YouTube URL to look up
+
+    Returns:
+        {"youtube_url": ..., "source_id": ..., "clips": [...], "count": N}
+        or {"error": "clips not ready yet — the pipeline is still preparing them; wait and call get_clips again"}
+    """
+    if not _valid_url(youtube_url):
+        return {"error": "invalid youtube_url"}
+
+    if not DATABASE_URL:
+        return {"error": "DATABASE_URL not configured"}
+
+    try:
+        conn = psycopg.connect(DATABASE_URL, connect_timeout=5)
+    except Exception as e:
+        return {"error": f"database connection failed: {e}"}
+
+    try:
+        with conn.cursor() as cur:
+            # Resolve source_id from youtube_url
+            cur.execute("SELECT id FROM sources WHERE youtube_url=%s", (youtube_url,))
+            source_row = cur.fetchone()
+            if not source_row:
+                return {"error": "clips not ready yet — the pipeline is still preparing them; wait and call get_clips again"}
+
+            source_id = source_row[0]
+
+            # Get all segments for this source
+            cur.execute(
+                "SELECT clip_index, start_sec, end_sec, credit_handle, segment_path FROM video_segments "
+                "WHERE source_id=%s ORDER BY clip_index ASC",
+                (source_id,)
+            )
+            cols = [c.name for c in cur.description] if cur.description else []
+            rows = cur.fetchall()
+            clips = [_segment_row_to_dict(row, cols) for row in rows]
+
+        return {
+            "youtube_url": youtube_url,
+            "source_id": source_id,
+            "clips": clips,
+            "count": len(clips)
+        }
+    except Exception as e:
+        return {"error": f"query failed: {e}"}
+    finally:
+        conn.close()
 
 
 # ── Entry point ──────────────────────────────────────────────────────────

@@ -25,6 +25,9 @@ from reelbot_mcp import (
     _read_soul,
 )
 
+# Mock psycopg for DB tests
+from unittest.mock import patch, MagicMock
+
 
 def test_valid_url_https():
     """Test URL validation with https URL."""
@@ -209,6 +212,64 @@ def test_read_soul_missing_file():
     print("✓ test_read_soul_missing_file (implicit)")
 
 
+def test_save_storyboard_invalid_url():
+    """Test save_storyboard rejects invalid URLs."""
+    from reelbot_mcp import save_storyboard
+    result = save_storyboard("not-a-url", '{"scene_order": []}')
+    assert "error" in result, "should return error for invalid URL"
+    assert "invalid youtube_url" in result["error"], f"error should mention invalid URL, got {result['error']}"
+    print("✓ test_save_storyboard_invalid_url")
+
+
+def test_save_storyboard_invalid_json():
+    """Test save_storyboard rejects invalid JSON."""
+    from reelbot_mcp import save_storyboard
+    result = save_storyboard("https://youtube.com/watch?v=abc123", "not-json")
+    assert "error" in result, "should return error for invalid JSON"
+    assert "not valid JSON" in result["error"], f"error should mention invalid JSON, got {result['error']}"
+    print("✓ test_save_storyboard_invalid_json")
+
+
+def test_save_storyboard_empty_scene_order():
+    """Test save_storyboard rejects empty scene_order."""
+    from reelbot_mcp import save_storyboard
+    result = save_storyboard("https://youtube.com/watch?v=abc123", '{"scene_order": []}')
+    assert "error" in result, "should return error for empty scene_order"
+    assert "non-empty" in result["error"], f"error should mention non-empty array, got {result['error']}"
+    print("✓ test_save_storyboard_empty_scene_order")
+
+
+def test_save_storyboard_missing_scene_order():
+    """Test save_storyboard rejects missing scene_order."""
+    from reelbot_mcp import save_storyboard
+    result = save_storyboard("https://youtube.com/watch?v=abc123", '{"aspect_ratio": "9:16"}')
+    assert "error" in result, "should return error for missing scene_order"
+    assert "non-empty" in result["error"], f"error should mention non-empty array, got {result['error']}"
+    print("✓ test_save_storyboard_missing_scene_order")
+
+
+def test_save_storyboard_dict_input():
+    """Test save_storyboard accepts dict input."""
+    from reelbot_mcp import save_storyboard
+    # Accepts both dict and string
+    storyboard_dict = {
+        "aspect_ratio": "9:16",
+        "overall_style": "cinematic",
+        "music_mood": "epic",
+        "scene_order": [
+            {"scene": 1, "start": "0:00", "end": "0:05", "duration_sec": 5, "shot": "wide", "camera_movement": "pan", "subject": "hero", "action": "enters", "image_prompt": "test"}
+        ]
+    }
+    result = save_storyboard("https://youtube.com/watch?v=abc123", storyboard_dict)
+    # Should either succeed (if DB configured) or fail gracefully (if not)
+    # The key is that it accepts dict input without JSON parsing error
+    if "error" in result:
+        assert "JSON" not in result["error"], f"error should not be a JSON parsing error, got {result['error']}"
+    else:
+        assert result.get("ok") is True, "should succeed with ok: true"
+    print("✓ test_save_storyboard_dict_input")
+
+
 def main():
     """Run all tests."""
     tests = [
@@ -231,6 +292,11 @@ def main():
         test_segment_row_to_dict_nulls,
         test_read_soul_valid_agents,
         test_read_soul_missing_file,
+        test_save_storyboard_invalid_url,
+        test_save_storyboard_invalid_json,
+        test_save_storyboard_empty_scene_order,
+        test_save_storyboard_missing_scene_order,
+        test_save_storyboard_dict_input,
     ]
 
     failed = 0
