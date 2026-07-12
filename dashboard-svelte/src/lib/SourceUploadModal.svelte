@@ -161,6 +161,38 @@
     geminiError = null
     geminiBrief = ''
     try {
+      // Step 1: Ensure clips are prepared (no-AI scene-split only)
+      const decomposeResult = await api.decomposeNoAI(urlInput.trim())
+      if (!decomposeResult?.run_id) {
+        geminiError = decomposeResult?.error || 'Gagal memulai persiapan klip'
+        loading = false
+        return
+      }
+
+      // Step 2: Poll for decompose completion
+      let done = false
+      let pollCount = 0
+      const maxPolls = 120 // 2 minutes with 1s intervals
+      while (!done && pollCount < maxPolls) {
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        const statusResult = await api.decomposeStatus(decomposeResult.run_id)
+        if (statusResult?.status === 'done') {
+          done = true
+        } else if (statusResult?.status === 'error') {
+          geminiError = statusResult?.error || 'Persiapan klip gagal'
+          loading = false
+          return
+        }
+        pollCount++
+      }
+
+      if (!done) {
+        geminiError = 'Timeout menunggu persiapan klip'
+        loading = false
+        return
+      }
+
+      // Step 3: Fetch the Gemini brief
       const result = await api.getGeminiBrief(urlInput.trim())
       if (result?.instruction) {
         geminiBrief = result.instruction
