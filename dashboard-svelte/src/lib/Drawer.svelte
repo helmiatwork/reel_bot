@@ -739,16 +739,21 @@
     display: flex; align-items: center; justify-content: center;
   }
   .lb-card {
-    display: flex; flex-direction: column; gap: 12px;
-    width: min(860px, 92vw); max-height: 88vh; overflow-y: auto;
+    display: flex; flex-direction: row; align-items: flex-start; gap: 16px;
+    width: min(1120px, 94vw); max-height: 88vh; overflow: hidden;
     background: var(--bg); border: 1px solid var(--line); border-radius: 12px;
     padding: 14px; box-shadow: 0 12px 48px rgba(0,0,0,.5);
   }
   .lb-img {
-    width: 100%; max-height: 56vh; object-fit: contain;
+    flex: 0 0 auto; width: auto; max-width: 44%; max-height: 82vh; object-fit: contain;
     border-radius: 8px; background: var(--soft);
   }
-  .lb-info { text-align: left; }
+  .lb-info { text-align: left; flex: 1 1 auto; min-width: 0; max-height: 82vh; overflow-y: auto; }
+  @media (max-width: 640px) {
+    .lb-card { flex-direction: column; align-items: stretch; }
+    .lb-img { max-width: 100%; max-height: 50vh; align-self: center; }
+    .lb-info { max-height: none; overflow-y: visible; }
+  }
   .lb-frame-no {
     font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
     color: var(--mut); margin-bottom: 6px;
