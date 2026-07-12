@@ -538,7 +538,7 @@ def get_clips(youtube_url: str) -> dict:
             )
             cols = [c.name for c in cur.description] if cur.description else []
             rows = cur.fetchall()
-            clips = [dict(zip(cols, row)) for row in rows]
+            clips = [_segment_row_to_dict(row, cols) for row in rows]
 
         return {
             "youtube_url": youtube_url,
