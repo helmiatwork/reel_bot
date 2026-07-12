@@ -156,7 +156,10 @@
         let isFirstPoll = prevJobsSnapshot.size === 0
         data.forEach(job => {
           const prev = prevJobsSnapshot.get(job.run_id)
-          if (!isFirstPoll && prev && prev.status === 'running') {
+          // Toast on running→done/error, OR a brand-new run that finished between polls
+          // (fast videos can complete inside one poll window, so prev is never 'running')
+          const justFinished = prev ? prev.status === 'running' : job.status !== 'running'
+          if (!isFirstPoll && justFinished) {
             if (job.status === 'done') {
               const toastTitle = 'Analisa selesai'
               const toastSub = job.title || (job.url ? (job.url.startsWith('file://') ? 'Upload file' : job.url.substring(0, 45) + '…') : '—')
