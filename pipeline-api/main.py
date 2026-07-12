@@ -6472,6 +6472,9 @@ RULES:
 - You have EXACTLY TWO tools available: `get_clips` and `save_storyboard`. Use them in that order only.
 - Do NOT call any other tool (not analyze, not make_brief, not generate_shot_prompts).
 - Do NOT run shell commands or attempt any preprocessing — the clips are already prepared.
+- CRITICAL: base EVERY field on what you ACTUALLY SEE in the clip videos. Never copy placeholder or example values.
+- Produce ONE scene per clip returned by get_clips (match its count), using each clip's start_sec/end_sec for the timing.
+- If get_clips returns an error or an empty list, STOP: report the error to the user and do NOT call save_storyboard. Never invent, guess, or fabricate scenes.
 
 Task:
 1. Call the reelbot MCP tool `get_clips` with youtube_url="{youtube_url}" to get the list of segment files.
@@ -6482,38 +6485,7 @@ Task:
 STORYBOARD JSON SCHEMA (output must match this exactly):
 {STORYBOARD_JSON_SCHEMA}
 
-EXAMPLE OUTPUT:
-{{
-  "aspect_ratio": "9:16",
-  "overall_style": "dynamic cinematic",
-  "music_mood": "epic action",
-  "scene_order": [
-    {{
-      "scene": 1,
-      "start": "0:00",
-      "end": "0:05",
-      "duration_sec": 5,
-      "shot": "wide establishing",
-      "camera_movement": "slow pan right",
-      "subject": "protagonist",
-      "action": "enters frame running",
-      "image_prompt": "cinematic wide shot of hero entering a futuristic city at sunrise, dynamic lighting"
-    }},
-    {{
-      "scene": 2,
-      "start": "0:05",
-      "end": "0:12",
-      "duration_sec": 7,
-      "shot": "close-up",
-      "camera_movement": "none",
-      "subject": "face",
-      "action": "surprised expression",
-      "image_prompt": "close-up portrait of hero with surprised expression, warm sunset light on face"
-    }}
-  ]
-}}
-
-Generate the storyboard now. Output ONLY the JSON (no markdown fence, no explanation)."""
+Generate the storyboard now, based ONLY on what you actually see in the clip videos. Output ONLY the JSON (no markdown fence, no explanation)."""
 
     return {
         "instruction": instruction,
