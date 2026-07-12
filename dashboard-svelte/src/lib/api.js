@@ -207,9 +207,12 @@ export const api = {
   winnersCloneStatus: (run_id) => getJSON('/winners/clone/status/' + run_id),
 
   decompose: (youtube_url) => postJSON('/decompose', { youtube_url }),
+  decomposeNoAI: (youtube_url) => postJSON('/decompose', { youtube_url, group_clips: false, split_files: true }),
   decomposeStatus: (run_id) => getJSON('/decompose/status/' + encodeURIComponent(run_id)),
   sourceSegments: (source_id) => getJSON('/sources/' + source_id + '/segments'),
   sourceAnalysis: (source_id) => getJSON('/sources/' + source_id + '/analysis'),
+  getGeminiBrief: (youtube_url) => getJSON('/analyze/gemini-brief?youtube_url=' + encodeURIComponent(youtube_url)),
+  importStoryboard: (youtube_url, storyboard) => postJSON('/analyze/import', { youtube_url, storyboard }),
 
   chatSessions: () => getJSON('/dash/chat/sessions'),
   chatSession: (sid) => getJSON(`/dash/chat/session/${encodeURIComponent(sid)}`),
