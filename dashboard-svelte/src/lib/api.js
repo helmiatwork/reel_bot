@@ -140,7 +140,7 @@ export const api = {
   discoverCorpus: (niche, count = 5) => postJSON('/discover/corpus', { niche, count }),
   discoverCorpusStatus: (run_id) => getJSON('/discover/corpus/status/' + run_id),
   analyzeClaude: (youtube_url, { intent = '', force = false, output_format = 'none' } = {}) => postJSON('/analyze/claude', { youtube_url, intent, force, output_format }),
-  analyzeClaudeAsync: (youtube_url, { intent = '', force = false, output_format = 'none' } = {}) => postJSON('/analyze/claude/async', { youtube_url, intent, force, output_format }),
+  analyzeClaudeAsync: (youtube_url, { intent = '', force = false, output_format = 'none', stages = 'full' } = {}) => postJSON('/analyze/claude/async', { youtube_url, intent, force, output_format, stages }),
   analyzeClaudeStatus: (run_id) => getJSON('/analyze/claude/status/' + run_id),
   analyzeRuns: (limit = 20) => getJSON('/analyze/claude/runs?limit=' + limit),
   uploadSourceAsync: async (file, { intent = '', output_format = 'none' } = {}) => {
