@@ -27,6 +27,11 @@
     load() // the backend already inserted a 'running' row — pull it in now
   }
 
+  function handleAlreadyExists(source) {
+    modalOpen = false
+    openDrawer('source', enrich(source))
+  }
+
   const PLATFORM_ICON = {
     youtube: 'i-yt', tiktok: 'i-tt', instagram: 'i-ig', xiaohongshu: 'i-xhs'
   }
@@ -175,7 +180,7 @@
 
 <Pagination {offset} {limit} {total} onprev={prev} onnext={next} />
 
-<SourceUploadModal bind:isOpen={modalOpen} onSuccess={() => { modalOpen = false; load() }} onAnalyzeStarted={handleAnalyzeStarted} />
+<SourceUploadModal bind:isOpen={modalOpen} onSuccess={() => { modalOpen = false; load() }} onAnalyzeStarted={handleAnalyzeStarted} onAlreadyExists={handleAlreadyExists} />
 <JobsPopup bind:isOpen={jobsOpen} bind:initialRunId={selectedJobRunId} />
 
 <style>
