@@ -4,7 +4,7 @@
   import { api } from './api.js'
 
   // Props (runes mode — isOpen is bound by parent)
-  let { isOpen = $bindable(false), onSuccess = () => {}, onAnalyzeStarted = (_runId) => {} } = $props()
+  let { isOpen = $bindable(false), onSuccess = () => {}, onAnalyzeStarted = (_runId, _label) => {} } = $props()
 
   // Modal state
   let activeTab = $state('url')
@@ -83,7 +83,7 @@
         loading = false
         return
       }
-      onAnalyzeStarted(result.run_id)
+      onAnalyzeStarted(result.run_id, urlInput.trim())
       closeModal()
     } catch (e) {
       error = `Error: ${e.message}`
@@ -105,7 +105,7 @@
         loading = false
         return
       }
-      onAnalyzeStarted(result.run_id)
+      onAnalyzeStarted(result.run_id, selectedFile?.name || 'Upload file')
       closeModal()
     } catch (e) {
       error = `Error: ${e.message}`
