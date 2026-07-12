@@ -5260,6 +5260,32 @@ class AnalyzeClaudeRequest(BaseModel):
     stages: str = "full"
 
 
+# Storyboard schema (matched to Gemini analysis output)
+STORYBOARD_JSON_SCHEMA = """{
+  "aspect_ratio": "str",
+  "overall_style": "str",
+  "music_mood": "str",
+  "scene_order": [
+    {
+      "scene": "int",
+      "start": "M:SS",
+      "end": "M:SS",
+      "duration_sec": "int",
+      "shot": "str",
+      "camera_movement": "str",
+      "subject": "str",
+      "action": "str",
+      "image_prompt": "str"
+    }
+  ]
+}"""
+
+
+class StoryboardImportRequest(BaseModel):
+    youtube_url: str
+    storyboard: dict | str  # Accept JSON string or dict
+
+
 def _compute_aspect_ratio(video_path: str) -> str:
     """
     Compute aspect ratio from video dimensions using ffprobe.
@@ -6351,6 +6377,145 @@ def analyze_claude_runs(limit: int = 20):
     summaries.sort(key=lambda x: x["created"], reverse=True)
 
     return summaries[:limit]
+
+
+@app.post("/analyze/import")
+def analyze_import(req: StoryboardImportRequest):
+    """
+    Manual paste-back endpoint: import a storyboard JSON (Gemini or manual result) to sources.
+
+    Validates the storyboard, then UPSERTs to sources table.
+    Returns {"ok": true, "youtube_url": ..., "scenes": N} on success.
+    """
+    # Validate URL
+    try:
+        _validate_source_url(req.youtube_url)
+    except HTTPException:
+        raise HTTPException(status_code=400, detail="invalid youtube_url")
+
+    # Parse storyboard (accept string or dict)
+    if isinstance(req.storyboard, str):
+        try:
+            storyboard_dict = json.loads(req.storyboard)
+        except (json.JSONDecodeError, ValueError):
+            raise HTTPException(status_code=400, detail="storyboard is not valid JSON")
+    elif isinstance(req.storyboard, dict):
+        storyboard_dict = req.storyboard
+    else:
+        raise HTTPException(status_code=400, detail="storyboard must be a JSON string or dict")
+
+    # Validate scene_order
+    scene_order = storyboard_dict.get("scene_order")
+    if not isinstance(scene_order, list) or not scene_order:
+        raise HTTPException(status_code=400, detail="storyboard must contain a non-empty scene_order array")
+
+    # DB write: UPDATE or INSERT
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=500, detail="database not configured")
+
+    try:
+        with conn.cursor() as cur:
+            # Compact JSON string for storage
+            gen_prompt_json = json.dumps(storyboard_dict, separators=(',', ':'))
+
+            # Try UPDATE first
+            cur.execute(
+                "UPDATE sources SET gen_prompt=%s, gen_prompt_format='prompt_json', status='analyzed' "
+                "WHERE youtube_url=%s",
+                (gen_prompt_json, req.youtube_url)
+            )
+            rows_updated = cur.rowcount
+
+            # If UPDATE didn't match, INSERT
+            if rows_updated == 0:
+                cur.execute(
+                    "INSERT INTO sources (youtube_url, platform, status, gen_prompt, gen_prompt_format) "
+                    "VALUES (%s, %s, %s, %s, %s)",
+                    (req.youtube_url, "youtube", "analyzed", gen_prompt_json, "prompt_json")
+                )
+
+            conn.commit()
+        return {
+            "ok": True,
+            "youtube_url": req.youtube_url,
+            "scenes": len(scene_order)
+        }
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=f"database error: {e}")
+    finally:
+        conn.close()
+
+
+@app.get("/analyze/gemini-brief")
+def analyze_gemini_brief(youtube_url: str):
+    """
+    Instruction builder for Gemini analysis via Antigravity MCP.
+
+    Returns a static instruction template telling the Gemini agent to:
+    1. Call reelbot MCP get_clips(youtube_url) to get local segment files
+    2. Analyze each segment and produce per-scene storyboard JSON
+    3. Call reelbot MCP save_storyboard(youtube_url, json) to persist
+
+    Query param: youtube_url
+    Returns: {"instruction": str, "youtube_url": str}
+    """
+    try:
+        _validate_source_url(youtube_url)
+    except HTTPException:
+        raise HTTPException(status_code=400, detail="invalid youtube_url")
+
+    instruction = f"""You are analyzing decomposed video clips for a short-form content project.
+
+Task:
+1. Call the reelbot MCP tool \`get_clips\` with youtube_url="{youtube_url}" to get the list of segment files.
+2. Watch and analyze each segment (seg_NN.mp4) to understand what happens in each scene.
+3. Produce a detailed per-scene storyboard in the exact JSON schema below.
+4. Call the reelbot MCP tool \`save_storyboard\` with youtube_url="{youtube_url}" and the storyboard JSON.
+
+If you don't have MCP access: output the JSON storyboard and I'll paste it back into reelbot.
+
+STORYBOARD JSON SCHEMA (output must match this exactly):
+{STORYBOARD_JSON_SCHEMA}
+
+EXAMPLE OUTPUT:
+{{
+  "aspect_ratio": "9:16",
+  "overall_style": "dynamic cinematic",
+  "music_mood": "epic action",
+  "scene_order": [
+    {{
+      "scene": 1,
+      "start": "0:00",
+      "end": "0:05",
+      "duration_sec": 5,
+      "shot": "wide establishing",
+      "camera_movement": "slow pan right",
+      "subject": "protagonist",
+      "action": "enters frame running",
+      "image_prompt": "cinematic wide shot of hero entering a futuristic city at sunrise, dynamic lighting"
+    }},
+    {{
+      "scene": 2,
+      "start": "0:05",
+      "end": "0:12",
+      "duration_sec": 7,
+      "shot": "close-up",
+      "camera_movement": "none",
+      "subject": "face",
+      "action": "surprised expression",
+      "image_prompt": "close-up portrait of hero with surprised expression, warm sunset light on face"
+    }}
+  ]
+}}
+
+Generate the storyboard now. Output ONLY the JSON (no markdown fence, no explanation)."""
+
+    return {
+        "instruction": instruction,
+        "youtube_url": youtube_url
+    }
 
 
 @app.get("/sources/frames")
