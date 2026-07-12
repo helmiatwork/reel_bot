@@ -83,6 +83,16 @@
     load()
   })
 
+  // Realtime: reload the table when an active analyze run finishes (persists a new source).
+  // ponytail: keys off runningCount dropping; a run that finishes inside one 5s job-poll
+  // window never registers as running, so reload it via the toast path if that ever matters.
+  let prevRunning = 0
+  $effect(() => {
+    const now = runningCount
+    if (now < prevRunning) load()
+    prevRunning = now
+  })
+
   function prev() { offset = Math.max(0, offset - limit); load() }
   function next() { offset = offset + limit; load() }
 </script>
