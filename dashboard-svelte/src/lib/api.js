@@ -210,6 +210,8 @@ export const api = {
   decomposeStatus: (run_id) => getJSON('/decompose/status/' + encodeURIComponent(run_id)),
   sourceSegments: (source_id) => getJSON('/sources/' + source_id + '/segments'),
   sourceAnalysis: (source_id) => getJSON('/sources/' + source_id + '/analysis'),
+  getGeminiBrief: (youtube_url) => getJSON('/analyze/gemini-brief?youtube_url=' + encodeURIComponent(youtube_url)),
+  importStoryboard: (youtube_url, storyboard) => postJSON('/analyze/import', { youtube_url, storyboard }),
 
   chatSessions: () => getJSON('/dash/chat/sessions'),
   chatSession: (sid) => getJSON(`/dash/chat/session/${encodeURIComponent(sid)}`),

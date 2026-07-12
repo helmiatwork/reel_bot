@@ -25,6 +25,16 @@
   // Output format (shared across both tabs)
   let outputFormat = $state('none')
 
+  // Analysis mode (gemini_mcp, gemini_manual, claude)
+  let analysisMode = $state('gemini_mcp')
+
+  // Gemini mode state
+  let geminiBrief = $state('')
+  let geminiBriefCopied = $state(false)
+  let geminiPaste = $state('')
+  let savingGemini = $state(false)
+  let geminiError = $state(null)
+
   // Set when the submitted URL is already in the library
   let existsSource = $state(null)
 
@@ -38,6 +48,12 @@
       selectedFile = null
       fileIntent = ''
       outputFormat = 'none'
+      analysisMode = 'gemini_mcp'
+      geminiBrief = ''
+      geminiBriefCopied = false
+      geminiPaste = ''
+      savingGemini = false
+      geminiError = null
       error = null
       loading = false
       activeTab = 'url'
@@ -135,6 +151,60 @@
       selectedFile = null
     }
   }
+
+  async function fetchGeminiBrief() {
+    if (!urlInput.trim()) {
+      error = 'URL tidak boleh kosong'
+      return
+    }
+    loading = true
+    geminiError = null
+    geminiBrief = ''
+    try {
+      const result = await api.getGeminiBrief(urlInput.trim())
+      if (result?.instruction) {
+        geminiBrief = result.instruction
+      } else {
+        geminiError = result?.error || 'Gagal mengambil instruksi'
+      }
+    } catch (e) {
+      geminiError = `Error: ${e.message}`
+    } finally {
+      loading = false
+    }
+  }
+
+  function copyGeminiBrief() {
+    navigator.clipboard.writeText(geminiBrief)
+    geminiBriefCopied = true
+    setTimeout(() => { geminiBriefCopied = false }, 2000)
+  }
+
+  async function saveGeminiStoryboard() {
+    if (!urlInput.trim()) {
+      geminiError = 'URL tidak boleh kosong'
+      return
+    }
+    if (!geminiPaste.trim()) {
+      geminiError = 'Tempel hasil Gemini (JSON) terlebih dahulu'
+      return
+    }
+    savingGemini = true
+    geminiError = null
+    try {
+      const result = await api.importStoryboard(urlInput.trim(), geminiPaste.trim())
+      if (result?.ok) {
+        onSuccess()
+        closeModal()
+      } else {
+        geminiError = result?.error || 'Gagal menyimpan storyboard'
+      }
+    } catch (e) {
+      geminiError = `Error: ${e.message}`
+    } finally {
+      savingGemini = false
+    }
+  }
 </script>
 
 <svelte:window onkeydown={onKey} />
@@ -169,34 +239,123 @@
 
     <!-- Body -->
     <div class="m-body">
-      <!-- Tabs -->
-      <div class="tabs" role="tablist">
-        <button
-          class="tab"
-          class:active={activeTab === 'url'}
-          role="tab"
-          aria-selected={activeTab === 'url'}
-          onclick={() => { activeTab = 'url'; error = null; }}
-        >
-          URL
-        </button>
-        <button
-          class="tab"
-          class:active={activeTab === 'file'}
-          role="tab"
-          aria-selected={activeTab === 'file'}
-          onclick={() => { activeTab = 'file'; error = null; }}
-        >
-          Upload File
-        </button>
+      <!-- Analysis Mode Selector -->
+      <div class="analysis-mode-selector">
+        <label class="field">
+          <span class="field-label">Metode Analisis</span>
+          <div class="mode-options">
+            <label class="mode-option">
+              <input type="radio" name="analysisMode" value="gemini_mcp" bind:group={analysisMode} disabled={loading || savingGemini} />
+              <span class="mode-label">Gemini (Antigravity)</span>
+            </label>
+            <label class="mode-option">
+              <input type="radio" name="analysisMode" value="gemini_manual" bind:group={analysisMode} disabled={loading || savingGemini} />
+              <span class="mode-label">Gemini (manual)</span>
+            </label>
+            <label class="mode-option">
+              <input type="radio" name="analysisMode" value="claude" bind:group={analysisMode} disabled={loading || savingGemini} />
+              <span class="mode-label">Claude (auto)</span>
+            </label>
+          </div>
+        </label>
       </div>
 
-      <!-- Error message -->
-      {#if error}
-        <div class="error-msg" transition:fade={{ duration: 150 }}>
-          {error}
+      <!-- Conditional content based on analysis mode -->
+      {#if analysisMode === 'gemini_mcp' || analysisMode === 'gemini_manual'}
+        <!-- Gemini mode (both MCP and manual) -->
+        <div class="gemini-section" transition:fade={{ duration: 150 }}>
+          <label class="field">
+            <span class="field-label">YouTube / TikTok / Instagram URL</span>
+            <input
+              class="inp"
+              type="text"
+              placeholder="https://youtube.com/watch?v=..."
+              bind:value={urlInput}
+              disabled={loading || savingGemini}
+            />
+          </label>
+
+          {#if analysisMode === 'gemini_mcp'}
+            <!-- MCP mode: show instruction -->
+            <button
+              class="btn-fetch-brief"
+              onclick={fetchGeminiBrief}
+              disabled={loading || !urlInput.trim()}
+            >
+              {#if loading}
+                <span class="spinner-sm"></span>
+                Ambil instruksi…
+              {:else}
+                Ambil instruksi Gemini
+              {/if}
+            </button>
+
+            {#if geminiBrief}
+              <div class="brief-box" transition:fade={{ duration: 150 }}>
+                <textarea
+                  class="inp inp-brief"
+                  readonly
+                  value={geminiBrief}
+                ></textarea>
+                <button
+                  class="btn-copy"
+                  onclick={copyGeminiBrief}
+                >
+                  {geminiBriefCopied ? '✓ Tersalin' : 'Salin'}
+                </button>
+                <div class="brief-note">Tempel instruksi ini ke Antigravity untuk analisis Gemini. Gemini akan memanggil reelbot MCP untuk menganalisis klip dan menyimpan hasilnya.</div>
+              </div>
+            {/if}
+          {:else}
+            <!-- Manual mode: show paste box -->
+            <label class="field">
+              <span class="field-label">Tempel hasil Gemini (JSON)</span>
+              <textarea
+                class="inp inp-mono"
+                placeholder='Paste hasil JSON dari Gemini, contoh: {"aspect_ratio": "9:16", "scene_order": [...]}'
+                bind:value={geminiPaste}
+                disabled={savingGemini}
+                rows="8"
+              ></textarea>
+            </label>
+          {/if}
+
+          {#if geminiError}
+            <div class="error-msg" transition:fade={{ duration: 150 }}>
+              {geminiError}
+            </div>
+          {/if}
         </div>
-      {/if}
+      {:else}
+        <!-- Claude mode: show original upload flow -->
+        <!-- Tabs -->
+        <div class="tabs" role="tablist">
+          <button
+            class="tab"
+            class:active={activeTab === 'url'}
+            role="tab"
+            aria-selected={activeTab === 'url'}
+            onclick={() => { activeTab = 'url'; error = null; }}
+          >
+            URL
+          </button>
+          <button
+            class="tab"
+            class:active={activeTab === 'file'}
+            role="tab"
+            aria-selected={activeTab === 'file'}
+            onclick={() => { activeTab = 'file'; error = null; }}
+          >
+            Upload File
+          </button>
+        </div>
+
+        <!-- Error message -->
+        {#if error}
+          <div class="error-msg" transition:fade={{ duration: 150 }}>
+            {error}
+          </div>
+        {/if}
 
       {#if existsSource}
         <div class="exists-msg" transition:fade={{ duration: 150 }}>
@@ -296,26 +455,46 @@
 
     <!-- Footer -->
     <div class="m-footer">
-      <span class="flow-label">Input → Analyze{outputFormat === 'prompt_video' ? ' → Prompt video' : outputFormat === 'prompt_json' ? ' → Prompt JSON' : ''}</span>
-      <button
-        class="btn-cancel"
-        onclick={closeModal}
-        disabled={loading}
-      >
-        Batal
-      </button>
-      <button
-        class="btn-primary"
-        onclick={activeTab === 'url' ? submitUrl : submitFile}
-        disabled={loading}
-      >
-        {#if loading}
-          <span class="spinner"></span>
-          Menganalisis...
-        {:else}
-          Analisis
-        {/if}
-      </button>
+      {#if analysisMode === 'gemini_mcp'}
+        <span class="flow-label">Ambil instruksi → Tempel ke Antigravity</span>
+        <button class="btn-cancel" onclick={closeModal} disabled={loading}>Batal</button>
+      {:else if analysisMode === 'gemini_manual'}
+        <span class="flow-label">Paste hasil Gemini → Simpan</span>
+        <button class="btn-cancel" onclick={closeModal} disabled={savingGemini}>Batal</button>
+        <button
+          class="btn-primary"
+          onclick={saveGeminiStoryboard}
+          disabled={savingGemini || !geminiPaste.trim()}
+        >
+          {#if savingGemini}
+            <span class="spinner"></span>
+            Menyimpan…
+          {:else}
+            Simpan
+          {/if}
+        </button>
+      {:else}
+        <span class="flow-label">Input → Analyze{outputFormat === 'prompt_video' ? ' → Prompt video' : outputFormat === 'prompt_json' ? ' → Prompt JSON' : ''}</span>
+        <button
+          class="btn-cancel"
+          onclick={closeModal}
+          disabled={loading}
+        >
+          Batal
+        </button>
+        <button
+          class="btn-primary"
+          onclick={activeTab === 'url' ? submitUrl : submitFile}
+          disabled={loading}
+        >
+          {#if loading}
+            <span class="spinner"></span>
+            Menganalisis...
+          {:else}
+            Analisis
+          {/if}
+        </button>
+      {/if}
     </div>
   </div>
 {/if}
@@ -568,7 +747,133 @@
     animation: spin 0.6s linear infinite;
   }
 
+  .spinner-sm {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 0.6s linear infinite;
+    margin-right: 0.25rem;
+  }
+
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+
+  /* Analysis mode selector */
+  .analysis-mode-selector {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .mode-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .mode-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+  }
+
+  .mode-option:hover {
+    background-color: var(--bg-alt);
+  }
+
+  .mode-option input[type="radio"] {
+    cursor: pointer;
+  }
+
+  .mode-option input[type="radio"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .mode-label {
+    font-size: 0.875rem;
+    color: var(--fg);
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  /* Gemini section */
+  .gemini-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .btn-fetch-brief {
+    padding: 0.625rem 1rem;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .btn-fetch-brief:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  .btn-fetch-brief:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .brief-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: var(--bg-alt);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+
+  .inp-brief {
+    min-height: 200px;
+    font-family: 'Monaco', 'Courier New', monospace;
+    font-size: 0.75rem;
+    resize: vertical;
+  }
+
+  .btn-copy {
+    padding: 0.5rem 0.75rem;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    align-self: flex-start;
+  }
+
+  .btn-copy:hover {
+    opacity: 0.9;
+  }
+
+  .brief-note {
+    font-size: 0.75rem;
+    color: var(--mut);
+    line-height: 1.4;
   }
 </style>
