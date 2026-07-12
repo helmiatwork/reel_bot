@@ -6466,15 +6466,18 @@ def analyze_gemini_brief(youtube_url: str):
     except HTTPException:
         raise HTTPException(status_code=400, detail="invalid youtube_url")
 
-    instruction = f"""You are analyzing decomposed video clips for a short-form content project.
+    instruction = f"""You are analyzing video clips for a short-form content project.
+
+RULES:
+- You have EXACTLY TWO tools available: `get_clips` and `save_storyboard`. Use them in that order only.
+- Do NOT call any other tool (not analyze, not make_brief, not generate_shot_prompts).
+- Do NOT run shell commands or attempt any preprocessing — the clips are already prepared.
 
 Task:
 1. Call the reelbot MCP tool `get_clips` with youtube_url="{youtube_url}" to get the list of segment files.
 2. Watch and analyze each segment (seg_NN.mp4) to understand what happens in each scene.
 3. Produce a detailed per-scene storyboard in the exact JSON schema below.
 4. Call the reelbot MCP tool `save_storyboard` with youtube_url="{youtube_url}" and the storyboard JSON.
-
-If you don't have MCP access: output the JSON storyboard and I'll paste it back into reelbot.
 
 STORYBOARD JSON SCHEMA (output must match this exactly):
 {STORYBOARD_JSON_SCHEMA}
