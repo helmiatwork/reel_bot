@@ -517,7 +517,7 @@ def get_clips(youtube_url: str) -> dict:
 
     Returns:
         {"youtube_url": ..., "source_id": ..., "clips": [...], "count": N}
-        or {"error": "no clips found — run decompose on this URL first"}
+        or {"error": "clips not ready yet — the pipeline is still preparing them; wait and call get_clips again"}
     """
     if not _valid_url(youtube_url):
         return {"error": "invalid youtube_url"}
@@ -536,7 +536,7 @@ def get_clips(youtube_url: str) -> dict:
             cur.execute("SELECT id FROM sources WHERE youtube_url=%s", (youtube_url,))
             source_row = cur.fetchone()
             if not source_row:
-                return {"error": "no clips found — run decompose on this URL first"}
+                return {"error": "clips not ready yet — the pipeline is still preparing them; wait and call get_clips again"}
 
             source_id = source_row[0]
 
