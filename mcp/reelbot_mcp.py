@@ -302,6 +302,8 @@ def get_segments(source_id: int) -> dict:
 @server.tool()
 def generate_shot_prompts(script_text: str, style_note: str = "") -> dict:
     """
+    Not part of the Gemini storyboard flow (get_clips + save_storyboard). Only use if explicitly asked.
+
     Generate Gemini image→video prompts from a script.
 
     Reads shotprompt/SOUL.md, builds a prompt, calls Claude bridge.
@@ -341,6 +343,8 @@ def generate_shot_prompts(script_text: str, style_note: str = "") -> dict:
 @server.tool()
 def make_brief(analysis_json: str, target: str = "") -> dict:
     """
+    Not part of the Gemini storyboard flow (get_clips + save_storyboard). Only use if explicitly asked.
+
     Generate a Production Brief from video analysis.
 
     Reads director/SOUL.md, builds a prompt with analysis + target, calls Claude bridge.
@@ -379,6 +383,8 @@ def make_brief(analysis_json: str, target: str = "") -> dict:
 @server.tool()
 def analyze(youtube_url: str, intent: str = "") -> dict:
     """
+    DO NOT USE for the Gemini storyboard flow. This runs the separate CLAUDE vision pipeline (downloads + Claude analysis) and will incur cost and ignore your work. For building a storyboard from decomposed clips, use get_clips + save_storyboard instead.
+
     Run a fresh Claude-vision analysis of a YouTube video and save it to the corpus DB.
 
     POSTs to the running pipeline-api /analyze/claude endpoint. Synchronous call;
@@ -426,6 +432,8 @@ def analyze(youtube_url: str, intent: str = "") -> dict:
 @server.tool()
 def save_storyboard(youtube_url: str, storyboard_json: str) -> dict:
     """
+    STORYBOARD FLOW STEP 2 (final). Call this after analyzing the clips to persist the per-scene storyboard JSON to the database. This is the ONLY correct way to save a Gemini-produced storyboard.
+
     Save a storyboard (scene-by-scene breakdown) to the sources table.
 
     Args:
@@ -498,6 +506,8 @@ def save_storyboard(youtube_url: str, storyboard_json: str) -> dict:
 @server.tool()
 def get_clips(youtube_url: str) -> dict:
     """
+    STORYBOARD FLOW STEP 1. Use this to fetch the local video clip files (seg_NN.mp4) for a decomposed video. This is the FIRST tool to call when building a Gemini storyboard.
+
     Get decomposed video clips (segments) for a source by youtube_url.
 
     Convenience wrapper: resolves source_id from youtube_url, then returns all video_segments.
