@@ -155,24 +155,36 @@
     }
   })
 
-  async function reanalyze() {
+  // Per-tab primary action: full re-analyze / redo frames+analysis / regenerate prompt only.
+  let tabAction = $derived(
+    activeTab === 'frames'
+      ? { label: 'Re-generate frame', busy: '⏳ Frame…', stages: 'frames_only' }
+      : activeTab === 'prompt'
+      ? { label: 'Re-generate prompt', busy: '⏳ Prompt…', stages: 'prompt_only' }
+      : { label: 'Re-analyze', busy: '⏳ Analyzing…', stages: 'full' }
+  )
+
+  async function runStage(stages) {
     const s = d?.data
     if (!s?.youtube_url) return
     reanalyzeLoading = true
     reanalyzeError = ''
     reanalyzeDone = false
-    // Use the ASYNC endpoint so the job is tracked, shows in the Proses popup,
-    // and fires a toast when done. Keep the source's output format so the
-    // storyboard regenerates the same kind (prompt_json/prompt_video).
-    const fmt = s.gen_prompt_format || analysis?.gen_prompt_format || 'none'
-    const r = await api.analyzeClaudeAsync(s.youtube_url, { force: true, output_format: fmt })
+    // Async endpoint → tracked in Proses popup + toast on done. Keep the source's
+    // output format so the prompt regenerates the same kind; prompt_only needs a real one.
+    let fmt = s.gen_prompt_format || analysis?.gen_prompt_format || 'none'
+    if (stages === 'prompt_only' && fmt === 'none') fmt = 'prompt_json'
+    const r = await api.analyzeClaudeAsync(s.youtube_url, { force: true, output_format: fmt, stages })
     reanalyzeLoading = false
     if (!r || r.error || r.detail || !r.run_id) {
-      reanalyzeError = r?.error || r?.detail || 'Re-analyze gagal.'
+      reanalyzeError = r?.error || r?.detail || 'Gagal.'
       return
     }
     reanalyzeDone = true
   }
+
+  // Clear the action status line when switching tabs
+  $effect(() => { activeTab; reanalyzeDone = false; reanalyzeError = '' })
 
   async function startDecompose() {
     const s = d?.data
@@ -320,10 +332,10 @@
               <button
                 class="reana-btn"
                 disabled={reanalyzeLoading}
-                onclick={reanalyze}
-                aria-label="Re-analyze this video"
+                onclick={() => runStage(tabAction.stages)}
+                aria-label={tabAction.label}
               >
-                {reanalyzeLoading ? '⏳ Analyzing…' : 'Re-analyze'}
+                {reanalyzeLoading ? tabAction.busy : tabAction.label}
               </button>
               {#if reanalyzeDone}<span class="reana-ok">✓ masuk antrean — lihat Proses</span>{/if}
               {#if reanalyzeError}<span class="reana-err">{reanalyzeError}</span>{/if}

@@ -5255,6 +5255,9 @@ class AnalyzeClaudeRequest(BaseModel):
     model: Optional[str] = None
     force: bool = False
     output_format: str = "none"
+    # "full" = download→frames→analysis→prompt; "frames_only" = redo frames+analysis,
+    # skip prompt; "prompt_only" = regenerate gen_prompt from the stored analysis (no download).
+    stages: str = "full"
 
 
 def _compute_aspect_ratio(video_path: str) -> str:
@@ -5792,6 +5795,52 @@ def _generate_gen_prompt(frame_descriptions: str, subdir: str, output_format: st
         return (None, None)
 
 
+def _regen_prompt_only(req: "AnalyzeClaudeRequest", output_format: str, progress_id: Optional[str] = None, start_time: Optional[float] = None) -> dict:
+    """Regenerate ONLY gen_prompt from the stored analysis detail — no download, no frames.
+    Backs the 'Re-generate prompt' action on the Generated Prompt tab."""
+    if output_format == "none":
+        raise HTTPException(status_code=400, detail="Pilih output format (prompt_video / prompt_json) untuk regenerate prompt")
+    video_id = _extract_video_id_from_youtube_url(req.youtube_url)
+    detail = ""
+    summary = ""
+    conn = _db_conn()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT content_detail, content_summary FROM video_analysis WHERE youtube_url=%s ORDER BY id DESC LIMIT 1",
+                    (req.youtube_url,),
+                )
+                row = cur.fetchone()
+                if row:
+                    detail = row[0] or ""
+                    summary = row[1] or ""
+        finally:
+            conn.close()
+    frame_context = detail or summary
+    if not frame_context:
+        raise HTTPException(status_code=404, detail="Belum ada analisa tersimpan — jalankan Re-analyze dulu")
+    if progress_id:
+        _log_run(progress_id, f"📝 Generate prompt ({ANALYZE_SYNTHESIS_MODEL})…", start_time)
+    gen_prompt, gen_prompt_format = _generate_gen_prompt(frame_context, video_id, output_format, ANALYZE_SYNTHESIS_MODEL)
+    if not gen_prompt:
+        raise HTTPException(status_code=502, detail="Generate prompt gagal")
+    conn = _db_conn()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE sources SET gen_prompt=%s, gen_prompt_format=%s WHERE youtube_url=%s",
+                    (gen_prompt, gen_prompt_format, req.youtube_url),
+                )
+            conn.commit()
+        finally:
+            conn.close()
+    if progress_id:
+        _log_run(progress_id, "✓ Prompt dibuat", start_time)
+    return {"youtube_url": req.youtube_url, "gen_prompt": gen_prompt, "gen_prompt_format": gen_prompt_format, "stages": "prompt_only"}
+
+
 def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = None, start_time: Optional[float] = None) -> dict:
     """
     Core analyze logic, reusable by both sync and async endpoints.
@@ -5818,6 +5867,10 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
 
     # Sanitize intent — only use as data, never as instructions
     safe_intent = re.sub(r"[^\w\s\-.,!?()]", "", intent)[:500] if intent else "tidak ada instruksi khusus"
+
+    # prompt_only: skip the whole pipeline, just regenerate gen_prompt from stored analysis
+    if req.stages == "prompt_only":
+        return _regen_prompt_only(req, output_format, progress_id, start_time)
 
     # Dedupe guard: if not force, check for cached analysis on this URL
     if not req.force:
@@ -6034,7 +6087,8 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
     # Step 4b: Generate gen_prompt (only for prompt_video; prompt_json already has gen_prompt_storyboard)
     gen_prompt = None
     gen_prompt_format = None
-    if output_format == "prompt_json":
+    # frames_only redoes frames+analysis but leaves the existing gen_prompt untouched
+    if req.stages != "frames_only" and output_format == "prompt_json":
         # Extract FULL gen_prompt_storyboard from parsed result (with aspect_ratio, music_mood, etc.)
         storyboard = parsed.get("gen_prompt_storyboard")
         if storyboard and "scene_order" in storyboard:
@@ -6046,7 +6100,7 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
                     _log_run(progress_id, "✓ Prompt dibuat (dari sintesis)", start_time)
             except Exception:
                 pass
-    elif output_format == "prompt_video":
+    elif req.stages != "frames_only" and output_format == "prompt_video":
         # Generate prompt_video from frame descriptions
         if progress_id:
             _log_run(progress_id, "📝 Generate prompt (video)…", start_time)
@@ -6184,6 +6238,8 @@ def analyze_claude_async(req: AnalyzeClaudeRequest, bg: BackgroundTasks):
     output_format = (req.output_format or "none").lower()
     if output_format not in ("none", "prompt_video", "prompt_json"):
         raise HTTPException(status_code=400, detail=f"Invalid output_format '{output_format}'. Must be one of: none, prompt_video, prompt_json")
+    if req.stages not in ("full", "frames_only", "prompt_only"):
+        raise HTTPException(status_code=400, detail=f"Invalid stages '{req.stages}'. Must be one of: full, frames_only, prompt_only")
 
     # Already in the library? Don't re-analyze — tell the client so it can open the detail popup.
     if not req.force:
