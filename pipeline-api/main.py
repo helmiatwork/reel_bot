@@ -158,9 +158,18 @@ def _validate_source_url(url: str) -> str:
 
     return url
 
-DASHBOARD_DIR = Path(os.getenv("DASHBOARD_DIR", str(_REPO_ROOT / "dashboard-svelte" / "dist")))
-if not DASHBOARD_DIR.exists():
-    DASHBOARD_DIR = Path("/app/dashboard")
+_dash_env = os.getenv("DASHBOARD_DIR", "")
+if _dash_env:
+    DASHBOARD_DIR = Path(_dash_env)
+else:
+    # No env override: pick the first build dir that exists. analytics-dashboard/ is the
+    # tracked native build, dashboard-svelte/dist the Vite dev output, /app/dashboard the
+    # Docker path. This makes `uvicorn main:app` serve the UI natively with no env var.
+    DASHBOARD_DIR = _REPO_ROOT / "dashboard-svelte" / "dist"
+    for _cand in (_REPO_ROOT / "analytics-dashboard", _REPO_ROOT / "dashboard-svelte" / "dist", Path("/app/dashboard")):
+        if _cand.exists():
+            DASHBOARD_DIR = _cand
+            break
 DASHBOARD = DASHBOARD_DIR / "index.html"
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 

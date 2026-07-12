@@ -16,7 +16,7 @@ Run from the repo root (`~/Documents/repo/helmi/reelbot`). `.env` must exist (se
 | postgres | 5432 | `pg_ctl -D ./data/pg -o "-p 5432" -w -l ./data/pg/server.log start` | `psql -h localhost -U admin -l` |
 | cliproxy | 8317 | `./data/bin/cli-proxy-api -config ./cliproxy/config.yaml` | `curl localhost:8317/v1/models` |
 | openclaw | 18789 | `openclaw gateway --port 18789` (Node — brew) | log: `starting provider (@…)` |
-| pipeline-api | 8000 | `cd pipeline-api && ./.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000` | `curl localhost:8000/health` |
+| pipeline-api | 8000 | `sh scripts/start-pipeline-api.sh` (loads `.env`, serves `analytics-dashboard/` UI at `/`) | `curl localhost:8000/health` |
 | arcreel | 1241 | `cd data/arcreel && ./.venv/bin/uvicorn server.app:app --host 0.0.0.0 --port 1241` | `curl localhost:1241` |
 | n8n | 5678 | run under **Node 22** with DB env (see §3) | `curl localhost:5678/healthz` |
 | claude bridge | 9999 | `CLAUDE_BIN=/opt/homebrew/bin/claude sh scripts/start-bridge.sh` | `curl localhost:9999` |
