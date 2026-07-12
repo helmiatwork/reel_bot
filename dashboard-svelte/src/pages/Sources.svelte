@@ -15,6 +15,13 @@
   let niche = $state('')
   let modalOpen = $state(false)
   let jobsOpen = $state(false)
+  let selectedJobRunId = $state(null)
+
+  function handleAnalyzeStarted(run_id) {
+    selectedJobRunId = run_id
+    modalOpen = false
+    jobsOpen = true
+  }
 
   const PLATFORM_ICON = {
     youtube: 'i-yt', tiktok: 'i-tt', instagram: 'i-ig', xiaohongshu: 'i-xhs'
@@ -142,8 +149,8 @@
 
 <Pagination {offset} {limit} {total} onprev={prev} onnext={next} />
 
-<SourceUploadModal bind:isOpen={modalOpen} onSuccess={() => { modalOpen = false; load() }} />
-<JobsPopup bind:isOpen={jobsOpen} />
+<SourceUploadModal bind:isOpen={modalOpen} onSuccess={() => { modalOpen = false; load() }} onAnalyzeStarted={handleAnalyzeStarted} />
+<JobsPopup bind:isOpen={jobsOpen} bind:initialRunId={selectedJobRunId} />
 
 <style>
   .top-row {
