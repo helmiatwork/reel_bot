@@ -312,7 +312,7 @@
               <span class="field-label">Tempel hasil Gemini (JSON)</span>
               <textarea
                 class="inp inp-mono"
-                placeholder='Paste hasil JSON dari Gemini, contoh: {"aspect_ratio": "9:16", "scene_order": [...]}'
+                placeholder="Paste hasil JSON dari Gemini di sini"
                 bind:value={geminiPaste}
                 disabled={savingGemini}
                 rows="8"
@@ -450,6 +450,7 @@
             </select>
           </label>
         </div>
+      {/if}
       {/if}
     </div>
 
