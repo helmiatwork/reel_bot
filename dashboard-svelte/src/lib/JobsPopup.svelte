@@ -17,7 +17,6 @@
   let pollListInterval = null
   let pollDetailInterval = null
   let panelEl = $state(null)
-  let consoleEl = $state(null)
   let detailLoading = $state(false)
 
   $effect(() => {
@@ -94,18 +93,9 @@
       if (data) {
         selectedJobDetail = data
         detailLoading = false
-        autoScrollConsole()
       }
     } catch (e) {
       console.error('[pollDetail] error:', e)
-    }
-  }
-
-  function autoScrollConsole() {
-    if (!consoleEl) return
-    const atBottom = consoleEl.scrollTop + consoleEl.clientHeight >= consoleEl.scrollHeight - 20
-    if (atBottom) {
-      setTimeout(() => { consoleEl.scrollTop = consoleEl.scrollHeight }, 0)
     }
   }
 
@@ -224,15 +214,6 @@
           <!-- Analyze stepper (all jobs in this popup are analyze runs) -->
           {#if selectedJobDetail?.log}
             <AnalyzeStepper logs={selectedJobDetail.log} />
-          {/if}
-
-          <!-- Live log console -->
-          {#if selectedJobDetail?.log}
-            <div class="console-section">
-              <div class="console-title">Log</div>
-              <pre class="log-console" bind:this={consoleEl}>{#each selectedJobDetail.log as entry, i (i)}[{entry.t}s] {entry.msg}
-{/each}</pre>
-            </div>
           {/if}
 
           <!-- Result display (if done) -->
@@ -520,36 +501,6 @@
 
   .detail-status {
     margin-left: auto;
-  }
-
-  .console-section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .console-title {
-    font-weight: 600;
-    font-size: 0.875rem;
-    color: var(--fg);
-  }
-
-  .log-console {
-    display: block;
-    width: 100%;
-    height: 200px;
-    overflow-y: auto;
-    background: rgba(0, 0, 0, 0.8);
-    color: #0f0;
-    font-family: 'Monaco', 'Courier New', monospace;
-    font-size: 0.75rem;
-    line-height: 1.4;
-    padding: 0.75rem;
-    border-radius: 4px;
-    border: 1px solid var(--border);
-    margin: 0;
-    white-space: pre-wrap;
-    word-wrap: break-word;
   }
 
   .result-section {
