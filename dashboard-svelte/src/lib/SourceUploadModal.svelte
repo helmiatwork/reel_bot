@@ -4,7 +4,7 @@
   import { api } from './api.js'
 
   // Props (runes mode — isOpen is bound by parent)
-  let { isOpen = $bindable(false), onSuccess = () => {}, onAnalyzeStarted = (_runId, _label) => {} } = $props()
+  let { isOpen = $bindable(false), onSuccess = () => {}, onAnalyzeStarted = (_runId, _label) => {}, onAlreadyExists = (_source) => {} } = $props()
 
   // Modal state
   let activeTab = $state('url')
@@ -25,6 +25,9 @@
   // Output format (shared across both tabs)
   let outputFormat = $state('none')
 
+  // Set when the submitted URL is already in the library
+  let existsSource = $state(null)
+
   // Reset all form state whenever modal opens — fixes stale stepper bug
   // (parent sets isOpen directly, bypassing the old openModal() call)
   $effect(() => {
@@ -38,8 +41,14 @@
       error = null
       loading = false
       activeTab = 'url'
+      existsSource = null
     }
   })
+
+  function openExisting() {
+    onAlreadyExists(existsSource)
+    closeModal()
+  }
 
   function closeModal() {
     isOpen = false
@@ -76,8 +85,14 @@
     }
     loading = true
     error = null
+    existsSource = null
     try {
       const result = await api.analyzeClaudeAsync(urlInput.trim(), { intent: urlIntent, output_format: outputFormat })
+      if (result?.already_exists) {
+        existsSource = result.source
+        loading = false
+        return
+      }
       if (!result?.run_id) {
         error = result?.message || 'Gagal memulai analisis'
         loading = false
@@ -180,6 +195,14 @@
       {#if error}
         <div class="error-msg" transition:fade={{ duration: 150 }}>
           {error}
+        </div>
+      {/if}
+
+      {#if existsSource}
+        <div class="exists-msg" transition:fade={{ duration: 150 }}>
+          <div class="exists-head">⚠ Source ini sudah ada di library</div>
+          <div class="exists-url">{existsSource.youtube_url}</div>
+          <button class="btn-primary exists-btn" onclick={openExisting}>Buka detail</button>
         </div>
       {/if}
 
@@ -404,6 +427,20 @@
     font-size: 0.875rem;
     margin-bottom: 1rem;
   }
+
+  .exists-msg {
+    padding: 0.75rem 1rem;
+    background: rgba(64, 81, 137, 0.1);
+    border: 1px solid rgba(64, 81, 137, 0.25);
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .exists-head { font-weight: 600; font-size: 0.875rem; color: var(--accent); }
+  .exists-url { font-size: 0.75rem; font-family: 'Monaco', monospace; word-break: break-all; opacity: 0.8; }
+  .exists-btn { align-self: flex-start; }
 
   .field {
     display: flex;
