@@ -1,11 +1,14 @@
 <script>
   import { fade, scale } from 'svelte/transition'
   import { cubicOut } from 'svelte/easing'
+  import { untrack } from 'svelte'
   import { api, isActiveRunning } from './api.js'
   import { onDestroy } from 'svelte'
+  import AnalyzeStepper from './AnalyzeStepper.svelte'
 
   // Props (runes mode — isOpen is bound by parent)
-  let { isOpen = $bindable(false) } = $props()
+  // initialRunId: when set before open, auto-focuses the detail view for that run
+  let { isOpen = $bindable(false), initialRunId = $bindable(null) } = $props()
 
   // Modal state
   let jobs = $state([])
@@ -19,7 +22,14 @@
 
   $effect(() => {
     if (isOpen) {
-      openModal()
+      // Read initialRunId without tracking it — we only want this effect to
+      // re-run on isOpen changes, not on every initialRunId change.
+      const autoSelect = untrack(() => {
+        const r = initialRunId
+        initialRunId = null  // clear after use so next manual open is clean
+        return r
+      })
+      openModal(autoSelect)
     } else {
       closeModal()
     }
@@ -31,12 +41,17 @@
     if (pollDetailInterval) clearInterval(pollDetailInterval)
   })
 
-  function openModal() {
-    selectedRunId = null
+  function openModal(autoSelect = null) {
+    selectedRunId = autoSelect
     selectedJobDetail = null
     jobs = []
     pollList()
     pollListInterval = setInterval(pollList, 2000)
+    if (autoSelect) {
+      detailLoading = true
+      pollJobDetail()
+      pollDetailInterval = setInterval(pollJobDetail, 1200)
+    }
   }
 
   function closeModal() {
@@ -205,6 +220,11 @@
               </span>
             </div>
           </div>
+
+          <!-- Analyze stepper (all jobs in this popup are analyze runs) -->
+          {#if selectedJobDetail?.log}
+            <AnalyzeStepper logs={selectedJobDetail.log} />
+          {/if}
 
           <!-- Live log console -->
           {#if selectedJobDetail?.log}

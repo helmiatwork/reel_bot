@@ -4,7 +4,7 @@
   import { api } from './api.js'
 
   // Props (runes mode — isOpen is bound by parent)
-  let { isOpen = $bindable(false), onSuccess = () => {} } = $props()
+  let { isOpen = $bindable(false), onSuccess = () => {}, onAnalyzeStarted = (_runId) => {} } = $props()
 
   // Modal state
   let activeTab = $state('url')
@@ -25,68 +25,25 @@
   // Output format (shared across both tabs)
   let outputFormat = $state('none')
 
-  // Async progress state
-  let runId = $state(null)
-  let logs = $state([])
-  let pollInterval = $state(null)
-  let consoleEl = $state(null)
-
-  function openModal() {
-    triggerEl = document.activeElement
-    urlInput = ''
-    urlIntent = ''
-    selectedFile = null
-    fileIntent = ''
-    outputFormat = 'none'
-    error = null
-    loading = false
-    runId = null
-    logs = []
-    activeTab = 'url'
-    isOpen = true
-    if (pollInterval) clearInterval(pollInterval)
-  }
+  // Reset all form state whenever modal opens — fixes stale stepper bug
+  // (parent sets isOpen directly, bypassing the old openModal() call)
+  $effect(() => {
+    if (isOpen) {
+      triggerEl = document.activeElement
+      urlInput = ''
+      urlIntent = ''
+      selectedFile = null
+      fileIntent = ''
+      outputFormat = 'none'
+      error = null
+      loading = false
+      activeTab = 'url'
+    }
+  })
 
   function closeModal() {
-    if (pollInterval) clearInterval(pollInterval)
     isOpen = false
     setTimeout(() => triggerEl?.focus(), 50)
-  }
-
-  function autoScrollConsole() {
-    if (!consoleEl) return
-    // Only auto-scroll if the user is already pinned near the bottom — don't yank
-    // them back down if they scrolled up to read an earlier log line.
-    const atBottom = consoleEl.scrollTop + consoleEl.clientHeight >= consoleEl.scrollHeight - 20
-    if (atBottom) {
-      setTimeout(() => { consoleEl.scrollTop = consoleEl.scrollHeight }, 0)
-    }
-  }
-
-  async function pollStatus(id) {
-    try {
-      const status = await api.analyzeClaudeStatus(id)
-      if (!status) return
-      logs = status.log || []
-      autoScrollConsole()
-      if (status.status === 'done') {
-        if (pollInterval) clearInterval(pollInterval)
-        loading = false
-        closeModal()
-        onSuccess()
-      } else if (status.status === 'error') {
-        if (pollInterval) clearInterval(pollInterval)
-        error = `Error: ${status.error || 'Unknown error'}`
-        loading = false
-      }
-    } catch (e) {
-      console.error('[poll] error:', e)
-      // Network/backend failure mid-poll: stop polling and surface it instead of
-      // spinning forever on a frozen console.
-      if (pollInterval) clearInterval(pollInterval)
-      error = 'Koneksi terputus. Coba tutup dan buka kembali.'
-      loading = false
-    }
   }
 
   function onBackdropClick(e) {
@@ -121,9 +78,13 @@
     error = null
     try {
       const result = await api.analyzeClaudeAsync(urlInput.trim(), { intent: urlIntent, output_format: outputFormat })
-      runId = result.run_id
-      logs = []
-      pollInterval = setInterval(() => pollStatus(runId), 1200)
+      if (!result?.run_id) {
+        error = result?.message || 'Gagal memulai analisis'
+        loading = false
+        return
+      }
+      onAnalyzeStarted(result.run_id)
+      closeModal()
     } catch (e) {
       error = `Error: ${e.message}`
       loading = false
@@ -139,9 +100,13 @@
     error = null
     try {
       const result = await api.uploadSourceAsync(selectedFile, { intent: fileIntent, output_format: outputFormat })
-      runId = result.run_id
-      logs = []
-      pollInterval = setInterval(() => pollStatus(runId), 1200)
+      if (!result?.run_id) {
+        error = result?.message || 'Gagal memulai analisis'
+        loading = false
+        return
+      }
+      onAnalyzeStarted(result.run_id)
+      closeModal()
     } catch (e) {
       error = `Error: ${e.message}`
       loading = false
@@ -306,38 +271,28 @@
       {/if}
     </div>
 
-    <!-- Live log console (shown during async operations) — below the fields -->
-    {#if runId && logs.length > 0}
-      <div class="console-container" transition:fade={{ duration: 150 }}>
-        <pre class="log-console" bind:this={consoleEl}>{#each logs as entry, i (i)}[{entry.t}s] {entry.msg}
-{/each}</pre>
-      </div>
-    {/if}
-
     <!-- Footer -->
     <div class="m-footer">
       <span class="flow-label">Input → Analyze{outputFormat === 'prompt_video' ? ' → Prompt video' : outputFormat === 'prompt_json' ? ' → Prompt JSON' : ''}</span>
       <button
         class="btn-cancel"
         onclick={closeModal}
-        disabled={runId && loading}
+        disabled={loading}
       >
-        {runId && loading ? 'Tutup' : 'Batal'}
+        Batal
       </button>
-      {#if !runId}
-        <button
-          class="btn-primary"
-          onclick={activeTab === 'url' ? submitUrl : submitFile}
-          disabled={loading}
-        >
-          {#if loading}
-            <span class="spinner"></span>
-            Menganalisis...
-          {:else}
-            Analisis
-          {/if}
-        </button>
-      {/if}
+      <button
+        class="btn-primary"
+        onclick={activeTab === 'url' ? submitUrl : submitFile}
+        disabled={loading}
+      >
+        {#if loading}
+          <span class="spinner"></span>
+          Menganalisis...
+        {:else}
+          Analisis
+        {/if}
+      </button>
     </div>
   </div>
 {/if}
@@ -578,27 +533,5 @@
 
   @keyframes spin {
     to { transform: rotate(360deg); }
-  }
-
-  .console-container {
-    margin-bottom: 1rem;
-  }
-
-  .log-console {
-    display: block;
-    width: 100%;
-    height: 180px;
-    overflow-y: auto;
-    background: rgba(0, 0, 0, 0.8);
-    color: #0f0;
-    font-family: 'Monaco', 'Courier New', monospace;
-    font-size: 0.75rem;
-    line-height: 1.4;
-    padding: 0.75rem;
-    border-radius: 4px;
-    border: 1px solid var(--border);
-    margin: 0;
-    white-space: pre-wrap;
-    word-break: break-word;
   }
 </style>
