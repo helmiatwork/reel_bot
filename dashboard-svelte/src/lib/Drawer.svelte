@@ -83,11 +83,61 @@
 
   // tab state
   let activeTab = $state('analisa')
+  // Live status that overrides the row's status once polling detects a change.
+  let liveStatus = $state(null)
+  let curStatus = $derived(liveStatus ?? d?.data?.status)
   // While the source is still being prepared/analyzed, show a loading panel
   // instead of the (empty) tabs.
   let isProcessing = $derived(
-    d?.data?.status === 'processing' || d?.data?.status === 'working' || d?.data?.status === 'running'
+    curStatus === 'processing' || curStatus === 'working' || curStatus === 'running'
   )
+
+  // Live processing checklist (mirrors the Add-Source popup stepper)
+  let procStage = $state('saving_meta')
+  let procPoll = null
+  const PROC_STEPS = [
+    { key: 'saving_meta', label: 'Menyimpan atribut video' },
+    { key: 'downloading', label: 'Mengunduh video' },
+    { key: 'splitting', label: 'Memotong klip per menit' },
+    { key: 'saving', label: 'Menyimpan atribut klip ke database' },
+    { key: 'working', label: 'Analisa Gemini (Antigravity)' },
+  ]
+  const PROC_STAGE_ORDER = {
+    saving_meta: 0, downloading: 1, detecting: 2, grouping: 2, splitting: 2,
+    finding: 3, saving: 3, processing: 4, working: 4, done: 5, analyzed: 5,
+  }
+  function procStepStatus(stepKey) {
+    const cur = PROC_STAGE_ORDER[procStage] ?? 0
+    const idx = PROC_STEPS.findIndex(s => s.key === stepKey)
+    if (cur > idx) return 'done'
+    if (cur === idx) return 'active'
+    return 'pending'
+  }
+  function stopProcPoll() { if (procPoll) { clearInterval(procPoll); procPoll = null } }
+  async function pollProcessing(youtubeUrl, sourceId) {
+    // 1) if an active decompose run exists, use its granular stage
+    let stage = null
+    try {
+      const runs = await api.analyzeRuns(20)
+      const run = (runs || []).find(r => r.kind === 'decompose' && r.url === youtubeUrl && r.status !== 'done' && r.status !== 'error')
+      if (run?.current_stage) stage = run.current_stage
+    } catch {}
+    // 2) otherwise fall back to the source status (processing/working/analyzed)
+    try {
+      const st = await api.storyboardStatus(youtubeUrl)
+      if (st?.ready) {
+        procStage = 'done'
+        liveStatus = 'analyzed'
+        stopProcPoll()
+        // reload full analysis now that it's ready
+        const anaRes = await api.sourceAnalysis(sourceId)
+        analysis = anaRes ?? {}
+        return
+      }
+      if (!stage) stage = st?.status || 'processing'
+    } catch {}
+    procStage = stage || 'processing'
+  }
   // Verify view state
   let showRawJson = $state(false)
   // Per-scene JSON popup (verify view)
@@ -183,6 +233,9 @@
 
   drawer.subscribe(async (v) => {
     stopPoll()
+    stopProcPoll()
+    liveStatus = null
+    procStage = 'saving_meta'
     decomposeRunning = false
     decomposeStage = ''
     decomposeError = ''
@@ -210,6 +263,12 @@
         // Fetch real analysis data from backend
         const anaRes = await api.sourceAnalysis(v.data.id)
         analysis = anaRes ?? {}
+      }
+      // Live checklist while the source is still processing/working
+      const st = v.data?.status
+      if (st === 'processing' || st === 'working' || st === 'running') {
+        pollProcessing(v.data.youtube_url, v.data.id)
+        procPoll = setInterval(() => pollProcessing(v.data.youtube_url, v.data.id), 3000)
       }
     }
   })
@@ -443,13 +502,19 @@
       <!-- Processing: analysis not ready yet — show loading instead of tabs -->
       {#if isProcessing}
         <div class="processing-panel">
-          <span class="spin-lg"></span>
           <div class="processing-title">Sedang diproses…</div>
-          <div class="processing-sub">
-            {d.data?.status === 'working'
-              ? 'Gemini (Antigravity) sedang menganalisis klip.'
-              : 'Menyiapkan klip & metadata. Hasil analisa akan muncul di sini otomatis.'}
+          <div class="proc-steps">
+            {#each PROC_STEPS as step}
+              {@const ps = procStepStatus(step.key)}
+              <div class="proc-step {ps}">
+                <span class="proc-icon">
+                  {#if ps === 'done'}✓{:else if ps === 'active'}<span class="spin-sm"></span>{:else}○{/if}
+                </span>
+                <span class="proc-label">{step.label}</span>
+              </div>
+            {/each}
           </div>
+          <div class="processing-sub">Hasil analisa akan muncul di sini otomatis saat selesai.</div>
         </div>
       {/if}
 
@@ -779,15 +844,25 @@
   .chip-blue  { background: rgba(37,99,235,.12);    color: #2563eb; }
 
   .processing-panel {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 10px; padding: 48px 20px; text-align: center;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 14px; padding: 36px 20px; text-align: center;
   }
   .processing-title { font-size: 15px; font-weight: 600; }
-  .processing-sub { font-size: 13px; color: var(--mut); max-width: 320px; }
-  .spin-lg {
-    width: 34px; height: 34px; border: 3px solid rgba(37,99,235,.2);
-    border-top-color: #2563eb; border-radius: 50%;
-    animation: spin .8s linear infinite; margin-bottom: 4px;
+  .processing-sub { font-size: 12px; color: var(--mut); max-width: 340px; }
+  .proc-steps {
+    display: flex; flex-direction: column; gap: 10px; text-align: left;
+    padding: 16px 18px; background: var(--soft); border: 1px solid var(--line);
+    border-radius: 8px; min-width: 280px;
+  }
+  .proc-step { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .proc-icon { width: 18px; height: 18px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+  .proc-step.pending { color: var(--mut); }
+  .proc-step.active { color: var(--txt); font-weight: 600; }
+  .proc-step.done { color: #16a34a; }
+  .proc-step.done .proc-icon { color: #16a34a; font-weight: 700; }
+  .spin-sm {
+    width: 14px; height: 14px; border: 2px solid rgba(37,99,235,.25);
+    border-top-color: #2563eb; border-radius: 50%; animation: spin .8s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   .chip-mut   { background: rgba(148,163,184,.16); color: var(--mut);   }
