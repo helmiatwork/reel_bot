@@ -69,6 +69,19 @@
     return 'pending'
   }
 
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+  // Walk the prep checklist forward from wherever it stopped up to 'done', dwelling on
+  // each step so the ✓s animate in sequence instead of snapping (prep is near-instant).
+  async function animatePrepToDone() {
+    const order = ['saving_meta', 'downloading', 'splitting', 'saving', 'done']
+    let i = order.indexOf(prepStage)
+    if (i < 0) i = 0
+    for (; i < order.length; i++) {
+      prepStage = order[i]
+      await sleep(650)
+    }
+  }
+
   // Set when the submitted URL is already in the library
   let existsSource = $state(null)
 
@@ -250,6 +263,11 @@
         storyboardPhase = ''
         return
       }
+
+      // Stream-copy makes prep near-instant, so the checklist would snap straight to
+      // the brief. Walk the remaining steps forward with a small dwell so each ✓ ticks
+      // over smoothly before the prompt appears.
+      await animatePrepToDone()
 
       // Analysis runs on Claude automatically (fast) — Gemini only does the storyboard.
       // Fire-and-forget: output_format 'none' = frames+analysis, never touches gen_prompt.
