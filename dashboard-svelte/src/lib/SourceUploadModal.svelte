@@ -34,6 +34,11 @@
   let geminiPaste = $state('')
   let savingGemini = $state(false)
   let geminiError = $state(null)
+  let storyboardPhase = $state('')  // 'clips' | 'brief' | 'analyzing' | 'ready'
+  let storyboardReady = $state(false)
+  let storyboardScenes = $state(0)
+  let pollStoryboardInterval = null
+  let pollStoryboardCount = $state(0)
 
   // Set when the submitted URL is already in the library
   let existsSource = $state(null)
@@ -152,27 +157,44 @@
     }
   }
 
+  function stopStoryboardPolling() {
+    if (pollStoryboardInterval) {
+      clearInterval(pollStoryboardInterval)
+      pollStoryboardInterval = null
+    }
+    storyboardPhase = ''
+    storyboardReady = false
+    pollStoryboardCount = 0
+  }
+
   async function fetchGeminiBrief() {
     if (!urlInput.trim()) {
-      error = 'URL tidak boleh kosong'
+      geminiError = 'URL tidak boleh kosong'
       return
     }
     loading = true
     geminiError = null
     geminiBrief = ''
+    storyboardPhase = ''
+    storyboardReady = false
+    storyboardScenes = 0
+    stopStoryboardPolling()
+
     try {
-      // Step 1: Ensure clips are prepared (no-AI scene-split only)
-      const decomposeResult = await api.decomposeNoAI(urlInput.trim())
+      // Phase A: Prepare clips with per-minute interval (fixed 60s windows)
+      storyboardPhase = 'clips'
+      const decomposeResult = await api.decomposePerMinute(urlInput.trim())
       if (!decomposeResult?.run_id) {
         geminiError = decomposeResult?.error || 'Gagal memulai persiapan klip'
         loading = false
+        storyboardPhase = ''
         return
       }
 
-      // Step 2: Poll for decompose completion
+      // Poll for decompose completion
       let done = false
       let pollCount = 0
-      const maxPolls = 120 // 2 minutes with 1s intervals
+      const maxPolls = 120
       while (!done && pollCount < maxPolls) {
         await new Promise(resolve => setTimeout(resolve, 1000))
         const statusResult = await api.decomposeStatus(decomposeResult.run_id)
@@ -181,6 +203,7 @@
         } else if (statusResult?.status === 'error') {
           geminiError = statusResult?.error || 'Persiapan klip gagal'
           loading = false
+          storyboardPhase = ''
           return
         }
         pollCount++
@@ -189,18 +212,42 @@
       if (!done) {
         geminiError = 'Timeout menunggu persiapan klip'
         loading = false
+        storyboardPhase = ''
         return
       }
 
-      // Step 3: Fetch the Gemini brief
+      // Phase B: Fetch Gemini brief & start monitoring storyboard
+      storyboardPhase = 'brief'
       const result = await api.getGeminiBrief(urlInput.trim())
       if (result?.instruction) {
         geminiBrief = result.instruction
       } else {
         geminiError = result?.error || 'Gagal mengambil instruksi'
+        loading = false
+        storyboardPhase = ''
+        return
       }
+
+      // Phase C: Auto-poll storyboard status (user runs Gemini in Antigravity)
+      storyboardPhase = 'analyzing'
+      pollStoryboardCount = 0
+      pollStoryboardInterval = setInterval(async () => {
+        pollStoryboardCount++
+        const statusResult = await api.storyboardStatus(urlInput.trim())
+        if (statusResult?.ready) {
+          storyboardReady = true
+          storyboardScenes = statusResult.scenes || 0
+          stopStoryboardPolling()
+          storyboardPhase = 'ready'
+        } else if (pollStoryboardCount >= 200) {
+          // Cap at ~200 polls (10 min at 3s interval)
+          stopStoryboardPolling()
+          geminiError = 'Timeout menunggu Gemini analisa'
+        }
+      }, 3000)
     } catch (e) {
       geminiError = `Error: ${e.message}`
+      storyboardPhase = ''
     } finally {
       loading = false
     }
@@ -308,21 +355,26 @@
           </label>
 
           {#if analysisMode === 'gemini_mcp'}
-            <!-- MCP mode: show instruction -->
-            <button
-              class="btn-fetch-brief"
-              onclick={fetchGeminiBrief}
-              disabled={loading || !urlInput.trim()}
-            >
-              {#if loading}
+            <!-- MCP mode: show instruction + polling -->
+            {#if !storyboardPhase}
+              <button
+                class="btn-fetch-brief"
+                onclick={fetchGeminiBrief}
+                disabled={loading || !urlInput.trim()}
+              >
+                {#if loading}
+                  <span class="spinner-sm"></span>
+                  Ambil instruksi…
+                {:else}
+                  Ambil instruksi Gemini
+                {/if}
+              </button>
+            {:else if storyboardPhase === 'clips'}
+              <div class="phase-box" transition:fade={{ duration: 150 }}>
                 <span class="spinner-sm"></span>
-                Ambil instruksi…
-              {:else}
-                Ambil instruksi Gemini
-              {/if}
-            </button>
-
-            {#if geminiBrief}
+                <span>Menyiapkan clip…</span>
+              </div>
+            {:else if storyboardPhase === 'brief' || storyboardPhase === 'analyzing'}
               <div class="brief-box" transition:fade={{ duration: 150 }}>
                 <textarea
                   class="inp inp-brief"
@@ -336,6 +388,24 @@
                   {geminiBriefCopied ? '✓ Tersalin' : 'Salin'}
                 </button>
                 <div class="brief-note">Tempel instruksi ini ke Antigravity untuk analisis Gemini. Gemini akan memanggil reelbot MCP untuk menganalisis klip dan menyimpan hasilnya.</div>
+
+                {#if storyboardPhase === 'analyzing'}
+                  <div class="analyzing-box" transition:fade={{ duration: 150 }}>
+                    <span class="spinner-sm"></span>
+                    <span>Menunggu Gemini analisa…</span>
+                    <button class="btn-cancel" onclick={stopStoryboardPolling}>Batal</button>
+                  </div>
+                {/if}
+              </div>
+            {:else if storyboardPhase === 'ready' && storyboardReady}
+              <div class="ready-box" transition:fade={{ duration: 150 }}>
+                <div class="ready-msg">✅ Storyboard siap: {storyboardScenes} scene</div>
+                <button
+                  class="btn-primary"
+                  onclick={closeModal}
+                >
+                  Tutup
+                </button>
               </div>
             {/if}
           {:else}

@@ -2630,6 +2630,9 @@ class DecomposeRequest(BaseModel):
     # shots of a NEW scene onto the previous one. Prefer group_clips for merging;
     # only raise this if you knowingly accept duration-based gluing.
     min_clip_sec: float = 0.0
+    # Fixed-interval clip mode: when >0, use this interval (seconds) to create
+    # fixed-duration clips instead of scene detection. 0 = disabled (use scenedetect).
+    interval_sec: float = 0.0
 
 
 @app.post("/decompose")
@@ -2666,36 +2669,63 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
             video_path = _download_source_video(req.youtube_url)
             video_id = _extract_video_id_from_youtube_url(req.youtube_url)
 
-            # Detect cuts
-            _save_run(run_id, _update_run(run_id, status="detecting"))
-            shots = _detect_scene_cuts(str(video_path), threshold=req.scene_threshold, min_sec=req.min_clip_sec)
-            if not shots:
-                shots = [{"index": 0, "start_sec": 0.0, "end_sec": 999999.0}]  # fallback: whole video
-
-            # Group shots into distinct source clips (Step 2a). Only for compilations —
-            # when group_clips is False, each detected scene cut becomes its own segment
-            # (raw per-cut split, no AI merging, no vision call). That is what you want
-            # for plainly cutting a single video at every scene change.
+            # Fixed-interval mode: skip scene detection entirely
             clips = []
-            if req.group_clips:
-                _save_run(run_id, _update_run(run_id, status="grouping"))
-                # Frames MUST live under ANALYZE_FRAME_DIR/<subdir> — that is the only
-                # place the claude bridge resolves them. subdir == video_id[:8] to match
-                # the subdir _group_shots_claude passes to the bridge.
-                frame_dir = f"{ANALYZE_FRAME_DIR}/{video_id[:8]}"
-                clips = _group_shots_claude(video_id, shots, frame_dir, str(video_path))
-            if not clips:
-                # Fallback: treat each shot as a clip (no grouping)
-                clips = [
-                    {
+            if req.interval_sec and req.interval_sec > 0:
+                _save_run(run_id, _update_run(run_id, status="splitting"))
+                # Get video duration via ffprobe
+                import math
+                ffprobe_result = subprocess.run(
+                    ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                     "-of", "default=noprint_wrappers=1:nokey=1", str(video_path)],
+                    capture_output=True, text=True, timeout=30
+                )
+                if ffprobe_result.returncode != 0 or not ffprobe_result.stdout.strip():
+                    raise RuntimeError(f"ffprobe failed: {ffprobe_result.stderr}")
+                duration = float(ffprobe_result.stdout.strip())
+
+                # Build fixed-interval clips
+                num_clips = math.ceil(duration / req.interval_sec)
+                for i in range(num_clips):
+                    start_sec = i * req.interval_sec
+                    end_sec = min((i + 1) * req.interval_sec, duration)
+                    clips.append({
                         "clip_index": i + 1,
-                        "start_sec": shot["start_sec"],
-                        "end_sec": shot["end_sec"],
+                        "start_sec": start_sec,
+                        "end_sec": end_sec,
                         "credit_handle": None,
-                        "shot_indices": [shot["index"]]
-                    }
-                    for i, shot in enumerate(shots)
-                ]
+                        "shot_indices": [i]
+                    })
+            else:
+                # Detect cuts
+                _save_run(run_id, _update_run(run_id, status="detecting"))
+                shots = _detect_scene_cuts(str(video_path), threshold=req.scene_threshold, min_sec=req.min_clip_sec)
+                if not shots:
+                    shots = [{"index": 0, "start_sec": 0.0, "end_sec": 999999.0}]  # fallback: whole video
+
+                # Group shots into distinct source clips (Step 2a). Only for compilations —
+                # when group_clips is False, each detected scene cut becomes its own segment
+                # (raw per-cut split, no AI merging, no vision call). That is what you want
+                # for plainly cutting a single video at every scene change.
+                if req.group_clips:
+                    _save_run(run_id, _update_run(run_id, status="grouping"))
+                    # Frames MUST live under ANALYZE_FRAME_DIR/<subdir> — that is the only
+                    # place the claude bridge resolves them. subdir == video_id[:8] to match
+                    # the subdir _group_shots_claude passes to the bridge.
+                    frame_dir = f"{ANALYZE_FRAME_DIR}/{video_id[:8]}"
+                    clips = _group_shots_claude(video_id, shots, frame_dir, str(video_path))
+                if not clips:
+                    # Fallback: treat each shot as a clip (no grouping)
+                    clips = [
+                        {
+                            "clip_index": i + 1,
+                            "start_sec": shot["start_sec"],
+                            "end_sec": shot["end_sec"],
+                            "credit_handle": None,
+                            "shot_indices": [shot["index"]]
+                        }
+                        for i, shot in enumerate(shots)
+                    ]
 
             # Split (if requested) — cut one mp4 per GROUPED clip (its full
             # start→end range), not per raw shot. Otherwise a clip's file would
@@ -6448,6 +6478,60 @@ def analyze_import(req: StoryboardImportRequest):
         conn.close()
 
 
+@app.get("/analyze/storyboard-status")
+def analyze_storyboard_status(youtube_url: str):
+    """
+    Check if a storyboard is ready for a given youtube_url.
+
+    Returns:
+      {
+        "ready": bool,           # true if gen_prompt exists and is valid JSON
+        "scenes": int,           # number of scenes in scene_order (0 if not ready)
+        "status": str            # source status ('' if no source found)
+      }
+    """
+    try:
+        _validate_source_url(youtube_url)
+    except HTTPException:
+        raise HTTPException(status_code=400, detail="invalid youtube_url")
+
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=500, detail="database not configured")
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT status, gen_prompt, gen_prompt_format FROM sources WHERE youtube_url = %s",
+                (youtube_url,)
+            )
+            row = cur.fetchone()
+            if not row:
+                return {"ready": False, "scenes": 0, "status": ""}
+
+            status, gen_prompt, gen_prompt_format = row
+            ready = False
+            scenes = 0
+
+            if gen_prompt and gen_prompt_format == 'prompt_json':
+                try:
+                    storyboard = json.loads(gen_prompt)
+                    scene_order = storyboard.get("scene_order", [])
+                    if isinstance(scene_order, list):
+                        scenes = len(scene_order)
+                        ready = scenes > 0
+                except (json.JSONDecodeError, ValueError):
+                    pass
+
+            return {
+                "ready": ready,
+                "scenes": scenes,
+                "status": status or ""
+            }
+    finally:
+        conn.close()
+
+
 @app.get("/analyze/gemini-brief")
 def analyze_gemini_brief(youtube_url: str):
     """
@@ -6469,23 +6553,23 @@ def analyze_gemini_brief(youtube_url: str):
     instruction = f"""You are analyzing video clips for a short-form content project.
 
 RULES:
-- You have EXACTLY TWO tools available: `get_clips` and `save_storyboard`. Use them in that order only.
-- Do NOT call any other tool (not analyze, not make_brief, not generate_shot_prompts).
-- Do NOT run shell commands or attempt any preprocessing — the clips are already prepared.
-- CRITICAL: base EVERY field on what you ACTUALLY SEE in the clip videos. Never copy placeholder or example values.
-- Produce ONE scene per clip returned by get_clips (match its count), using each clip's start_sec/end_sec for the timing.
-- If get_clips returns an error or an empty list, STOP: report the error to the user and do NOT call save_storyboard. Never invent, guess, or fabricate scenes.
+- You have EXACTLY TWO MCP tools available: `get_clips` and `save_storyboard`. Use them in that order only.
+- Do NOT call any other tool, open a browser, run terminal commands, use whisper/scenedetect/cv2, write any script, or reference local file paths.
+- Do NOT run any preprocessing — the clips are already prepared.
+- CRITICAL: base EVERY field on what you ACTUALLY SEE in the clip videos. Never use placeholder or example values.
 
 Task:
-1. Call the reelbot MCP tool `get_clips` with youtube_url="{youtube_url}" to get the list of segment files.
-2. Watch and analyze each segment (seg_NN.mp4) to understand what happens in each scene.
+1. Call the reelbot MCP tool `get_clips` with youtube_url="{youtube_url}" to get the list of segment files (~60s each, in order).
+2. WATCH each returned clip carefully. Break what you SEE into scenes of ≤8 seconds. Base every field ONLY on what you actually see. Keep scene numbering continuous across clips.
 3. Produce a detailed per-scene storyboard in the exact JSON schema below.
 4. Call the reelbot MCP tool `save_storyboard` with youtube_url="{youtube_url}" and the storyboard JSON.
+
+If get_clips returns an error or an empty list, STOP and report the error. Never invent, guess, or fabricate scenes.
 
 STORYBOARD JSON SCHEMA (output must match this exactly):
 {STORYBOARD_JSON_SCHEMA}
 
-Generate the storyboard now, based ONLY on what you actually see in the clip videos. Output ONLY the JSON (no markdown fence, no explanation)."""
+Generate the storyboard now. Output ONLY the JSON (no markdown fence, no explanation)."""
 
     return {
         "instruction": instruction,
@@ -6584,6 +6668,44 @@ def serve_frame(video_id: str, name: str):
         raise HTTPException(status_code=404, detail="frame not found")
 
     return FileResponse(str(frame_path), media_type="image/jpeg")
+
+
+@app.get("/media/source/{video_id}")
+def serve_source_video(video_id: str):
+    """Serve the cached source.mp4 for a video with path-traversal guard.
+
+    Path param: video_id (alnum + dash/underscore)
+    Guard: rejects if video_id doesn't match safe pattern; checks final path
+           is under data/videos/ before returning FileResponse.
+    Returns: 400 if validation fails, 404 if file missing, 200 + MP4 otherwise.
+    FileResponse handles HTTP Range requests for seeking.
+    """
+    import re as _re_guard
+
+    # Validate video_id: alphanumeric, dash, underscore only
+    if not _re_guard.match(r"^[A-Za-z0-9_-]+$", video_id):
+        raise HTTPException(status_code=400, detail="invalid video_id")
+
+    video_path = _REPO_ROOT / "data" / "videos" / video_id / "source.mp4"
+    base_dir = _REPO_ROOT / "data" / "videos"
+
+    try:
+        # Resolve and check the final path stays under data/videos/
+        real_path = video_path.resolve()
+        real_base = base_dir.resolve()
+        # Check that real_path is under real_base (with proper separator)
+        if not str(real_path).startswith(str(real_base) + os.sep):
+            raise HTTPException(status_code=400, detail="path traversal rejected")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail="invalid path")
+
+    # Check file exists
+    if not video_path.exists():
+        raise HTTPException(status_code=404, detail="source video not found")
+
+    return FileResponse(str(video_path), media_type="video/mp4")
 
 
 @app.get("/sources/{source_id}/segments")

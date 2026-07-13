@@ -208,9 +208,11 @@ export const api = {
 
   decompose: (youtube_url) => postJSON('/decompose', { youtube_url }),
   decomposeNoAI: (youtube_url) => postJSON('/decompose', { youtube_url, group_clips: false, split_files: true }),
+  decomposePerMinute: (youtube_url) => postJSON('/decompose', { youtube_url, group_clips: false, split_files: true, interval_sec: 60 }),
   decomposeStatus: (run_id) => getJSON('/decompose/status/' + encodeURIComponent(run_id)),
   sourceSegments: (source_id) => getJSON('/sources/' + source_id + '/segments'),
   sourceAnalysis: (source_id) => getJSON('/sources/' + source_id + '/analysis'),
+  storyboardStatus: (youtube_url) => getJSON('/analyze/storyboard-status?youtube_url=' + encodeURIComponent(youtube_url)),
   getGeminiBrief: (youtube_url) => getJSON('/analyze/gemini-brief?youtube_url=' + encodeURIComponent(youtube_url)),
   importStoryboard: (youtube_url, storyboard) => postJSON('/analyze/import', { youtube_url, storyboard }),
 

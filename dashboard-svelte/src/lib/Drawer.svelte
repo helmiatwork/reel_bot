@@ -83,6 +83,59 @@
 
   // tab state
   let activeTab = $state('analisa')
+  // Verify view state
+  let showRawJson = $state(false)
+  // Per-scene JSON popup (verify view)
+  let sceneJsonModal = $state(null)
+  let videoRef = $state(null)
+
+  // Extract video_id from youtube_url (handle v=, /shorts/, or last path segment)
+  function extractVideoId(url) {
+    if (!url) return null
+    try {
+      const u = new URL(url)
+      if (u.hostname.includes('youtube.com')) {
+        const v = u.searchParams.get('v')
+        if (v) return v
+      } else if (u.hostname.includes('youtu.be')) {
+        return u.pathname.slice(1)
+      } else if (u.hostname.includes('youtube.com') && u.pathname.includes('/shorts/')) {
+        const m = u.pathname.match(/\/shorts\/([a-zA-Z0-9_-]+)/)
+        if (m) return m[1]
+      }
+      return u.pathname.split('/').pop() || null
+    } catch { return null }
+  }
+
+  // Play a scene: seek to start_sec and play until end_sec
+  function playScene(startSec, endSec) {
+    if (!videoRef) return
+    videoRef.currentTime = startSec
+    videoRef.play()
+    // Stop playback at end_sec
+    const checkEndTime = () => {
+      if (videoRef.currentTime >= endSec) {
+        videoRef.pause()
+        videoRef.removeEventListener('timeupdate', checkEndTime)
+      }
+    }
+    videoRef.addEventListener('timeupdate', checkEndTime)
+  }
+
+  // Stable per-tag hue from its text (same tag → same color every render)
+  function tagHue(t) {
+    let h = 0
+    for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) % 360
+    return h
+  }
+
+  // Seek to a scene's start and pause (preview the frame as a thumbnail)
+  function seekScene(startSec) {
+    if (!videoRef) return
+    videoRef.pause()
+    videoRef.currentTime = startSec
+  }
+
   // Display + copy share one string: pretty-printed JSON for prompt_json, raw otherwise
   // Split a prose string with "(1)… (2)…" markers into a lead + bullet points.
   // Returns null when there are no numbered markers (render as prose instead).
@@ -133,6 +186,7 @@
     reanalyzeDone = false
     lightboxSrc = null
     activeTab = 'analisa'
+    showRawJson = false
     d = v
     frames = []
     segments = []
@@ -263,6 +317,30 @@
   </div>
 {/if}
 
+<!-- Per-scene JSON popup -->
+{#if sceneJsonModal}
+  <div
+    class="lb-overlay"
+    onclick={() => sceneJsonModal = null}
+    onkeydown={(e) => { if (e.key === 'Escape') sceneJsonModal = null }}
+    role="dialog"
+    aria-modal="true"
+    aria-label="JSON scene"
+    tabindex="-1"
+  >
+    <button class="lb-close" onclick={() => sceneJsonModal = null} aria-label="Tutup">✕</button>
+    <div class="lb-card" onclick={(e) => e.stopPropagation()} role="document" style="max-width:640px">
+      <div class="lb-info">
+        <div class="lb-frame-no">Scene{sceneJsonModal.scene != null ? ` #${sceneJsonModal.scene}` : ''}{sceneJsonModal.start ? ` · ${sceneJsonModal.start}${sceneJsonModal.end ? '–' + sceneJsonModal.end : ''}` : ''}</div>
+        <pre class="lb-json">{JSON.stringify(sceneJsonModal, null, 2)}</pre>
+        <button class="copy-btn" onclick={() => copyPrompt(JSON.stringify(sceneJsonModal, null, 2))}>
+          {copiedPrompt ? '✓ Tersalin' : 'Salin JSON'}
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
 {#if d}
   <!-- Backdrop -->
   <div
@@ -291,7 +369,7 @@
           class="tab-btn {activeTab === 'analisa' ? 'active' : ''}"
           onclick={() => activeTab = 'analisa'}
         >
-          Analisa
+          Analisa{#if d.data?.status}<span class="status-chip tab-chip {d.data.status === 'analyzed' ? 'chip-green' : d.data.status === 'error' ? 'chip-red' : 'chip-mut'}">{d.data.status}</span>{/if}
         </button>
         <button
           class="tab-btn {activeTab === 'frames' ? 'active' : ''}"
@@ -320,11 +398,11 @@
             {:else}{s.title}{/if}
           </h2>
           <div class="header-meta">
-            <span class="status-chip {s.status === 'analyzed' ? 'chip-green' : s.status === 'error' ? 'chip-red' : 'chip-mut'}">{s.status}</span>
-            {#if s.niche && s.niche !== '-'}<span class="hm-item">{s.niche}</span>{/if}
-            <span class="hm-item num">{s.viewsLabel} views</span>
+            {#if s.niche && s.niche !== '-'}<span class="meta-chip">{s.niche}</span>{/if}
+            <span class="meta-chip">{s.viewsLabel} views</span>
+            <span class="meta-chip">Channel {s.channel || '-'}</span>
+            <span class="meta-chip">ID {s.id}</span>
           </div>
-          <div class="mut" style="font-size:12px"><span class="sub-cap">Channel</span> {s.channel || '-'} <span class="sub-sep">·</span> <span class="sub-cap">ID</span> {s.id}</div>
         </div>
         {#if s.youtube_url}
           <div class="header-right">
@@ -358,6 +436,16 @@
       <!-- ANALISA TAB -->
       {#if activeTab === 'analisa'}
         <div class="tab-panel">
+          {#if analysis.tags?.length}
+            <div class="ana-card">
+              <div class="ana-label">Tags</div>
+              <div class="tags-row">
+                {#each analysis.tags as t}
+                  <span class="tag" style="background: hsl({tagHue(t)} 70% 92%); color: hsl({tagHue(t)} 55% 32%); border-color: hsl({tagHue(t)} 55% 80%)">{t}</span>
+                {/each}
+              </div>
+            </div>
+          {/if}
           <!-- Analysis section cards -->
           {#if analysis.hook}
             <div class="ana-card">
@@ -404,30 +492,6 @@
               <div class="ana-body">{analysis.detail}</div>
             </div>
           {/if}
-          {#if analysis.tags?.length}
-            <div class="tags-row">
-              {#each analysis.tags as t}<span class="tag">{t}</span>{/each}
-            </div>
-          {/if}
-
-          {#if segments.length}
-            <h3 style="margin:16px 0 8px;font-size:13px;font-weight:600">Segmen</h3>
-            <div class="seg-list">
-              {#each segments as seg}
-                <div class="seg-row">
-                  <span class="seg-idx">Klip {seg.clip_index}</span>
-                  <span class="seg-time">{seg.start_sec?.toFixed(1)}–{seg.end_sec?.toFixed(1)} dtk</span>
-                  <span class="badge-sm {seg.origin_status === 'found' ? 'b-found' : 'b-grey'}">{seg.origin_status}</span>
-                  <span class="seg-credit">{seg.credit_handle || '—'}</span>
-                  {#if seg.original_url}
-                    <a href={seg.original_url} target="_blank" rel="noopener noreferrer" style="font-size:12px">asli</a>
-                  {:else}
-                    <span class="mut" style="font-size:12px">belum ketemu</span>
-                  {/if}
-                </div>
-              {/each}
-            </div>
-          {/if}
         </div>
       {/if}
 
@@ -455,20 +519,101 @@
 
       <!-- GENERATED PROMPT TAB -->
       {#if activeTab === 'prompt'}
-        <div class="tab-panel">
-          {#if analysis.gen_prompt}
-            <div class="gen-prompt-box">
-              {#if analysis.gen_prompt_format === 'prompt_json'}
-                <pre class="gen-prompt-json">{promptDisplay(analysis)}</pre>
-              {:else}
-                <div class="gen-prompt-text">{analysis.gen_prompt}</div>
+        <div class="tab-panel verify-panel">
+          {#if analysis.gen_prompt && analysis.gen_prompt_format === 'prompt_json'}
+            {@const videoId = extractVideoId(d.data?.youtube_url)}
+            {@const storyboard = (() => {
+              try { return JSON.parse(analysis.gen_prompt) }
+              catch { return {} }
+            })()}
+
+            <!-- Split: left video (sticky), right scene list (scroll) -->
+            <div class="verify-split">
+              {#if videoId}
+                <div class="verify-left">
+                  <video
+                    bind:this={videoRef}
+                    controls
+                    src={`/media/source/${videoId}`}
+                    style="background: #000; border-radius: 4px; width: 100%; display: block"
+                  />
+                </div>
+              {/if}
+
+              {#if storyboard.scene_order && Array.isArray(storyboard.scene_order)}
+                <div class="verify-right">
+                  {#each storyboard.scene_order as scene}
+                    <div class="scene-row">
+                      <div class="scene-actions">
+                        <button
+                          class="scene-play"
+                          onclick={() => playScene(timeToSeconds(scene.start), timeToSeconds(scene.end))}
+                          title="Putar scene"
+                          aria-label="Putar"
+                        >
+                          ▶
+                        </button>
+                        <button
+                          class="scene-json-btn"
+                          onclick={() => sceneJsonModal = scene}
+                          title="Lihat JSON scene"
+                          aria-label="JSON"
+                        >
+                          {'{ }'}
+                        </button>
+                      </div>
+                      <div
+                        class="scene-info"
+                        onclick={() => seekScene(timeToSeconds(scene.start))}
+                        onkeydown={(e) => { if (e.key === 'Enter') seekScene(timeToSeconds(scene.start)) }}
+                        role="button"
+                        tabindex="0"
+                        title="Lihat frame (jeda di scene ini)"
+                      >
+                        <div class="scene-header">
+                          #{scene.scene} · {scene.start}–{scene.end} · {scene.shot} · {scene.subject} · {scene.action}
+                        </div>
+                        {#if scene.image_prompt}
+                          <div class="scene-prompt">{scene.image_prompt}</div>
+                        {/if}
+                      </div>
+                    </div>
+                  {/each}
+                </div>
               {/if}
             </div>
-            <button class="copy-btn" onclick={() => copyPrompt(promptDisplay(analysis))}>
-              {copiedPrompt ? '✓ Copied!' : 'Copy'}
-            </button>
+
+            <!-- JSON toggle -->
+            <div class="verify-toggle">
+              <button
+                class="toggle-btn"
+                onclick={() => showRawJson = !showRawJson}
+              >
+                {showRawJson ? 'Sembunyikan JSON' : 'Lihat JSON'}
+              </button>
+            </div>
+
+            {#if showRawJson}
+              <div class="gen-prompt-box" transition:fade={{ duration: 150 }}>
+                <pre class="gen-prompt-json">{promptDisplay(analysis)}</pre>
+                <button class="copy-btn" onclick={() => copyPrompt(promptDisplay(analysis))}>
+                  {copiedPrompt ? '✓ Tersalin' : 'Salin'}
+                </button>
+              </div>
+            {/if}
           {:else}
-            <div class="mut" style="font-size:12px;padding:8px 0">No generated prompt tersedia.</div>
+            <div class="mut" style="font-size:12px;padding:8px 0">
+              {#if analysis.gen_prompt && analysis.gen_prompt_format !== 'prompt_json'}
+                <div class="gen-prompt-box">
+                  <div class="gen-prompt-text">{analysis.gen_prompt}</div>
+                </div>
+                <button class="copy-btn" onclick={() => copyPrompt(promptDisplay(analysis))}>
+                  {copiedPrompt ? '✓ Copied!' : 'Copy'}
+                </button>
+              {:else}
+                No generated prompt tersedia.
+              {/if}
+            </div>
           {/if}
         </div>
       {/if}
@@ -607,6 +752,7 @@
 
   /* Status chip */
   .status-chip { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+  .tab-chip { margin-left: 6px; padding: 2px 8px; font-size: 10px; vertical-align: middle; }
   .chip-green { background: rgba(10,179,156,.12); color: var(--green); }
   .chip-red   { background: rgba(240,101,72,.12);  color: var(--red);   }
   .chip-mut   { background: rgba(148,163,184,.16); color: var(--mut);   }
@@ -617,7 +763,7 @@
   .title-link:hover { color: var(--accent); text-decoration: underline; }
   .title-link .ext { color: var(--accent); font-size: 0.8em; }
   .header-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
-  .hm-item {
+  .hm-item, .meta-chip {
     font-size: 12px; color: var(--mut); font-weight: 500;
     padding: 2px 9px; background: var(--soft); border: 1px solid var(--line); border-radius: 20px;
   }
@@ -822,4 +968,66 @@
   .tab-panel {
     display: flex; flex-direction: column; gap: 10px;
   }
+
+  /* Verify panel (Prompt tab with video + scenes) */
+  .verify-panel {
+    gap: 12px;
+  }
+  .verify-split {
+    display: flex; gap: 14px; align-items: flex-start;
+  }
+  .verify-left {
+    flex: 0 0 46%; position: sticky; top: 0; align-self: flex-start;
+  }
+  .verify-right {
+    flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px;
+    max-height: 72vh; overflow-y: auto;
+  }
+  @media (max-width: 720px) {
+    .verify-split { flex-direction: column; }
+    .verify-left { flex: none; width: 100%; position: static; }
+    .verify-right { max-height: none; }
+  }
+  .scene-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 12px; background: var(--soft); border: 1px solid var(--line);
+    border-radius: 6px; font-size: 12px;
+  }
+  .scene-actions {
+    flex-shrink: 0; display: flex; flex-direction: column; gap: 4px;
+  }
+  .scene-play {
+    width: 28px; height: 28px; padding: 0;
+    border: none; background: var(--accent); color: white;
+    border-radius: 4px; cursor: pointer; font-size: 12px;
+    transition: opacity .15s;
+  }
+  .scene-play:hover { opacity: .85; }
+  .scene-json-btn {
+    width: 28px; height: 28px; padding: 0;
+    border: none; background: #6b46c1; color: white;
+    border-radius: 4px; cursor: pointer; font-size: 11px; font-family: monospace;
+    transition: opacity .15s;
+  }
+  .scene-json-btn:hover { opacity: .85; }
+  .scene-info {
+    flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;
+    cursor: pointer;
+  }
+  .scene-info:hover .scene-header { color: var(--accent); }
+  .scene-header {
+    font-size: 12px; color: var(--txt); font-weight: 500;
+  }
+  .scene-prompt {
+    font-size: 11px; color: var(--mut); font-style: italic;
+  }
+  .verify-toggle {
+    display: flex; justify-content: center;
+  }
+  .toggle-btn {
+    font-size: 11px; padding: 6px 12px; background: var(--soft);
+    border: 1px solid var(--line); border-radius: 4px; cursor: pointer;
+    color: var(--mut); transition: all .15s;
+  }
+  .toggle-btn:hover { background: var(--border); color: var(--fg); }
 </style>
