@@ -85,6 +85,8 @@
   let activeTab = $state('analisa')
   // Verify view state
   let showRawJson = $state(false)
+  // Per-scene JSON popup (verify view)
+  let sceneJsonModal = $state(null)
   let videoRef = $state(null)
 
   // Extract video_id from youtube_url (handle v=, /shorts/, or last path segment)
@@ -296,6 +298,30 @@
         {:else}
           <div class="mut" style="font-size:12px">Belum ada storyboard buat dicocokkan — jalankan analisa dengan output Prompt JSON dulu.</div>
         {/if}
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Per-scene JSON popup -->
+{#if sceneJsonModal}
+  <div
+    class="lb-overlay"
+    onclick={() => sceneJsonModal = null}
+    onkeydown={(e) => { if (e.key === 'Escape') sceneJsonModal = null }}
+    role="dialog"
+    aria-modal="true"
+    aria-label="JSON scene"
+    tabindex="-1"
+  >
+    <button class="lb-close" onclick={() => sceneJsonModal = null} aria-label="Tutup">✕</button>
+    <div class="lb-card" onclick={(e) => e.stopPropagation()} role="document" style="max-width:640px">
+      <div class="lb-info">
+        <div class="lb-frame-no">Scene{sceneJsonModal.scene != null ? ` #${sceneJsonModal.scene}` : ''}{sceneJsonModal.start ? ` · ${sceneJsonModal.start}${sceneJsonModal.end ? '–' + sceneJsonModal.end : ''}` : ''}</div>
+        <pre class="lb-json">{JSON.stringify(sceneJsonModal, null, 2)}</pre>
+        <button class="copy-btn" onclick={() => copyPrompt(JSON.stringify(sceneJsonModal, null, 2))}>
+          {copiedPrompt ? '✓ Tersalin' : 'Salin JSON'}
+        </button>
       </div>
     </div>
   </div>
@@ -518,14 +544,24 @@
                 <div class="verify-right">
                   {#each storyboard.scene_order as scene}
                     <div class="scene-row">
-                      <button
-                        class="scene-play"
-                        onclick={() => playScene(timeToSeconds(scene.start), timeToSeconds(scene.end))}
-                        title="Putar scene"
-                        aria-label="Putar"
-                      >
-                        ▶
-                      </button>
+                      <div class="scene-actions">
+                        <button
+                          class="scene-play"
+                          onclick={() => playScene(timeToSeconds(scene.start), timeToSeconds(scene.end))}
+                          title="Putar scene"
+                          aria-label="Putar"
+                        >
+                          ▶
+                        </button>
+                        <button
+                          class="scene-json-btn"
+                          onclick={() => sceneJsonModal = scene}
+                          title="Lihat JSON scene"
+                          aria-label="JSON"
+                        >
+                          {'{ }'}
+                        </button>
+                      </div>
                       <div class="scene-info">
                         <div class="scene-header">
                           #{scene.scene} · {scene.start}–{scene.end} · {scene.shot} · {scene.subject} · {scene.action}
@@ -949,13 +985,23 @@
     padding: 10px 12px; background: var(--soft); border: 1px solid var(--line);
     border-radius: 6px; font-size: 12px;
   }
+  .scene-actions {
+    flex-shrink: 0; display: flex; flex-direction: column; gap: 4px;
+  }
   .scene-play {
-    flex-shrink: 0; width: 28px; height: 28px; padding: 0;
+    width: 28px; height: 28px; padding: 0;
     border: none; background: var(--accent); color: white;
     border-radius: 4px; cursor: pointer; font-size: 12px;
     transition: opacity .15s;
   }
   .scene-play:hover { opacity: .85; }
+  .scene-json-btn {
+    width: 28px; height: 28px; padding: 0;
+    border: 1px solid var(--line); background: var(--soft); color: var(--mut);
+    border-radius: 4px; cursor: pointer; font-size: 11px; font-family: monospace;
+    transition: all .15s;
+  }
+  .scene-json-btn:hover { color: var(--txt); border-color: var(--accent); }
   .scene-info {
     flex: 1; display: flex; flex-direction: column; gap: 4px;
   }
