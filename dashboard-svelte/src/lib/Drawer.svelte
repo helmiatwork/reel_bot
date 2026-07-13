@@ -369,7 +369,7 @@
           class="tab-btn {activeTab === 'analisa' ? 'active' : ''}"
           onclick={() => activeTab = 'analisa'}
         >
-          Analisa{#if d.data?.status}<span class="status-chip tab-chip {d.data.status === 'analyzed' ? 'chip-green' : d.data.status === 'processing' || d.data.status === 'running' ? 'chip-amber' : d.data.status === 'error' ? 'chip-red' : 'chip-mut'}">{d.data.status}</span>{/if}
+          Analisa{#if d.data?.status}<span class="status-chip tab-chip {d.data.status === 'analyzed' ? 'chip-green' : d.data.status === 'working' ? 'chip-blue' : d.data.status === 'processing' || d.data.status === 'running' ? 'chip-amber' : d.data.status === 'error' ? 'chip-red' : 'chip-mut'}">{d.data.status}</span>{/if}
         </button>
         {#if frames.length}
           <button
@@ -758,6 +758,7 @@
   .chip-green { background: rgba(10,179,156,.12); color: var(--green); }
   .chip-red   { background: rgba(240,101,72,.12);  color: var(--red);   }
   .chip-amber { background: rgba(217,119,6,.12);   color: #d97706; }
+  .chip-blue  { background: rgba(37,99,235,.12);    color: #2563eb; }
   .chip-mut   { background: rgba(148,163,184,.16); color: var(--mut);   }
 
   /* Header: clickable title + inline meta (status / niche / views) */

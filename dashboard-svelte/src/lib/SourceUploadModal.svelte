@@ -41,6 +41,7 @@
   let pollStoryboardCount = $state(0)
   let prepStage = $state('')
   let prepPollCount = $state(0)
+  let geminiStarted = $state(false)  // true once Gemini calls get_clips (status='working')
   const PREP_STAGE_LABEL = {
     downloading: 'Mengunduh video…',
     saving_meta: 'Menyimpan atribut video…',
@@ -264,10 +265,13 @@
 
       // Phase C: Auto-poll storyboard status (user runs Gemini in Antigravity)
       storyboardPhase = 'analyzing'
+      geminiStarted = false
       pollStoryboardCount = 0
       pollStoryboardInterval = setInterval(async () => {
         pollStoryboardCount++
         const statusResult = await api.storyboardStatus(urlInput.trim())
+        // status flips processing → working (Gemini called get_clips) → analyzed (done)
+        geminiStarted = statusResult?.status === 'working'
         if (statusResult?.ready) {
           storyboardReady = true
           storyboardScenes = statusResult.scenes || 0
@@ -435,9 +439,13 @@
                 <div class="brief-note">Tempel instruksi ini ke Antigravity untuk analisis Gemini. Gemini akan memanggil reelbot MCP untuk menganalisis klip dan menyimpan hasilnya.</div>
 
                 {#if storyboardPhase === 'analyzing'}
-                  <div class="analyzing-box" transition:fade={{ duration: 150 }}>
+                  <div class="analyzing-box {geminiStarted ? 'working' : ''}" transition:fade={{ duration: 150 }}>
                     <span class="spinner-sm"></span>
-                    <span>Menunggu Gemini analisa…</span>
+                    {#if geminiStarted}
+                      <span>Gemini (Antigravity) sedang bekerja…</span>
+                    {:else}
+                      <span>Menunggu Gemini mulai (tempel instruksi di Antigravity)…</span>
+                    {/if}
                     <button class="btn-cancel" onclick={stopStoryboardPolling}>Batal</button>
                   </div>
                 {/if}

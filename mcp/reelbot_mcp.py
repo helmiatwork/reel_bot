@@ -677,6 +677,16 @@ def get_clips(youtube_url: str) -> dict:
             rows = cur.fetchall()
             clips = [_segment_row_to_dict(row, cols) for row in rows]
 
+            # Signal that Gemini has started working: flip status processing → working
+            # (not if already analyzed). The dashboard's storyboard-status poll reads this
+            # so the "Menunggu Gemini" loading flips to "Gemini sedang bekerja" in real time.
+            if clips:
+                cur.execute(
+                    "UPDATE sources SET status='working' WHERE id=%s AND status <> 'analyzed'",
+                    (source_id,)
+                )
+                conn.commit()
+
         return {
             "youtube_url": youtube_url,
             "source_id": source_id,
