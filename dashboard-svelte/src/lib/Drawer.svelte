@@ -391,10 +391,11 @@
             {:else}{s.title}{/if}
           </h2>
           <div class="header-meta">
-            {#if s.niche && s.niche !== '-'}<span class="hm-item">{s.niche}</span>{/if}
-            <span class="hm-item num">{s.viewsLabel} views</span>
+            {#if s.niche && s.niche !== '-'}<span class="meta-chip">{s.niche}</span>{/if}
+            <span class="meta-chip">{s.viewsLabel} views</span>
+            <span class="meta-chip">Channel {s.channel || '-'}</span>
+            <span class="meta-chip">ID {s.id}</span>
           </div>
-          <div class="mut" style="font-size:12px"><span class="sub-cap">Channel</span> {s.channel || '-'} <span class="sub-sep">·</span> <span class="sub-cap">ID</span> {s.id}</div>
         </div>
         {#if s.youtube_url}
           <div class="header-right">
@@ -750,7 +751,7 @@
   .title-link:hover { color: var(--accent); text-decoration: underline; }
   .title-link .ext { color: var(--accent); font-size: 0.8em; }
   .header-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
-  .hm-item {
+  .hm-item, .meta-chip {
     font-size: 12px; color: var(--mut); font-weight: 500;
     padding: 2px 9px; background: var(--soft); border: 1px solid var(--line); border-radius: 20px;
   }
