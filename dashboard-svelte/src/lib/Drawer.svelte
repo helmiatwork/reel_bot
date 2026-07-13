@@ -83,6 +83,43 @@
 
   // tab state
   let activeTab = $state('analisa')
+  // Verify view state
+  let showRawJson = $state(false)
+  let videoRef = $state(null)
+
+  // Extract video_id from youtube_url (handle v=, /shorts/, or last path segment)
+  function extractVideoId(url) {
+    if (!url) return null
+    try {
+      const u = new URL(url)
+      if (u.hostname.includes('youtube.com')) {
+        const v = u.searchParams.get('v')
+        if (v) return v
+      } else if (u.hostname.includes('youtu.be')) {
+        return u.pathname.slice(1)
+      } else if (u.hostname.includes('youtube.com') && u.pathname.includes('/shorts/')) {
+        const m = u.pathname.match(/\/shorts\/([a-zA-Z0-9_-]+)/)
+        if (m) return m[1]
+      }
+      return u.pathname.split('/').pop() || null
+    } catch { return null }
+  }
+
+  // Play a scene: seek to start_sec and play until end_sec
+  function playScene(startSec, endSec) {
+    if (!videoRef) return
+    videoRef.currentTime = startSec
+    videoRef.play()
+    // Stop playback at end_sec
+    const checkEndTime = () => {
+      if (videoRef.currentTime >= endSec) {
+        videoRef.pause()
+        videoRef.removeEventListener('timeupdate', checkEndTime)
+      }
+    }
+    videoRef.addEventListener('timeupdate', checkEndTime)
+  }
+
   // Display + copy share one string: pretty-printed JSON for prompt_json, raw otherwise
   // Split a prose string with "(1)… (2)…" markers into a lead + bullet points.
   // Returns null when there are no numbered markers (render as prose instead).
@@ -133,6 +170,7 @@
     reanalyzeDone = false
     lightboxSrc = null
     activeTab = 'analisa'
+    showRawJson = false
     d = v
     frames = []
     segments = []
@@ -455,20 +493,85 @@
 
       <!-- GENERATED PROMPT TAB -->
       {#if activeTab === 'prompt'}
-        <div class="tab-panel">
-          {#if analysis.gen_prompt}
-            <div class="gen-prompt-box">
-              {#if analysis.gen_prompt_format === 'prompt_json'}
+        <div class="tab-panel verify-panel">
+          {#if analysis.gen_prompt && analysis.gen_prompt_format === 'prompt_json'}
+            {@const videoId = extractVideoId(d.data?.youtube_url)}
+            {@const storyboard = (() => {
+              try { return JSON.parse(analysis.gen_prompt) }
+              catch { return {} }
+            })()}
+
+            <!-- Sticky video player at top -->
+            {#if videoId}
+              <div class="verify-player">
+                <video
+                  bind:this={videoRef}
+                  controls
+                  width="100%"
+                  height="auto"
+                  src={`/media/source/${videoId}`}
+                  style="background: #000; border-radius: 4px; margin-bottom: 8px"
+                />
+              </div>
+            {/if}
+
+            <!-- Scene rows -->
+            {#if storyboard.scene_order && Array.isArray(storyboard.scene_order)}
+              <div class="verify-scenes">
+                {#each storyboard.scene_order as scene}
+                  <div class="scene-row">
+                    <button
+                      class="scene-play"
+                      onclick={() => playScene(timeToSeconds(scene.start), timeToSeconds(scene.end))}
+                      title="Putar scene"
+                      aria-label="Putar"
+                    >
+                      ▶
+                    </button>
+                    <div class="scene-info">
+                      <div class="scene-header">
+                        #{scene.scene} · {scene.start}–{scene.end} · {scene.shot} · {scene.subject} · {scene.action}
+                      </div>
+                      {#if scene.image_prompt}
+                        <div class="scene-prompt">{scene.image_prompt}</div>
+                      {/if}
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            {/if}
+
+            <!-- JSON toggle -->
+            <div class="verify-toggle">
+              <button
+                class="toggle-btn"
+                onclick={() => showRawJson = !showRawJson}
+              >
+                {showRawJson ? 'Sembunyikan JSON' : 'Lihat JSON'}
+              </button>
+            </div>
+
+            {#if showRawJson}
+              <div class="gen-prompt-box" transition:fade={{ duration: 150 }}>
                 <pre class="gen-prompt-json">{promptDisplay(analysis)}</pre>
+                <button class="copy-btn" onclick={() => copyPrompt(promptDisplay(analysis))}>
+                  {copiedPrompt ? '✓ Tersalin' : 'Salin'}
+                </button>
+              </div>
+            {/if}
+          {:else}
+            <div class="mut" style="font-size:12px;padding:8px 0">
+              {#if analysis.gen_prompt && analysis.gen_prompt_format !== 'prompt_json'}
+                <div class="gen-prompt-box">
+                  <div class="gen-prompt-text">{analysis.gen_prompt}</div>
+                </div>
+                <button class="copy-btn" onclick={() => copyPrompt(promptDisplay(analysis))}>
+                  {copiedPrompt ? '✓ Copied!' : 'Copy'}
+                </button>
               {:else}
-                <div class="gen-prompt-text">{analysis.gen_prompt}</div>
+                No generated prompt tersedia.
               {/if}
             </div>
-            <button class="copy-btn" onclick={() => copyPrompt(promptDisplay(analysis))}>
-              {copiedPrompt ? '✓ Copied!' : 'Copy'}
-            </button>
-          {:else}
-            <div class="mut" style="font-size:12px;padding:8px 0">No generated prompt tersedia.</div>
           {/if}
         </div>
       {/if}
@@ -822,4 +925,47 @@
   .tab-panel {
     display: flex; flex-direction: column; gap: 10px;
   }
+
+  /* Verify panel (Prompt tab with video + scenes) */
+  .verify-panel {
+    gap: 12px;
+  }
+  .verify-player {
+    position: sticky; top: 0; background: var(--bg); z-index: 10;
+    padding: 0; margin: 0 -1.5rem 8px -1.5rem;
+    padding: 0 1.5rem;
+  }
+  .verify-scenes {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .scene-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 12px; background: var(--soft); border: 1px solid var(--line);
+    border-radius: 6px; font-size: 12px;
+  }
+  .scene-play {
+    flex-shrink: 0; width: 28px; height: 28px; padding: 0;
+    border: none; background: var(--accent); color: white;
+    border-radius: 4px; cursor: pointer; font-size: 12px;
+    transition: opacity .15s;
+  }
+  .scene-play:hover { opacity: .85; }
+  .scene-info {
+    flex: 1; display: flex; flex-direction: column; gap: 4px;
+  }
+  .scene-header {
+    font-size: 12px; color: var(--txt); font-weight: 500;
+  }
+  .scene-prompt {
+    font-size: 11px; color: var(--mut); font-style: italic;
+  }
+  .verify-toggle {
+    display: flex; justify-content: center;
+  }
+  .toggle-btn {
+    font-size: 11px; padding: 6px 12px; background: var(--soft);
+    border: 1px solid var(--line); border-radius: 4px; cursor: pointer;
+    color: var(--mut); transition: all .15s;
+  }
+  .toggle-btn:hover { background: var(--border); color: var(--fg); }
 </style>
