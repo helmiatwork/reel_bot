@@ -39,6 +39,16 @@
   let storyboardScenes = $state(0)
   let pollStoryboardInterval = null
   let pollStoryboardCount = $state(0)
+  let prepStage = $state('')
+  let prepPollCount = $state(0)
+  const PREP_STAGE_LABEL = {
+    downloading: 'Mengunduh video…',
+    detecting: 'Mendeteksi scene…',
+    grouping: 'Mengelompokkan…',
+    splitting: 'Memotong klip per menit…',
+    finding: 'Menautkan klip…',
+    saving: 'Menyimpan ke database…',
+  }
 
   // Set when the submitted URL is already in the library
   let existsSource = $state(null)
@@ -194,10 +204,16 @@
       // Poll for decompose completion
       let done = false
       let pollCount = 0
-      const maxPolls = 120
+      const maxPolls = 600
+      prepStage = 'downloading'
+      prepPollCount = 0
       while (!done && pollCount < maxPolls) {
         await new Promise(resolve => setTimeout(resolve, 1000))
         const statusResult = await api.decomposeStatus(decomposeResult.run_id)
+        prepPollCount = pollCount + 1
+        if (statusResult?.status && statusResult.status !== 'done') {
+          prepStage = statusResult.status
+        }
         if (statusResult?.status === 'done') {
           done = true
         } else if (statusResult?.status === 'error') {
@@ -372,7 +388,10 @@
             {:else if storyboardPhase === 'clips'}
               <div class="phase-box" transition:fade={{ duration: 150 }}>
                 <span class="spinner-sm"></span>
-                <span>Menyiapkan clip…</span>
+                <div class="phase-text">
+                  <span class="phase-title">Menyiapkan clip…</span>
+                  <span class="phase-sub">{PREP_STAGE_LABEL[prepStage] || 'Memproses…'} · {prepPollCount}s</span>
+                </div>
               </div>
             {:else if storyboardPhase === 'brief' || storyboardPhase === 'analyzing'}
               <div class="brief-box" transition:fade={{ duration: 150 }}>
@@ -864,6 +883,20 @@
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
+
+  .phase-box {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 16px; background: var(--soft, #f1f5f9);
+    border: 1px solid var(--line, #e2e8f0); border-radius: 8px;
+  }
+  .phase-box .spinner-sm {
+    width: 18px; height: 18px; border-width: 2px;
+    border-color: rgba(107,70,193,.25); border-top-color: #6b46c1;
+    flex-shrink: 0;
+  }
+  .phase-text { display: flex; flex-direction: column; gap: 2px; }
+  .phase-title { font-size: 14px; font-weight: 600; }
+  .phase-sub { font-size: 12px; color: var(--mut, #64748b); }
 
   /* Analysis mode selector */
   .analysis-mode-selector {
