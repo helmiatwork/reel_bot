@@ -241,7 +241,7 @@
                   <div class="job-main">
                     <div class="job-url">{job.title || truncateUrl(job.url)}</div>
                     <div class="job-meta">
-                      <span class="decompose-stage">
+                      <span class="decompose-stage {job.sourceStatus === 'working' ? 'stage-working' : (job.sourceStatus === 'processing' || live?.active) ? 'stage-processing' : ''}">
                         {#if live?.active}<span class="spin"></span>{/if}
                         {live ? live.text : getDecomposeStageLabel(job.current_stage)}
                       </span>
@@ -589,6 +589,9 @@
     display: inline-block;
     animation: spin 0.7s linear infinite;
   }
+  /* processing = amber, working (Gemini) = blue; done stays green */
+  .decompose-stage.stage-processing { background: rgba(217,119,6,.14); color: #d97706; }
+  .decompose-stage.stage-working { background: rgba(37,99,235,.14); color: #2563eb; }
   .prep-stepper {
     display: flex; flex-direction: column; gap: 8px;
     padding: 14px 16px; background: var(--soft, #f1f5f9);
