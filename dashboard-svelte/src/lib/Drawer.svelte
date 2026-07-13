@@ -114,6 +114,20 @@
     return 'pending'
   }
   function stopProcPoll() { if (procPoll) { clearInterval(procPoll); procPoll = null } }
+  // Signal that processing finished: short beep + transient banner.
+  let justDone = $state(false)
+  function notifyDone() {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext
+      const ctx = new Ctx()
+      const o = ctx.createOscillator(), g = ctx.createGain()
+      o.connect(g); g.connect(ctx.destination)
+      o.frequency.value = 880; g.gain.value = 0.07
+      o.start(); o.stop(ctx.currentTime + 0.18)
+    } catch {}
+    justDone = true
+    setTimeout(() => { justDone = false }, 6000)
+  }
   async function pollProcessing(youtubeUrl, sourceId) {
     // 1) if an active decompose run exists, use its granular stage
     let stage = null
@@ -127,11 +141,16 @@
       const st = await api.storyboardStatus(youtubeUrl)
       if (st?.ready) {
         procStage = 'done'
-        liveStatus = 'analyzed'
         stopProcPoll()
-        // reload full analysis now that it's ready
-        const anaRes = await api.sourceAnalysis(sourceId)
+        // reload full analysis + frames now that it's ready
+        const [anaRes, frRes] = await Promise.all([
+          api.sourceAnalysis(sourceId),
+          youtubeUrl ? api.sourceFrames(youtubeUrl).catch(() => null) : Promise.resolve(null),
+        ])
         analysis = anaRes ?? {}
+        if (frRes?.frames) frames = frRes.frames
+        // notify once, only on the processing → done transition
+        if (liveStatus !== 'analyzed') { liveStatus = 'analyzed'; notifyDone() }
         return
       }
       if (!stage) stage = st?.status || 'processing'
@@ -259,6 +278,7 @@
     stopPoll()
     stopProcPoll()
     liveStatus = null
+    justDone = false
     procStage = 'saving_meta'
     decomposeRunning = false
     decomposeStage = ''
@@ -486,7 +506,7 @@
           class="tab-btn {activeTab === 'analisa' ? 'active' : ''}"
           onclick={() => activeTab = 'analisa'}
         >
-          Analisa{#if d.data?.status}<span class="status-chip tab-chip {d.data.status === 'analyzed' ? 'chip-green' : d.data.status === 'working' ? 'chip-blue' : d.data.status === 'processing' || d.data.status === 'running' ? 'chip-amber' : d.data.status === 'error' ? 'chip-red' : 'chip-mut'}">{d.data.status}</span>{/if}
+          Analisa{#if curStatus}<span class="status-chip tab-chip {curStatus === 'analyzed' ? 'chip-green' : curStatus === 'working' ? 'chip-blue' : curStatus === 'processing' || curStatus === 'running' ? 'chip-amber' : curStatus === 'error' ? 'chip-red' : 'chip-mut'}">{curStatus}</span>{/if}
         </button>
         {#if frames.length}
           <button
@@ -551,6 +571,10 @@
           </div>
         {/if}
       </div>
+
+      {#if justDone}
+        <div class="done-banner" transition:fade={{ duration: 150 }}>✅ Selesai — analisa & storyboard sudah ke-load</div>
+      {/if}
 
       <!-- Processing: analysis not ready yet — show loading instead of tabs -->
       {#if isProcessing}
@@ -899,6 +923,11 @@
   .chip-amber { background: rgba(217,119,6,.12);   color: #d97706; }
   .chip-blue  { background: rgba(37,99,235,.12);    color: #2563eb; }
 
+  .done-banner {
+    margin: 0 0 12px; padding: 10px 14px; border-radius: 8px;
+    background: rgba(22,163,74,.12); border: 1px solid rgba(22,163,74,.35);
+    color: #16a34a; font-size: 13px; font-weight: 600; text-align: center;
+  }
   .processing-panel {
     display: flex; flex-direction: column; align-items: center;
     gap: 14px; padding: 36px 20px; text-align: center;
