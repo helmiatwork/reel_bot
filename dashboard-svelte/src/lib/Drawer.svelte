@@ -100,7 +100,6 @@
     { key: 'downloading', label: 'Mengunduh video' },
     { key: 'splitting', label: 'Memotong klip per menit' },
     { key: 'saving', label: 'Menyimpan atribut klip ke database' },
-    { key: 'working', label: 'Menunggu analisa & storyboard Gemini selesai' },
   ]
   const PROC_STAGE_ORDER = {
     saving_meta: 0, downloading: 1, detecting: 2, grouping: 2, splitting: 2,
@@ -588,13 +587,11 @@
                   {#if ps === 'done'}✓{:else if ps === 'active'}<span class="spin-sm"></span>{:else}○{/if}
                 </span>
                 <span class="proc-label">{step.label}</span>
-                {#if step.key === 'working' && ps !== 'pending'}
-                  <button class="proc-brief-btn" onclick={showGeminiBrief}>Tampilkan prompt</button>
-                {/if}
               </div>
             {/each}
           </div>
-          <div class="processing-sub">Hasil analisa akan muncul di sini otomatis saat selesai.</div>
+          <button class="proc-brief-btn" onclick={showGeminiBrief}>Tampilkan prompt Gemini</button>
+          <div class="processing-sub">Klip siap. Analisa & storyboard Gemini dipantau di daftar Proses / status baris — hasil muncul di sini otomatis saat selesai.</div>
         </div>
       {/if}
 
