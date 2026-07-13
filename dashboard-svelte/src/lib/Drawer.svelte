@@ -422,6 +422,11 @@
       <!-- ANALISA TAB -->
       {#if activeTab === 'analisa'}
         <div class="tab-panel">
+          {#if analysis.tags?.length}
+            <div class="tags-row">
+              {#each analysis.tags as t}<span class="tag">{t}</span>{/each}
+            </div>
+          {/if}
           <!-- Analysis section cards -->
           {#if analysis.hook}
             <div class="ana-card">
@@ -468,12 +473,6 @@
               <div class="ana-body">{analysis.detail}</div>
             </div>
           {/if}
-          {#if analysis.tags?.length}
-            <div class="tags-row">
-              {#each analysis.tags as t}<span class="tag">{t}</span>{/each}
-            </div>
-          {/if}
-
         </div>
       {/if}
 
