@@ -362,7 +362,7 @@
           class="tab-btn {activeTab === 'analisa' ? 'active' : ''}"
           onclick={() => activeTab = 'analisa'}
         >
-          Analisa{d.data?.status ? ` (${d.data.status})` : ''}
+          Analisa{#if d.data?.status}<span class="status-chip tab-chip {d.data.status === 'analyzed' ? 'chip-green' : d.data.status === 'error' ? 'chip-red' : 'chip-mut'}">{d.data.status}</span>{/if}
         </button>
         <button
           class="tab-btn {activeTab === 'frames' ? 'active' : ''}"
@@ -739,6 +739,7 @@
 
   /* Status chip */
   .status-chip { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+  .tab-chip { margin-left: 6px; padding: 2px 8px; font-size: 10px; vertical-align: middle; }
   .chip-green { background: rgba(10,179,156,.12); color: var(--green); }
   .chip-red   { background: rgba(240,101,72,.12);  color: var(--red);   }
   .chip-mut   { background: rgba(148,163,184,.16); color: var(--mut);   }
