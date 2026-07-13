@@ -100,7 +100,7 @@
     { key: 'downloading', label: 'Mengunduh video' },
     { key: 'splitting', label: 'Memotong klip per menit' },
     { key: 'saving', label: 'Menyimpan atribut klip ke database' },
-    { key: 'working', label: 'Menunggu analisa Gemini selesai' },
+    { key: 'working', label: 'Menunggu storyboard Gemini selesai' },
   ]
   const PROC_STAGE_ORDER = {
     saving_meta: 0, downloading: 1, detecting: 2, grouping: 2, splitting: 2,

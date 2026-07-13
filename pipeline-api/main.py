@@ -6652,10 +6652,11 @@ def analyze_gemini_brief(youtube_url: str):
 
     Returns a static instruction template telling the Gemini agent to:
     1. Call reelbot MCP get_clips(youtube_url) to get local segment files
-    2. Analyze each segment and produce video analysis JSON
-    3. Call reelbot MCP save_analysis(youtube_url, json) to persist the analysis
-    4. Analyze each segment and produce per-scene storyboard JSON
-    5. Call reelbot MCP save_storyboard(youtube_url, json) to persist the storyboard
+    2. Watch each segment and produce per-scene storyboard JSON
+    3. Call reelbot MCP save_storyboard(youtube_url, json) to persist the storyboard
+
+    Analysis (hook/retention/tags) is handled separately by the fast Claude
+    analyze pass — Gemini only builds the storyboard here.
 
     Query param: youtube_url
     Returns: {"instruction": str, "youtube_url": str}
@@ -6665,30 +6666,25 @@ def analyze_gemini_brief(youtube_url: str):
     except HTTPException:
         raise HTTPException(status_code=400, detail="invalid youtube_url")
 
-    instruction = f"""You are analyzing video clips for a short-form content project.
+    instruction = f"""You are building a per-scene storyboard from video clips for a short-form content project.
 
 RULES:
-- You have EXACTLY THREE MCP tools available: `get_clips`, `save_analysis`, and `save_storyboard`. Use them in that order only.
-- Do NOT call any other tool, open a browser, run terminal commands, use whisper/scenedetect/cv2, write any script, or reference local file paths.
+- You have EXACTLY TWO MCP tools available: `get_clips` and `save_storyboard`. Use them in that order only.
+- Do NOT search or read any file in the workspace/codebase, call any other tool, open a browser, run terminal commands, use whisper/scenedetect/cv2, write any script, or reference local file paths. The two MCP tools are fully self-documenting.
 - Do NOT run any preprocessing — the clips are already prepared.
 - CRITICAL: base EVERY field on what you ACTUALLY SEE AND HEAR in the clip videos. Never use placeholder or example values.
 
 Task:
 STEP 1: Call the reelbot MCP tool `get_clips` with youtube_url="{youtube_url}" to get the list of segment files (~60s each, in order). WATCH every returned clip carefully.
 
-STEP 2: Based on ONLY what you saw/heard in the clips, produce a video ANALYSIS JSON with the schema below. Call `save_analysis` with youtube_url="{youtube_url}" and the analysis JSON.
+STEP 2: Based on what you saw in the clips, break the content into scenes of ≤8 seconds. Produce a detailed per-scene STORYBOARD JSON with the schema below. Call `save_storyboard` with youtube_url="{youtube_url}" and the storyboard JSON.
 
-STEP 3: Based on what you saw in the clips, break the content into scenes of ≤8 seconds. Produce a detailed per-scene STORYBOARD JSON with the schema below. Call `save_storyboard` with youtube_url="{youtube_url}" and the storyboard JSON.
+If get_clips returns an error or an empty list, STOP and report the error. Never invent, guess, or fabricate scenes.
 
-If get_clips returns an error or an empty list, STOP and report the error. Never invent, guess, or fabricate scenes or analysis fields.
-
-ANALYSIS JSON SCHEMA (for STEP 2 — output must match this exactly):
-{ANALYSIS_JSON_SCHEMA}
-
-STORYBOARD JSON SCHEMA (for STEP 3 — output must match this exactly):
+STORYBOARD JSON SCHEMA (for STEP 2 — output must match this exactly):
 {STORYBOARD_JSON_SCHEMA}
 
-Execute steps 1, 2, and 3 in order. Use only the three MCP tools."""
+Execute steps 1 and 2 in order. Use only the two MCP tools."""
 
     return {
         "instruction": instruction,
