@@ -294,11 +294,25 @@ export function fmtViews(n) {
   return String(n)
 }
 
-// Job status helper: a job is "active running" if status=running AND created < 30 min ago.
+// Job status helper: a job is "active running" if:
+// - For analyze_source: status=running AND created < 30 min ago
+// - For decompose: status is one of the active stages (not done/error) AND created < 30 min ago
 // Real analyze jobs finish in minutes; anything running >30 min is stale/crashed/test.
 export function isActiveRunning(job) {
-  if (job.status !== 'running') return false
   const now = Date.now() / 1000
   const age = now - job.created
-  return age < 1800  // 30 minutes in seconds
+  if (age >= 1800) return false  // 30 minutes in seconds
+
+  // Analyze runs: status must be 'running'
+  if (job.kind === 'analyze_source' || !job.kind) {
+    return job.status === 'running'
+  }
+
+  // Decompose runs: status must be one of the active stages
+  if (job.kind === 'decompose') {
+    const activeStages = ['downloading', 'detecting', 'grouping', 'splitting', 'finding', 'saving']
+    return activeStages.includes(job.status)
+  }
+
+  return false
 }

@@ -106,6 +106,20 @@
     return 'gray'
   }
 
+  function getDecomposeStageLabel(stage) {
+    const stageMap = {
+      'downloading': 'Mengunduh video…',
+      'detecting': 'Mendeteksi scene…',
+      'grouping': 'Mengelompokkan…',
+      'splitting': 'Memotong klip per menit…',
+      'finding': 'Menautkan klip…',
+      'saving': 'Menyimpan…',
+      'done': 'Selesai',
+      'error': 'Gagal'
+    }
+    return stageMap[stage] || stage
+  }
+
   function truncateUrl(url) {
     if (!url) return '—'
     if (url.startsWith('file://')) return 'Uploaded file'
@@ -175,21 +189,35 @@
                 class="job-row"
                 onclick={() => selectJob(job)}
               >
-                <div class="job-main">
-                  <div class="job-url">{job.title || truncateUrl(job.url)}</div>
-                  <div class="job-meta">
-                    <span class={`status-chip status-${getStatusColor(job.status)}`}>
-                      {job.status}
-                    </span>
-                    {#if job.output_format && job.output_format !== 'none'}
-                      <span class={`format-badge format-${job.output_format}`}>
-                        {job.output_format === 'prompt_json' ? 'JSON' : 'Text'}
+                {#if job.kind === 'decompose'}
+                  <!-- Decompose run: simple row with stage label -->
+                  <div class="job-main">
+                    <div class="job-url">{job.title || truncateUrl(job.url)}</div>
+                    <div class="job-meta">
+                      <span class="decompose-stage">
+                        {getDecomposeStageLabel(job.current_stage)}
                       </span>
-                    {/if}
-                    <span class="time">{formatRelativeTime(job.created)}</span>
+                      <span class="time">{formatRelativeTime(job.created)}</span>
+                    </div>
                   </div>
-                  <div class="job-msg">{job.last_msg}</div>
-                </div>
+                {:else}
+                  <!-- Analyze run: status badge + format -->
+                  <div class="job-main">
+                    <div class="job-url">{job.title || truncateUrl(job.url)}</div>
+                    <div class="job-meta">
+                      <span class={`status-chip status-${getStatusColor(job.status)}`}>
+                        {job.status}
+                      </span>
+                      {#if job.output_format && job.output_format !== 'none'}
+                        <span class={`format-badge format-${job.output_format}`}>
+                          {job.output_format === 'prompt_json' ? 'JSON' : 'Text'}
+                        </span>
+                      {/if}
+                      <span class="time">{formatRelativeTime(job.created)}</span>
+                    </div>
+                    <div class="job-msg">{job.last_msg}</div>
+                  </div>
+                {/if}
               </div>
             {/each}
           {:else}
@@ -205,15 +233,45 @@
               ← Kembali
             </button>
             <div class="detail-status">
-              <span class={`status-chip status-${getStatusColor(selectedJobDetail?.status || 'unknown')}`}>
-                {selectedJobDetail?.status || 'unknown'}
-              </span>
+              {#if selectedJobDetail?.kind === 'decompose'}
+                <span class="decompose-stage">
+                  {getDecomposeStageLabel(selectedJobDetail?.current_stage || 'unknown')}
+                </span>
+              {:else}
+                <span class={`status-chip status-${getStatusColor(selectedJobDetail?.status || 'unknown')}`}>
+                  {selectedJobDetail?.status || 'unknown'}
+                </span>
+              {/if}
             </div>
           </div>
 
-          <!-- Analyze stepper (all jobs in this popup are analyze runs) -->
-          {#if selectedJobDetail?.log}
+          <!-- Analyze stepper (only for analyze_source runs) -->
+          {#if selectedJobDetail?.kind !== 'decompose' && selectedJobDetail?.log}
             <AnalyzeStepper logs={selectedJobDetail.log} />
+          {/if}
+
+          <!-- Decompose stage info -->
+          {#if selectedJobDetail?.kind === 'decompose'}
+            <div class="decompose-detail">
+              <div class="detail-section">
+                <span class="field-label">Stage</span>
+                <div class="field-value">
+                  {getDecomposeStageLabel(selectedJobDetail?.current_stage || 'unknown')}
+                </div>
+              </div>
+              {#if selectedJobDetail?.interval_sec}
+                <div class="detail-section">
+                  <span class="field-label">Interval</span>
+                  <div class="field-value">{selectedJobDetail.interval_sec}s per clip</div>
+                </div>
+              {/if}
+              {#if selectedJobDetail?.segments && selectedJobDetail.segments.length > 0}
+                <div class="detail-section">
+                  <span class="field-label">Clips Found</span>
+                  <div class="field-value">{selectedJobDetail.segments.length}</div>
+                </div>
+              {/if}
+            </div>
           {/if}
 
           <!-- Result display (if done) -->
@@ -451,6 +509,21 @@
     color: #a855f7;
   }
 
+  .format-decompose {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+  }
+
+  .decompose-stage {
+    padding: 0.25rem 0.625rem;
+    border-radius: 3px;
+    font-weight: 500;
+    font-size: 0.75rem;
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    white-space: nowrap;
+  }
+
   .time {
     color: var(--mut);
     margin-left: auto;
@@ -635,5 +708,17 @@
 
   .btn-close:hover {
     background: var(--border);
+  }
+
+  .decompose-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .detail-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 </style>
