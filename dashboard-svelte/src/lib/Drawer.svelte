@@ -220,6 +220,30 @@
     })
   }
 
+  // Gemini brief popup: the instruction the user pastes into Antigravity
+  let geminiBriefModal = $state(null)
+  let geminiBriefLoading = $state(false)
+  let geminiBriefCopied = $state(false)
+  async function showGeminiBrief() {
+    const url = d?.data?.youtube_url
+    if (!url) return
+    geminiBriefLoading = true
+    geminiBriefModal = ''
+    try {
+      const res = await api.getGeminiBrief(url)
+      geminiBriefModal = res?.instruction || res?.error || 'Gagal mengambil instruksi'
+    } catch (e) {
+      geminiBriefModal = `Error: ${e.message}`
+    } finally {
+      geminiBriefLoading = false
+    }
+  }
+  function copyGeminiBrief() {
+    navigator.clipboard.writeText(geminiBriefModal)
+    geminiBriefCopied = true
+    setTimeout(() => { geminiBriefCopied = false }, 2000)
+  }
+
   function stopPoll() {
     if (pollInterval) { clearInterval(pollInterval); pollInterval = null }
   }
@@ -405,6 +429,35 @@
   </div>
 {/if}
 
+<!-- Gemini brief popup: paste into Antigravity -->
+{#if geminiBriefModal !== null}
+  <div
+    class="lb-overlay"
+    onclick={() => geminiBriefModal = null}
+    onkeydown={(e) => { if (e.key === 'Escape') geminiBriefModal = null }}
+    role="dialog"
+    aria-modal="true"
+    aria-label="Prompt Gemini"
+    tabindex="-1"
+  >
+    <button class="lb-close" onclick={() => geminiBriefModal = null} aria-label="Tutup">✕</button>
+    <div class="lb-card" onclick={(e) => e.stopPropagation()} role="document" style="max-width:640px">
+      <div class="lb-info">
+        <div class="lb-frame-no">Prompt untuk Antigravity (Gemini)</div>
+        {#if geminiBriefLoading}
+          <div class="brief-loading"><span class="spin-sm"></span> Mengambil instruksi…</div>
+        {:else}
+          <pre class="lb-json">{geminiBriefModal}</pre>
+          <button class="copy-btn" onclick={copyGeminiBrief}>
+            {geminiBriefCopied ? '✓ Tersalin' : 'Salin prompt'}
+          </button>
+          <div class="brief-hint">Tempel ke Antigravity. Gemini akan panggil reelbot MCP, analisa klip, simpan hasil otomatis.</div>
+        {/if}
+      </div>
+    </div>
+  </div>
+{/if}
+
 {#if d}
   <!-- Backdrop -->
   <div
@@ -511,6 +564,9 @@
                   {#if ps === 'done'}✓{:else if ps === 'active'}<span class="spin-sm"></span>{:else}○{/if}
                 </span>
                 <span class="proc-label">{step.label}</span>
+                {#if step.key === 'working' && ps !== 'pending'}
+                  <button class="proc-brief-btn" onclick={showGeminiBrief}>Tampilkan prompt</button>
+                {/if}
               </div>
             {/each}
           </div>
@@ -860,6 +916,10 @@
   .proc-step.active { color: var(--txt); font-weight: 600; }
   .proc-step.done { color: #16a34a; }
   .proc-step.done .proc-icon { color: #16a34a; font-weight: 700; }
+  .proc-brief-btn { margin-left: auto; padding: 3px 10px; font-size: 12px; font-weight: 600; color: #fff; background: #6b46c1; border: none; border-radius: 6px; cursor: pointer; }
+  .proc-brief-btn:hover { background: #5a3aa8; }
+  .brief-loading { display: flex; align-items: center; gap: 8px; color: var(--mut); font-size: 13px; padding: 12px 0; }
+  .brief-hint { margin-top: 10px; font-size: 12px; color: var(--mut); line-height: 1.5; }
   .spin-sm {
     width: 14px; height: 14px; border: 2px solid rgba(37,99,235,.25);
     border-top-color: #2563eb; border-radius: 50%; animation: spin .8s linear infinite;
