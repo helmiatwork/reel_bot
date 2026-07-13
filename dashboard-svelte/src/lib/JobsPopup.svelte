@@ -79,7 +79,19 @@
       // instead of flipping to "done" the moment the fast clip-cut finishes.
       const statusByUrl = {}
       if (srcTable?.rows) for (const r of srcTable.rows) statusByUrl[r.youtube_url] = r.status
-      if (data) jobs = data.map((j) => ({ ...j, sourceStatus: statusByUrl[j.url] || null }))
+      if (data) {
+        // Dedupe by url — one video can have several runs (repeated decompose/analyze).
+        // API returns newest-first, so keep the first occurrence per url.
+        const seen = new Set()
+        jobs = data
+          .map((j) => ({ ...j, sourceStatus: statusByUrl[j.url] || null }))
+          .filter((j) => {
+            const k = j.url || j.run_id
+            if (seen.has(k)) return false
+            seen.add(k)
+            return true
+          })
+      }
     } catch (e) {
       console.error('[pollList] error:', e)
     }
