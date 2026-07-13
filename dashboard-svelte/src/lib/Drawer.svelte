@@ -474,24 +474,6 @@
             </div>
           {/if}
 
-          {#if segments.length}
-            <h3 style="margin:16px 0 8px;font-size:13px;font-weight:600">Segmen</h3>
-            <div class="seg-list">
-              {#each segments as seg}
-                <div class="seg-row">
-                  <span class="seg-idx">Klip {seg.clip_index}</span>
-                  <span class="seg-time">{seg.start_sec?.toFixed(1)}–{seg.end_sec?.toFixed(1)} dtk</span>
-                  <span class="badge-sm {seg.origin_status === 'found' ? 'b-found' : 'b-grey'}">{seg.origin_status}</span>
-                  <span class="seg-credit">{seg.credit_handle || '—'}</span>
-                  {#if seg.original_url}
-                    <a href={seg.original_url} target="_blank" rel="noopener noreferrer" style="font-size:12px">asli</a>
-                  {:else}
-                    <span class="mut" style="font-size:12px">belum ketemu</span>
-                  {/if}
-                </div>
-              {/each}
-            </div>
-          {/if}
         </div>
       {/if}
 
