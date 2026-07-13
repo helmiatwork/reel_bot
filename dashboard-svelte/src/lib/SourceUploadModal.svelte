@@ -269,11 +269,9 @@
       // over smoothly before the prompt appears.
       await animatePrepToDone()
 
-      // Analysis runs on Claude automatically (fast) — Gemini only does the storyboard.
-      // Fire-and-forget: output_format 'none' = frames+analysis, never touches gen_prompt.
-      api.analyzeClaudeAsync(urlInput.trim(), { output_format: 'none', stages: 'full' }).catch(() => {})
-
-      // Phase B: Fetch Gemini brief & start monitoring storyboard
+      // Phase B: Fetch Gemini brief & start monitoring.
+      // Gemini writes BOTH analysis and storyboard (save_analysis + save_storyboard).
+      // Claude is only a manual fallback via the Re-analyze button in the drawer.
       storyboardPhase = 'brief'
       const result = await api.getGeminiBrief(urlInput.trim())
       if (result?.instruction) {
@@ -458,7 +456,7 @@
                 >
                   {geminiBriefCopied ? '✓ Tersalin' : 'Salin'}
                 </button>
-                <div class="brief-note">Tempel instruksi ini ke Antigravity untuk membuat storyboard. Gemini menonton klip lewat reelbot MCP dan menyimpan storyboard. Analisa (hook/retensi/tags) jalan otomatis via Claude — tidak perlu Gemini.</div>
+                <div class="brief-note">Tempel instruksi ini ke Antigravity. Gemini menonton klip lewat reelbot MCP, lalu menyimpan analisa + storyboard sekaligus. (Claude hanya cadangan manual via tombol Re-analyze kalau Gemini bermasalah.)</div>
 
                 {#if storyboardPhase === 'analyzing'}
                   <div class="analyzing-box {geminiStarted ? 'working' : ''}" transition:fade={{ duration: 150 }}>
