@@ -2,7 +2,7 @@
   import { fade, scale } from 'svelte/transition'
   import { cubicOut } from 'svelte/easing'
   import { untrack } from 'svelte'
-  import { api } from './api.js'
+  import { api, isActiveRunning } from './api.js'
   import { onDestroy } from 'svelte'
   import AnalyzeStepper from './AnalyzeStepper.svelte'
 
@@ -83,6 +83,17 @@
     } catch (e) {
       console.error('[pollList] error:', e)
     }
+  }
+
+  // Show only in-progress jobs; hide finished ones. A decompose job stays visible until
+  // its source reaches 'analyzed' (so it survives the Gemini wait after clip-cut finishes).
+  function isJobActive(job) {
+    if (job.kind === 'decompose') {
+      const ss = job.sourceStatus
+      if (ss) return ss !== 'analyzed' && ss !== 'error'
+      return job.status !== 'done' && job.status !== 'error'
+    }
+    return isActiveRunning(job)
   }
 
   // Live label for a job: prefer the source's overall status (processing → working →
@@ -218,8 +229,8 @@
       {#if !selectedRunId}
         <!-- Jobs List View -->
         <div class="jobs-list" transition:fade={{ duration: 150 }}>
-          {#if jobs.length > 0}
-            {#each jobs as job (job.run_id)}
+          {#if jobs.filter(isJobActive).length > 0}
+            {#each jobs.filter(isJobActive) as job (job.run_id)}
               <div
                 class="job-row"
                 onclick={() => selectJob(job)}
