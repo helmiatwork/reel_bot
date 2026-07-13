@@ -997,11 +997,11 @@
   .scene-play:hover { opacity: .85; }
   .scene-json-btn {
     width: 28px; height: 28px; padding: 0;
-    border: 1px solid var(--line); background: var(--soft); color: var(--mut);
+    border: none; background: #6b46c1; color: white;
     border-radius: 4px; cursor: pointer; font-size: 11px; font-family: monospace;
-    transition: all .15s;
+    transition: opacity .15s;
   }
-  .scene-json-btn:hover { color: var(--txt); border-color: var(--accent); }
+  .scene-json-btn:hover { opacity: .85; }
   .scene-info {
     flex: 1; display: flex; flex-direction: column; gap: 4px;
   }
