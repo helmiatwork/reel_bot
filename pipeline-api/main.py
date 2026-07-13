@@ -6670,9 +6670,10 @@ def analyze_gemini_brief(youtube_url: str):
 
 RULES:
 - You have EXACTLY THREE MCP tools available: `get_clips`, `save_analysis`, and `save_storyboard`. Use them in that order only.
-- Do NOT search or read any file in the workspace/codebase, call any other tool, open a browser, run terminal commands, use whisper/scenedetect/cv2, write any script, or reference local file paths. The three MCP tools are fully self-documenting.
+- get_clips returns a list of local video files (each `segment_path` is an .mp4). You MUST OPEN AND WATCH every one of those video files — that is the whole point. Antigravity loads them for you; treat each as a real video to view, not as text.
+- Do NOT search or read source code in the workspace, call any other tool, open a browser, run terminal commands, use whisper/scenedetect/cv2, or write any script. (Watching the get_clips .mp4 files is REQUIRED, not forbidden.)
 - Do NOT run any preprocessing — the clips are already prepared.
-- CRITICAL: base EVERY field on what you ACTUALLY SEE AND HEAR in the clip videos. Never use placeholder or example values.
+- CRITICAL: base EVERY field on what you ACTUALLY SEE AND HEAR in the clip videos. If you did not actually view the video frames, STOP and report that you could not watch the clips — NEVER guess, invent, or describe generic content. Fabricated analysis is worse than no analysis.
 
 Task:
 STEP 1: Call the reelbot MCP tool `get_clips` with youtube_url="{youtube_url}" to get the list of segment files (~60s each, in order). WATCH every returned clip carefully.
