@@ -2691,20 +2691,21 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
     def _decompose_job():
         frame_dir = None  # set once video_id is known; used by finally cleanup
         try:
-            # For per-minute Gemini prep (interval_sec > 0): insert source metadata + 'processing'
-            # status BEFORE the (slow) download, so the row appears in the Sources table
-            # immediately on submit with title/channel/views visible.
-            if req.interval_sec and req.interval_sec > 0:
-                _insert_source_with_metadata(req.youtube_url)
-
-            # Download
+            # Step 1: download the video
             _save_run(run_id, _update_run(run_id, status="downloading"))
             video_path = _download_source_video(req.youtube_url)
             video_id = _extract_video_id_from_youtube_url(req.youtube_url)
 
+            # Step 2 (per-minute Gemini prep): save the video's attributes (title, channel,
+            # views, niche) + 'processing' status to the DB so the Sources row appears.
+            if req.interval_sec and req.interval_sec > 0:
+                _save_run(run_id, _update_run(run_id, status="saving_meta"))
+                _insert_source_with_metadata(req.youtube_url)
+
             # Fixed-interval mode: skip scene detection entirely
             clips = []
             if req.interval_sec and req.interval_sec > 0:
+                # Step 3: cut the video into per-minute clips
                 _save_run(run_id, _update_run(run_id, status="splitting"))
                 # Get video duration via ffprobe
                 import math

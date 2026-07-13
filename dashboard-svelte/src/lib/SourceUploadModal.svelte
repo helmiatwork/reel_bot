@@ -43,6 +43,7 @@
   let prepPollCount = $state(0)
   const PREP_STAGE_LABEL = {
     downloading: 'Mengunduh video…',
+    saving_meta: 'Menyimpan atribut video…',
     detecting: 'Mendeteksi scene…',
     grouping: 'Mengelompokkan…',
     splitting: 'Memotong klip per menit…',
@@ -53,10 +54,11 @@
   // order = how far the pipeline has progressed; each stage maps to a step.
   const PREP_STEPS = [
     { key: 'downloading', label: 'Mengunduh video' },
+    { key: 'saving_meta', label: 'Menyimpan atribut video' },
     { key: 'splitting', label: 'Memotong klip per menit' },
-    { key: 'saving', label: 'Menyimpan ke database' },
+    { key: 'saving', label: 'Menyimpan atribut klip ke database' },
   ]
-  const PREP_STAGE_ORDER = { downloading: 0, detecting: 1, grouping: 1, splitting: 1, finding: 2, saving: 2, done: 3 }
+  const PREP_STAGE_ORDER = { downloading: 0, saving_meta: 1, detecting: 2, grouping: 2, splitting: 2, finding: 3, saving: 3, done: 4 }
   // Status of a step given the current prepStage: done | active | pending
   function prepStepStatus(stepKey) {
     const cur = PREP_STAGE_ORDER[prepStage] ?? 0
