@@ -2688,6 +2688,11 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
             video_path = _download_source_video(req.youtube_url)
             video_id = _extract_video_id_from_youtube_url(req.youtube_url)
 
+            # For per-minute Gemini prep (interval_sec > 0): insert source metadata + 'processing' status upfront
+            # so the row appears in the Sources table immediately with metadata visible
+            if req.interval_sec and req.interval_sec > 0:
+                _insert_source_with_metadata(req.youtube_url)
+
             # Fixed-interval mode: skip scene detection entirely
             clips = []
             if req.interval_sec and req.interval_sec > 0:
@@ -2772,13 +2777,16 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
                 try:
                     with conn.cursor() as cur:
                         # Upsert source (compilation)
+                        # For per-minute Gemini prep (interval_sec > 0): keep status='processing' (already set upfront)
+                        # For compilation (interval_sec == 0): set status='analyzed' (clips are complete, ready for traditional flow)
+                        status_val = "processing" if (req.interval_sec and req.interval_sec > 0) else "analyzed"
                         cur.execute("""
                             INSERT INTO sources (youtube_url, platform, status)
                             VALUES (%s, %s, %s)
                             ON CONFLICT (youtube_url) DO UPDATE
-                            SET status = 'analyzed'
+                            SET status = %s
                             RETURNING id
-                        """, (req.youtube_url, "youtube", "analyzed"))
+                        """, (req.youtube_url, "youtube", status_val, status_val))
                         source_id = cur.fetchone()[0]
 
                         # Update insert tuples with correct source_id
@@ -5198,6 +5206,55 @@ def _stub_source(youtube_url: str, title: Optional[str] = None) -> None:
             conn.close()
     except Exception as e:
         print(f"[sources] _stub_source error (non-fatal): {e}")
+
+
+def _insert_source_with_metadata(youtube_url: str) -> None:
+    """
+    Insert or enrich a source row with metadata + 'processing' status at the START
+    of per-minute decompose (Gemini prep). Non-fatal: any error is logged but doesn't break decompose.
+
+    Behavior:
+    - Fetch channel metadata via yt-dlp
+    - If new row: INSERT with title, channel, views_at_analysis, niche, status='processing'
+    - If row exists: UPDATE metadata fields (title, channel, views_at_analysis, niche) only
+      where currently NULL (COALESCE pattern), and set status='processing' ONLY if not already 'analyzed'
+    """
+    try:
+        if _detect_platform(youtube_url) == "xiaohongshu":
+            # yt-dlp has no XHS metadata; gracefully degrade
+            return
+        try:
+            meta = _fetch_channel_meta(youtube_url)
+        except Exception as e:
+            print(f"[decompose] _insert_source_with_metadata: fetch failed (non-fatal): {e}")
+            meta = {}
+
+        # If fetch failed entirely, still upsert stub with just youtube_url and status
+        title = meta.get("title") or ""
+        channel = meta.get("channel") or ""
+        views_at_analysis = meta.get("view_count")
+        niche = _infer_niche(title, "", channel) if title or channel else ""
+
+        conn = _db_conn()
+        if not conn:
+            return
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO sources (youtube_url, title, platform, channel, views_at_analysis, niche, status)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (youtube_url) DO UPDATE SET
+                        title = COALESCE(NULLIF(sources.title, ''), EXCLUDED.title, sources.title),
+                        channel = COALESCE(NULLIF(sources.channel, ''), EXCLUDED.channel, sources.channel),
+                        views_at_analysis = COALESCE(NULLIF(sources.views_at_analysis, 0), EXCLUDED.views_at_analysis, sources.views_at_analysis),
+                        niche = COALESCE(NULLIF(sources.niche, ''), EXCLUDED.niche, sources.niche),
+                        status = CASE WHEN sources.status = 'analyzed' THEN 'analyzed' ELSE 'processing' END
+                """, (youtube_url, title, _detect_platform(youtube_url), channel, views_at_analysis, niche, "processing"))
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception as e:
+        print(f"[decompose] _insert_source_with_metadata error (non-fatal): {e}")
 
 
 def _save_source(youtube_url: str) -> None:
