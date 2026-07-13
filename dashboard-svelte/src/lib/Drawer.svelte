@@ -507,10 +507,8 @@
                 <video
                   bind:this={videoRef}
                   controls
-                  width="100%"
-                  height="auto"
                   src={`/media/source/${videoId}`}
-                  style="background: #000; border-radius: 4px; margin-bottom: 8px"
+                  style="background: #000; border-radius: 4px; margin-bottom: 8px; width: 100%; max-height: 34vh; object-fit: contain; display: block"
                 />
               </div>
             {/if}
