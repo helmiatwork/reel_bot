@@ -49,6 +49,22 @@
     finding: 'Menautkan klip…',
     saving: 'Menyimpan ke database…',
   }
+  // Live step checklist for the prep phase (like the analyze stepper).
+  // order = how far the pipeline has progressed; each stage maps to a step.
+  const PREP_STEPS = [
+    { key: 'downloading', label: 'Mengunduh video' },
+    { key: 'splitting', label: 'Memotong klip per menit' },
+    { key: 'saving', label: 'Menyimpan ke database' },
+  ]
+  const PREP_STAGE_ORDER = { downloading: 0, detecting: 1, grouping: 1, splitting: 1, finding: 2, saving: 2, done: 3 }
+  // Status of a step given the current prepStage: done | active | pending
+  function prepStepStatus(stepKey) {
+    const cur = PREP_STAGE_ORDER[prepStage] ?? 0
+    const idx = PREP_STEPS.findIndex(s => s.key === stepKey)
+    if (cur > idx) return 'done'
+    if (cur === idx) return 'active'
+    return 'pending'
+  }
 
   // Set when the submitted URL is already in the library
   let existsSource = $state(null)
@@ -386,12 +402,20 @@
                 {/if}
               </button>
             {:else if storyboardPhase === 'clips'}
-              <div class="phase-box" transition:fade={{ duration: 150 }}>
-                <span class="spinner-sm"></span>
-                <div class="phase-text">
-                  <span class="phase-title">Menyiapkan clip…</span>
-                  <span class="phase-sub">{PREP_STAGE_LABEL[prepStage] || 'Memproses…'} · {prepPollCount}s</span>
+              <div class="prep-stepper" transition:fade={{ duration: 150 }}>
+                <div class="prep-hd">
+                  <span class="prep-title">Menyiapkan clip</span>
+                  <span class="prep-elapsed">{prepPollCount}s</span>
                 </div>
+                {#each PREP_STEPS as step}
+                  {@const st = prepStepStatus(step.key)}
+                  <div class="prep-step {st}">
+                    <span class="prep-icon">
+                      {#if st === 'done'}✓{:else if st === 'active'}<span class="spinner-sm"></span>{:else}○{/if}
+                    </span>
+                    <span class="prep-label">{step.label}</span>
+                  </div>
+                {/each}
               </div>
             {:else if storyboardPhase === 'brief' || storyboardPhase === 'analyzing'}
               <div class="brief-box" transition:fade={{ duration: 150 }}>
@@ -884,19 +908,28 @@
     to { transform: rotate(360deg); }
   }
 
-  .phase-box {
-    display: flex; align-items: center; gap: 10px;
+  .prep-stepper {
+    display: flex; flex-direction: column; gap: 8px;
     padding: 14px 16px; background: var(--soft, #f1f5f9);
     border: 1px solid var(--line, #e2e8f0); border-radius: 8px;
   }
-  .phase-box .spinner-sm {
-    width: 18px; height: 18px; border-width: 2px;
-    border-color: rgba(107,70,193,.25); border-top-color: #6b46c1;
-    flex-shrink: 0;
+  .prep-hd { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .prep-title { font-size: 14px; font-weight: 600; }
+  .prep-elapsed { font-size: 12px; color: var(--mut, #64748b); }
+  .prep-step { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .prep-icon {
+    width: 18px; height: 18px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
   }
-  .phase-text { display: flex; flex-direction: column; gap: 2px; }
-  .phase-title { font-size: 14px; font-weight: 600; }
-  .phase-sub { font-size: 12px; color: var(--mut, #64748b); }
+  .prep-step.pending { color: var(--mut, #94a3b8); }
+  .prep-step.pending .prep-icon { color: var(--mut, #cbd5e1); }
+  .prep-step.active { color: var(--txt, #0f172a); font-weight: 600; }
+  .prep-step.done { color: #16a34a; }
+  .prep-step.done .prep-icon { color: #16a34a; font-weight: 700; }
+  .prep-step .spinner-sm {
+    width: 14px; height: 14px; border-width: 2px;
+    border-color: rgba(107,70,193,.25); border-top-color: #6b46c1; margin: 0;
+  }
 
   /* Analysis mode selector */
   .analysis-mode-selector {
