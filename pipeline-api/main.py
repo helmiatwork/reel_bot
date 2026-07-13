@@ -1154,9 +1154,17 @@ def health():
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 def root():
-    """Serve the Reelbot dashboard UI."""
+    """Serve the Reelbot dashboard UI.
+
+    index.html is served with no-cache so the browser always revalidates it and
+    picks up new hashed JS/CSS bundles after a rebuild. The /assets files are
+    content-hashed (immutable), so they stay cacheable — only this shell must not.
+    """
     if DASHBOARD.exists():
-        return FileResponse(str(DASHBOARD))
+        return FileResponse(
+            str(DASHBOARD),
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+        )
     return HTMLResponse("<h2>Reelbot API running</h2><p><a href='/docs'>API docs</a></p>")
 
 
