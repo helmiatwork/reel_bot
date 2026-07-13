@@ -1651,14 +1651,17 @@ def _scenes_to_shots(scene_list: list) -> list:
     return shots
 
 
-def _split_segments(video_path: str, video_id: str, shots: list) -> list:
+def _split_segments(video_path: str, video_id: str, shots: list, stream_copy: bool = False) -> list:
     """
-    Split video into segment mp4s using ffmpeg stream-copy (fast).
+    Split video into segment mp4s using ffmpeg.
 
     Args:
         video_path: absolute path to source video
         video_id: sanitized video_id for directory path
         shots: list of shot dicts with start_sec, end_sec
+        stream_copy: when True, cut with -c copy (near-instant, keyframe-snapped —
+            fine for fixed per-minute windows). When False, re-encode for
+            frame-accurate mid-GOP cuts (needed for scenedetect boundaries).
 
     Returns:
         list of shot dicts augmented with "segment_path" field
@@ -1676,20 +1679,32 @@ def _split_segments(video_path: str, video_id: str, shots: list) -> list:
         seg_path = seg_dir / f"seg_{index:02d}.mp4"
 
         try:
-            # Frame-accurate cut: -ss/-to AFTER -i forces exact-frame seeking, and
-            # re-encoding lets ffmpeg cut mid-GOP. Stream-copy (-c copy) snapped the
-            # start back to the nearest keyframe, so segments ran long and bled the
-            # tail of the previous clip. Slower, but precise — fine for short-form.
-            cmd = [
-                "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
-                "-i", str(video_path),
-                "-ss", str(start), "-to", str(end),
-                "-c:v", "libx264", "-preset", "medium", "-crf", "18",
-                "-pix_fmt", "yuv420p",
-                "-c:a", "aac", "-b:a", "192k",
-                "-movflags", "+faststart",
-                str(seg_path),
-            ]
+            if stream_copy:
+                # Fast path: stream-copy, no re-encode. -ss BEFORE -i seeks by keyframe
+                # (near-instant). Fixed per-minute windows don't need frame-accuracy, so
+                # keyframe-snapping is acceptable and ~100x faster than re-encoding.
+                cmd = [
+                    "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+                    "-ss", str(start), "-i", str(video_path),
+                    "-t", str(end - start),
+                    "-c", "copy", "-movflags", "+faststart",
+                    str(seg_path),
+                ]
+            else:
+                # Frame-accurate cut: -ss/-to AFTER -i forces exact-frame seeking, and
+                # re-encoding lets ffmpeg cut mid-GOP. Stream-copy (-c copy) snapped the
+                # start back to the nearest keyframe, so segments ran long and bled the
+                # tail of the previous clip. Slower, but precise — fine for short-form.
+                cmd = [
+                    "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+                    "-i", str(video_path),
+                    "-ss", str(start), "-to", str(end),
+                    "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+                    "-pix_fmt", "yuv420p",
+                    "-c:a", "aac", "-b:a", "192k",
+                    "-movflags", "+faststart",
+                    str(seg_path),
+                ]
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
 
             if proc.returncode == 0 and seg_path.exists():
@@ -2740,7 +2755,7 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
                     {"index": c["clip_index"] - 1, "start_sec": c["start_sec"], "end_sec": c["end_sec"]}
                     for c in clips
                 ]
-                split = _split_segments(str(video_path), video_id, clip_ranges)
+                split = _split_segments(str(video_path), video_id, clip_ranges, stream_copy=bool(req.interval_sec and req.interval_sec > 0))
                 idx_to_path = {s["index"]: s.get("segment_path") for s in split}
                 for c in clips:
                     c["segment_path"] = idx_to_path.get(c["clip_index"] - 1)
