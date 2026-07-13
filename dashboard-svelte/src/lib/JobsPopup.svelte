@@ -139,6 +139,22 @@
     return stageMap[stage] || stage
   }
 
+  // Same prep checklist as the Add-Source form, so the detail view matches.
+  const PREP_STEPS = [
+    { key: 'saving_meta', label: 'Menyimpan atribut video' },
+    { key: 'downloading', label: 'Mengunduh video' },
+    { key: 'splitting', label: 'Memotong klip per menit' },
+    { key: 'saving', label: 'Menyimpan atribut klip ke database' },
+  ]
+  const PREP_STAGE_ORDER = { saving_meta: 0, downloading: 1, detecting: 2, grouping: 2, splitting: 2, finding: 3, saving: 3, done: 4, analyzed: 4 }
+  function prepStepStatus(cur, key) {
+    const c = PREP_STAGE_ORDER[cur] ?? 0
+    const idx = PREP_STEPS.findIndex((s) => s.key === key)
+    if (c > idx) return 'done'
+    if (c === idx) return 'active'
+    return 'pending'
+  }
+
   function truncateUrl(url) {
     if (!url) return '—'
     if (url.startsWith('file://')) return 'Uploaded file'
@@ -274,11 +290,17 @@
           <!-- Decompose stage info -->
           {#if selectedJobDetail?.kind === 'decompose'}
             <div class="decompose-detail">
-              <div class="detail-section">
-                <span class="field-label">Stage</span>
-                <div class="field-value">
-                  {getDecomposeStageLabel(selectedJobDetail?.current_stage || 'unknown')}
-                </div>
+              {@const cur = selectedJobDetail?.current_stage || 'saving_meta'}
+              <div class="prep-stepper">
+                {#each PREP_STEPS as step}
+                  {@const st = prepStepStatus(cur, step.key)}
+                  <div class="prep-step {st}">
+                    <span class="prep-icon">
+                      {#if st === 'done'}✓{:else if st === 'active'}<span class="spinner-sm"></span>{:else}○{/if}
+                    </span>
+                    <span class="prep-label">{step.label}</span>
+                  </div>
+                {/each}
               </div>
               {#if selectedJobDetail?.interval_sec}
                 <div class="detail-section">
@@ -555,6 +577,26 @@
     border-radius: 50%;
     display: inline-block;
     animation: spin 0.7s linear infinite;
+  }
+  .prep-stepper {
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 14px 16px; background: var(--soft, #f1f5f9);
+    border: 1px solid var(--line, #e2e8f0); border-radius: 8px; margin-bottom: 12px;
+  }
+  .prep-step { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .prep-icon {
+    width: 18px; height: 18px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .prep-step.pending { color: var(--mut, #94a3b8); }
+  .prep-step.pending .prep-icon { color: var(--mut, #cbd5e1); }
+  .prep-step.active { color: var(--txt, #0f172a); font-weight: 600; }
+  .prep-step.done { color: #16a34a; }
+  .prep-step.done .prep-icon { color: #16a34a; font-weight: 700; }
+  .prep-step .spinner-sm {
+    width: 14px; height: 14px; border: 2px solid rgba(107,70,193,.25);
+    border-top-color: #6b46c1; border-radius: 50%; display: inline-block;
+    animation: spin 0.8s linear infinite;
   }
 
   .time {
