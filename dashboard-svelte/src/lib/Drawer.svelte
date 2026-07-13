@@ -122,6 +122,13 @@
     videoRef.addEventListener('timeupdate', checkEndTime)
   }
 
+  // Stable per-tag hue from its text (same tag → same color every render)
+  function tagHue(t) {
+    let h = 0
+    for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) % 360
+    return h
+  }
+
   // Seek to a scene's start and pause (preview the frame as a thumbnail)
   function seekScene(startSec) {
     if (!videoRef) return
@@ -430,8 +437,13 @@
       {#if activeTab === 'analisa'}
         <div class="tab-panel">
           {#if analysis.tags?.length}
-            <div class="tags-row">
-              {#each analysis.tags as t}<span class="tag">{t}</span>{/each}
+            <div class="ana-card">
+              <div class="ana-label">Tags</div>
+              <div class="tags-row">
+                {#each analysis.tags as t}
+                  <span class="tag" style="background: hsl({tagHue(t)} 70% 92%); color: hsl({tagHue(t)} 55% 32%); border-color: hsl({tagHue(t)} 55% 80%)">{t}</span>
+                {/each}
+              </div>
             </div>
           {/if}
           <!-- Analysis section cards -->
