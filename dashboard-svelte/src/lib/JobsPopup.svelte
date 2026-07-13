@@ -289,8 +289,8 @@
 
           <!-- Decompose stage info -->
           {#if selectedJobDetail?.kind === 'decompose'}
+            {@const cur = selectedJobDetail?.current_stage || 'saving_meta'}
             <div class="decompose-detail">
-              {@const cur = selectedJobDetail?.current_stage || 'saving_meta'}
               <div class="prep-stepper">
                 {#each PREP_STEPS as step}
                   {@const st = prepStepStatus(cur, step.key)}
