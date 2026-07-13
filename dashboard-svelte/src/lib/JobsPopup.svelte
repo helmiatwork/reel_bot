@@ -70,11 +70,30 @@
 
   async function pollList() {
     try {
-      const data = await api.analyzeRuns(20)
-      if (data) jobs = data
+      const [data, srcTable] = await Promise.all([
+        api.analyzeRuns(20),
+        api.table('sources', 50, 0).catch(() => null),
+      ])
+      // Map youtube_url → live source status so a decompose row keeps showing
+      // "processing/working" until the source is fully analyzed (Gemini done),
+      // instead of flipping to "done" the moment the fast clip-cut finishes.
+      const statusByUrl = {}
+      if (srcTable?.rows) for (const r of srcTable.rows) statusByUrl[r.youtube_url] = r.status
+      if (data) jobs = data.map((j) => ({ ...j, sourceStatus: statusByUrl[j.url] || null }))
     } catch (e) {
       console.error('[pollList] error:', e)
     }
+  }
+
+  // Live label for a job: prefer the source's overall status (processing → working →
+  // analyzed) over the transient run status. Returns null to fall back to run status.
+  function jobLive(job) {
+    const ss = job.sourceStatus
+    if (!ss) return null
+    if (ss === 'analyzed') return { text: 'Selesai', active: false }
+    if (ss === 'working') return { text: 'Gemini (Antigravity) bekerja…', active: true }
+    if (ss === 'processing') return { text: 'Sedang diproses…', active: true }
+    return null
   }
 
   function selectJob(run) {
@@ -190,12 +209,14 @@
                 onclick={() => selectJob(job)}
               >
                 {#if job.kind === 'decompose'}
-                  <!-- Decompose run: simple row with stage label -->
+                  <!-- Decompose run: reflect the source's live status (processing → working → done) -->
+                  {@const live = jobLive(job)}
                   <div class="job-main">
                     <div class="job-url">{job.title || truncateUrl(job.url)}</div>
                     <div class="job-meta">
                       <span class="decompose-stage">
-                        {getDecomposeStageLabel(job.current_stage)}
+                        {#if live?.active}<span class="spin"></span>{/if}
+                        {live ? live.text : getDecomposeStageLabel(job.current_stage)}
                       </span>
                       <span class="time">{formatRelativeTime(job.created)}</span>
                     </div>
@@ -515,6 +536,9 @@
   }
 
   .decompose-stage {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     padding: 0.25rem 0.625rem;
     border-radius: 3px;
     font-weight: 500;
@@ -522,6 +546,15 @@
     background: rgba(34, 197, 94, 0.15);
     color: #22c55e;
     white-space: nowrap;
+  }
+  .decompose-stage .spin {
+    width: 9px;
+    height: 9px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    display: inline-block;
+    animation: spin 0.7s linear infinite;
   }
 
   .time {
