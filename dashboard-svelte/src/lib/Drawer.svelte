@@ -362,7 +362,7 @@
           class="tab-btn {activeTab === 'analisa' ? 'active' : ''}"
           onclick={() => activeTab = 'analisa'}
         >
-          Analisa
+          Analisa{d.data?.status ? ` (${d.data.status})` : ''}
         </button>
         <button
           class="tab-btn {activeTab === 'frames' ? 'active' : ''}"
@@ -391,7 +391,6 @@
             {:else}{s.title}{/if}
           </h2>
           <div class="header-meta">
-            <span class="status-chip {s.status === 'analyzed' ? 'chip-green' : s.status === 'error' ? 'chip-red' : 'chip-mut'}">{s.status}</span>
             {#if s.niche && s.niche !== '-'}<span class="hm-item">{s.niche}</span>{/if}
             <span class="hm-item num">{s.viewsLabel} views</span>
           </div>
