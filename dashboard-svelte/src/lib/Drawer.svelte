@@ -83,6 +83,11 @@
 
   // tab state
   let activeTab = $state('analisa')
+  // While the source is still being prepared/analyzed, show a loading panel
+  // instead of the (empty) tabs.
+  let isProcessing = $derived(
+    d?.data?.status === 'processing' || d?.data?.status === 'working' || d?.data?.status === 'running'
+  )
   // Verify view state
   let showRawJson = $state(false)
   // Per-scene JSON popup (verify view)
@@ -362,8 +367,8 @@
       <span class="x" onclick={closeDrawer} role="button" tabindex="0" aria-label="Tutup">✕</span>
     </div>
 
-    <!-- Tab Bar (for source type only) -->
-    {#if d.type === 'source'}
+    <!-- Tab Bar (for source type only; hidden while still processing) -->
+    {#if d.type === 'source' && !isProcessing}
       <div class="tab-bar">
         <button
           class="tab-btn {activeTab === 'analisa' ? 'active' : ''}"
@@ -435,8 +440,21 @@
         {/if}
       </div>
 
+      <!-- Processing: analysis not ready yet — show loading instead of tabs -->
+      {#if isProcessing}
+        <div class="processing-panel">
+          <span class="spin-lg"></span>
+          <div class="processing-title">Sedang diproses…</div>
+          <div class="processing-sub">
+            {d.data?.status === 'working'
+              ? 'Gemini (Antigravity) sedang menganalisis klip.'
+              : 'Menyiapkan klip & metadata. Hasil analisa akan muncul di sini otomatis.'}
+          </div>
+        </div>
+      {/if}
+
       <!-- ANALISA TAB -->
-      {#if activeTab === 'analisa'}
+      {#if !isProcessing && activeTab === 'analisa'}
         <div class="tab-panel">
           {#if analysis.tags?.length}
             <div class="ana-card">
@@ -498,7 +516,7 @@
       {/if}
 
       <!-- FRAMES TAB -->
-      {#if activeTab === 'frames'}
+      {#if !isProcessing && activeTab === 'frames'}
         <div class="tab-panel">
           <div class="frames">
             {#if framesLoading}
@@ -520,7 +538,7 @@
       {/if}
 
       <!-- GENERATED PROMPT TAB -->
-      {#if activeTab === 'prompt'}
+      {#if !isProcessing && activeTab === 'prompt'}
         <div class="tab-panel verify-panel">
           {#if analysis.gen_prompt && analysis.gen_prompt_format === 'prompt_json'}
             {@const videoId = extractVideoId(d.data?.youtube_url)}
@@ -759,6 +777,19 @@
   .chip-red   { background: rgba(240,101,72,.12);  color: var(--red);   }
   .chip-amber { background: rgba(217,119,6,.12);   color: #d97706; }
   .chip-blue  { background: rgba(37,99,235,.12);    color: #2563eb; }
+
+  .processing-panel {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; padding: 48px 20px; text-align: center;
+  }
+  .processing-title { font-size: 15px; font-weight: 600; }
+  .processing-sub { font-size: 13px; color: var(--mut); max-width: 320px; }
+  .spin-lg {
+    width: 34px; height: 34px; border: 3px solid rgba(37,99,235,.2);
+    border-top-color: #2563eb; border-radius: 50%;
+    animation: spin .8s linear infinite; margin-bottom: 4px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
   .chip-mut   { background: rgba(148,163,184,.16); color: var(--mut);   }
 
   /* Header: clickable title + inline meta (status / niche / views) */
