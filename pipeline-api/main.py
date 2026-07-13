@@ -2654,6 +2654,10 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
 
     run_id = str(uuid.uuid4())
     _save_run(run_id, {
+        "kind": "decompose",
+        "youtube_url": req.youtube_url,
+        "interval_sec": req.interval_sec,
+        "created": time.time(),
         "status": "downloading",
         "current_stage": "downloading",
         "source_id": None,
@@ -6362,9 +6366,9 @@ def analyze_claude_status(run_id: str):
 
 @app.get("/analyze/claude/runs")
 def analyze_claude_runs(limit: int = 20):
-    """List all analyze_source runs, sorted by created desc.
+    """List all analyze_source and decompose runs, sorted by created desc.
 
-    Returns: [{run_id, url, title, status, output_format, created, last_msg, log_count}]
+    Returns: [{run_id, url, title, status, output_format, created, last_msg, log_count, kind, current_stage}]
     ponytail: linear dir scan; index if dir grows large.
     """
     runs_dir = _REPO_ROOT / "output" / "research_runs"
@@ -6391,8 +6395,9 @@ def analyze_claude_runs(limit: int = 20):
             run_id = run_file.stem  # filename without .json
             run = json.loads(run_file.read_text())
 
-            # Filter for analyze_source runs only
-            if run.get("kind") != "analyze_source":
+            # Filter for analyze_source or decompose runs
+            kind = run.get("kind")
+            if kind not in ("analyze_source", "decompose"):
                 continue
 
             # Extract summary fields
@@ -6400,16 +6405,28 @@ def analyze_claude_runs(limit: int = 20):
             if run.get("log") and len(run["log"]) > 0:
                 last_msg = run["log"][-1].get("msg", "")
 
-            run_url = run.get("url", "")
+            # Use current_stage as fallback for last_msg if no log
+            if not last_msg:
+                last_msg = run.get("current_stage", "")
+
+            if kind == "analyze_source":
+                run_url = run.get("url", "")
+                output_format = run.get("output_format", "")
+            else:  # decompose
+                run_url = run.get("youtube_url", "")
+                output_format = "decompose"
+
             summaries.append({
                 "run_id": run_id,
                 "url": run_url,
                 "title": url_to_title.get(run_url),  # null if not found
                 "status": run.get("status", "unknown"),
-                "output_format": run.get("output_format", ""),
+                "output_format": output_format,
                 "created": run.get("created", 0),
                 "last_msg": last_msg,
-                "log_count": len(run.get("log", []))
+                "log_count": len(run.get("log", [])),
+                "kind": kind,
+                "current_stage": run.get("current_stage", "")
             })
         except Exception:
             # Skip unparseable files
