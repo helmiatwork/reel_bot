@@ -122,6 +122,13 @@
     videoRef.addEventListener('timeupdate', checkEndTime)
   }
 
+  // Seek to a scene's start and pause (preview the frame as a thumbnail)
+  function seekScene(startSec) {
+    if (!videoRef) return
+    videoRef.pause()
+    videoRef.currentTime = startSec
+  }
+
   // Display + copy share one string: pretty-printed JSON for prompt_json, raw otherwise
   // Split a prose string with "(1)… (2)…" markers into a lead + bullet points.
   // Returns null when there are no numbered markers (render as prose instead).
@@ -543,7 +550,14 @@
                           {'{ }'}
                         </button>
                       </div>
-                      <div class="scene-info">
+                      <div
+                        class="scene-info"
+                        onclick={() => seekScene(timeToSeconds(scene.start))}
+                        onkeydown={(e) => { if (e.key === 'Enter') seekScene(timeToSeconds(scene.start)) }}
+                        role="button"
+                        tabindex="0"
+                        title="Lihat frame (jeda di scene ini)"
+                      >
                         <div class="scene-header">
                           #{scene.scene} · {scene.start}–{scene.end} · {scene.shot} · {scene.subject} · {scene.action}
                         </div>
@@ -984,8 +998,10 @@
   }
   .scene-json-btn:hover { opacity: .85; }
   .scene-info {
-    flex: 1; display: flex; flex-direction: column; gap: 4px;
+    flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;
+    cursor: pointer;
   }
+  .scene-info:hover .scene-header { color: var(--accent); }
   .scene-header {
     font-size: 12px; color: var(--txt); font-weight: 500;
   }
