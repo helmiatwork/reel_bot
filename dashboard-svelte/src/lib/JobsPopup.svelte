@@ -2,7 +2,7 @@
   import { fade, scale } from 'svelte/transition'
   import { cubicOut } from 'svelte/easing'
   import { untrack } from 'svelte'
-  import { api, isActiveRunning } from './api.js'
+  import { api } from './api.js'
   import { onDestroy } from 'svelte'
   import AnalyzeStepper from './AnalyzeStepper.svelte'
 
@@ -183,8 +183,8 @@
       {#if !selectedRunId}
         <!-- Jobs List View -->
         <div class="jobs-list" transition:fade={{ duration: 150 }}>
-          {#if jobs.filter(isActiveRunning).length > 0}
-            {#each jobs.filter(isActiveRunning) as job (job.run_id)}
+          {#if jobs.length > 0}
+            {#each jobs as job (job.run_id)}
               <div
                 class="job-row"
                 onclick={() => selectJob(job)}
