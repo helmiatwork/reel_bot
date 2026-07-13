@@ -107,6 +107,8 @@ tbody tr{cursor:pointer} tbody tr:hover td{background:var(--soft)}
 .c-running{background:rgba(64,81,137,.12);color:var(--accent);display:inline-flex;align-items:center;gap:5px}
 .c-running .spin{width:9px;height:9px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin .7s linear infinite}
 .c-processing{background:rgba(217,119,6,.12);color:#d97706}
+.c-working{background:rgba(37,99,235,.12);color:#2563eb;display:inline-flex;align-items:center;gap:5px}
+.c-working .spin{width:9px;height:9px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin .7s linear infinite}
 .pending-row{opacity:.85}
 @keyframes spin{to{transform:rotate(360deg)}}
 .c-prompt-json{background:rgba(10,179,156,.12);color:var(--green)}

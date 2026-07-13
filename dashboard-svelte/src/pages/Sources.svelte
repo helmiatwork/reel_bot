@@ -167,6 +167,8 @@
               <span class="chip c-running"><span class="spin"></span>running</span>
             {:else if s.status === 'processing'}
               <span class="chip c-processing">processing</span>
+            {:else if s.status === 'working'}
+              <span class="chip c-working"><span class="spin"></span>working</span>
             {:else}
               <span class="chip {s.status === 'error' ? 'c-error' : s.status === 'used' ? 'c-used' : 'c-done'}">{s.status}</span>
             {/if}
