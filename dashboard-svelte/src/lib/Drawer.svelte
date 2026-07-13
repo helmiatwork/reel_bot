@@ -371,12 +371,14 @@
         >
           Analisa{#if d.data?.status}<span class="status-chip tab-chip {d.data.status === 'analyzed' ? 'chip-green' : d.data.status === 'error' ? 'chip-red' : 'chip-mut'}">{d.data.status}</span>{/if}
         </button>
-        <button
-          class="tab-btn {activeTab === 'frames' ? 'active' : ''}"
-          onclick={() => activeTab = 'frames'}
-        >
-          Frames{frames.length ? ` (${frames.length})` : ''}
-        </button>
+        {#if frames.length}
+          <button
+            class="tab-btn {activeTab === 'frames' ? 'active' : ''}"
+            onclick={() => activeTab = 'frames'}
+          >
+            Frames ({frames.length})
+          </button>
+        {/if}
         <button
           class="tab-btn {activeTab === 'prompt' ? 'active' : ''}"
           onclick={() => activeTab = 'prompt'}
