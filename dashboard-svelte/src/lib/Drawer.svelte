@@ -501,43 +501,44 @@
               catch { return {} }
             })()}
 
-            <!-- Sticky video player at top -->
-            {#if videoId}
-              <div class="verify-player">
-                <video
-                  bind:this={videoRef}
-                  controls
-                  src={`/media/source/${videoId}`}
-                  style="background: #000; border-radius: 4px; margin-bottom: 8px; width: 100%; max-height: 34vh; object-fit: contain; display: block"
-                />
-              </div>
-            {/if}
+            <!-- Split: left video (sticky), right scene list (scroll) -->
+            <div class="verify-split">
+              {#if videoId}
+                <div class="verify-left">
+                  <video
+                    bind:this={videoRef}
+                    controls
+                    src={`/media/source/${videoId}`}
+                    style="background: #000; border-radius: 4px; width: 100%; display: block"
+                  />
+                </div>
+              {/if}
 
-            <!-- Scene rows -->
-            {#if storyboard.scene_order && Array.isArray(storyboard.scene_order)}
-              <div class="verify-scenes">
-                {#each storyboard.scene_order as scene}
-                  <div class="scene-row">
-                    <button
-                      class="scene-play"
-                      onclick={() => playScene(timeToSeconds(scene.start), timeToSeconds(scene.end))}
-                      title="Putar scene"
-                      aria-label="Putar"
-                    >
-                      ▶
-                    </button>
-                    <div class="scene-info">
-                      <div class="scene-header">
-                        #{scene.scene} · {scene.start}–{scene.end} · {scene.shot} · {scene.subject} · {scene.action}
+              {#if storyboard.scene_order && Array.isArray(storyboard.scene_order)}
+                <div class="verify-right">
+                  {#each storyboard.scene_order as scene}
+                    <div class="scene-row">
+                      <button
+                        class="scene-play"
+                        onclick={() => playScene(timeToSeconds(scene.start), timeToSeconds(scene.end))}
+                        title="Putar scene"
+                        aria-label="Putar"
+                      >
+                        ▶
+                      </button>
+                      <div class="scene-info">
+                        <div class="scene-header">
+                          #{scene.scene} · {scene.start}–{scene.end} · {scene.shot} · {scene.subject} · {scene.action}
+                        </div>
+                        {#if scene.image_prompt}
+                          <div class="scene-prompt">{scene.image_prompt}</div>
+                        {/if}
                       </div>
-                      {#if scene.image_prompt}
-                        <div class="scene-prompt">{scene.image_prompt}</div>
-                      {/if}
                     </div>
-                  </div>
-                {/each}
-              </div>
-            {/if}
+                  {/each}
+                </div>
+              {/if}
+            </div>
 
             <!-- JSON toggle -->
             <div class="verify-toggle">
@@ -928,13 +929,20 @@
   .verify-panel {
     gap: 12px;
   }
-  .verify-player {
-    position: sticky; top: 0; background: var(--bg); z-index: 10;
-    padding: 0; margin: 0 -1.5rem 8px -1.5rem;
-    padding: 0 1.5rem;
+  .verify-split {
+    display: flex; gap: 14px; align-items: flex-start;
   }
-  .verify-scenes {
-    display: flex; flex-direction: column; gap: 8px;
+  .verify-left {
+    flex: 0 0 46%; position: sticky; top: 0; align-self: flex-start;
+  }
+  .verify-right {
+    flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px;
+    max-height: 72vh; overflow-y: auto;
+  }
+  @media (max-width: 720px) {
+    .verify-split { flex-direction: column; }
+    .verify-left { flex: none; width: 100%; position: static; }
+    .verify-right { max-height: none; }
   }
   .scene-row {
     display: flex; align-items: flex-start; gap: 10px;
