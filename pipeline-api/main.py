@@ -1154,9 +1154,17 @@ def health():
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 def root():
-    """Serve the Reelbot dashboard UI."""
+    """Serve the Reelbot dashboard UI.
+
+    index.html is served with no-cache so the browser always revalidates it and
+    picks up new hashed JS/CSS bundles after a rebuild. The /assets files are
+    content-hashed (immutable), so they stay cacheable — only this shell must not.
+    """
     if DASHBOARD.exists():
-        return FileResponse(str(DASHBOARD))
+        return FileResponse(
+            str(DASHBOARD),
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+        )
     return HTMLResponse("<h2>Reelbot API running</h2><p><a href='/docs'>API docs</a></p>")
 
 
@@ -1651,14 +1659,17 @@ def _scenes_to_shots(scene_list: list) -> list:
     return shots
 
 
-def _split_segments(video_path: str, video_id: str, shots: list) -> list:
+def _split_segments(video_path: str, video_id: str, shots: list, stream_copy: bool = False) -> list:
     """
-    Split video into segment mp4s using ffmpeg stream-copy (fast).
+    Split video into segment mp4s using ffmpeg.
 
     Args:
         video_path: absolute path to source video
         video_id: sanitized video_id for directory path
         shots: list of shot dicts with start_sec, end_sec
+        stream_copy: when True, cut with -c copy (near-instant, keyframe-snapped —
+            fine for fixed per-minute windows). When False, re-encode for
+            frame-accurate mid-GOP cuts (needed for scenedetect boundaries).
 
     Returns:
         list of shot dicts augmented with "segment_path" field
@@ -1676,20 +1687,32 @@ def _split_segments(video_path: str, video_id: str, shots: list) -> list:
         seg_path = seg_dir / f"seg_{index:02d}.mp4"
 
         try:
-            # Frame-accurate cut: -ss/-to AFTER -i forces exact-frame seeking, and
-            # re-encoding lets ffmpeg cut mid-GOP. Stream-copy (-c copy) snapped the
-            # start back to the nearest keyframe, so segments ran long and bled the
-            # tail of the previous clip. Slower, but precise — fine for short-form.
-            cmd = [
-                "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
-                "-i", str(video_path),
-                "-ss", str(start), "-to", str(end),
-                "-c:v", "libx264", "-preset", "medium", "-crf", "18",
-                "-pix_fmt", "yuv420p",
-                "-c:a", "aac", "-b:a", "192k",
-                "-movflags", "+faststart",
-                str(seg_path),
-            ]
+            if stream_copy:
+                # Fast path: stream-copy, no re-encode. -ss BEFORE -i seeks by keyframe
+                # (near-instant). Fixed per-minute windows don't need frame-accuracy, so
+                # keyframe-snapping is acceptable and ~100x faster than re-encoding.
+                cmd = [
+                    "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+                    "-ss", str(start), "-i", str(video_path),
+                    "-t", str(end - start),
+                    "-c", "copy", "-movflags", "+faststart",
+                    str(seg_path),
+                ]
+            else:
+                # Frame-accurate cut: -ss/-to AFTER -i forces exact-frame seeking, and
+                # re-encoding lets ffmpeg cut mid-GOP. Stream-copy (-c copy) snapped the
+                # start back to the nearest keyframe, so segments ran long and bled the
+                # tail of the previous clip. Slower, but precise — fine for short-form.
+                cmd = [
+                    "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+                    "-i", str(video_path),
+                    "-ss", str(start), "-to", str(end),
+                    "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+                    "-pix_fmt", "yuv420p",
+                    "-c:a", "aac", "-b:a", "192k",
+                    "-movflags", "+faststart",
+                    str(seg_path),
+                ]
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
 
             if proc.returncode == 0 and seg_path.exists():
@@ -2654,6 +2677,10 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
 
     run_id = str(uuid.uuid4())
     _save_run(run_id, {
+        "kind": "decompose",
+        "youtube_url": req.youtube_url,
+        "interval_sec": req.interval_sec,
+        "created": time.time(),
         "status": "downloading",
         "current_stage": "downloading",
         "source_id": None,
@@ -2664,7 +2691,15 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
     def _decompose_job():
         frame_dir = None  # set once video_id is known; used by finally cleanup
         try:
-            # Download
+            # Step 1 (per-minute Gemini prep): save the video's attributes (title, channel,
+            # views, niche) + 'processing' status to the DB FIRST — before the slow download —
+            # using yt-dlp --dump-json (metadata only). The Sources row appears in the table
+            # in real time, right after submit.
+            if req.interval_sec and req.interval_sec > 0:
+                _save_run(run_id, _update_run(run_id, status="saving_meta"))
+                _insert_source_with_metadata(req.youtube_url)
+
+            # Step 2: download the video
             _save_run(run_id, _update_run(run_id, status="downloading"))
             video_path = _download_source_video(req.youtube_url)
             video_id = _extract_video_id_from_youtube_url(req.youtube_url)
@@ -2672,6 +2707,7 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
             # Fixed-interval mode: skip scene detection entirely
             clips = []
             if req.interval_sec and req.interval_sec > 0:
+                # Step 3: cut the video into per-minute clips
                 _save_run(run_id, _update_run(run_id, status="splitting"))
                 # Get video duration via ffprobe
                 import math
@@ -2736,7 +2772,7 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
                     {"index": c["clip_index"] - 1, "start_sec": c["start_sec"], "end_sec": c["end_sec"]}
                     for c in clips
                 ]
-                split = _split_segments(str(video_path), video_id, clip_ranges)
+                split = _split_segments(str(video_path), video_id, clip_ranges, stream_copy=bool(req.interval_sec and req.interval_sec > 0))
                 idx_to_path = {s["index"]: s.get("segment_path") for s in split}
                 for c in clips:
                     c["segment_path"] = idx_to_path.get(c["clip_index"] - 1)
@@ -2753,13 +2789,16 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
                 try:
                     with conn.cursor() as cur:
                         # Upsert source (compilation)
+                        # For per-minute Gemini prep (interval_sec > 0): keep status='processing' (already set upfront)
+                        # For compilation (interval_sec == 0): set status='analyzed' (clips are complete, ready for traditional flow)
+                        status_val = "processing" if (req.interval_sec and req.interval_sec > 0) else "analyzed"
                         cur.execute("""
                             INSERT INTO sources (youtube_url, platform, status)
                             VALUES (%s, %s, %s)
                             ON CONFLICT (youtube_url) DO UPDATE
-                            SET status = 'analyzed'
+                            SET status = %s
                             RETURNING id
-                        """, (req.youtube_url, "youtube", "analyzed"))
+                        """, (req.youtube_url, "youtube", status_val, status_val))
                         source_id = cur.fetchone()[0]
 
                         # Update insert tuples with correct source_id
@@ -5181,6 +5220,55 @@ def _stub_source(youtube_url: str, title: Optional[str] = None) -> None:
         print(f"[sources] _stub_source error (non-fatal): {e}")
 
 
+def _insert_source_with_metadata(youtube_url: str) -> None:
+    """
+    Insert or enrich a source row with metadata + 'processing' status at the START
+    of per-minute decompose (Gemini prep). Non-fatal: any error is logged but doesn't break decompose.
+
+    Behavior:
+    - Fetch channel metadata via yt-dlp
+    - If new row: INSERT with title, channel, views_at_analysis, niche, status='processing'
+    - If row exists: UPDATE metadata fields (title, channel, views_at_analysis, niche) only
+      where currently NULL (COALESCE pattern), and set status='processing' ONLY if not already 'analyzed'
+    """
+    try:
+        if _detect_platform(youtube_url) == "xiaohongshu":
+            # yt-dlp has no XHS metadata; gracefully degrade
+            return
+        try:
+            meta = _fetch_channel_meta(youtube_url)
+        except Exception as e:
+            print(f"[decompose] _insert_source_with_metadata: fetch failed (non-fatal): {e}")
+            meta = {}
+
+        # If fetch failed entirely, still upsert stub with just youtube_url and status
+        title = meta.get("title") or ""
+        channel = meta.get("channel") or ""
+        views_at_analysis = meta.get("view_count")
+        niche = _infer_niche(title, "", channel) if title or channel else ""
+
+        conn = _db_conn()
+        if not conn:
+            return
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO sources (youtube_url, title, platform, channel, views_at_analysis, niche, status)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (youtube_url) DO UPDATE SET
+                        title = COALESCE(NULLIF(sources.title, ''), EXCLUDED.title, sources.title),
+                        channel = COALESCE(NULLIF(sources.channel, ''), EXCLUDED.channel, sources.channel),
+                        views_at_analysis = COALESCE(NULLIF(sources.views_at_analysis, 0), EXCLUDED.views_at_analysis, sources.views_at_analysis),
+                        niche = COALESCE(NULLIF(sources.niche, ''), EXCLUDED.niche, sources.niche),
+                        status = CASE WHEN sources.status = 'analyzed' THEN 'analyzed' ELSE 'processing' END
+                """, (youtube_url, title, _detect_platform(youtube_url), channel, views_at_analysis, niche, "processing"))
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception as e:
+        print(f"[decompose] _insert_source_with_metadata error (non-fatal): {e}")
+
+
 def _save_source(youtube_url: str) -> None:
     """
     Save the analyzed video to the sources library. For new sources, insert with
@@ -5308,6 +5396,18 @@ STORYBOARD_JSON_SCHEMA = """{
       "image_prompt": "str"
     }
   ]
+}"""
+
+
+# Analysis schema (matched to Gemini analysis output)
+ANALYSIS_JSON_SCHEMA = """{
+  "hook": "str — the opening hook and why it grabs attention",
+  "retention": "str — what keeps viewers watching",
+  "retention_score": "int (1-10)",
+  "structure": "str — the video's structural flow",
+  "summary": "str — one-sentence summary",
+  "detail": "str — chronological detailed walkthrough of what happens",
+  "tags": ["str", "..."]
 }"""
 
 
@@ -6350,9 +6450,9 @@ def analyze_claude_status(run_id: str):
 
 @app.get("/analyze/claude/runs")
 def analyze_claude_runs(limit: int = 20):
-    """List all analyze_source runs, sorted by created desc.
+    """List all analyze_source and decompose runs, sorted by created desc.
 
-    Returns: [{run_id, url, title, status, output_format, created, last_msg, log_count}]
+    Returns: [{run_id, url, title, status, output_format, created, last_msg, log_count, kind, current_stage}]
     ponytail: linear dir scan; index if dir grows large.
     """
     runs_dir = _REPO_ROOT / "output" / "research_runs"
@@ -6379,8 +6479,9 @@ def analyze_claude_runs(limit: int = 20):
             run_id = run_file.stem  # filename without .json
             run = json.loads(run_file.read_text())
 
-            # Filter for analyze_source runs only
-            if run.get("kind") != "analyze_source":
+            # Filter for analyze_source or decompose runs
+            kind = run.get("kind")
+            if kind not in ("analyze_source", "decompose"):
                 continue
 
             # Extract summary fields
@@ -6388,16 +6489,28 @@ def analyze_claude_runs(limit: int = 20):
             if run.get("log") and len(run["log"]) > 0:
                 last_msg = run["log"][-1].get("msg", "")
 
-            run_url = run.get("url", "")
+            # Use current_stage as fallback for last_msg if no log
+            if not last_msg:
+                last_msg = run.get("current_stage", "")
+
+            if kind == "analyze_source":
+                run_url = run.get("url", "")
+                output_format = run.get("output_format", "")
+            else:  # decompose
+                run_url = run.get("youtube_url", "")
+                output_format = "decompose"
+
             summaries.append({
                 "run_id": run_id,
                 "url": run_url,
                 "title": url_to_title.get(run_url),  # null if not found
                 "status": run.get("status", "unknown"),
-                "output_format": run.get("output_format", ""),
+                "output_format": output_format,
                 "created": run.get("created", 0),
                 "last_msg": last_msg,
-                "log_count": len(run.get("log", []))
+                "log_count": len(run.get("log", [])),
+                "kind": kind,
+                "current_stage": run.get("current_stage", "")
             })
         except Exception:
             # Skip unparseable files
@@ -6539,8 +6652,11 @@ def analyze_gemini_brief(youtube_url: str):
 
     Returns a static instruction template telling the Gemini agent to:
     1. Call reelbot MCP get_clips(youtube_url) to get local segment files
-    2. Analyze each segment and produce per-scene storyboard JSON
-    3. Call reelbot MCP save_storyboard(youtube_url, json) to persist
+    2. Watch each segment, produce video analysis JSON, call save_analysis
+    3. Watch each segment, produce per-scene storyboard JSON, call save_storyboard
+
+    Gemini writes BOTH analysis and storyboard in one pass. Claude analyze is
+    only a manual fallback (Re-analyze button) when Gemini has trouble.
 
     Query param: youtube_url
     Returns: {"instruction": str, "youtube_url": str}
@@ -6550,26 +6666,31 @@ def analyze_gemini_brief(youtube_url: str):
     except HTTPException:
         raise HTTPException(status_code=400, detail="invalid youtube_url")
 
-    instruction = f"""You are analyzing video clips for a short-form content project.
+    instruction = f"""You are analyzing video clips for a short-form content project: producing BOTH a video analysis and a per-scene storyboard.
 
 RULES:
-- You have EXACTLY TWO MCP tools available: `get_clips` and `save_storyboard`. Use them in that order only.
-- Do NOT call any other tool, open a browser, run terminal commands, use whisper/scenedetect/cv2, write any script, or reference local file paths.
+- You have EXACTLY THREE MCP tools available: `get_clips`, `save_analysis`, and `save_storyboard`. Use them in that order only.
+- get_clips returns a list of local video files (each `segment_path` is an .mp4). You MUST OPEN AND WATCH every one of those video files — that is the whole point. Antigravity loads them for you; treat each as a real video to view, not as text.
+- Do NOT search or read source code in the workspace, call any other tool, open a browser, run terminal commands, use whisper/scenedetect/cv2, or write any script. (Watching the get_clips .mp4 files is REQUIRED, not forbidden.)
 - Do NOT run any preprocessing — the clips are already prepared.
-- CRITICAL: base EVERY field on what you ACTUALLY SEE in the clip videos. Never use placeholder or example values.
+- CRITICAL: base EVERY field on what you ACTUALLY SEE AND HEAR in the clip videos. If you did not actually view the video frames, STOP and report that you could not watch the clips — NEVER guess, invent, or describe generic content. Fabricated analysis is worse than no analysis.
 
 Task:
-1. Call the reelbot MCP tool `get_clips` with youtube_url="{youtube_url}" to get the list of segment files (~60s each, in order).
-2. WATCH each returned clip carefully. Break what you SEE into scenes of ≤8 seconds. Base every field ONLY on what you actually see. Keep scene numbering continuous across clips.
-3. Produce a detailed per-scene storyboard in the exact JSON schema below.
-4. Call the reelbot MCP tool `save_storyboard` with youtube_url="{youtube_url}" and the storyboard JSON.
+STEP 1: Call the reelbot MCP tool `get_clips` with youtube_url="{youtube_url}" to get the list of segment files (~60s each, in order). WATCH every returned clip carefully.
 
-If get_clips returns an error or an empty list, STOP and report the error. Never invent, guess, or fabricate scenes.
+STEP 2: Based on ONLY what you saw/heard in the clips, produce a video ANALYSIS JSON with the schema below. Call `save_analysis` with youtube_url="{youtube_url}" and the analysis JSON.
 
-STORYBOARD JSON SCHEMA (output must match this exactly):
+STEP 3: Based on what you saw in the clips, break the content into scenes of ≤8 seconds. Produce a detailed per-scene STORYBOARD JSON with the schema below. Call `save_storyboard` with youtube_url="{youtube_url}" and the storyboard JSON.
+
+If get_clips returns an error or an empty list, STOP and report the error. Never invent, guess, or fabricate scenes or analysis fields.
+
+ANALYSIS JSON SCHEMA (for STEP 2 — output must match this exactly):
+{ANALYSIS_JSON_SCHEMA}
+
+STORYBOARD JSON SCHEMA (for STEP 3 — output must match this exactly):
 {STORYBOARD_JSON_SCHEMA}
 
-Generate the storyboard now. Output ONLY the JSON (no markdown fence, no explanation)."""
+Execute steps 1, 2, and 3 in order. Use only the three MCP tools."""
 
     return {
         "instruction": instruction,

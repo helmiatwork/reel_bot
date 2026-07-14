@@ -83,6 +83,79 @@
 
   // tab state
   let activeTab = $state('analisa')
+  // Live status that overrides the row's status once polling detects a change.
+  let liveStatus = $state(null)
+  let curStatus = $derived(liveStatus ?? d?.data?.status)
+  // While the source is still being prepared/analyzed, show a loading panel
+  // instead of the (empty) tabs.
+  let isProcessing = $derived(
+    curStatus === 'processing' || curStatus === 'working' || curStatus === 'running'
+  )
+
+  // Live processing checklist (mirrors the Add-Source popup stepper)
+  let procStage = $state('saving_meta')
+  let procPoll = null
+  const PROC_STEPS = [
+    { key: 'saving_meta', label: 'Menyimpan atribut video' },
+    { key: 'downloading', label: 'Mengunduh video' },
+    { key: 'splitting', label: 'Memotong klip per menit' },
+    { key: 'saving', label: 'Menyimpan atribut klip ke database' },
+  ]
+  const PROC_STAGE_ORDER = {
+    saving_meta: 0, downloading: 1, detecting: 2, grouping: 2, splitting: 2,
+    finding: 3, saving: 3, processing: 4, working: 4, done: 5, analyzed: 5,
+  }
+  function procStepStatus(stepKey) {
+    const cur = PROC_STAGE_ORDER[procStage] ?? 0
+    const idx = PROC_STEPS.findIndex(s => s.key === stepKey)
+    if (cur > idx) return 'done'
+    if (cur === idx) return 'active'
+    return 'pending'
+  }
+  function stopProcPoll() { if (procPoll) { clearInterval(procPoll); procPoll = null } }
+  // Signal that processing finished: short beep + transient banner.
+  let justDone = $state(false)
+  function notifyDone() {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext
+      const ctx = new Ctx()
+      const o = ctx.createOscillator(), g = ctx.createGain()
+      o.connect(g); g.connect(ctx.destination)
+      o.frequency.value = 880; g.gain.value = 0.07
+      o.start(); o.stop(ctx.currentTime + 0.18)
+    } catch {}
+    justDone = true
+    setTimeout(() => { justDone = false }, 6000)
+  }
+  async function pollProcessing(youtubeUrl, sourceId) {
+    // 1) if an active decompose run exists, use its granular stage
+    let stage = null
+    try {
+      const runs = await api.analyzeRuns(20)
+      const run = (runs || []).find(r => r.kind === 'decompose' && r.url === youtubeUrl && r.status !== 'done' && r.status !== 'error')
+      if (run?.current_stage) stage = run.current_stage
+    } catch {}
+    // 2) otherwise fall back to the source status (processing/working/analyzed)
+    try {
+      const st = await api.storyboardStatus(youtubeUrl)
+      if (st?.ready) {
+        procStage = 'done'
+        stopProcPoll()
+        // reload full analysis + frames now that it's ready
+        const [anaRes, frRes] = await Promise.all([
+          api.sourceAnalysis(sourceId),
+          youtubeUrl ? api.sourceFrames(youtubeUrl).catch(() => null) : Promise.resolve(null),
+        ])
+        analysis = anaRes ?? {}
+        if (frRes?.frames) frames = frRes.frames
+        // notify once, only on the processing → done transition
+        if (liveStatus !== 'analyzed') { liveStatus = 'analyzed'; notifyDone() }
+        return
+      }
+      if (!stage) stage = st?.status || 'processing'
+    } catch {}
+    procStage = stage || 'processing'
+  }
   // Verify view state
   let showRawJson = $state(false)
   // Per-scene JSON popup (verify view)
@@ -165,6 +238,30 @@
     })
   }
 
+  // Gemini brief popup: the instruction the user pastes into Antigravity
+  let geminiBriefModal = $state(null)
+  let geminiBriefLoading = $state(false)
+  let geminiBriefCopied = $state(false)
+  async function showGeminiBrief() {
+    const url = d?.data?.youtube_url
+    if (!url) return
+    geminiBriefLoading = true
+    geminiBriefModal = ''
+    try {
+      const res = await api.getGeminiBrief(url)
+      geminiBriefModal = res?.instruction || res?.error || 'Gagal mengambil instruksi'
+    } catch (e) {
+      geminiBriefModal = `Error: ${e.message}`
+    } finally {
+      geminiBriefLoading = false
+    }
+  }
+  function copyGeminiBrief() {
+    navigator.clipboard.writeText(geminiBriefModal)
+    geminiBriefCopied = true
+    setTimeout(() => { geminiBriefCopied = false }, 2000)
+  }
+
   function stopPoll() {
     if (pollInterval) { clearInterval(pollInterval); pollInterval = null }
   }
@@ -178,6 +275,10 @@
 
   drawer.subscribe(async (v) => {
     stopPoll()
+    stopProcPoll()
+    liveStatus = null
+    justDone = false
+    procStage = 'saving_meta'
     decomposeRunning = false
     decomposeStage = ''
     decomposeError = ''
@@ -205,6 +306,12 @@
         // Fetch real analysis data from backend
         const anaRes = await api.sourceAnalysis(v.data.id)
         analysis = anaRes ?? {}
+      }
+      // Live checklist while the source is still processing/working
+      const st = v.data?.status
+      if (st === 'processing' || st === 'working' || st === 'running') {
+        pollProcessing(v.data.youtube_url, v.data.id)
+        procPoll = setInterval(() => pollProcessing(v.data.youtube_url, v.data.id), 3000)
       }
     }
   })
@@ -341,6 +448,35 @@
   </div>
 {/if}
 
+<!-- Gemini brief popup: paste into Antigravity -->
+{#if geminiBriefModal !== null}
+  <div
+    class="lb-overlay"
+    onclick={() => geminiBriefModal = null}
+    onkeydown={(e) => { if (e.key === 'Escape') geminiBriefModal = null }}
+    role="dialog"
+    aria-modal="true"
+    aria-label="Prompt Gemini"
+    tabindex="-1"
+  >
+    <button class="lb-close" onclick={() => geminiBriefModal = null} aria-label="Tutup">✕</button>
+    <div class="lb-card" onclick={(e) => e.stopPropagation()} role="document" style="max-width:640px">
+      <div class="lb-info">
+        <div class="lb-frame-no">Prompt untuk Antigravity (Gemini)</div>
+        {#if geminiBriefLoading}
+          <div class="brief-loading"><span class="spin-sm"></span> Mengambil instruksi…</div>
+        {:else}
+          <pre class="lb-json">{geminiBriefModal}</pre>
+          <button class="copy-btn" onclick={copyGeminiBrief}>
+            {geminiBriefCopied ? '✓ Tersalin' : 'Salin prompt'}
+          </button>
+          <div class="brief-hint">Tempel ke Antigravity. Gemini akan panggil reelbot MCP, analisa klip, simpan hasil otomatis.</div>
+        {/if}
+      </div>
+    </div>
+  </div>
+{/if}
+
 {#if d}
   <!-- Backdrop -->
   <div
@@ -362,21 +498,23 @@
       <span class="x" onclick={closeDrawer} role="button" tabindex="0" aria-label="Tutup">✕</span>
     </div>
 
-    <!-- Tab Bar (for source type only) -->
-    {#if d.type === 'source'}
+    <!-- Tab Bar (for source type only; hidden while still processing) -->
+    {#if d.type === 'source' && !isProcessing}
       <div class="tab-bar">
         <button
           class="tab-btn {activeTab === 'analisa' ? 'active' : ''}"
           onclick={() => activeTab = 'analisa'}
         >
-          Analisa{#if d.data?.status}<span class="status-chip tab-chip {d.data.status === 'analyzed' ? 'chip-green' : d.data.status === 'error' ? 'chip-red' : 'chip-mut'}">{d.data.status}</span>{/if}
+          Analisa{#if curStatus}<span class="status-chip tab-chip {curStatus === 'analyzed' ? 'chip-green' : curStatus === 'working' ? 'chip-blue' : curStatus === 'processing' || curStatus === 'running' ? 'chip-amber' : curStatus === 'error' ? 'chip-red' : 'chip-mut'}">{curStatus}</span>{/if}
         </button>
-        <button
-          class="tab-btn {activeTab === 'frames' ? 'active' : ''}"
-          onclick={() => activeTab = 'frames'}
-        >
-          Frames{frames.length ? ` (${frames.length})` : ''}
-        </button>
+        {#if frames.length}
+          <button
+            class="tab-btn {activeTab === 'frames' ? 'active' : ''}"
+            onclick={() => activeTab = 'frames'}
+          >
+            Frames ({frames.length})
+          </button>
+        {/if}
         <button
           class="tab-btn {activeTab === 'prompt' ? 'active' : ''}"
           onclick={() => activeTab = 'prompt'}
@@ -433,8 +571,32 @@
         {/if}
       </div>
 
+      {#if justDone}
+        <div class="done-banner" transition:fade={{ duration: 150 }}>✅ Selesai — analisa & storyboard sudah ke-load</div>
+      {/if}
+
+      <!-- Processing: analysis not ready yet — show loading instead of tabs -->
+      {#if isProcessing}
+        <div class="processing-panel">
+          <div class="processing-title">Sedang diproses…</div>
+          <div class="proc-steps">
+            {#each PROC_STEPS as step}
+              {@const ps = procStepStatus(step.key)}
+              <div class="proc-step {ps}">
+                <span class="proc-icon">
+                  {#if ps === 'done'}✓{:else if ps === 'active'}<span class="spin-sm"></span>{:else}○{/if}
+                </span>
+                <span class="proc-label">{step.label}</span>
+              </div>
+            {/each}
+          </div>
+          <button class="proc-brief-btn" onclick={showGeminiBrief}>Tampilkan prompt Gemini</button>
+          <div class="processing-sub">Klip siap. Analisa & storyboard Gemini dipantau di daftar Proses / status baris — hasil muncul di sini otomatis saat selesai.</div>
+        </div>
+      {/if}
+
       <!-- ANALISA TAB -->
-      {#if activeTab === 'analisa'}
+      {#if !isProcessing && activeTab === 'analisa'}
         <div class="tab-panel">
           {#if analysis.tags?.length}
             <div class="ana-card">
@@ -496,7 +658,7 @@
       {/if}
 
       <!-- FRAMES TAB -->
-      {#if activeTab === 'frames'}
+      {#if !isProcessing && activeTab === 'frames'}
         <div class="tab-panel">
           <div class="frames">
             {#if framesLoading}
@@ -518,7 +680,7 @@
       {/if}
 
       <!-- GENERATED PROMPT TAB -->
-      {#if activeTab === 'prompt'}
+      {#if !isProcessing && activeTab === 'prompt'}
         <div class="tab-panel verify-panel">
           {#if analysis.gen_prompt && analysis.gen_prompt_format === 'prompt_json'}
             {@const videoId = extractVideoId(d.data?.youtube_url)}
@@ -755,6 +917,40 @@
   .tab-chip { margin-left: 6px; padding: 2px 8px; font-size: 10px; vertical-align: middle; }
   .chip-green { background: rgba(10,179,156,.12); color: var(--green); }
   .chip-red   { background: rgba(240,101,72,.12);  color: var(--red);   }
+  .chip-amber { background: rgba(217,119,6,.12);   color: #d97706; }
+  .chip-blue  { background: rgba(37,99,235,.12);    color: #2563eb; }
+
+  .done-banner {
+    margin: 0 0 12px; padding: 10px 14px; border-radius: 8px;
+    background: rgba(22,163,74,.12); border: 1px solid rgba(22,163,74,.35);
+    color: #16a34a; font-size: 13px; font-weight: 600; text-align: center;
+  }
+  .processing-panel {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 14px; padding: 36px 20px; text-align: center;
+  }
+  .processing-title { font-size: 15px; font-weight: 600; }
+  .processing-sub { font-size: 12px; color: var(--mut); max-width: 340px; }
+  .proc-steps {
+    display: flex; flex-direction: column; gap: 10px; text-align: left;
+    padding: 16px 18px; background: var(--soft); border: 1px solid var(--line);
+    border-radius: 8px; min-width: 280px;
+  }
+  .proc-step { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .proc-icon { width: 18px; height: 18px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+  .proc-step.pending { color: var(--mut); }
+  .proc-step.active { color: var(--txt); font-weight: 600; }
+  .proc-step.done { color: #16a34a; }
+  .proc-step.done .proc-icon { color: #16a34a; font-weight: 700; }
+  .proc-brief-btn { margin-left: auto; padding: 3px 10px; font-size: 12px; font-weight: 600; color: #fff; background: #6b46c1; border: none; border-radius: 6px; cursor: pointer; }
+  .proc-brief-btn:hover { background: #5a3aa8; }
+  .brief-loading { display: flex; align-items: center; gap: 8px; color: var(--mut); font-size: 13px; padding: 12px 0; }
+  .brief-hint { margin-top: 10px; font-size: 12px; color: var(--mut); line-height: 1.5; }
+  .spin-sm {
+    width: 14px; height: 14px; border: 2px solid rgba(37,99,235,.25);
+    border-top-color: #2563eb; border-radius: 50%; animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
   .chip-mut   { background: rgba(148,163,184,.16); color: var(--mut);   }
 
   /* Header: clickable title + inline meta (status / niche / views) */
