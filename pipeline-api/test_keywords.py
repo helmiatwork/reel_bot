@@ -41,7 +41,7 @@ def mock_google_ads_response():
                 "text": "video editing tutorial",
                 "keyword_idea_metrics": {
                     "avg_monthly_searches": 14600,
-                    "competition": 1,  # MEDIUM
+                    "competition": 3,  # MEDIUM
                     "competition_index": 67,
                     "low_top_of_page_bid_micros": 500000,
                     "high_top_of_page_bid_micros": 2500000,
@@ -51,7 +51,7 @@ def mock_google_ads_response():
                 "text": "best video editor free",
                 "keyword_idea_metrics": {
                     "avg_monthly_searches": 8200,
-                    "competition": 0,  # LOW
+                    "competition": 2,  # LOW
                     "competition_index": 23,
                     "low_top_of_page_bid_micros": 100000,
                     "high_top_of_page_bid_micros": 500000,
@@ -321,9 +321,55 @@ def test_mcp_tool_keyword_ideas(mock_google_ads_response):
 
 def test_database_upsert_no_duplicates(client):
     """UPSERT should prevent duplicates on (keyword, region, source)."""
-    # This requires the SQL schema to have unique constraint
-    # Tested via integration with actual DB, but we can verify the SQL structure
-    pass  # Schema validation in db/keywords.sql
+    with patch("main._db_conn") as mock_db:
+        mock_conn = MagicMock()
+        mock_cur = MagicMock()
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cur
+        mock_db.return_value = mock_conn
+
+        mock_response = {
+            "results": [
+                {
+                    "text": "test keyword",
+                    "keyword_idea_metrics": {
+                        "avg_monthly_searches": 1000,
+                        "competition": 3,
+                        "competition_index": 50,
+                        "low_top_of_page_bid_micros": 100000,
+                        "high_top_of_page_bid_micros": 500000,
+                    },
+                }
+            ]
+        }
+
+        with patch("main.generate_keyword_ideas", return_value=mock_response):
+            col_names = ["id", "seed", "keyword", "source", "search_volume_min", "search_volume_max",
+                         "avg_monthly_searches", "competition", "competition_index",
+                         "cpc_low_micros", "cpc_high_micros", "region", "niche", "score", "fetched_at"]
+            mock_cols = []
+            for name in col_names:
+                col = MagicMock()
+                col.name = name
+                mock_cols.append(col)
+
+            mock_cur.description = mock_cols
+            mock_cur.fetchone.return_value = (
+                1, "test", "test keyword", "google_ads", None, None, 1000, "MEDIUM", 50,
+                100000, 500000, "ID:id", None, 500.0, datetime.now().isoformat()
+            )
+
+            response = client.post(
+                "/keywords/ideas",
+                json={"seeds": ["test"], "geo": "ID", "lang": "id"}
+            )
+
+            # Verify the UPSERT SQL was executed
+            assert mock_cur.execute.called
+            sql_call = mock_cur.execute.call_args[0][0]
+            assert "ON CONFLICT (keyword, region, source)" in sql_call, \
+                "SQL should include ON CONFLICT clause for deduplication"
+            assert "DO UPDATE SET" in sql_call, \
+                "SQL should include DO UPDATE for conflict handling"
 
 
 # ── Simple standalone checks (no pytest) ────────────────────────────────────────
@@ -355,7 +401,7 @@ if __name__ == "__main__":
                 "text": "test keyword",
                 "keyword_idea_metrics": {
                     "avg_monthly_searches": 1000,
-                    "competition": 1,
+                    "competition": 3,
                     "competition_index": 50,
                     "low_top_of_page_bid_micros": 100000,
                     "high_top_of_page_bid_micros": 500000,

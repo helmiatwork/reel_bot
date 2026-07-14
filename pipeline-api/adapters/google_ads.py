@@ -58,27 +58,22 @@ def _get_client():
 
     try:
         from google.ads.googleads.client import GoogleAdsClient
-        from google.oauth2.credentials import Credentials
     except ImportError as e:
         raise GoogleAdsNotConfigured(
             f"google-ads library not installed: {e}. "
             "Install with: pip install google-ads"
         )
 
-    # Build credentials and client
-    credentials = Credentials(
-        token=None,
-        refresh_token=os.getenv("GOOGLE_ADS_REFRESH_TOKEN"),
-        token_uri="https://oauth2.googleapis.com/token",
-        client_id=os.getenv("GOOGLE_ADS_CLIENT_ID"),
-        client_secret=os.getenv("GOOGLE_ADS_CLIENT_SECRET"),
-    )
-
-    _client = GoogleAdsClient.load_from_storage(
-        version="v17",
-        credentials=credentials
-    )
-    _client.developer_token = os.getenv("GOOGLE_ADS_DEVELOPER_TOKEN")
+    # Build client config dict with all required credentials
+    config = {
+        "developer_token": os.getenv("GOOGLE_ADS_DEVELOPER_TOKEN"),
+        "client_id": os.getenv("GOOGLE_ADS_CLIENT_ID"),
+        "client_secret": os.getenv("GOOGLE_ADS_CLIENT_SECRET"),
+        "refresh_token": os.getenv("GOOGLE_ADS_REFRESH_TOKEN"),
+        "login_customer_id": os.getenv("GOOGLE_ADS_LOGIN_CUSTOMER_ID"),
+        "use_proto_plus": True,
+    }
+    _client = GoogleAdsClient.load_from_dict(config, version="v17")
 
     return _client
 
@@ -89,19 +84,14 @@ def _competition_enum_to_str(competition_enum: Optional[int]) -> Optional[str]:
     """
     Map Google Ads competition enum to readable string.
 
-    0 = LOW
-    1 = MEDIUM
-    2 = HIGH
+    2 = LOW
+    3 = MEDIUM
+    4 = HIGH
     """
+    _COMPETITION_MAP = {2: "LOW", 3: "MEDIUM", 4: "HIGH"}
     if competition_enum is None:
         return None
-    if competition_enum == 0:
-        return "LOW"
-    if competition_enum == 1:
-        return "MEDIUM"
-    if competition_enum == 2:
-        return "HIGH"
-    return None
+    return _COMPETITION_MAP.get(int(competition_enum))
 
 
 def normalize_keyword_ideas(
@@ -141,7 +131,7 @@ def normalize_keyword_ideas(
             "keyword": text,
             "source": source,
             "region": region,
-            "search_volume_min": avg_monthly_searches,  # placeholder for future min/max ranges
+            "search_volume_min": None,  # min/max NULL until real range data exists
             "search_volume_max": None,
             "avg_monthly_searches": avg_monthly_searches,
             "competition": _competition_enum_to_str(competition),
@@ -213,8 +203,8 @@ def generate_keyword_ideas(
         "US": 2840,  # United States
     }
     LANG_CONSTANTS = {
-        "id": 1000,  # Indonesian (placeholder, Google Ads uses different codes)
-        "en": 1000,  # English (placeholder)
+        "id": 1025,  # Indonesian
+        "en": 1000,  # English
     }
 
     geo_id = GEO_CONSTANTS.get(geo.upper())
@@ -229,22 +219,13 @@ def generate_keyword_ideas(
     customer_id = os.getenv("GOOGLE_ADS_CUSTOMER_ID", "").replace("-", "")
     service = client.get_service("KeywordPlanIdeaService")
 
-    # Create location and language objects
-    location = client.get_type("LocationInfo")
-    location.geo_target_constant = f"geoTargetConstants/{geo_id}"
-    locations = [location]
-
-    language = client.get_type("LanguageInfo")
-    language.language_constant = f"languageConstants/{lang_id}"
-    languages = [language]
-
     keyword_seed = client.get_type("KeywordSeed")
     keyword_seed.keywords = seeds
 
     request = client.get_type("GenerateKeywordIdeasRequest")
     request.customer_id = customer_id
-    request.language = languages[0]
-    request.geo_target_constants = locations
+    request.language = f"languageConstants/{lang_id}"
+    request.geo_target_constants = [f"geoTargetConstants/{geo_id}"]
     request.keyword_seed = keyword_seed
 
     # Execute request and collect results

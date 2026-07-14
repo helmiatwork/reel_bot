@@ -10874,22 +10874,6 @@ class KeywordIdeasRequest(BaseModel):
     lang: str = "id"
 
 
-class KeywordRow(BaseModel):
-    id: int
-    seed: Optional[str] = None
-    keyword: str
-    source: str
-    avg_monthly_searches: Optional[int] = None
-    competition: Optional[str] = None
-    competition_index: Optional[int] = None
-    cpc_low_micros: Optional[int] = None
-    cpc_high_micros: Optional[int] = None
-    region: str
-    niche: Optional[str] = None
-    score: Optional[float] = None
-    fetched_at: str
-
-
 class StudioItemCreate(BaseModel):
     title: str
     niche: Optional[str] = None
@@ -11083,64 +11067,66 @@ def keywords_ideas(req: KeywordIdeasRequest):
     # Compute scores and UPSERT into DB
     db_rows = []
     conn = _db_conn()
-    if conn:
-        try:
-            with conn.cursor() as cur:
-                for kw in normalized:
-                    score = compute_score(
-                        avg_monthly_searches=kw["avg_monthly_searches"],
-                        competition_index=kw["competition_index"],
-                        niche_fit=1.0  # Hook for future niche weighting
-                    )
+    if not conn:
+        raise HTTPException(status_code=503, detail="database unavailable")
 
-                    # UPSERT: on conflict (keyword, region, source), update all fields
-                    cur.execute("""
-                        INSERT INTO keywords
-                        (seed, keyword, source, search_volume_min, search_volume_max,
-                         avg_monthly_searches, competition, competition_index,
-                         cpc_low_micros, cpc_high_micros, region, niche, score, raw)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
-                        ON CONFLICT (keyword, region, source) DO UPDATE SET
-                            seed = EXCLUDED.seed,
-                            avg_monthly_searches = EXCLUDED.avg_monthly_searches,
-                            competition = EXCLUDED.competition,
-                            competition_index = EXCLUDED.competition_index,
-                            cpc_low_micros = EXCLUDED.cpc_low_micros,
-                            cpc_high_micros = EXCLUDED.cpc_high_micros,
-                            niche = EXCLUDED.niche,
-                            score = EXCLUDED.score,
-                            raw = EXCLUDED.raw,
-                            fetched_at = now()
-                        RETURNING
-                            id, seed, keyword, source, search_volume_min, search_volume_max,
-                            avg_monthly_searches, competition, competition_index,
-                            cpc_low_micros, cpc_high_micros, region, niche, score, fetched_at
-                    """, (
-                        " ".join(req.seeds),  # seed = comma-joined input
-                        kw["keyword"],
-                        kw["source"],
-                        kw["search_volume_min"],
-                        kw["search_volume_max"],
-                        kw["avg_monthly_searches"],
-                        kw["competition"],
-                        kw["competition_index"],
-                        kw["cpc_low_micros"],
-                        kw["cpc_high_micros"],
-                        kw["region"],
-                        kw["niche"],
-                        score,
-                        kw["raw"],
-                    ))
-                    row = cur.fetchone()
-                    if row:
-                        cols = [c.name for c in cur.description]
-                        db_rows.append(dict(zip(cols, row)))
+    try:
+        with conn.cursor() as cur:
+            for kw in normalized:
+                score = compute_score(
+                    avg_monthly_searches=kw["avg_monthly_searches"],
+                    competition_index=kw["competition_index"],
+                    niche_fit=1.0  # Hook for future niche weighting
+                )
 
-            conn.commit()
-        except Exception as e:
-            print(f"[/keywords/ideas] UPSERT error: {e}")
-        finally:
-            conn.close()
+                # UPSERT: on conflict (keyword, region, source), update all fields
+                cur.execute("""
+                    INSERT INTO keywords
+                    (seed, keyword, source, search_volume_min, search_volume_max,
+                     avg_monthly_searches, competition, competition_index,
+                     cpc_low_micros, cpc_high_micros, region, niche, score, raw)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
+                    ON CONFLICT (keyword, region, source) DO UPDATE SET
+                        seed = EXCLUDED.seed,
+                        avg_monthly_searches = EXCLUDED.avg_monthly_searches,
+                        competition = EXCLUDED.competition,
+                        competition_index = EXCLUDED.competition_index,
+                        cpc_low_micros = EXCLUDED.cpc_low_micros,
+                        cpc_high_micros = EXCLUDED.cpc_high_micros,
+                        niche = EXCLUDED.niche,
+                        score = EXCLUDED.score,
+                        raw = EXCLUDED.raw,
+                        fetched_at = now()
+                    RETURNING
+                        id, seed, keyword, source, search_volume_min, search_volume_max,
+                        avg_monthly_searches, competition, competition_index,
+                        cpc_low_micros, cpc_high_micros, region, niche, score, fetched_at
+                """, (
+                    " ".join(req.seeds),  # seed = space-joined input
+                    kw["keyword"],
+                    kw["source"],
+                    kw["search_volume_min"],
+                    kw["search_volume_max"],
+                    kw["avg_monthly_searches"],
+                    kw["competition"],
+                    kw["competition_index"],
+                    kw["cpc_low_micros"],
+                    kw["cpc_high_micros"],
+                    kw["region"],
+                    kw["niche"],
+                    score,
+                    kw["raw"],
+                ))
+                row = cur.fetchone()
+                if row:
+                    cols = [c.name for c in cur.description]
+                    db_rows.append(dict(zip(cols, row)))
+
+        conn.commit()
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Failed to save keywords: {str(e)}")
+    finally:
+        conn.close()
 
     return {"keywords": db_rows}
 
