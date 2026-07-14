@@ -39,6 +39,48 @@
   let storyboardScenes = $state(0)
   let pollStoryboardInterval = null
   let pollStoryboardCount = $state(0)
+  let prepStage = $state('')
+  let prepPollCount = $state(0)
+  let geminiStarted = $state(false)  // true once Gemini calls get_clips (status='working')
+  const PREP_STAGE_LABEL = {
+    downloading: 'Mengunduh video…',
+    saving_meta: 'Menyimpan atribut video…',
+    detecting: 'Mendeteksi scene…',
+    grouping: 'Mengelompokkan…',
+    splitting: 'Memotong klip per menit…',
+    finding: 'Menautkan klip…',
+    saving: 'Menyimpan ke database…',
+  }
+  // Live step checklist for the prep phase (like the analyze stepper).
+  // order = how far the pipeline has progressed; each stage maps to a step.
+  const PREP_STEPS = [
+    { key: 'saving_meta', label: 'Menyimpan atribut video' },
+    { key: 'downloading', label: 'Mengunduh video' },
+    { key: 'splitting', label: 'Memotong klip per menit' },
+    { key: 'saving', label: 'Menyimpan atribut klip ke database' },
+  ]
+  const PREP_STAGE_ORDER = { saving_meta: 0, downloading: 1, detecting: 2, grouping: 2, splitting: 2, finding: 3, saving: 3, done: 4 }
+  // Status of a step given the current prepStage: done | active | pending
+  function prepStepStatus(stepKey) {
+    const cur = PREP_STAGE_ORDER[prepStage] ?? 0
+    const idx = PREP_STEPS.findIndex(s => s.key === stepKey)
+    if (cur > idx) return 'done'
+    if (cur === idx) return 'active'
+    return 'pending'
+  }
+
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+  // Walk the prep checklist forward from wherever it stopped up to 'done', dwelling on
+  // each step so the ✓s animate in sequence instead of snapping (prep is near-instant).
+  async function animatePrepToDone() {
+    const order = ['saving_meta', 'downloading', 'splitting', 'saving', 'done']
+    let i = order.indexOf(prepStage)
+    if (i < 0) i = 0
+    for (; i < order.length; i++) {
+      prepStage = order[i]
+      await sleep(650)
+    }
+  }
 
   // Set when the submitted URL is already in the library
   let existsSource = $state(null)
@@ -194,10 +236,16 @@
       // Poll for decompose completion
       let done = false
       let pollCount = 0
-      const maxPolls = 120
+      const maxPolls = 600
+      prepStage = 'saving_meta'
+      prepPollCount = 0
       while (!done && pollCount < maxPolls) {
         await new Promise(resolve => setTimeout(resolve, 1000))
         const statusResult = await api.decomposeStatus(decomposeResult.run_id)
+        prepPollCount = pollCount + 1
+        if (statusResult?.status && statusResult.status !== 'done') {
+          prepStage = statusResult.status
+        }
         if (statusResult?.status === 'done') {
           done = true
         } else if (statusResult?.status === 'error') {
@@ -216,7 +264,14 @@
         return
       }
 
-      // Phase B: Fetch Gemini brief & start monitoring storyboard
+      // Stream-copy makes prep near-instant, so the checklist would snap straight to
+      // the brief. Walk the remaining steps forward with a small dwell so each ✓ ticks
+      // over smoothly before the prompt appears.
+      await animatePrepToDone()
+
+      // Phase B: Fetch Gemini brief & start monitoring.
+      // Gemini writes BOTH analysis and storyboard (save_analysis + save_storyboard).
+      // Claude is only a manual fallback via the Re-analyze button in the drawer.
       storyboardPhase = 'brief'
       const result = await api.getGeminiBrief(urlInput.trim())
       if (result?.instruction) {
@@ -230,10 +285,13 @@
 
       // Phase C: Auto-poll storyboard status (user runs Gemini in Antigravity)
       storyboardPhase = 'analyzing'
+      geminiStarted = false
       pollStoryboardCount = 0
       pollStoryboardInterval = setInterval(async () => {
         pollStoryboardCount++
         const statusResult = await api.storyboardStatus(urlInput.trim())
+        // status flips processing → working (Gemini called get_clips) → analyzed (done)
+        geminiStarted = statusResult?.status === 'working'
         if (statusResult?.ready) {
           storyboardReady = true
           storyboardScenes = statusResult.scenes || 0
@@ -370,9 +428,20 @@
                 {/if}
               </button>
             {:else if storyboardPhase === 'clips'}
-              <div class="phase-box" transition:fade={{ duration: 150 }}>
-                <span class="spinner-sm"></span>
-                <span>Menyiapkan clip…</span>
+              <div class="prep-stepper" transition:fade={{ duration: 150 }}>
+                <div class="prep-hd">
+                  <span class="prep-title">Menyiapkan clip</span>
+                  <span class="prep-elapsed">{prepPollCount}s</span>
+                </div>
+                {#each PREP_STEPS as step}
+                  {@const st = prepStepStatus(step.key)}
+                  <div class="prep-step {st}">
+                    <span class="prep-icon">
+                      {#if st === 'done'}✓{:else if st === 'active'}<span class="spinner-sm"></span>{:else}○{/if}
+                    </span>
+                    <span class="prep-label">{step.label}</span>
+                  </div>
+                {/each}
               </div>
             {:else if storyboardPhase === 'brief' || storyboardPhase === 'analyzing'}
               <div class="brief-box" transition:fade={{ duration: 150 }}>
@@ -387,12 +456,16 @@
                 >
                   {geminiBriefCopied ? '✓ Tersalin' : 'Salin'}
                 </button>
-                <div class="brief-note">Tempel instruksi ini ke Antigravity untuk analisis Gemini. Gemini akan memanggil reelbot MCP untuk menganalisis klip dan menyimpan hasilnya.</div>
+                <div class="brief-note">Tempel instruksi ini ke Antigravity. Gemini menonton klip lewat reelbot MCP, lalu menyimpan analisa + storyboard sekaligus. (Claude hanya cadangan manual via tombol Re-analyze kalau Gemini bermasalah.)</div>
 
                 {#if storyboardPhase === 'analyzing'}
-                  <div class="analyzing-box" transition:fade={{ duration: 150 }}>
+                  <div class="analyzing-box {geminiStarted ? 'working' : ''}" transition:fade={{ duration: 150 }}>
                     <span class="spinner-sm"></span>
-                    <span>Menunggu Gemini analisa…</span>
+                    {#if geminiStarted}
+                      <span>Gemini (Antigravity) sedang bekerja…</span>
+                    {:else}
+                      <span>Menunggu Gemini mulai (tempel instruksi di Antigravity)…</span>
+                    {/if}
                     <button class="btn-cancel" onclick={stopStoryboardPolling}>Batal</button>
                   </div>
                 {/if}
@@ -863,6 +936,29 @@
 
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+
+  .prep-stepper {
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 14px 16px; background: var(--soft, #f1f5f9);
+    border: 1px solid var(--line, #e2e8f0); border-radius: 8px;
+  }
+  .prep-hd { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .prep-title { font-size: 14px; font-weight: 600; }
+  .prep-elapsed { font-size: 12px; color: var(--mut, #64748b); }
+  .prep-step { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .prep-icon {
+    width: 18px; height: 18px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .prep-step.pending { color: var(--mut, #94a3b8); }
+  .prep-step.pending .prep-icon { color: var(--mut, #cbd5e1); }
+  .prep-step.active { color: var(--txt, #0f172a); font-weight: 600; }
+  .prep-step.done { color: #16a34a; }
+  .prep-step.done .prep-icon { color: #16a34a; font-weight: 700; }
+  .prep-step .spinner-sm {
+    width: 14px; height: 14px; border-width: 2px;
+    border-color: rgba(107,70,193,.25); border-top-color: #6b46c1; margin: 0;
   }
 
   /* Analysis mode selector */

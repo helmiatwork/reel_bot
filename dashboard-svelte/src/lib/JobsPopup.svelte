@@ -70,11 +70,53 @@
 
   async function pollList() {
     try {
-      const data = await api.analyzeRuns(20)
-      if (data) jobs = data
+      const [data, srcTable] = await Promise.all([
+        api.analyzeRuns(20),
+        api.table('sources', 50, 0).catch(() => null),
+      ])
+      // Map youtube_url → live source status so a decompose row keeps showing
+      // "processing/working" until the source is fully analyzed (Gemini done),
+      // instead of flipping to "done" the moment the fast clip-cut finishes.
+      const statusByUrl = {}
+      if (srcTable?.rows) for (const r of srcTable.rows) statusByUrl[r.youtube_url] = r.status
+      if (data) {
+        // Dedupe by url — one video can have several runs (repeated decompose/analyze).
+        // API returns newest-first, so keep the first occurrence per url.
+        const seen = new Set()
+        jobs = data
+          .map((j) => ({ ...j, sourceStatus: statusByUrl[j.url] || null }))
+          .filter((j) => {
+            const k = j.url || j.run_id
+            if (seen.has(k)) return false
+            seen.add(k)
+            return true
+          })
+      }
     } catch (e) {
       console.error('[pollList] error:', e)
     }
+  }
+
+  // Show only in-progress jobs; hide finished ones. A decompose job stays visible until
+  // its source reaches 'analyzed' (so it survives the Gemini wait after clip-cut finishes).
+  function isJobActive(job) {
+    if (job.kind === 'decompose') {
+      const ss = job.sourceStatus
+      if (ss) return ss !== 'analyzed' && ss !== 'error'
+      return job.status !== 'done' && job.status !== 'error'
+    }
+    return isActiveRunning(job)
+  }
+
+  // Live label for a job: prefer the source's overall status (processing → working →
+  // analyzed) over the transient run status. Returns null to fall back to run status.
+  function jobLive(job) {
+    const ss = job.sourceStatus
+    if (!ss) return null
+    if (ss === 'analyzed') return { text: 'Selesai', active: false }
+    if (ss === 'working') return { text: 'Gemini (Antigravity) bekerja…', active: true }
+    if (ss === 'processing') return { text: 'Sedang diproses…', active: true }
+    return null
   }
 
   function selectJob(run) {
@@ -104,6 +146,36 @@
     if (status === 'done') return 'green'
     if (status === 'error') return 'red'
     return 'gray'
+  }
+
+  function getDecomposeStageLabel(stage) {
+    const stageMap = {
+      'downloading': 'Mengunduh video…',
+      'detecting': 'Mendeteksi scene…',
+      'grouping': 'Mengelompokkan…',
+      'splitting': 'Memotong klip per menit…',
+      'finding': 'Menautkan klip…',
+      'saving': 'Menyimpan…',
+      'done': 'Selesai',
+      'error': 'Gagal'
+    }
+    return stageMap[stage] || stage
+  }
+
+  // Same prep checklist as the Add-Source form, so the detail view matches.
+  const PREP_STEPS = [
+    { key: 'saving_meta', label: 'Menyimpan atribut video' },
+    { key: 'downloading', label: 'Mengunduh video' },
+    { key: 'splitting', label: 'Memotong klip per menit' },
+    { key: 'saving', label: 'Menyimpan atribut klip ke database' },
+  ]
+  const PREP_STAGE_ORDER = { saving_meta: 0, downloading: 1, detecting: 2, grouping: 2, splitting: 2, finding: 3, saving: 3, done: 4, analyzed: 4 }
+  function prepStepStatus(cur, key) {
+    const c = PREP_STAGE_ORDER[cur] ?? 0
+    const idx = PREP_STEPS.findIndex((s) => s.key === key)
+    if (c > idx) return 'done'
+    if (c === idx) return 'active'
+    return 'pending'
   }
 
   function truncateUrl(url) {
@@ -169,27 +241,43 @@
       {#if !selectedRunId}
         <!-- Jobs List View -->
         <div class="jobs-list" transition:fade={{ duration: 150 }}>
-          {#if jobs.filter(isActiveRunning).length > 0}
-            {#each jobs.filter(isActiveRunning) as job (job.run_id)}
+          {#if jobs.filter(isJobActive).length > 0}
+            {#each jobs.filter(isJobActive) as job (job.run_id)}
               <div
                 class="job-row"
                 onclick={() => selectJob(job)}
               >
-                <div class="job-main">
-                  <div class="job-url">{job.title || truncateUrl(job.url)}</div>
-                  <div class="job-meta">
-                    <span class={`status-chip status-${getStatusColor(job.status)}`}>
-                      {job.status}
-                    </span>
-                    {#if job.output_format && job.output_format !== 'none'}
-                      <span class={`format-badge format-${job.output_format}`}>
-                        {job.output_format === 'prompt_json' ? 'JSON' : 'Text'}
+                {#if job.kind === 'decompose'}
+                  <!-- Decompose run: reflect the source's live status (processing → working → done) -->
+                  {@const live = jobLive(job)}
+                  <div class="job-main">
+                    <div class="job-url">{job.title || truncateUrl(job.url)}</div>
+                    <div class="job-meta">
+                      <span class="decompose-stage {job.sourceStatus === 'working' ? 'stage-working' : (job.sourceStatus === 'processing' || live?.active) ? 'stage-processing' : ''}">
+                        {#if live?.active}<span class="spin"></span>{/if}
+                        {live ? live.text : getDecomposeStageLabel(job.current_stage)}
                       </span>
-                    {/if}
-                    <span class="time">{formatRelativeTime(job.created)}</span>
+                      <span class="time">{formatRelativeTime(job.created)}</span>
+                    </div>
                   </div>
-                  <div class="job-msg">{job.last_msg}</div>
-                </div>
+                {:else}
+                  <!-- Analyze run: status badge + format -->
+                  <div class="job-main">
+                    <div class="job-url">{job.title || truncateUrl(job.url)}</div>
+                    <div class="job-meta">
+                      <span class={`status-chip status-${getStatusColor(job.status)}`}>
+                        {job.status}
+                      </span>
+                      {#if job.output_format && job.output_format !== 'none'}
+                        <span class={`format-badge format-${job.output_format}`}>
+                          {job.output_format === 'prompt_json' ? 'JSON' : 'Text'}
+                        </span>
+                      {/if}
+                      <span class="time">{formatRelativeTime(job.created)}</span>
+                    </div>
+                    <div class="job-msg">{job.last_msg}</div>
+                  </div>
+                {/if}
               </div>
             {/each}
           {:else}
@@ -205,15 +293,51 @@
               ← Kembali
             </button>
             <div class="detail-status">
-              <span class={`status-chip status-${getStatusColor(selectedJobDetail?.status || 'unknown')}`}>
-                {selectedJobDetail?.status || 'unknown'}
-              </span>
+              {#if selectedJobDetail?.kind === 'decompose'}
+                <span class="decompose-stage">
+                  {getDecomposeStageLabel(selectedJobDetail?.current_stage || 'unknown')}
+                </span>
+              {:else}
+                <span class={`status-chip status-${getStatusColor(selectedJobDetail?.status || 'unknown')}`}>
+                  {selectedJobDetail?.status || 'unknown'}
+                </span>
+              {/if}
             </div>
           </div>
 
-          <!-- Analyze stepper (all jobs in this popup are analyze runs) -->
-          {#if selectedJobDetail?.log}
+          <!-- Analyze stepper (only for analyze_source runs) -->
+          {#if selectedJobDetail?.kind !== 'decompose' && selectedJobDetail?.log}
             <AnalyzeStepper logs={selectedJobDetail.log} />
+          {/if}
+
+          <!-- Decompose stage info -->
+          {#if selectedJobDetail?.kind === 'decompose'}
+            {@const cur = selectedJobDetail?.current_stage || 'saving_meta'}
+            <div class="decompose-detail">
+              <div class="prep-stepper">
+                {#each PREP_STEPS as step}
+                  {@const st = prepStepStatus(cur, step.key)}
+                  <div class="prep-step {st}">
+                    <span class="prep-icon">
+                      {#if st === 'done'}✓{:else if st === 'active'}<span class="spinner-sm"></span>{:else}○{/if}
+                    </span>
+                    <span class="prep-label">{step.label}</span>
+                  </div>
+                {/each}
+              </div>
+              {#if selectedJobDetail?.interval_sec}
+                <div class="detail-section">
+                  <span class="field-label">Interval</span>
+                  <div class="field-value">{selectedJobDetail.interval_sec}s per clip</div>
+                </div>
+              {/if}
+              {#if selectedJobDetail?.segments && selectedJobDetail.segments.length > 0}
+                <div class="detail-section">
+                  <span class="field-label">Clips Found</span>
+                  <div class="field-value">{selectedJobDetail.segments.length}</div>
+                </div>
+              {/if}
+            </div>
           {/if}
 
           <!-- Result display (if done) -->
@@ -451,6 +575,56 @@
     color: #a855f7;
   }
 
+  .format-decompose {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+  }
+
+  .decompose-stage {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0.25rem 0.625rem;
+    border-radius: 3px;
+    font-weight: 500;
+    font-size: 0.75rem;
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    white-space: nowrap;
+  }
+  .decompose-stage .spin {
+    width: 9px;
+    height: 9px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    display: inline-block;
+    animation: spin 0.7s linear infinite;
+  }
+  /* processing = amber, working (Gemini) = blue; done stays green */
+  .decompose-stage.stage-processing { background: rgba(217,119,6,.14); color: #d97706; }
+  .decompose-stage.stage-working { background: rgba(37,99,235,.14); color: #2563eb; }
+  .prep-stepper {
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 14px 16px; background: var(--soft, #f1f5f9);
+    border: 1px solid var(--line, #e2e8f0); border-radius: 8px; margin-bottom: 12px;
+  }
+  .prep-step { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .prep-icon {
+    width: 18px; height: 18px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .prep-step.pending { color: var(--mut, #94a3b8); }
+  .prep-step.pending .prep-icon { color: var(--mut, #cbd5e1); }
+  .prep-step.active { color: var(--txt, #0f172a); font-weight: 600; }
+  .prep-step.done { color: #16a34a; }
+  .prep-step.done .prep-icon { color: #16a34a; font-weight: 700; }
+  .prep-step .spinner-sm {
+    width: 14px; height: 14px; border: 2px solid rgba(107,70,193,.25);
+    border-top-color: #6b46c1; border-radius: 50%; display: inline-block;
+    animation: spin 0.8s linear infinite;
+  }
+
   .time {
     color: var(--mut);
     margin-left: auto;
@@ -635,5 +809,17 @@
 
   .btn-close:hover {
     background: var(--border);
+  }
+
+  .decompose-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .detail-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 </style>

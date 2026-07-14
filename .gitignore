@@ -47,3 +47,6 @@ Procfile
 
 # user-supplied social cookies (secrets — never commit)
 data/cookies/
+
+# serena tooling index (local only)
+.serena/

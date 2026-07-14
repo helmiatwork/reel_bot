@@ -11,8 +11,10 @@ Environment:
 
 Schema (sources, video_analysis, video_segments):
 - sources: id, youtube_url, title, niche, platform, channel, views_at_analysis, status, created_at
-- video_analysis: youtube_url, hook, structure, retention, retention_score, tags (JSON), model, cost_usd, created_at
+- video_analysis: id, youtube_url, intent, hook, structure, retention, retention_score, tags (JSONB), raw_result, model, cost_usd, content_summary, content_detail, created_at
 - video_segments: source_id, clip_index, start_sec, end_sec, credit_handle, original_url, origin_status, confidence, segment_path
+
+STORYBOARD FLOW: get_clips → save_analysis (optional) → save_storyboard
 """
 
 import json
@@ -231,7 +233,7 @@ def get_analysis(youtube_url: str) -> dict:
         youtube_url: the YouTube URL
 
     Returns:
-        {"analysis": {dict with hook, structure, retention, retention_score, tags, model, cost_usd}}
+        {"analysis": {dict with hook, structure, retention, retention_score, tags, model, cost_usd, content_summary, content_detail}}
         or {"error": "...", "analysis": {}} if not found
     """
     if not DATABASE_URL:
@@ -245,7 +247,7 @@ def get_analysis(youtube_url: str) -> dict:
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT youtube_url, hook, structure, retention, retention_score, tags, model, cost_usd "
+                "SELECT youtube_url, hook, structure, retention, retention_score, tags, model, cost_usd, content_summary, content_detail "
                 "FROM video_analysis WHERE youtube_url = %s ORDER BY created_at DESC LIMIT 1",
                 (youtube_url,)
             )
@@ -504,6 +506,131 @@ def save_storyboard(youtube_url: str, storyboard_json: str) -> dict:
 
 
 @server.tool()
+def save_analysis(youtube_url: str, analysis_json: str) -> dict:
+    """
+    STORYBOARD FLOW STEP 2 (optional companion). Call this after analyzing the clips to persist the video ANALYSIS (hook/retention/structure/summary/detail/tags) produced from the same clips. Use ONLY get_clips, save_analysis, save_storyboard in the Gemini flow.
+
+    Save video analysis results to the database.
+
+    Args:
+        youtube_url: the YouTube URL to associate with the analysis
+        analysis_json: JSON string or dict with {hook, retention, retention_score, structure, summary, detail, tags, intent (optional)}
+
+    Returns:
+        {"ok": true, "youtube_url": ..., "saved": true} on success
+        {"error": "..."} on failure (invalid URL, bad JSON, empty analysis)
+    """
+    # Validate URL
+    if not _valid_url(youtube_url):
+        return {"error": "invalid youtube_url"}
+
+    # Parse analysis_json (accept string or dict)
+    if isinstance(analysis_json, str):
+        try:
+            analysis_dict = json.loads(analysis_json)
+        except (json.JSONDecodeError, ValueError):
+            return {"error": "analysis_json is not valid JSON"}
+    elif isinstance(analysis_json, dict):
+        analysis_dict = analysis_json
+    else:
+        return {"error": "analysis_json must be a JSON string or dict"}
+
+    # Require at least one of the main fields
+    required_fields = ["hook", "structure", "retention", "content_summary", "content_detail"]
+    has_content = any(analysis_dict.get(field) for field in required_fields)
+    if not has_content:
+        return {"error": "analysis is empty; must contain at least one of: hook, structure, retention, content_summary, content_detail"}
+
+    # Extract fields (map user names to DB column names)
+    hook = analysis_dict.get("hook")
+    structure = analysis_dict.get("structure")
+    retention = analysis_dict.get("retention")
+    retention_score = analysis_dict.get("retention_score")
+    content_summary = analysis_dict.get("summary") or analysis_dict.get("content_summary")
+    content_detail = analysis_dict.get("detail") or analysis_dict.get("content_detail")
+    tags = analysis_dict.get("tags")
+    intent = analysis_dict.get("intent")
+
+    # Coerce retention_score to int if present
+    if retention_score is not None:
+        try:
+            retention_score = int(retention_score)
+        except (ValueError, TypeError):
+            retention_score = None
+
+    # Parse tags if present
+    if tags is not None:
+        if isinstance(tags, str):
+            try:
+                tags = json.loads(tags)
+            except (json.JSONDecodeError, ValueError):
+                tags = None
+        if isinstance(tags, list):
+            tags = json.dumps(tags)  # Store as compact JSON string
+        elif isinstance(tags, dict):
+            tags = json.dumps(tags)
+        else:
+            tags = None
+
+    # DB write: INSERT new row (no upsert)
+    if not DATABASE_URL:
+        return {"error": "DATABASE_URL not configured"}
+
+    try:
+        conn = psycopg.connect(DATABASE_URL, connect_timeout=5)
+    except Exception as e:
+        return {"error": f"database connection failed: {e}"}
+
+    try:
+        with conn.cursor() as cur:
+            # Store compact JSON of full input in raw_result
+            raw_result_json = json.dumps(analysis_dict, separators=(',', ':'))
+
+            # INSERT new row
+            cur.execute(
+                "INSERT INTO video_analysis "
+                "(youtube_url, intent, hook, structure, retention, retention_score, content_summary, content_detail, tags, raw_result, model, cost_usd) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                (
+                    youtube_url,
+                    intent,
+                    hook,
+                    structure,
+                    retention,
+                    retention_score,
+                    content_summary,
+                    content_detail,
+                    tags,
+                    raw_result_json,
+                    "gemini-antigravity",
+                    0  # cost_usd = 0 for Gemini (free)
+                )
+            )
+
+            # Also ensure sources row exists with status='analyzed'
+            cur.execute(
+                "UPDATE sources SET status='analyzed' WHERE youtube_url=%s",
+                (youtube_url,)
+            )
+            rows_updated = cur.rowcount
+
+            # If UPDATE didn't match, INSERT minimal sources row
+            if rows_updated == 0:
+                cur.execute(
+                    "INSERT INTO sources (youtube_url, platform, status) VALUES (%s, %s, %s)",
+                    (youtube_url, "youtube", "analyzed")
+                )
+
+            conn.commit()
+        return {"ok": True, "youtube_url": youtube_url, "saved": True}
+    except Exception as e:
+        conn.rollback()
+        return {"error": f"database error: {e}"}
+    finally:
+        conn.close()
+
+
+@server.tool()
 def get_clips(youtube_url: str) -> dict:
     """
     STORYBOARD FLOW STEP 1. Use this to fetch the local video clip files (seg_NN.mp4) for a decomposed video. This is the FIRST tool to call when building a Gemini storyboard.
@@ -549,6 +676,16 @@ def get_clips(youtube_url: str) -> dict:
             cols = [c.name for c in cur.description] if cur.description else []
             rows = cur.fetchall()
             clips = [_segment_row_to_dict(row, cols) for row in rows]
+
+            # Signal that Gemini has started working: flip status processing → working
+            # (not if already analyzed). The dashboard's storyboard-status poll reads this
+            # so the "Menunggu Gemini" loading flips to "Gemini sedang bekerja" in real time.
+            if clips:
+                cur.execute(
+                    "UPDATE sources SET status='working' WHERE id=%s AND status <> 'analyzed'",
+                    (source_id,)
+                )
+                conn.commit()
 
         return {
             "youtube_url": youtube_url,
