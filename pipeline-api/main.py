@@ -27,6 +27,9 @@ _YT_PIPELINE = str(_REPO_ROOT / "yt-pipeline" / "yt_pipeline.py")
 
 sys.path.insert(0, str(_REPO_ROOT))
 
+# Import Google Ads adapter (module imports cleanly even if creds are missing)
+from adapters.google_ads import generate_keyword_ideas, GoogleAdsNotConfigured, normalize_keyword_ideas, compute_score
+
 app = FastAPI(title="Content Pipeline API", version="1.0")
 
 
@@ -73,6 +76,10 @@ def startup_event():
         _revenue_init_db()
     except Exception as e:
         print(f"[startup] revenue db init failed (non-fatal): {e}")
+    try:
+        _keywords_init_db()
+    except Exception as e:
+        print(f"[startup] keywords db init failed (non-fatal): {e}")
 
 # ── SSRF guard: blocked networks (module-level constant) ────────────────────
 # Extra ranges beyond ipaddress.ip_address check (0.0.0.0/8, CGNAT, etc)
@@ -9108,6 +9115,52 @@ def _revenue_init_db():
         conn.close()
 
 
+def _keywords_init_db():
+    """Create keywords table for Google Ads keyword research. Non-fatal on error."""
+    conn = _db_conn()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS keywords (
+                    id                  BIGSERIAL PRIMARY KEY,
+                    seed                TEXT,
+                    keyword             TEXT NOT NULL,
+                    source              TEXT NOT NULL,
+                    search_volume_min   BIGINT,
+                    search_volume_max   BIGINT,
+                    avg_monthly_searches BIGINT,
+                    competition         TEXT,
+                    competition_index   INT,
+                    cpc_low_micros      BIGINT,
+                    cpc_high_micros     BIGINT,
+                    region              TEXT NOT NULL,
+                    niche               TEXT,
+                    score               DOUBLE PRECISION,
+                    raw                 JSONB,
+                    fetched_at          TIMESTAMPTZ DEFAULT now()
+                )
+            """)
+            # Indexes
+            cur.execute("CREATE INDEX IF NOT EXISTS keywords_score_idx ON keywords (score DESC)")
+            cur.execute("CREATE INDEX IF NOT EXISTS keywords_niche_idx ON keywords (niche)")
+            cur.execute("CREATE INDEX IF NOT EXISTS keywords_source_idx ON keywords (source)")
+            cur.execute("CREATE INDEX IF NOT EXISTS keywords_region_idx ON keywords (region)")
+            cur.execute("CREATE INDEX IF NOT EXISTS keywords_keyword_idx ON keywords (keyword)")
+            cur.execute("CREATE INDEX IF NOT EXISTS keywords_fetched_at_idx ON keywords (fetched_at DESC)")
+            # Unique constraint for UPSERT on (keyword, region, source)
+            cur.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS keywords_upsert_key
+                ON keywords (keyword, region, source)
+            """)
+        conn.commit()
+    except Exception as e:
+        print(f"[keywords] init db error: {e}")
+    finally:
+        conn.close()
+
+
 def _revenue_summary_data() -> dict:
     """Compute per-platform and per-video revenue rollup joined with latest views.
 
@@ -10813,6 +10866,14 @@ class BatchGenerateRequest(BaseModel):
     count: int = 10
 
 
+# ── Keywords (Google Ads research) ─────────────────────────────────────────
+
+class KeywordIdeasRequest(BaseModel):
+    seeds: List[str]
+    geo: str = "ID"
+    lang: str = "id"
+
+
 class StudioItemCreate(BaseModel):
     title: str
     niche: Optional[str] = None
@@ -10952,6 +11013,200 @@ def generate_batch_status(run_id: str):
     if not run:
         raise HTTPException(status_code=404, detail="run not found")
     return run
+
+
+# ── Keywords (Google Ads Keyword Planner) ──────────────────────────────────
+
+@app.post("/keywords/ideas")
+def keywords_ideas(req: KeywordIdeasRequest):
+    """
+    Generate keyword ideas from seed terms via Google Ads API.
+
+    Calls Google Ads KeywordPlanIdeaService, normalizes results, computes scores,
+    and UPSERTs into the keywords table.
+
+    Args:
+        seeds: list of seed keywords
+        geo: geo code (default "ID" = Indonesia)
+        lang: language code (default "id" = Indonesian)
+
+    Returns:
+        {"keywords": [KeywordRow, ...]} on success
+        {"error": "..."} on error (HTTP 503 if unconfigured, 500 if other)
+    """
+    if not req.seeds:
+        raise HTTPException(status_code=400, detail="seeds list is required")
+
+    # Validate geo/lang
+    valid_geos = {"ID", "US"}
+    valid_langs = {"id", "en"}
+    if req.geo not in valid_geos:
+        raise HTTPException(status_code=400, detail=f"geo must be one of {valid_geos}")
+    if req.lang not in valid_langs:
+        raise HTTPException(status_code=400, detail=f"lang must be one of {valid_langs}")
+
+    # Call Google Ads adapter
+    try:
+        api_response = generate_keyword_ideas(seeds=req.seeds, geo=req.geo, lang=req.lang)
+    except GoogleAdsNotConfigured as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Google Ads not configured. Set these env vars: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Google Ads API error: {str(e)}")
+
+    # Normalize results
+    region = f"{req.geo}:{req.lang}"
+    normalized = normalize_keyword_ideas(
+        results=api_response.get("results", []),
+        source="google_ads",
+        region=region
+    )
+
+    # Compute scores and UPSERT into DB
+    db_rows = []
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=503, detail="database unavailable")
+
+    try:
+        with conn.cursor() as cur:
+            for kw in normalized:
+                score = compute_score(
+                    avg_monthly_searches=kw["avg_monthly_searches"],
+                    competition_index=kw["competition_index"],
+                    niche_fit=1.0  # Hook for future niche weighting
+                )
+
+                # UPSERT: on conflict (keyword, region, source), update all fields
+                cur.execute("""
+                    INSERT INTO keywords
+                    (seed, keyword, source, search_volume_min, search_volume_max,
+                     avg_monthly_searches, competition, competition_index,
+                     cpc_low_micros, cpc_high_micros, region, niche, score, raw)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
+                    ON CONFLICT (keyword, region, source) DO UPDATE SET
+                        seed = EXCLUDED.seed,
+                        avg_monthly_searches = EXCLUDED.avg_monthly_searches,
+                        competition = EXCLUDED.competition,
+                        competition_index = EXCLUDED.competition_index,
+                        cpc_low_micros = EXCLUDED.cpc_low_micros,
+                        cpc_high_micros = EXCLUDED.cpc_high_micros,
+                        niche = EXCLUDED.niche,
+                        score = EXCLUDED.score,
+                        raw = EXCLUDED.raw,
+                        fetched_at = now()
+                    RETURNING
+                        id, seed, keyword, source, search_volume_min, search_volume_max,
+                        avg_monthly_searches, competition, competition_index,
+                        cpc_low_micros, cpc_high_micros, region, niche, score, fetched_at
+                """, (
+                    " ".join(req.seeds),  # seed = space-joined input
+                    kw["keyword"],
+                    kw["source"],
+                    kw["search_volume_min"],
+                    kw["search_volume_max"],
+                    kw["avg_monthly_searches"],
+                    kw["competition"],
+                    kw["competition_index"],
+                    kw["cpc_low_micros"],
+                    kw["cpc_high_micros"],
+                    kw["region"],
+                    kw["niche"],
+                    score,
+                    kw["raw"],
+                ))
+                row = cur.fetchone()
+                if row:
+                    cols = [c.name for c in cur.description]
+                    db_rows.append(dict(zip(cols, row)))
+
+        conn.commit()
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Failed to save keywords: {str(e)}")
+    finally:
+        conn.close()
+
+    return {"keywords": db_rows}
+
+
+@app.get("/keywords")
+def keywords_list(
+    niche: Optional[str] = None,
+    source: Optional[str] = None,
+    min_volume: Optional[int] = None,
+    region: Optional[str] = None,
+    limit: int = 50
+):
+    """
+    Query keywords from the database.
+
+    Filters by niche, source, min search volume, and region.
+    Returns results ordered by score (descending).
+
+    Args:
+        niche: filter by niche slug (optional)
+        source: filter by source ('google_ads' | 'youtube_suggest')
+        min_volume: minimum average monthly searches
+        region: filter by region code (e.g. 'ID:id')
+        limit: max results (default 50)
+
+    Returns:
+        {"keywords": [KeywordRow, ...]}
+    """
+    limit = max(1, min(int(limit), 500))  # Clamp to [1, 500]
+
+    conn = _db_conn()
+    if not conn:
+        return {"keywords": []}
+
+    try:
+        with conn.cursor() as cur:
+            # Build dynamic WHERE clause
+            where_parts = []
+            params = []
+
+            if niche:
+                where_parts.append("niche = %s")
+                params.append(niche)
+            if source:
+                where_parts.append("source = %s")
+                params.append(source)
+            if min_volume is not None:
+                where_parts.append("avg_monthly_searches >= %s")
+                params.append(int(min_volume))
+            if region:
+                where_parts.append("region = %s")
+                params.append(region)
+
+            where_clause = " AND ".join(where_parts) if where_parts else "1=1"
+            params.append(limit)
+
+            sql = f"""
+                SELECT id, seed, keyword, source, search_volume_min, search_volume_max,
+                       avg_monthly_searches, competition, competition_index,
+                       cpc_low_micros, cpc_high_micros, region, niche, score, fetched_at
+                FROM keywords
+                WHERE {where_clause}
+                ORDER BY score DESC
+                LIMIT %s
+            """
+
+            cur.execute(sql, params)
+            cols = [c.name for c in cur.description]
+            rows = cur.fetchall()
+
+        keywords = []
+        for row in rows:
+            keywords.append(dict(zip(cols, row)))
+
+        return {"keywords": keywords}
+    except Exception as e:
+        print(f"[/keywords] query error: {e}")
+        return {"keywords": []}
+    finally:
+        conn.close()
 
 
 @app.get("/studio/board")
