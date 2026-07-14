@@ -699,6 +699,100 @@ def get_clips(youtube_url: str) -> dict:
         conn.close()
 
 
+# ── Keywords (Google Ads Keyword Planner) ──────────────────────────────────
+
+@server.tool()
+def keyword_ideas(
+    seeds: list,
+    geo: str = "ID",
+    lang: str = "id"
+) -> dict:
+    """
+    Generate keyword ideas from seed terms via Google Ads API.
+
+    Calls the pipeline API /keywords/ideas endpoint, which in turn uses
+    Google Ads KeywordPlanIdeaService to find related keywords.
+
+    Args:
+        seeds: list of seed keywords (e.g. ["video editing", "adobe premiere"])
+        geo: geo code (default "ID" = Indonesia; also supports "US")
+        lang: language code (default "id" = Indonesian; also supports "en")
+
+    Returns:
+        {"keywords": [{"keyword", "avg_monthly_searches", "competition", "score", ...}, ...]}
+        or {"error": "..."} if API call fails or is not configured
+    """
+    if not PIPELINE_API_URL:
+        return {"error": "PIPELINE_API_URL not configured"}
+
+    if not seeds or not isinstance(seeds, list):
+        return {"error": "seeds must be a non-empty list of strings"}
+
+    # Call the pipeline API
+    try:
+        response = httpx.post(
+            f"{PIPELINE_API_URL}/keywords/ideas",
+            json={"seeds": seeds, "geo": geo, "lang": lang},
+            timeout=30,
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": f"keyword_ideas API call failed: {e}"}
+
+
+@server.tool()
+def query_keywords(
+    niche: str = None,
+    source: str = None,
+    min_volume: int = None,
+    region: str = None,
+    limit: int = 50
+) -> dict:
+    """
+    Query keywords from the database.
+
+    Filters by niche, source, minimum search volume, and region.
+    Returns results ordered by composite score (highest first).
+
+    Args:
+        niche: filter by niche slug (optional, e.g. "restoration")
+        source: filter by source ("google_ads" or "youtube_suggest")
+        min_volume: minimum average monthly searches (optional)
+        region: filter by region code (optional, e.g. "ID:id", "US:en")
+        limit: max results (default 50, clamped to 1-500)
+
+    Returns:
+        {"keywords": [{"keyword", "avg_monthly_searches", "competition", "score", ...}, ...]}
+        or {"error": "..."} if query fails
+    """
+    if not PIPELINE_API_URL:
+        return {"error": "PIPELINE_API_URL not configured"}
+
+    params = {
+        "limit": _clamp_limit(limit),
+    }
+    if niche:
+        params["niche"] = niche
+    if source:
+        params["source"] = source
+    if min_volume is not None:
+        params["min_volume"] = int(min_volume)
+    if region:
+        params["region"] = region
+
+    try:
+        response = httpx.get(
+            f"{PIPELINE_API_URL}/keywords",
+            params=params,
+            timeout=30,
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": f"query_keywords API call failed: {e}"}
+
+
 # ── Entry point ──────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
