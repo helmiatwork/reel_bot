@@ -32,6 +32,9 @@ from adapters.google_ads import generate_keyword_ideas, GoogleAdsNotConfigured, 
 
 app = FastAPI(title="Content Pipeline API", version="1.0")
 
+# Module-level dict to track OAuth state -> account_id for web flow
+_oauth_flows = {}
+
 
 @app.on_event("startup")
 def startup_event():
@@ -2449,7 +2452,9 @@ def _scrape_cookie_file(platform: str):
 
 @app.get("/accounts")
 def accounts_list(platform: Optional[str] = None, role: Optional[str] = None):
-    """List accounts, optionally filtered by platform and/or role."""
+    """List accounts, optionally filtered by platform and/or role.
+    Includes computed fields: has_cookies, connected (for YouTube accounts).
+    """
     if role is not None and role not in ACCOUNT_ROLES:
         raise HTTPException(status_code=400, detail=f"role must be one of {ACCOUNT_ROLES}")
     conn = _db_conn()
@@ -2474,6 +2479,18 @@ def accounts_list(platform: Optional[str] = None, role: Optional[str] = None):
             rows = [dict(zip(cols, r)) for r in cur.fetchall()]
         for row in rows:
             row["has_cookies"] = _account_has_cookies(row["id"], row["platform"])
+            # For YouTube accounts, check if OAuth token file is valid (exists + has refresh_token)
+            if row["platform"] == "youtube":
+                token_file = Path(f"credentials/youtube_token_{row['id']}.json")
+                row["connected"] = False  # default to False
+                try:
+                    if token_file.exists() and token_file.stat().st_size > 0:
+                        from google.oauth2.credentials import Credentials
+                        creds = Credentials.from_authorized_user_file(str(token_file))
+                        row["connected"] = bool(creds.refresh_token)
+                except Exception:
+                    # Token file invalid or unreadable — not connected
+                    pass
         return _json(rows)
     except Exception as exc:
         print(f"[accounts] list error: {exc}")
@@ -2643,6 +2660,126 @@ def accounts_cookies_delete(account_id: int):
     if existed:
         cf.unlink()
     return {"ok": True, "has_cookies": False, "removed": existed}
+
+
+@app.post("/accounts/{account_id}/connect-youtube")
+def accounts_connect_youtube(account_id: int):
+    """Web OAuth flow initiation for YouTube account connection.
+    Returns auth_url for user to visit (non-blocking).
+    Redirect URI: http://localhost:8000/youtube-callback
+    """
+    conn = _db_conn()
+    if conn is None:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    try:
+        # Verify account exists and is youtube platform
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, platform, handle FROM accounts WHERE id=%s",
+                (account_id,)
+            )
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="account not found")
+            _, platform, handle = row
+        if platform != "youtube":
+            raise HTTPException(status_code=400, detail="account is not youtube platform")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        conn.close()
+
+    # Initiate web OAuth flow (non-blocking)
+    try:
+        import google_auth_oauthlib.flow as flow_module
+        import youtube_v3
+
+        creds_file = os.getenv("YOUTUBE_CREDENTIALS", "credentials/client_secrets.json")
+        if not Path(creds_file).exists():
+            raise HTTPException(status_code=500, detail="client_secrets.json not found")
+
+        # Create web OAuth flow (not InstalledAppFlow)
+        flow = flow_module.Flow.from_client_secrets_file(
+            creds_file,
+            scopes=youtube_v3.OAUTH_SCOPES,
+            redirect_uri="http://localhost:8000/youtube-callback"
+        )
+
+        # Get authorization URL and state
+        auth_url, state = flow.authorization_url(
+            access_type="offline",
+            prompt="consent"
+        )
+
+        # Save state -> account_id mapping for callback
+        _oauth_flows[state] = account_id
+
+        return {"auth_url": auth_url}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OAuth flow init failed: {str(e)}")
+
+
+@app.get("/youtube-callback")
+def youtube_callback(code: str = None, state: str = None, error: str = None):
+    """OAuth callback handler for YouTube web flow.
+    Exchanges code for credentials and saves to per-account file.
+    Redirects to dashboard with success/error status.
+    """
+    from fastapi.responses import RedirectResponse
+    import google_auth_oauthlib.flow as flow_module
+
+    if error:
+        return RedirectResponse(f"/?yt_connect=error&error={error}")
+
+    if not code or not state:
+        return RedirectResponse("/?yt_connect=error&error=missing_code_or_state")
+
+    # Look up account_id from state
+    account_id = _oauth_flows.get(state)
+    if account_id is None:
+        return RedirectResponse("/?yt_connect=error&error=invalid_state")
+
+    try:
+        # Remove state from map (single use)
+        del _oauth_flows[state]
+
+        creds_file = os.getenv("YOUTUBE_CREDENTIALS", "credentials/client_secrets.json")
+        if not Path(creds_file).exists():
+            return RedirectResponse("/?yt_connect=error&error=missing_secrets")
+
+        # Recreate flow to exchange code for token
+        flow = flow_module.Flow.from_client_secrets_file(
+            creds_file,
+            scopes=["https://www.googleapis.com/auth/youtube.force-ssl",
+                    "https://www.googleapis.com/auth/youtube.upload",
+                    "https://www.googleapis.com/auth/yt-analytics.readonly",
+                    "https://www.googleapis.com/auth/yt-analytics-monetary.readonly"],
+            redirect_uri="http://localhost:8000/youtube-callback"
+        )
+
+        # Exchange code for credentials
+        flow.fetch_token(code=code)
+        creds = flow.credentials
+
+        # Save token to per-account file
+        token_file = Path(f"credentials/youtube_token_{account_id}.json")
+        token_file.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(str(token_file), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w") as f:
+            f.write(creds.to_json())
+        try:
+            os.chmod(str(token_file), 0o600)
+        except OSError:
+            pass
+
+        return RedirectResponse("/?yt_connect=success")
+    except Exception as e:
+        print(f"[youtube-callback] error: {e}")
+        return RedirectResponse(f"/?yt_connect=error&error=token_exchange_failed")
 
 
 class DecomposeRequest(BaseModel):

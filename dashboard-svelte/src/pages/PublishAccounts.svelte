@@ -10,6 +10,7 @@
 
   let accounts = $state([])
   let loading  = $state(true)
+  let connecting = $state({})  // Track connecting state per account id
   let ui = $state(Object.fromEntries(
     PLATFORMS.map(p => [p.id, { adding: false, handle: '', label: '', saving: false, msg: null }])
   ))
@@ -55,6 +56,20 @@
     if (!confirm(`Delete account @${acct.handle}?`)) return
     await api.accountDelete(acct.id)
     await load()
+  }
+
+  async function connectYoutube(acct) {
+    connecting[acct.id] = true
+    const r = await api.accountConnectYoutube(acct.id)
+    connecting[acct.id] = false
+    if (r && r.auth_url) {
+      // Web OAuth flow: redirect user to Google auth, will return to / with yt_connect=success/error
+      window.location.href = r.auth_url
+    } else if (r && r.detail) {
+      alert(`Connection failed: ${r.detail}`)
+    } else {
+      alert('Connection failed. Check console and try again.')
+    }
   }
 </script>
 
@@ -127,6 +142,20 @@
                   </div>
                   <div class="acct-badges">
                     <span class="badge earn">earning</span>
+                    {#if p.id === 'youtube'}
+                      {#if acct.connected}
+                        <span class="badge connected" title="OAuth token saved">connected</span>
+                      {:else}
+                        <button
+                          class="badge connect"
+                          disabled={connecting[acct.id]}
+                          title="Connect YouTube OAuth"
+                          onclick={() => connectYoutube(acct)}
+                        >
+                          {connecting[acct.id] ? 'Connecting…' : 'Connect'}
+                        </button>
+                      {/if}
+                    {/if}
                     <button
                       class="badge toggle"
                       class:active={acct.active}
@@ -304,6 +333,26 @@
     background: rgba(99,102,241,.1);
     border-color: rgba(99,102,241,.3);
     color: #818cf8;
+  }
+  .badge.connected {
+    background: rgba(34,197,94,.1);
+    border-color: rgba(34,197,94,.3);
+    color: #22c55e;
+  }
+  .badge.connect {
+    cursor: pointer;
+    font-family: inherit;
+    background: rgba(99,102,241,.1);
+    border-color: rgba(99,102,241,.3);
+    color: #818cf8;
+  }
+  .badge.connect:hover:not(:disabled) {
+    background: rgba(99,102,241,.2);
+    border-color: rgba(99,102,241,.5);
+  }
+  .badge.connect:disabled {
+    opacity: 0.6;
+    cursor: default;
   }
   .badge.toggle {
     cursor: pointer;
