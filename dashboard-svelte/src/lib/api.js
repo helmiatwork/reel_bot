@@ -125,13 +125,20 @@ export const api = {
   saveCookies: (platform, content) => postJSON('/cookies/' + platform, { content }),
   deleteCookies: (platform) => delJSON('/cookies/' + platform),
 
+  // Brands (product grouping)
+  brands: () => getJSON('/brands'),
+  brand: (id) => getJSON(`/brands/${id}`),
+  brandCreate: (body) => postJSON('/brands', body),  // pass { name, description? }
+  brandUpdate: (id, body) => patchJSON(`/brands/${id}`, body),
+  brandDelete: (id) => delJSON(`/brands/${id}`),
+
   // Accounts
-  accounts: (platform, role) => {
-    const q = [platform && `platform=${platform}`, role && `role=${role}`].filter(Boolean).join('&')
+  accounts: (platform, role, brandId) => {
+    const q = [platform && `platform=${platform}`, role && `role=${role}`, brandId && `brand_id=${brandId}`].filter(Boolean).join('&')
     return getJSON('/accounts' + (q ? '?' + q : ''))
   },
-  accountCreate: (body) => postJSON('/accounts', body),   // pass { role: 'scrape'|'publish' } in body
-  accountUpdate: (id, body) => patchJSON(`/accounts/${id}`, body),  // pass { role } to change role
+  accountCreate: (body) => postJSON('/accounts', body),   // pass { role: 'scrape'|'publish', brand_id? } in body
+  accountUpdate: (id, body) => patchJSON(`/accounts/${id}`, body),  // pass { role, brand_id } to change
   accountDelete: (id) => delJSON(`/accounts/${id}`),
   accountSaveCookies: (id, content) => postJSON(`/accounts/${id}/cookies`, { content }),
   accountDeleteCookies: (id) => delJSON(`/accounts/${id}/cookies`),
