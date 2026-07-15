@@ -64,6 +64,10 @@ def startup_event():
     except Exception as e:
         print(f"[startup] performance db init failed (non-fatal): {e}")
     try:
+        _brands_init_db()
+    except Exception as e:
+        print(f"[startup] brands db init failed (non-fatal): {e}")
+    try:
         _accounts_init_db()
     except Exception as e:
         print(f"[startup] accounts db init failed (non-fatal): {e}")
@@ -2352,21 +2356,53 @@ def cookies_delete(platform: str):
 ACCOUNT_ROLES = ("scrape", "publish")
 
 
+class BrandCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+
+class BrandUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+
 class AccountCreate(BaseModel):
     platform: str
     handle: str
     label: Optional[str] = None
     role: str = "scrape"
+    brand_id: Optional[int] = None
 
 
 class AccountUpdate(BaseModel):
     label: Optional[str] = None
     active: Optional[bool] = None
     role: Optional[str] = None
+    brand_id: Optional[int] = None
 
 
 class AccountCookiePost(BaseModel):
     content: str
+
+
+def _brands_init_db():
+    """Initialize brands table at startup (non-fatal on failure)."""
+    conn = _db_conn()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""CREATE TABLE IF NOT EXISTS brands (
+                id          BIGSERIAL PRIMARY KEY,
+                name        TEXT NOT NULL UNIQUE,
+                description TEXT,
+                created_at  TIMESTAMPTZ DEFAULT now()
+            )""")
+        conn.commit()
+    except Exception as e:
+        print(f"[brands] init db error: {e}")
+    finally:
+        conn.close()
 
 
 def _accounts_init_db():
@@ -2394,6 +2430,17 @@ def _accounts_init_db():
                 "ALTER TABLE accounts ADD COLUMN IF NOT EXISTS "
                 "last_used_at TIMESTAMPTZ"
             )
+            cur.execute(
+                "ALTER TABLE accounts ADD COLUMN IF NOT EXISTS "
+                "brand_id BIGINT"
+            )
+            # Add FK constraint idempotently (I-1: ON DELETE SET NULL)
+            cur.execute("""DO $$ BEGIN
+              IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'accounts_brand_id_fkey') THEN
+                ALTER TABLE accounts ADD CONSTRAINT accounts_brand_id_fkey
+                  FOREIGN KEY (brand_id) REFERENCES brands(id) ON DELETE SET NULL;
+              END IF;
+            END $$;""")
         conn.commit()
     except Exception as e:
         print(f"[accounts] init db error: {e}")
@@ -2451,8 +2498,8 @@ def _scrape_cookie_file(platform: str):
 
 
 @app.get("/accounts")
-def accounts_list(platform: Optional[str] = None, role: Optional[str] = None):
-    """List accounts, optionally filtered by platform and/or role.
+def accounts_list(platform: Optional[str] = None, role: Optional[str] = None, brand_id: Optional[int] = None):
+    """List accounts, optionally filtered by platform, role, and/or brand_id.
     Includes computed fields: has_cookies, connected (for YouTube accounts).
     """
     if role is not None and role not in ACCOUNT_ROLES:
@@ -2469,9 +2516,11 @@ def accounts_list(platform: Optional[str] = None, role: Optional[str] = None):
                 wheres.append("platform=%s"); params.append(platform)
             if role:
                 wheres.append("role=%s"); params.append(role)
+            if brand_id is not None:
+                wheres.append("brand_id=%s"); params.append(brand_id)
             where_clause = ("WHERE " + " AND ".join(wheres)) if wheres else ""
             cur.execute(
-                f"SELECT id,platform,handle,label,active,role,last_used_at,created_at "
+                f"SELECT id,platform,handle,label,active,role,last_used_at,created_at,brand_id "
                 f"FROM accounts {where_clause} ORDER BY platform,created_at",
                 params,
             )
@@ -2515,11 +2564,11 @@ def accounts_create(req: AccountCreate):
     try:
         with conn.cursor() as cur:
             cur.execute(
-                """INSERT INTO accounts (platform, handle, label, role)
-                   VALUES (%s, %s, %s, %s)
+                """INSERT INTO accounts (platform, handle, label, role, brand_id)
+                   VALUES (%s, %s, %s, %s, %s)
                    ON CONFLICT (platform, handle) DO NOTHING
-                   RETURNING id,platform,handle,label,active,role,last_used_at,created_at""",
-                (req.platform, handle, req.label or handle, req.role),
+                   RETURNING id,platform,handle,label,active,role,last_used_at,created_at,brand_id""",
+                (req.platform, handle, req.label or handle, req.role, req.brand_id),
             )
             row = cur.fetchone()
             if not row:
@@ -2540,8 +2589,12 @@ def accounts_create(req: AccountCreate):
 
 @app.patch("/accounts/{account_id}")
 def accounts_update(account_id: int, req: AccountUpdate):
-    """Partial update: label, active flag, and/or role."""
-    if req.label is None and req.active is None and req.role is None:
+    """Partial update: label, active flag, role, and/or brand_id.
+
+    Use model_fields_set to distinguish explicit null from absent (I-2).
+    """
+    # I-2: Use model_fields_set to allow explicit brand_id=null to unset brand
+    if not req.model_fields_set:
         raise HTTPException(status_code=400, detail="nothing to update")
     if req.role is not None and req.role not in ACCOUNT_ROLES:
         raise HTTPException(status_code=400, detail=f"role must be one of {ACCOUNT_ROLES}")
@@ -2550,17 +2603,22 @@ def accounts_update(account_id: int, req: AccountUpdate):
         raise HTTPException(status_code=503, detail="database unavailable")
     try:
         sets, params = [], []
-        if req.label is not None:
+        if "label" in req.model_fields_set:
             sets.append("label=%s"); params.append(req.label)
-        if req.active is not None:
+        if "active" in req.model_fields_set:
             sets.append("active=%s"); params.append(req.active)
-        if req.role is not None:
+        if "role" in req.model_fields_set:
             sets.append("role=%s"); params.append(req.role)
+        if "brand_id" in req.model_fields_set:
+            if req.brand_id is None:
+                sets.append("brand_id=NULL")
+            else:
+                sets.append("brand_id=%s"); params.append(req.brand_id)
         params.append(account_id)
         with conn.cursor() as cur:
             cur.execute(
                 f"UPDATE accounts SET {','.join(sets)} WHERE id=%s "
-                f"RETURNING id,platform,handle,label,active,role,last_used_at,created_at",
+                f"RETURNING id,platform,handle,label,active,role,last_used_at,created_at,brand_id",
                 params,
             )
             row = cur.fetchone()
@@ -2721,6 +2779,176 @@ def accounts_connect_youtube(account_id: int):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"OAuth flow init failed: {str(e)}")
+
+
+# ── Brands (product grouping layer) ────────────────────────────────────────
+
+@app.get("/brands")
+def brands_list():
+    """List all brands with account counts."""
+    conn = _db_conn()
+    if conn is None:
+        return _json([])
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """SELECT b.id, b.name, b.description, b.created_at,
+                          COUNT(a.id) as account_count
+                   FROM brands b
+                   LEFT JOIN accounts a ON a.brand_id = b.id
+                   GROUP BY b.id, b.name, b.description, b.created_at
+                   ORDER BY b.created_at DESC"""
+            )
+            cols = [c.name for c in cur.description]
+            rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+        return _json(rows)
+    except Exception as exc:
+        print(f"[brands] list error: {exc}")
+        return _json([])
+    finally:
+        conn.close()
+
+
+@app.get("/brands/{brand_id}")
+def brands_get(brand_id: int):
+    """Get a specific brand with account count."""
+    conn = _db_conn()
+    if conn is None:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """SELECT b.id, b.name, b.description, b.created_at,
+                          COUNT(a.id) as account_count
+                   FROM brands b
+                   LEFT JOIN accounts a ON a.brand_id = b.id
+                   WHERE b.id=%s
+                   GROUP BY b.id, b.name, b.description, b.created_at""",
+                (brand_id,)
+            )
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="brand not found")
+            cols = [c.name for c in cur.description]
+            result = dict(zip(cols, row))
+        return _json(result)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"[brands] get error: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        conn.close()
+
+
+@app.post("/brands")
+def brands_create(req: BrandCreate):
+    """Create a new brand."""
+    name = (req.name or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="name is required")
+    conn = _db_conn()
+    if conn is None:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO brands (name, description)
+                   VALUES (%s, %s)
+                   ON CONFLICT (name) DO NOTHING
+                   RETURNING id, name, description, created_at""",
+                (name, req.description or None),
+            )
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(status_code=409, detail="brand name already exists")
+            cols = [c.name for c in cur.description]
+            result = dict(zip(cols, row))
+            result["account_count"] = 0
+        conn.commit()
+        return _json(result)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"[brands] create error: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        conn.close()
+
+
+@app.patch("/brands/{brand_id}")
+def brands_update(brand_id: int, req: BrandUpdate):
+    """Update brand name and/or description. (#3) Reject empty name."""
+    if req.name is None and req.description is None:
+        raise HTTPException(status_code=400, detail="nothing to update")
+    # #3: Reject empty name (mirror brands_create)
+    if req.name is not None:
+        stripped_name = (req.name or "").strip()
+        if not stripped_name:
+            raise HTTPException(status_code=400, detail="name cannot be empty")
+    conn = _db_conn()
+    if conn is None:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    try:
+        sets, params = [], []
+        if req.name is not None:
+            sets.append("name=%s"); params.append((req.name or "").strip())
+        if req.description is not None:
+            sets.append("description=%s"); params.append(req.description or None)
+        params.append(brand_id)
+        with conn.cursor() as cur:
+            cur.execute(
+                f"UPDATE brands SET {','.join(sets)} WHERE id=%s "
+                f"RETURNING id, name, description, created_at",
+                params,
+            )
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="brand not found")
+            cols = [c.name for c in cur.description]
+            result = dict(zip(cols, row))
+            # Get account count
+            cur.execute("SELECT COUNT(*) FROM accounts WHERE brand_id=%s", (brand_id,))
+            result["account_count"] = cur.fetchone()[0]
+        conn.commit()
+        return _json(result)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"[brands] update error: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        conn.close()
+
+
+@app.delete("/brands/{brand_id}")
+def brands_delete(brand_id: int):
+    """Delete a brand and set brand_id=NULL on its accounts."""
+    conn = _db_conn()
+    if conn is None:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    try:
+        with conn.cursor() as cur:
+            # First check if brand exists
+            cur.execute("SELECT id FROM brands WHERE id=%s", (brand_id,))
+            if not cur.fetchone():
+                raise HTTPException(status_code=404, detail="brand not found")
+            # Set brand_id=NULL on all accounts under this brand
+            cur.execute(
+                "UPDATE accounts SET brand_id=NULL WHERE brand_id=%s",
+                (brand_id,)
+            )
+            # Delete brand
+            cur.execute("DELETE FROM brands WHERE id=%s", (brand_id,))
+        conn.commit()
+        return {"status": "ok", "id": brand_id}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"[brands] delete error: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        conn.close()
 
 
 @app.get("/youtube-callback")
