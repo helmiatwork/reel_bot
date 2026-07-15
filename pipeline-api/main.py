@@ -2449,7 +2449,9 @@ def _scrape_cookie_file(platform: str):
 
 @app.get("/accounts")
 def accounts_list(platform: Optional[str] = None, role: Optional[str] = None):
-    """List accounts, optionally filtered by platform and/or role."""
+    """List accounts, optionally filtered by platform and/or role.
+    Includes computed fields: has_cookies, connected (for YouTube accounts).
+    """
     if role is not None and role not in ACCOUNT_ROLES:
         raise HTTPException(status_code=400, detail=f"role must be one of {ACCOUNT_ROLES}")
     conn = _db_conn()
@@ -2474,6 +2476,10 @@ def accounts_list(platform: Optional[str] = None, role: Optional[str] = None):
             rows = [dict(zip(cols, r)) for r in cur.fetchall()]
         for row in rows:
             row["has_cookies"] = _account_has_cookies(row["id"], row["platform"])
+            # For YouTube accounts, check if OAuth token file exists
+            if row["platform"] == "youtube":
+                token_file = Path(f"credentials/youtube_token_{row['id']}.json")
+                row["connected"] = token_file.exists() and token_file.stat().st_size > 0
         return _json(rows)
     except Exception as exc:
         print(f"[accounts] list error: {exc}")
@@ -2643,6 +2649,90 @@ def accounts_cookies_delete(account_id: int):
     if existed:
         cf.unlink()
     return {"ok": True, "has_cookies": False, "removed": existed}
+
+
+@app.post("/accounts/{account_id}/connect-youtube")
+def accounts_connect_youtube(account_id: int):
+    """OAuth flow for YouTube account connection.
+    Saves token to credentials/youtube_token_<account_id>.json.
+    Returns channel info on success.
+    """
+    conn = _db_conn()
+    if conn is None:
+        raise HTTPException(status_code=503, detail="database unavailable")
+    try:
+        # Verify account exists and is youtube platform
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, platform, handle FROM accounts WHERE id=%s",
+                (account_id,)
+            )
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="account not found")
+            _, platform, handle = row
+        if platform != "youtube":
+            raise HTTPException(status_code=400, detail="account is not youtube platform")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        conn.close()
+
+    # Run OAuth flow
+    try:
+        from google.auth.transport.requests import Request
+        import google_auth_oauthlib.flow as flow_module
+        from pathlib import Path
+
+        creds_file = os.getenv("YOUTUBE_CREDENTIALS", "credentials/client_secrets.json")
+        if not Path(creds_file).exists():
+            raise HTTPException(status_code=500, detail="client_secrets.json not found")
+
+        # Create OAuth flow with scopes for upload + read
+        flow = flow_module.InstalledAppFlow.from_client_secrets_file(
+            creds_file,
+            scopes=[
+                "https://www.googleapis.com/auth/youtube.upload",
+                "https://www.googleapis.com/auth/youtube.readonly"
+            ]
+        )
+
+        # Run local server (localhost:0 = random free port)
+        creds = flow.run_local_server(port=0, access_type="offline", prompt="consent")
+
+        # Save token to per-account file
+        token_file = Path(f"credentials/youtube_token_{account_id}.json")
+        token_file.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(str(token_file), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w") as f:
+            f.write(creds.to_json())
+        try:
+            os.chmod(str(token_file), 0o600)
+        except OSError:
+            pass
+
+        # Get channel info from the authorized channel
+        from googleapiclient.discovery import build
+        yt_service = build("youtube", "v3", credentials=creds)
+        req = yt_service.channels().list(
+            part="snippet",
+            mine=True
+        )
+        result = req.execute()
+        channel_title = result.get("items", [{}])[0].get("snippet", {}).get("title", "")
+
+        return {
+            "connected": True,
+            "account_id": account_id,
+            "channel": channel_title,
+            "message": f"Successfully connected @{handle}"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OAuth flow failed: {str(e)}")
 
 
 class DecomposeRequest(BaseModel):
