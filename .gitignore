@@ -25,8 +25,9 @@ openclaw/agents/*/sessions/
 .claude/
 docker-compose.override.yml
 
-# OAuth token (never commit)
+# OAuth tokens (never commit) — legacy + per-account
 youtube_token.json
+credentials/youtube_token_*.json
 
 # Playwright MCP artifacts (snapshots/screenshots/downloads)
 .playwright-mcp/
