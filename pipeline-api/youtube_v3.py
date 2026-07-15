@@ -374,20 +374,11 @@ def _get_oauth_service(account_id: Optional[int] = None):
                 raise YouTubeOAuthNotConfigured(
                     f"OAuth not configured: {token_file.name} missing and {creds_file} not found"
                 )
-            try:
-                fl = flow_module.InstalledAppFlow.from_client_secrets_file(
-                    creds_file,
-                    scopes=OAUTH_SCOPES
-                )
-                # Note: run_local_server() is interactive — not suitable for headless servers.
-                # Instead, we raise an exception to signal that manual setup is needed.
-                raise YouTubeOAuthNotConfigured(
-                    "OAuth flow requires interactive browser login; use youtube_token.json for server-side auth"
-                )
-            except YouTubeOAuthNotConfigured:
-                raise
-            except Exception as e:
-                raise YouTubeOAuthNotConfigured(f"OAuth setup failed: {e}")
+            # Note: run_local_server() is interactive — not suitable for headless servers.
+            # Instead, we raise an exception to signal that manual setup is needed.
+            raise YouTubeOAuthNotConfigured(
+                "OAuth flow requires interactive browser login; use youtube_token.json for server-side auth"
+            )
 
         # Save the refreshed token with owner-only perms (it's an OAuth credential).
         # Use os.open with 0o600 at creation time to avoid a world-readable race window.
@@ -500,6 +491,7 @@ def captions_download(caption_id: str, fmt: str = "srt") -> Dict:
 
 OAUTH_SCOPES = [
     "https://www.googleapis.com/auth/youtube.force-ssl",
+    "https://www.googleapis.com/auth/youtube.upload",
     "https://www.googleapis.com/auth/yt-analytics.readonly",
     "https://www.googleapis.com/auth/yt-analytics-monetary.readonly",
 ]

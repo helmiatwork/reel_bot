@@ -31,7 +31,7 @@ def mock_db_conn():
 @pytest.fixture
 def client():
     """FastAPI test client."""
-    return TestClient(m.app)
+    return TestClient(m.app, follow_redirects=False)
 
 
 # ── youtube_v3._get_oauth_service tests ───────────────────────────────────────
@@ -169,6 +169,83 @@ class TestConnectYoutubeEndpoint:
         response = client.post(f"/accounts/1/connect-youtube")
         assert response.status_code == 503
 
+    def test_connect_youtube_returns_auth_url(self, client, mock_db_conn):
+        """POST /accounts/{id}/connect-youtube should return auth_url (web OAuth flow)."""
+        account_id = 1
+        mock_conn = MagicMock()
+        mock_db_conn.return_value = mock_conn
+        mock_cursor = MagicMock()
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+
+        # Mock YouTube account lookup
+        mock_cursor.fetchone.return_value = (account_id, "youtube", "testchannel")
+
+        with patch("google_auth_oauthlib.flow.Flow") as mock_flow_cls:
+            mock_flow = MagicMock()
+            mock_flow_cls.from_client_secrets_file.return_value = mock_flow
+            mock_flow.authorization_url.return_value = (
+                "https://accounts.google.com/o/oauth2/auth?...",
+                "state123"
+            )
+
+            with patch("main.Path") as mock_path_cls:
+                creds_file = MagicMock()
+                creds_file.exists.return_value = True
+                mock_path_cls.return_value = creds_file
+
+                response = client.post(f"/accounts/{account_id}/connect-youtube")
+                assert response.status_code == 200
+                data = response.json()
+                assert "auth_url" in data
+                assert data["auth_url"].startswith("https://accounts.google.com")
+
+
+class TestYouTubeCallbackEndpoint:
+    """Tests for GET /youtube-callback OAuth callback flow."""
+
+    def test_callback_exchanges_code_for_token(self, client):
+        """GET /youtube-callback should exchange code for credentials and save token."""
+        state = "state123"
+        code = "auth_code_123"
+        account_id = 1
+
+        # Inject state into _oauth_flows first
+        import main
+        main._oauth_flows[state] = account_id
+
+        try:
+            with patch("google_auth_oauthlib.flow.Flow") as mock_flow_cls:
+                mock_flow = MagicMock()
+                mock_flow_cls.from_client_secrets_file.return_value = mock_flow
+
+                # Mock credentials from code exchange
+                mock_creds = MagicMock()
+                mock_creds.to_json.return_value = '{"access_token": "test", "refresh_token": "refresh123"}'
+                mock_flow.credentials = mock_creds
+
+                with patch("main.Path") as mock_path_cls:
+                    token_path = MagicMock()
+                    token_path.parent.mkdir = MagicMock()
+                    mock_path_cls.return_value = token_path
+
+                    response = client.get(f"/youtube-callback?code={code}&state={state}")
+                    # Should redirect on success
+                    assert response.status_code in [307, 302, 303]
+                    # Should redirect to dashboard with success param
+                    assert "yt_connect=success" in response.headers.get("location", "")
+        finally:
+            # Clean up
+            if state in main._oauth_flows:
+                del main._oauth_flows[state]
+
+
+    def test_callback_handles_missing_state(self, client):
+        """GET /youtube-callback should handle missing/invalid state."""
+        response = client.get("/youtube-callback?code=test&state=invalid_state")
+        # Should redirect with error (no state in _oauth_flows means invalid)
+        assert response.status_code in [307, 302, 303]
+        assert "yt_connect=error" in response.headers.get("location", "")
+
 
 # ── accounts_list connected status tests ───────────────────────────────────────
 
@@ -176,15 +253,32 @@ class TestAccountsConnectedStatus:
     """Tests for connected field in GET /accounts response."""
 
     def test_connected_field_added_to_response(self, client, mock_db_conn):
-        """YouTube accounts in response should include connected field."""
+        """YouTube accounts in response should include connected field (file + valid token)."""
         mock_conn = MagicMock()
         mock_db_conn.return_value = mock_conn
         mock_cursor = MagicMock()
         mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
 
-        # Mock account query
-        mock_cursor.description = [MagicMock(name=n) for n in
-            ["id", "platform", "handle", "label", "active", "role", "last_used_at", "created_at"]]
+        # Mock account query with proper column descriptions
+        col_mock_id = MagicMock()
+        col_mock_id.name = "id"
+        col_mock_platform = MagicMock()
+        col_mock_platform.name = "platform"
+        col_mock_handle = MagicMock()
+        col_mock_handle.name = "handle"
+        col_mock_label = MagicMock()
+        col_mock_label.name = "label"
+        col_mock_active = MagicMock()
+        col_mock_active.name = "active"
+        col_mock_role = MagicMock()
+        col_mock_role.name = "role"
+        col_mock_last = MagicMock()
+        col_mock_last.name = "last_used_at"
+        col_mock_created = MagicMock()
+        col_mock_created.name = "created_at"
+
+        mock_cursor.description = [col_mock_id, col_mock_platform, col_mock_handle, col_mock_label,
+                                    col_mock_active, col_mock_role, col_mock_last, col_mock_created]
         mock_cursor.fetchall.return_value = [
             (1, "youtube", "testchannel", "Test Channel", True, "publish", None, "2024-01-01")
         ]
@@ -200,11 +294,21 @@ class TestAccountsConnectedStatus:
                 return Path(p)
             mock_path_cls.side_effect = path_side_effect
 
-            response = client.get("/accounts")
-            assert response.status_code == 200
-            data = response.json()
-            # Response should have at least id and platform for filtering check
-            assert isinstance(data, list)
+            # Patch Credentials where it's imported inside the function
+            with patch("google.oauth2.credentials.Credentials") as mock_creds_cls:
+                # Mock valid credentials with refresh_token
+                mock_creds_inst = MagicMock()
+                mock_creds_inst.refresh_token = "test_refresh_token"
+                mock_creds_cls.from_authorized_user_file.return_value = mock_creds_inst
+
+                # Mock _account_has_cookies
+                with patch("main._account_has_cookies", return_value=False):
+                    response = client.get("/accounts")
+                    assert response.status_code == 200
+                    data = response.json()
+                    assert isinstance(data, list)
+                    assert len(data) == 1
+                    assert data[0]["connected"] == True
 
     def test_non_youtube_accounts_no_connected_field(self, client, mock_db_conn):
         """Non-YouTube accounts should not have connected field."""

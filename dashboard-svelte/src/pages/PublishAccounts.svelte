@@ -62,8 +62,9 @@
     connecting[acct.id] = true
     const r = await api.accountConnectYoutube(acct.id)
     connecting[acct.id] = false
-    if (r && r.connected) {
-      await load()
+    if (r && r.auth_url) {
+      // Web OAuth flow: redirect user to Google auth, will return to / with yt_connect=success/error
+      window.location.href = r.auth_url
     } else if (r && r.detail) {
       alert(`Connection failed: ${r.detail}`)
     } else {
