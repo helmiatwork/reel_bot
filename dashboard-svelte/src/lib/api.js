@@ -135,6 +135,7 @@ export const api = {
   accountDelete: (id) => delJSON(`/accounts/${id}`),
   accountSaveCookies: (id, content) => postJSON(`/accounts/${id}/cookies`, { content }),
   accountDeleteCookies: (id) => delJSON(`/accounts/${id}/cookies`),
+  accountConnectYoutube: (id) => postJSON(`/accounts/${id}/connect-youtube`, {}),
 
   generateScript: (topic, niche = '', top_n = 5) => postJSON('/generate/script', { topic, niche, top_n }),
   discoverCorpus: (niche, count = 5) => postJSON('/discover/corpus', { niche, count }),

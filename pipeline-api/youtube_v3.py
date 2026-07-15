@@ -326,9 +326,15 @@ def channel_uploads(channel_id: str, max_results: int = 10) -> List[Dict]:
 
 # ── OAuth credentials and captions support ──────────────────────────────────
 
-def _get_oauth_service():
+def _get_oauth_service(account_id: Optional[int] = None):
     """Build YouTube v3 service with OAuth credentials (for own-channel operations like captions).
-    Reuses shared token-loading pattern: checks youtube_token.json, refreshes if expired.
+    Reuses shared token-loading pattern: checks youtube_token.json (legacy) or
+    youtube_token_<account_id>.json (per-account), refreshes if expired.
+
+    Args:
+        account_id: Optional. If given, loads per-account token from credentials/youtube_token_<id>.json.
+                   If None, loads legacy youtube_token.json (backward compatible).
+
     Raises YouTubeOAuthNotConfigured if credentials are not available.
     """
     if Credentials is None:
@@ -339,7 +345,11 @@ def _get_oauth_service():
     except ImportError:
         raise YouTubeOAuthNotConfigured("OAuth libraries not installed")
 
-    token_file = Path("youtube_token.json")
+    # Determine token file path: per-account or legacy
+    if account_id is not None:
+        token_file = Path(f"credentials/youtube_token_{account_id}.json")
+    else:
+        token_file = Path("youtube_token.json")
     creds_file = YOUTUBE_CREDENTIALS
 
     # Check if token exists and is valid
@@ -362,7 +372,7 @@ def _get_oauth_service():
             # Try to use client_secrets for interactive OAuth
             if not Path(creds_file).exists():
                 raise YouTubeOAuthNotConfigured(
-                    f"OAuth not configured: youtube_token.json missing and {creds_file} not found"
+                    f"OAuth not configured: {token_file.name} missing and {creds_file} not found"
                 )
             try:
                 fl = flow_module.InstalledAppFlow.from_client_secrets_file(
@@ -382,6 +392,7 @@ def _get_oauth_service():
         # Save the refreshed token with owner-only perms (it's an OAuth credential).
         # Use os.open with 0o600 at creation time to avoid a world-readable race window.
         try:
+            token_file.parent.mkdir(parents=True, exist_ok=True)
             fd = os.open(str(token_file), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
             with os.fdopen(fd, "w") as f:
                 f.write(creds.to_json())
@@ -494,10 +505,15 @@ OAUTH_SCOPES = [
 ]
 
 
-def _load_oauth_creds():
+def _load_oauth_creds(account_id: Optional[int] = None):
     """
-    Load and refresh OAuth credentials from youtube_token.json.
+    Load and refresh OAuth credentials from youtube_token.json (legacy) or
+    youtube_token_<account_id>.json (per-account).
     Reuses shared token-loading logic for both captions and analytics.
+
+    Args:
+        account_id: Optional. If given, loads per-account token; else legacy token.
+
     Raises YouTubeOAuthNotConfigured if credentials are not available.
     """
     if Credentials is None:
@@ -507,7 +523,11 @@ def _load_oauth_creds():
     except ImportError:
         raise YouTubeOAuthNotConfigured("OAuth libraries not installed")
 
-    token_file = Path("youtube_token.json")
+    # Determine token file path: per-account or legacy
+    if account_id is not None:
+        token_file = Path(f"credentials/youtube_token_{account_id}.json")
+    else:
+        token_file = Path("youtube_token.json")
     creds_file = YOUTUBE_CREDENTIALS
 
     # Check if token exists and is valid
@@ -529,11 +549,12 @@ def _load_oauth_creds():
         if not creds:
             # No token available and can't refresh; raise error
             raise YouTubeOAuthNotConfigured(
-                f"OAuth not configured: youtube_token.json missing and {creds_file} not found"
+                f"OAuth not configured: {token_file.name} missing and {creds_file} not found"
             )
 
         # Save the refreshed token with owner-only perms.
         try:
+            token_file.parent.mkdir(parents=True, exist_ok=True)
             fd = os.open(str(token_file), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
             with os.fdopen(fd, "w") as f:
                 f.write(creds.to_json())
@@ -547,14 +568,18 @@ def _load_oauth_creds():
     return creds
 
 
-def _get_analytics_service():
+def _get_analytics_service(account_id: Optional[int] = None):
     """Build YouTube Analytics v2 service with OAuth credentials.
+
+    Args:
+        account_id: Optional. If given, uses per-account credentials; else legacy.
+
     Raises YouTubeOAuthNotConfigured if credentials are not available.
     """
     if Credentials is None:
         raise YouTubeOAuthNotConfigured("OAuth libraries not installed")
 
-    creds = _load_oauth_creds()
+    creds = _load_oauth_creds(account_id=account_id)
     return build("youtubeAnalytics", "v2", credentials=creds)
 
 
