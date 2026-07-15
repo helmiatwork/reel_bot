@@ -141,13 +141,23 @@ def test_brands_update_nothing():
     assert response.status_code == 400
 
 
+def test_brands_update_empty_name():
+    """PATCH /brands/{id} returns 400 if name is empty (#3)."""
+    response = client.patch("/brands/1", json={"name": "  "})
+    assert response.status_code == 400
+    assert "empty" in response.json()["detail"].lower()
+
+
 def test_brands_delete():
-    """DELETE /brands/{id} removes a brand."""
+    """DELETE /brands/{id} removes a brand and sets brand_id=NULL on accounts (#4)."""
     mock_conn, mock_cursor = mock_db_context(single_row=(1,))  # SELECT returns the id
     with patch("main._db_conn", return_value=mock_conn):
         response = client.delete("/brands/1")
     assert response.status_code == 200
     assert response.json().get("status") == "ok"
+    # (#4) Verify the NULL update was executed
+    assert any("brand_id=NULL" in str(call) for call in mock_cursor.execute.call_args_list), \
+        "Expected UPDATE accounts SET brand_id=NULL in delete flow"
 
 
 def test_brands_delete_nonexistent():
@@ -242,6 +252,21 @@ def test_accounts_update_brand_id():
     assert response.status_code == 200
     data = response.json()
     assert data.get("brand_id") == 5
+
+
+def test_accounts_update_unset_brand_id():
+    """PATCH /accounts/{id} with brand_id=null unsetting brand (I-2)."""
+    mock_conn, mock_cursor = mock_db_context(
+        description=["id", "platform", "handle", "label", "active", "role", "last_used_at", "created_at", "brand_id"],
+        single_row=(1, "youtube", "test_handle", "test_label", True, "scrape", None, datetime.now(), None)
+    )
+    with patch("main._db_conn", return_value=mock_conn):
+        response = client.patch("/accounts/1", json={"brand_id": None})
+    assert response.status_code == 200
+    data = response.json()
+    assert data.get("brand_id") is None
+    # (#4) Verify that brand_id=NULL was actually set in the SQL
+    assert any("brand_id=NULL" in str(call) for call in mock_cursor.execute.call_args_list)
 
 
 def test_accounts_list_filter_by_brand_id():

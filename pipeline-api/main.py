@@ -2434,6 +2434,13 @@ def _accounts_init_db():
                 "ALTER TABLE accounts ADD COLUMN IF NOT EXISTS "
                 "brand_id BIGINT"
             )
+            # Add FK constraint idempotently (I-1: ON DELETE SET NULL)
+            cur.execute("""DO $$ BEGIN
+              IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'accounts_brand_id_fkey') THEN
+                ALTER TABLE accounts ADD CONSTRAINT accounts_brand_id_fkey
+                  FOREIGN KEY (brand_id) REFERENCES brands(id) ON DELETE SET NULL;
+              END IF;
+            END $$;""")
         conn.commit()
     except Exception as e:
         print(f"[accounts] init db error: {e}")
@@ -2582,8 +2589,12 @@ def accounts_create(req: AccountCreate):
 
 @app.patch("/accounts/{account_id}")
 def accounts_update(account_id: int, req: AccountUpdate):
-    """Partial update: label, active flag, role, and/or brand_id."""
-    if req.label is None and req.active is None and req.role is None and req.brand_id is None:
+    """Partial update: label, active flag, role, and/or brand_id.
+
+    Use model_fields_set to distinguish explicit null from absent (I-2).
+    """
+    # I-2: Use model_fields_set to allow explicit brand_id=null to unset brand
+    if not req.model_fields_set:
         raise HTTPException(status_code=400, detail="nothing to update")
     if req.role is not None and req.role not in ACCOUNT_ROLES:
         raise HTTPException(status_code=400, detail=f"role must be one of {ACCOUNT_ROLES}")
@@ -2592,14 +2603,17 @@ def accounts_update(account_id: int, req: AccountUpdate):
         raise HTTPException(status_code=503, detail="database unavailable")
     try:
         sets, params = [], []
-        if req.label is not None:
+        if "label" in req.model_fields_set:
             sets.append("label=%s"); params.append(req.label)
-        if req.active is not None:
+        if "active" in req.model_fields_set:
             sets.append("active=%s"); params.append(req.active)
-        if req.role is not None:
+        if "role" in req.model_fields_set:
             sets.append("role=%s"); params.append(req.role)
-        if req.brand_id is not None:
-            sets.append("brand_id=%s"); params.append(req.brand_id)
+        if "brand_id" in req.model_fields_set:
+            if req.brand_id is None:
+                sets.append("brand_id=NULL")
+            else:
+                sets.append("brand_id=%s"); params.append(req.brand_id)
         params.append(account_id)
         with conn.cursor() as cur:
             cur.execute(
@@ -2864,9 +2878,14 @@ def brands_create(req: BrandCreate):
 
 @app.patch("/brands/{brand_id}")
 def brands_update(brand_id: int, req: BrandUpdate):
-    """Update brand name and/or description."""
+    """Update brand name and/or description. (#3) Reject empty name."""
     if req.name is None and req.description is None:
         raise HTTPException(status_code=400, detail="nothing to update")
+    # #3: Reject empty name (mirror brands_create)
+    if req.name is not None:
+        stripped_name = (req.name or "").strip()
+        if not stripped_name:
+            raise HTTPException(status_code=400, detail="name cannot be empty")
     conn = _db_conn()
     if conn is None:
         raise HTTPException(status_code=503, detail="database unavailable")
