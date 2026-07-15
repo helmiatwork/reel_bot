@@ -128,8 +128,22 @@
 
   async function deleteBrand(brand) {
     if (!confirm(`Delete brand "${brand.name}"?`)) return
-    await api.brandDelete(brand.id)
+    const r = await api.brandDelete(brand.id)
+    if (!r || r.detail) {
+      alert(`Delete failed: ${r?.detail || 'Unknown error'}`)
+      return
+    }
     await loadBrands()
+  }
+
+  async function removeAccountFromBrand(acct) {
+    if (!confirm(`Remove @${acct.handle} from this brand?`)) return
+    const r = await api.accountUpdate(acct.id, { brand_id: null })
+    if (!r || r.detail) {
+      alert(`Failed to remove from brand: ${r?.detail || 'Unknown error'}`)
+      return
+    }
+    await loadBrandDetail(selectedBrand.id)
   }
 
   async function saveAccount() {
@@ -412,9 +426,14 @@
                     </button>
                   </td>
                   <td class="col-aksi">
-                    <button class="btn-delete" title="Hapus akun" onclick={() => deleteAccount(acct)}>
-                      <svg class="ic-del"><use href="#i-trash"/></svg>
-                    </button>
+                    <div class="acct-actions">
+                      <button class="btn-unset" title="Lepaskan dari brand" onclick={() => removeAccountFromBrand(acct)}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M6 18L18 6M6 6l12 12"/></svg>
+                      </button>
+                      <button class="btn-delete" title="Hapus akun" onclick={() => deleteAccount(acct)}>
+                        <svg class="ic-del"><use href="#i-trash"/></svg>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               {/each}
@@ -781,7 +800,26 @@
   .col-label { width: 140px; }
   .col-status { width: 120px; }
   .col-aktif { width: 100px; }
-  .col-aksi { width: 60px; text-align: center; }
+  .col-aksi { width: 90px; text-align: center; }
+
+  .acct-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+  }
+
+  .btn-unset {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    color: var(--mut);
+    display: inline-flex;
+    align-items: center;
+    transition: color 0.2s;
+  }
+
+  .btn-unset:hover { color: #f59e0b; }
 
   .platform-cell {
     display: flex;
