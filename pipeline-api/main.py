@@ -5876,6 +5876,11 @@ ANALYSIS_JSON_SCHEMA = """{
   // visible in the clips, write "tidak terlihat" — never leave a field blank.
   // Neutral physical description only; do NOT sexualize or estimate the size of
   // specific body parts.
+  "transcript": [
+    {"start": "M:SS", "end": "M:SS", "speaker": "str — who is speaking (name/role), '' if unclear", "text": "str — spoken words, verbatim as heard"}
+  ],
+  // transcript: transcribe ALL spoken dialogue you HEAR in the clips, in order,
+  // as subtitle lines. Empty array [] if there is no speech.
   "tags": ["str", "..."]
 }"""
 
@@ -7560,7 +7565,7 @@ def get_source_analysis(source_id: int):
         return _json({
             "hook": "", "structure": "", "retention": "", "retention_score": None,
             "summary": "", "detail": "", "tags": [],
-            "hook_start": "", "hook_end": "", "retention_points": [], "characters": []
+            "hook_start": "", "hook_end": "", "retention_points": [], "characters": [], "transcript": []
         })
 
     try:
@@ -7584,7 +7589,7 @@ def get_source_analysis(source_id: int):
                 return _json({
                     "hook": "", "structure": "", "retention": "", "retention_score": None,
                     "summary": "", "detail": "", "tags": [],
-                    "hook_start": "", "hook_end": "", "retention_points": [], "characters": []
+                    "hook_start": "", "hook_end": "", "retention_points": [], "characters": [], "transcript": []
                 })
 
             hook, structure, retention, retention_score, summary, detail, tags, gen_prompt, gen_prompt_format, raw_result = row
@@ -7640,6 +7645,12 @@ def get_source_analysis(source_id: int):
                 {k: c.get(k, "") for k in _char_keys if c.get(k)}
                 for c in ch if isinstance(c, dict) and (c.get("name") or c.get("appearance") or c.get("recreation_prompt"))
             ] if isinstance(ch, list) else []
+            tr = raw.get("transcript")
+            resp["transcript"] = [
+                {"start": t.get("start", ""), "end": t.get("end", ""),
+                 "speaker": t.get("speaker", ""), "text": t.get("text", "")}
+                for t in tr if isinstance(t, dict) and t.get("text")
+            ] if isinstance(tr, list) else []
 
             if gen_prompt:
                 resp["gen_prompt"] = gen_prompt
@@ -7650,7 +7661,7 @@ def get_source_analysis(source_id: int):
         return _json({
             "hook": "", "structure": "", "retention": "", "retention_score": None,
             "summary": "", "detail": "", "tags": [],
-            "hook_start": "", "hook_end": "", "retention_points": [], "characters": []
+            "hook_start": "", "hook_end": "", "retention_points": [], "characters": [], "transcript": []
         })
     finally:
         conn.close()
