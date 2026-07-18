@@ -5841,6 +5841,15 @@ ANALYSIS_JSON_SCHEMA = """{
   "structure": "str — the video's structural flow",
   "summary": "str — one-sentence summary",
   "detail": "str — chronological detailed walkthrough of what happens",
+  "characters": [
+    {
+      "name": "str — name if stated, else a role label (e.g. 'host', 'groom')",
+      "role": "str — their role in the video",
+      "age_range": "str — approximate age range, e.g. '25-30'",
+      "appearance": "str — DETAILED and specific: overall build/posture (slim/heavyset/athletic/tall/short), hair (length, color, style), skin tone, facial features, and any distinguishing marks (glasses, tattoos, beard). Neutral physical description only — do NOT sexualize or estimate the size of specific body parts.",
+      "wardrobe": "str — DETAILED clothing and accessories (colors, garment types, logos, jewelry, headwear)"
+    }
+  ],
   "tags": ["str", "..."]
 }"""
 
@@ -7525,7 +7534,7 @@ def get_source_analysis(source_id: int):
         return _json({
             "hook": "", "structure": "", "retention": "", "retention_score": None,
             "summary": "", "detail": "", "tags": [],
-            "hook_start": "", "hook_end": "", "retention_points": []
+            "hook_start": "", "hook_end": "", "retention_points": [], "characters": []
         })
 
     try:
@@ -7549,7 +7558,7 @@ def get_source_analysis(source_id: int):
                 return _json({
                     "hook": "", "structure": "", "retention": "", "retention_score": None,
                     "summary": "", "detail": "", "tags": [],
-                    "hook_start": "", "hook_end": "", "retention_points": []
+                    "hook_start": "", "hook_end": "", "retention_points": [], "characters": []
                 })
 
             hook, structure, retention, retention_score, summary, detail, tags, gen_prompt, gen_prompt_format, raw_result = row
@@ -7594,6 +7603,15 @@ def get_source_analysis(source_id: int):
                 {"reason": p.get("reason", ""), "start": p["start"], "end": p["end"]}
                 for p in rp if isinstance(p, dict) and "start" in p and "end" in p
             ] if isinstance(rp, list) else []
+            ch = raw.get("characters")
+            resp["characters"] = [
+                {
+                    "name": c.get("name", ""), "role": c.get("role", ""),
+                    "age_range": c.get("age_range", ""),
+                    "appearance": c.get("appearance", ""), "wardrobe": c.get("wardrobe", ""),
+                }
+                for c in ch if isinstance(c, dict) and (c.get("name") or c.get("appearance"))
+            ] if isinstance(ch, list) else []
 
             if gen_prompt:
                 resp["gen_prompt"] = gen_prompt
@@ -7604,7 +7622,7 @@ def get_source_analysis(source_id: int):
         return _json({
             "hook": "", "structure": "", "retention": "", "retention_score": None,
             "summary": "", "detail": "", "tags": [],
-            "hook_start": "", "hook_end": "", "retention_points": []
+            "hook_start": "", "hook_end": "", "retention_points": [], "characters": []
         })
     finally:
         conn.close()
