@@ -270,6 +270,107 @@ def test_save_storyboard_dict_input():
     print("✓ test_save_storyboard_dict_input")
 
 
+def test_suno_audio_path_deterministic():
+    """Test _suno_audio_path returns consistent path for same URL."""
+    from reelbot_mcp import _suno_audio_path
+    url = "https://youtube.com/watch?v=test123"
+    path1 = _suno_audio_path(url)
+    path2 = _suno_audio_path(url)
+    assert path1 == path2, "same URL should produce identical path"
+    assert "output/suno_audio" in path1, "path should contain output/suno_audio"
+    assert path1.endswith(".mp3"), "path should end with .mp3"
+    print("✓ test_suno_audio_path_deterministic")
+
+
+def test_suno_audio_path_differs_for_different_urls():
+    """Test _suno_audio_path produces different paths for different URLs."""
+    from reelbot_mcp import _suno_audio_path
+    url1 = "https://youtube.com/watch?v=abc"
+    url2 = "https://youtube.com/watch?v=xyz"
+    path1 = _suno_audio_path(url1)
+    path2 = _suno_audio_path(url2)
+    assert path1 != path2, "different URLs should produce different paths"
+    print("✓ test_suno_audio_path_differs_for_different_urls")
+
+
+def test_get_audio_for_suno_invalid_url():
+    """Test get_audio_for_suno rejects invalid URLs."""
+    from reelbot_mcp import get_audio_for_suno
+    result = get_audio_for_suno("not-a-url")
+    assert "error" in result, "should return error for invalid URL"
+    assert "invalid youtube_url" in result["error"], f"error should mention invalid URL, got {result['error']}"
+    print("✓ test_get_audio_for_suno_invalid_url")
+
+
+def test_get_audio_for_suno_file_not_ready():
+    """Test get_audio_for_suno returns waiting message when file doesn't exist."""
+    from reelbot_mcp import get_audio_for_suno
+    # Use a URL that will map to a non-existent file
+    result = get_audio_for_suno("https://youtube.com/watch?v=nonexistent12345")
+    assert "error" in result, "should return error when file not found"
+    assert "not ready yet" in result["error"], f"error should mention waiting, got {result['error']}"
+    print("✓ test_get_audio_for_suno_file_not_ready")
+
+
+def test_get_audio_for_suno_success():
+    """Test get_audio_for_suno returns path when audio file exists."""
+    from reelbot_mcp import get_audio_for_suno, _suno_audio_path
+    from pathlib import Path
+    import tempfile
+    import os
+
+    url = "https://youtube.com/watch?v=test_audio_exists"
+
+    # Create a temp audio file at the expected path
+    audio_path = _suno_audio_path(url)
+    audio_file = Path(audio_path)
+
+    try:
+        # Create parent directory if needed
+        audio_file.parent.mkdir(parents=True, exist_ok=True)
+        # Create a dummy audio file (non-empty)
+        audio_file.write_bytes(b"fake mp3 audio content")
+
+        result = get_audio_for_suno(url)
+        assert "error" not in result, f"should succeed, got error: {result.get('error')}"
+        assert result.get("exists") is True, "should indicate file exists"
+        assert result.get("youtube_url") == url, "should return the URL"
+        assert result.get("audio_path") == str(audio_path), "should return the correct path"
+        assert result.get("file_size_bytes") > 0, "should report file size"
+        print("✓ test_get_audio_for_suno_success")
+    finally:
+        # Clean up
+        if audio_file.exists():
+            audio_file.unlink()
+
+
+def test_get_audio_for_suno_empty_file():
+    """Test get_audio_for_suno treats empty files as not ready."""
+    from reelbot_mcp import get_audio_for_suno, _suno_audio_path
+    from pathlib import Path
+
+    url = "https://youtube.com/watch?v=test_audio_empty"
+
+    # Create an empty audio file at the expected path
+    audio_path = _suno_audio_path(url)
+    audio_file = Path(audio_path)
+
+    try:
+        # Create parent directory if needed
+        audio_file.parent.mkdir(parents=True, exist_ok=True)
+        # Create an empty file
+        audio_file.touch()
+
+        result = get_audio_for_suno(url)
+        assert "error" in result, "should return error for empty file"
+        assert "not ready yet" in result["error"], f"error should mention waiting, got {result['error']}"
+        print("✓ test_get_audio_for_suno_empty_file")
+    finally:
+        # Clean up
+        if audio_file.exists():
+            audio_file.unlink()
+
+
 def main():
     """Run all tests."""
     tests = [
@@ -297,6 +398,12 @@ def main():
         test_save_storyboard_empty_scene_order,
         test_save_storyboard_missing_scene_order,
         test_save_storyboard_dict_input,
+        test_suno_audio_path_deterministic,
+        test_suno_audio_path_differs_for_different_urls,
+        test_get_audio_for_suno_invalid_url,
+        test_get_audio_for_suno_file_not_ready,
+        test_get_audio_for_suno_success,
+        test_get_audio_for_suno_empty_file,
     ]
 
     failed = 0

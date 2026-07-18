@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 import time
 import zipfile
+import hashlib
 
 import asyncio
 from pathlib import Path
@@ -7181,14 +7182,43 @@ Execute steps 1, 2, and 3 in order. Use only the three MCP tools."""
         }
 
 
+def _suno_audio_path(youtube_url: str) -> str:
+    """
+    Compute a deterministic path for Suno audio clips keyed by youtube_url.
+
+    IMPORTANT: This path computation MUST match the identical function in mcp/reelbot_mcp.py.
+    If you modify this, update the MCP tool's version as well so both can find the file.
+
+    Args:
+        youtube_url: YouTube URL (may contain query params)
+
+    Returns:
+        Absolute path: output/suno_audio/<sha1_hash>.mp3
+    """
+    # Normalize URL by removing trailing whitespace
+    normalized = youtube_url.strip()
+    # Create SHA1 hash of the URL (includes params, so different clips get different files)
+    url_hash = hashlib.sha1(normalized.encode()).hexdigest()
+    # Return deterministic path: output/suno_audio/<hash>.mp3
+    suno_dir = _REPO_ROOT / "output" / "suno_audio"
+    suno_dir.mkdir(parents=True, exist_ok=True)
+    return str(suno_dir / f"{url_hash}.mp3")
+
+
 def _download_and_clip_audio_for_suno(youtube_url: str, audio_start: Optional[float], audio_end: Optional[float]) -> str:
     """
-    Download audio from YouTube and clip to [audio_start, audio_end] range.
-    Returns path to clipped audio file (temp file).
+    Download audio from YouTube, clip to [audio_start, audio_end] range, and save to deterministic path.
+    Returns path to clipped audio file at output/suno_audio/<url_hash>.mp3.
     Raises on download/ffmpeg failure.
+
+    The output path is deterministic (keyed by youtube_url) so the MCP tool get_audio_for_suno
+    can locate the file later using the same URL.
     """
-    # Create temp directory for downloads
-    tmp_dir = tempfile.mkdtemp(prefix="suno_audio_")
+    # Compute deterministic output path (keyed by URL)
+    output_path = _suno_audio_path(youtube_url)
+
+    # Create temp directory for downloads (intermediate files)
+    tmp_dir = tempfile.mkdtemp(prefix="suno_audio_download_")
 
     try:
         # Download audio using yt-dlp
@@ -7208,15 +7238,26 @@ def _download_and_clip_audio_for_suno(youtube_url: str, audio_start: Optional[fl
         if not audio_files:
             raise Exception("Downloaded audio file not found")
 
-        audio_path = str(audio_files[0])
+        downloaded_path = str(audio_files[0])
 
-        # Clip if time range provided
+        # Clip if time range provided; otherwise move to output path
         if audio_start is not None or audio_end is not None:
-            audio_path = _clip_audio(audio_path, audio_start, audio_end)
+            clipped_path = _clip_audio(downloaded_path, audio_start, audio_end)
+        else:
+            clipped_path = downloaded_path
 
-        return audio_path
+        # Move clipped audio to deterministic output path
+        shutil.move(clipped_path, output_path)
+
+        return output_path
     except subprocess.CalledProcessError as e:
         raise Exception(f"yt-dlp download failed: {e.stderr}")
+    finally:
+        # Clean up temp download directory
+        try:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+        except Exception:
+            pass
 
 
 def _format_audio_hints_for_suno(audio_hints: dict) -> str:
