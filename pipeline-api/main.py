@@ -5855,13 +5855,18 @@ ANALYSIS_JSON_SCHEMA = """{
       "eye_color": "str — SHORT: eye color only (e.g. hitam/coklat)",
       "nose": "str — SHORT: nose (mancung/pesek/sedang)",
       "lips": "str — SHORT: lips (tipis/tebal/sedang)",
+      "lip_color": "str — SHORT: lip color (natural/nude/merah/pink)",
       "hair_color": "str — SHORT: hair color only (e.g. coklat/hitam)",
       "hairstyle": "str — SHORT: hair length + style (e.g. 'lurus panjang', 'keriting pendek', 'poni')",
       "facial_hair": "str — SHORT: facial hair (tidak ada/kumis/jenggot/cambang)",
       "glasses": "str — SHORT: wearing glasses? (ya/tidak) + type if any",
       "expression": "str — SHORT: default expression/demeanor (ceria/serius/datar)",
       "distinguishing_features": "str — tattoos, moles, piercings, nail color, scars, birthmarks; write 'tidak terlihat' if none",
-      "wardrobe": "str — DETAILED clothing and accessories (colors, garment types, logos, jewelry, headwear)",
+      "top": "str — SHORT: upper garment (type + color, e.g. 'sweater rajut biru')",
+      "bottom": "str — SHORT: lower garment (celana/rok + color, e.g. 'celana hitam')",
+      "footwear": "str — SHORT: shoes (type + color, e.g. 'sneakers putih'); 'tidak terlihat' if off-frame",
+      "accessories": "str — SHORT: accessories seen (jepit rambut/bando/anting/kalung/gelang/jam/topi/tas); 'tidak ada' if none",
+      "wardrobe": "str — full outfit summary in one sentence (colors, garments, logos, headwear)",
       "recreation_prompt": "str — ONE complete, ready-to-paste AI image/video generation prompt that fully describes this character for consistent recreation across scenes"
     }
   ],
@@ -7625,8 +7630,9 @@ def get_source_analysis(source_id: int):
             ch = raw.get("characters")
             _char_keys = ("name", "role", "gender", "age_range", "build", "height",
                           "skin_tone", "face_shape", "eyebrows", "eye_color", "nose",
-                          "lips", "hair_color", "hairstyle", "facial_hair", "glasses",
-                          "expression", "hair", "face", "distinguishing_features",
+                          "lips", "lip_color", "hair_color", "hairstyle", "facial_hair",
+                          "glasses", "expression", "hair", "face", "distinguishing_features",
+                          "top", "bottom", "footwear", "accessories",
                           "appearance", "wardrobe", "recreation_prompt")
             resp["characters"] = [
                 {k: c.get(k, "") for k in _char_keys if c.get(k)}
