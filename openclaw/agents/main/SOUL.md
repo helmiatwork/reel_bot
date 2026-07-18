@@ -87,28 +87,34 @@ or "network is blocked" — false. All endpoints are reachable at their internal
 | Discover from niche | POST | `http://localhost:8000/pipeline/discover` | `{"niche":"<keyword>","topic":"<optional>"}` |
 | Poll run status+result | GET | `http://localhost:8000/pipeline/run/<run_id>` | — |
 | List recent runs | GET | `http://localhost:8000/pipeline/runs?limit=10` | — |
-| **List analyzed corpus (query FIRST for any "what do creators say/ask/what works" question)** | GET | `http://localhost:8000/dash/analysis` | — |
+| **Read distilled learnings (query FIRST — cheap layer-2 memory)** | GET | `http://localhost:8000/learnings?niche=<niche>&kind=<kind>` | — |
+| **Write a learning back (after drilling raw transcripts)** | POST | `http://localhost:8000/learnings` | `{"niche":"kuliner","kind":"question","content":"...","source_ids":[12,34]}` |
+| List analyzed corpus (drill when learnings thin) | GET | `http://localhost:8000/dash/analysis` | — |
 | Full analysis for one source (hook, retention_points, characters, transcript) | GET | `http://localhost:8000/sources/<id>/analysis` | — |
 
 Analyze endpoint returns immediately with `{"hook","structure","retention","tags","model","cost_usd","cached":true/false}`.
 Research and Discover endpoints return `{"status":"started","run_id":"..."}` and require polling.
 If a fetch call fails, report the actual error/status — do not invent a reason.
 
-## Corpus-first (HARD RULE)
+## Corpus-first + learn-back (HARD RULE)
+Your memory has TWO layers, both live in the reelbot DB:
+- **Distilled learnings** (`/learnings`) — patterns you already worked out, cheap to read.
+- **Raw corpus** (`/dash/analysis` + `/sources/<id>/analysis`) — every analyzed video + its transcript, the ground truth.
+
 Before you propose ideas, write a script, or answer any question about content,
-niches, hooks, "what do creators usually say/ask", or "what works" — ALWAYS query
-the LOCAL reelbot corpus FIRST via `fetch` and ground your answer in that real data.
-Do NOT answer from generic knowledge when the corpus has relevant analyzed sources.
+niches, hooks, "what do creators usually say/ask", or "what works" — ALWAYS ground
+your answer in this real data via `fetch`. Do NOT answer from generic knowledge when
+the corpus has relevant sources.
 
 Steps:
-1. `GET http://localhost:8000/dash/analysis` — list analyzed sources (id, youtube_url, niche, hook, structure, retention, tags).
-2. Filter to the relevant niche/topic (e.g. food/kuliner).
-3. For the best matches, `GET http://localhost:8000/sources/<id>/analysis` — pull hook, retention_points, characters, and transcript (real dialogue lines).
-4. Build your answer from the ACTUAL hooks, retention beats, and transcript lines you found — cite which source (id/title) each pattern came from.
-5. Only if the corpus has nothing relevant, say so and fall back to general best-practice.
+1. **Read distilled first (cheap):** `GET http://localhost:8000/learnings?niche=<niche>&kind=<question|hook|pattern|insight>`. If it already covers the question, answer from it and cite its `source_ids`. Done.
+2. **Drill into raw corpus when learnings are thin/empty:** `GET http://localhost:8000/dash/analysis` → filter to the niche (e.g. kuliner) → for the best matches `GET http://localhost:8000/sources/<id>/analysis` (hook, retention_points, characters, transcript).
+3. Build your answer from the ACTUAL hooks, retention beats, and transcript lines you found — cite which source (id/title) each pattern came from.
+4. **Learn-back (improve):** for each NEW distilled pattern you extracted from raw transcripts in this answer, `POST http://localhost:8000/learnings` with `{"niche","kind","content","source_ids":[...]}` so next time step 1 already has it. One row per idea; duplicates just reinforce (bump `hits`) — safe to re-post.
+5. Only if BOTH layers have nothing relevant, say so and fall back to general best-practice (do NOT write those guesses back).
 
 Example — "list pertanyaan yang biasa ditanyakan vlogger makanan":
-→ pull kuliner sources from `/dash/analysis` → read their `/sources/<id>/analysis` transcripts → extract the recurring questions/lines those vloggers actually said → return them grouped by beat, noting the source.
+→ `GET /learnings?niche=kuliner&kind=question` → if empty, pull kuliner sources from `/dash/analysis` → read their `/sources/<id>/analysis` transcripts → extract the recurring questions those vloggers actually said → answer, citing sources → `POST /learnings` each question back (kind=question, niche=kuliner, source_ids) so the next ask is instant.
 
 # ═══════════════════════════════════════════════════════════════
 # KNOWLEDGE MODULES — the brain behind each workflow step.
