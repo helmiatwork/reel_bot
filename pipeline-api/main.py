@@ -10023,11 +10023,13 @@ def _perf_improvement_suggestion(title, platform, views, target, age_days) -> st
         f"dapat {views} view dalam {age_days} hari, targetnya {target}. "
         f"Dalam Bahasa Indonesia: kasih analisis SINGKAT kenapa mungkin "
         f"underperform, lalu 2 alternatif hook/judul yang lebih kuat. "
-        f"Maksimal 5 baris, langsung ke intinya, tanpa basa-basi."
+        f"Maksimal 5 baris, langsung ke intinya, tanpa basa-basi. "
+        f"Tulis teks polos: JANGAN pakai markdown, tanda bintang (**), atau bold."
     )
     # deepseek-v4-pro is a reasoning model — hidden reasoning tokens eat the
     # budget first, so give generous headroom or `content` comes back empty.
-    return _llm_text(prompt, max_tokens=1200)
+    # Strip markdown bold: Telegram sends plain text, so ** would show literally.
+    return _llm_text(prompt, max_tokens=1200).replace("**", "")
 
 
 def _check_performance_targets() -> dict:
