@@ -10210,12 +10210,20 @@ def _download_url_to_file(url: str, dest: Path) -> None:
     Raises on HTTP error or if the response is an HTML interstitial (not media)."""
     import requests
     _validate_source_url(url)  # SSRF guard — no private/loopback targets
+    MAX_DOWNLOAD = 4 * 1024 * 1024 * 1024  # 4 GB — covers any realistic video
     sess = requests.Session()
     r = sess.get(url, stream=True, timeout=120, allow_redirects=True)
+    # Re-validate the final URL: requests follows redirects, and a redirect to a
+    # private IP would bypass the pre-fetch guard. stream=True means the body is
+    # not read yet, so raising here prevents any body exfiltration.
+    if r.url and r.url != url:
+        _validate_source_url(r.url)
     # Google Drive large-file confirm token (classic cookie path)
     token = next((v for k, v in r.cookies.items() if k.startswith("download_warning")), None)
     if token:
-        r = sess.get(url, params={"confirm": token}, stream=True, timeout=120)
+        r = sess.get(url, params={"confirm": token}, stream=True, timeout=120, allow_redirects=True)
+        if r.url and r.url != url:
+            _validate_source_url(r.url)
     r.raise_for_status()
     ctype = r.headers.get("content-type", "")
     if ctype.startswith("text/html"):
@@ -10223,9 +10231,13 @@ def _download_url_to_file(url: str, dest: Path) -> None:
                         "For Google Drive make the file 'anyone with link' and use a smaller file, "
                         "or host it on a direct-download URL.")
     dest.parent.mkdir(parents=True, exist_ok=True)
+    written = 0
     with open(dest, "wb") as f:
         for chunk in r.iter_content(65536):
             if chunk:
+                written += len(chunk)
+                if written > MAX_DOWNLOAD:
+                    raise Exception("download exceeds 4 GB limit; use a direct-host URL")
                 f.write(chunk)
 
 
@@ -10284,40 +10296,50 @@ def _publish_scheduled_post(post_id: int, only_platforms: list = None) -> dict:
     + a public video URL). Records platform_urls (which also marks it posted)
     and never raises — per-platform errors are returned."""
     result = {"post_id": post_id, "results": {}, "errors": []}
+
+    # --- read phase: release the connection BEFORE the multi-minute upload so
+    # it never sits idle-in-transaction (which a DB idle timeout would kill,
+    # losing the platform_urls write after a successful upload). ---
     conn = _db_conn()
     if conn is None:
         result["errors"].append("no database connection")
         return result
-    local_path, is_temp = None, False
     try:
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT content_ref, title, caption, platforms, platform_accounts, platform_urls "
                 "FROM scheduled_posts WHERE id=%s", (post_id,))
             row = cur.fetchone()
-        if not row:
-            result["errors"].append("post not found")
-            return result
-        content_ref, title, caption, platforms_csv, pa_raw, pu_raw = row
-        try:
-            accounts = json.loads(pa_raw) if isinstance(pa_raw, str) else (pa_raw or {})
-        except Exception:
-            accounts = {}
-        try:
-            posted = json.loads(pu_raw) if isinstance(pu_raw, str) else (pu_raw or {})
-        except Exception:
-            posted = {}
-        wanted = [p.strip().lower() for p in (platforms_csv or "").split(",") if p.strip()]
-        if only_platforms:
-            wanted = [p for p in wanted if p in only_platforms]
-        if not wanted:
-            result["errors"].append("no platforms set on this post")
-            return result
+    except Exception as e:
+        result["errors"].append(f"query: {type(e).__name__}: {str(e)[:160]}")
+        row = None
+    finally:
+        conn.close()
+    if not row:
+        result["errors"].append("post not found")
+        return result
 
-        # Resolve the video once (needed for any file-upload platform).
+    content_ref, title, caption, platforms_csv, pa_raw, pu_raw = row
+    try:
+        accounts = json.loads(pa_raw) if isinstance(pa_raw, str) else (pa_raw or {})
+    except Exception:
+        accounts = {}
+    try:
+        posted = json.loads(pu_raw) if isinstance(pu_raw, str) else (pu_raw or {})
+    except Exception:
+        posted = {}
+    wanted = [p.strip().lower() for p in (platforms_csv or "").split(",") if p.strip()]
+    if only_platforms:
+        wanted = [p for p in wanted if p in only_platforms]
+    if not wanted:
+        result["errors"].append("no platforms set on this post")
+        return result
+
+    # --- upload phase: no DB connection held. ---
+    local_path, is_temp = None, False
+    try:
         local_path, is_temp = _resolve_content_to_file(content_ref)
         tags = []
-
         for platform in wanted:
             try:
                 if platform == "youtube":
@@ -10335,27 +10357,33 @@ def _publish_scheduled_post(post_id: int, only_platforms: list = None) -> dict:
             except Exception as e:
                 result["results"][platform] = {"status": "error", "error": f"{type(e).__name__}: {str(e)[:160]}"}
                 result["errors"].append(f"{platform}: {str(e)[:160]}")
-
-        # Persist any successful platform URLs (also the posted marker).
-        if posted:
-            with conn.cursor() as cur:
-                cur.execute(
-                    "UPDATE scheduled_posts SET platform_urls=%s, updated_at=now() WHERE id=%s",
-                    (json.dumps(posted), post_id))
-                conn.commit()
     except Exception as e:
         result["errors"].append(f"{type(e).__name__}: {str(e)[:160]}")
-        try:
-            conn.rollback()
-        except Exception:
-            pass
     finally:
         if is_temp and local_path:
             try:
                 Path(local_path).unlink(missing_ok=True)
             except Exception:
                 pass
-        conn.close()
+
+    # --- write phase: fresh connection, only when a post actually succeeded. ---
+    if any(v.get("status") == "ok" for v in result["results"].values()):
+        conn2 = _db_conn()
+        if conn2 is not None:
+            try:
+                with conn2.cursor() as cur:
+                    cur.execute(
+                        "UPDATE scheduled_posts SET platform_urls=%s, updated_at=now() WHERE id=%s",
+                        (json.dumps(posted), post_id))
+                    conn2.commit()
+            except Exception as e:
+                result["errors"].append(f"save platform_urls failed: {type(e).__name__}: {str(e)[:160]}")
+                try:
+                    conn2.rollback()
+                except Exception:
+                    pass
+            finally:
+                conn2.close()
     return result
 
 
@@ -10387,8 +10415,7 @@ def schedule_publish_due():
             ids = [r[0] for r in cur.fetchall()]
     except Exception as e:
         result["errors"].append(f"query: {e}")
-        conn.close()
-        return result
+        ids = []
     finally:
         conn.close()
 
