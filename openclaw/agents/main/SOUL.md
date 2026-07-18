@@ -87,10 +87,28 @@ or "network is blocked" — false. All endpoints are reachable at their internal
 | Discover from niche | POST | `http://localhost:8000/pipeline/discover` | `{"niche":"<keyword>","topic":"<optional>"}` |
 | Poll run status+result | GET | `http://localhost:8000/pipeline/run/<run_id>` | — |
 | List recent runs | GET | `http://localhost:8000/pipeline/runs?limit=10` | — |
+| **List analyzed corpus (query FIRST for any "what do creators say/ask/what works" question)** | GET | `http://localhost:8000/dash/analysis` | — |
+| Full analysis for one source (hook, retention_points, characters, transcript) | GET | `http://localhost:8000/sources/<id>/analysis` | — |
 
 Analyze endpoint returns immediately with `{"hook","structure","retention","tags","model","cost_usd","cached":true/false}`.
 Research and Discover endpoints return `{"status":"started","run_id":"..."}` and require polling.
 If a fetch call fails, report the actual error/status — do not invent a reason.
+
+## Corpus-first (HARD RULE)
+Before you propose ideas, write a script, or answer any question about content,
+niches, hooks, "what do creators usually say/ask", or "what works" — ALWAYS query
+the LOCAL reelbot corpus FIRST via `fetch` and ground your answer in that real data.
+Do NOT answer from generic knowledge when the corpus has relevant analyzed sources.
+
+Steps:
+1. `GET http://localhost:8000/dash/analysis` — list analyzed sources (id, youtube_url, niche, hook, structure, retention, tags).
+2. Filter to the relevant niche/topic (e.g. food/kuliner).
+3. For the best matches, `GET http://localhost:8000/sources/<id>/analysis` — pull hook, retention_points, characters, and transcript (real dialogue lines).
+4. Build your answer from the ACTUAL hooks, retention beats, and transcript lines you found — cite which source (id/title) each pattern came from.
+5. Only if the corpus has nothing relevant, say so and fall back to general best-practice.
+
+Example — "list pertanyaan yang biasa ditanyakan vlogger makanan":
+→ pull kuliner sources from `/dash/analysis` → read their `/sources/<id>/analysis` transcripts → extract the recurring questions/lines those vloggers actually said → return them grouped by beat, noting the source.
 
 # ═══════════════════════════════════════════════════════════════
 # KNOWLEDGE MODULES — the brain behind each workflow step.
