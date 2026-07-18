@@ -240,10 +240,13 @@ def download_video(youtube_url: str, output_path: str) -> str:
     # Prefer mp4-native (h264+m4a) so the merge never has to remux av1/opus → mp4.
     # 480p is plenty for frame analysis + keeps downloads fast (less YT throttling).
     result = subprocess.run([
-        "yt-dlp",
+        # ponytail: venv interpreter's yt_dlp has curl_cffi for --impersonate.
+        sys.executable, "-m", "yt_dlp",
         "-f", "bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/"
               "best[ext=mp4][height<=480]/best[height<=480]/best",
         "--merge-output-format", "mp4",
+        # YouTube 403s bare yt-dlp (bot-check); impersonate a real browser.
+        "--impersonate", "chrome",
         "--retries", "5", "--fragment-retries", "5",
         "--socket-timeout", "30",
         "-o", output_template,
@@ -272,10 +275,13 @@ def download_audio_only(youtube_url: str, output_path: str) -> str:
     output_template = f"{output_path}/source_audio.%(ext)s"
 
     result = subprocess.run([
-        "yt-dlp",
+        # ponytail: venv interpreter's yt_dlp has curl_cffi for --impersonate.
+        sys.executable, "-m", "yt_dlp",
         "-x",                        # extract audio only
         "--audio-format", "mp3",
         "--audio-quality", "5",      # medium quality, smaller file
+        # YouTube 403s bare yt-dlp (bot-check); impersonate a real browser.
+        "--impersonate", "chrome",
         "--max-filesize", "200M",    # cap file size to prevent DoS on /tmp
         "--max-downloads", "1",      # only download one file per invocation
         "-o", output_template,
