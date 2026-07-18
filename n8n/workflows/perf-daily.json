@@ -1,0 +1,43 @@
+{
+  "name": "Performance — daily view snapshot",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "days", "daysInterval": 1, "triggerAtHour": 9 }
+          ]
+        }
+      },
+      "id": "perf-schedule",
+      "name": "Daily 09:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [260, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/performance/refresh",
+        "options": { "timeout": 300000 }
+      },
+      "id": "perf-refresh",
+      "name": "POST /performance/refresh",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [520, 300]
+    }
+  ],
+  "connections": {
+    "Daily 09:00": {
+      "main": [
+        [
+          { "node": "POST /performance/refresh", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "meta": { "note": "Runs daily 09:00: POSTs /performance/refresh so pipeline-api fetches current view counts for every posted video and upserts one snapshot per url per day (performance_snapshots). Import + activate in the n8n UI (localhost:5678) or via `n8n import:workflow`." }
+}
