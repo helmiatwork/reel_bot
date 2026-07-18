@@ -5850,11 +5850,17 @@ ANALYSIS_JSON_SCHEMA = """{
       "build": "str — SHORT: body build (slim/athletic/heavyset)",
       "height": "str — SHORT: height impression (pendek/sedang/tinggi)",
       "skin_tone": "str — SHORT: skin tone (e.g. terang/sawo matang/gelap)",
-      "hair_color": "str — SHORT: hair color only (e.g. coklat/hitam)",
+      "face_shape": "str — SHORT: face shape (oval/bulat/kotak/lonjong)",
+      "eyebrows": "str — SHORT: eyebrows (tebal/tipis/melengkung)",
       "eye_color": "str — SHORT: eye color only (e.g. hitam/coklat)",
-      "hair": "str — full hair description: length, style, bangs, facial hair",
-      "face": "str — face shape, eyes, eyebrows, nose, lips, expression/demeanor",
-      "distinguishing_features": "str — glasses, tattoos, moles, jewelry, nail color, scars; write 'tidak terlihat' if none",
+      "nose": "str — SHORT: nose (mancung/pesek/sedang)",
+      "lips": "str — SHORT: lips (tipis/tebal/sedang)",
+      "hair_color": "str — SHORT: hair color only (e.g. coklat/hitam)",
+      "hairstyle": "str — SHORT: hair length + style (e.g. 'lurus panjang', 'keriting pendek', 'poni')",
+      "facial_hair": "str — SHORT: facial hair (tidak ada/kumis/jenggot/cambang)",
+      "glasses": "str — SHORT: wearing glasses? (ya/tidak) + type if any",
+      "expression": "str — SHORT: default expression/demeanor (ceria/serius/datar)",
+      "distinguishing_features": "str — tattoos, moles, piercings, nail color, scars, birthmarks; write 'tidak terlihat' if none",
       "wardrobe": "str — DETAILED clothing and accessories (colors, garment types, logos, jewelry, headwear)",
       "recreation_prompt": "str — ONE complete, ready-to-paste AI image/video generation prompt that fully describes this character for consistent recreation across scenes"
     }
@@ -7618,9 +7624,10 @@ def get_source_analysis(source_id: int):
             ] if isinstance(rp, list) else []
             ch = raw.get("characters")
             _char_keys = ("name", "role", "gender", "age_range", "build", "height",
-                          "skin_tone", "hair_color", "eye_color", "hair", "face",
-                          "distinguishing_features", "appearance", "wardrobe",
-                          "recreation_prompt")
+                          "skin_tone", "face_shape", "eyebrows", "eye_color", "nose",
+                          "lips", "hair_color", "hairstyle", "facial_hair", "glasses",
+                          "expression", "hair", "face", "distinguishing_features",
+                          "appearance", "wardrobe", "recreation_prompt")
             resp["characters"] = [
                 {k: c.get(k, "") for k in _char_keys if c.get(k)}
                 for c in ch if isinstance(c, dict) and (c.get("name") or c.get("appearance") or c.get("recreation_prompt"))

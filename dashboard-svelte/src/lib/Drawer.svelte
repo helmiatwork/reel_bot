@@ -729,6 +729,7 @@
               {#if anaSubTab === 'karakter'}
                 {#if analysis.characters?.length}
                   {#each analysis.characters as c}
+                    {@const attrs = [['build','Build'],['height','Tinggi'],['skin_tone','Kulit'],['face_shape','Bentuk wajah'],['eyebrows','Alis'],['eye_color','Mata'],['nose','Hidung'],['lips','Bibir'],['hair_color','Rambut'],['hairstyle','Gaya rambut'],['facial_hair','Kumis/janggut'],['glasses','Kacamata'],['expression','Ekspresi']]}
                     <div class="ana-card char-card">
                       <div class="char-head">
                         <span class="char-name">{c.name || 'Karakter'}</span>
@@ -736,16 +737,16 @@
                         {#if c.gender}<span class="score-badge">{c.gender}</span>{/if}
                         {#if c.age_range}<span class="score-badge">{c.age_range} th</span>{/if}
                       </div>
-                      {#if c.build || c.height || c.skin_tone || c.hair_color || c.eye_color}
+                      {#if attrs.some(([k]) => c[k])}
                         <table class="char-attr-table">
                           <tbody>
-                            {#each [['build','Build'],['height','Tinggi'],['skin_tone','Kulit'],['hair_color','Rambut'],['eye_color','Mata']] as [k, label]}
+                            {#each attrs as [k, label]}
                               {#if c[k]}<tr><td class="attr-k">{label}</td><td class="attr-v">{c[k]}</td></tr>{/if}
                             {/each}
                           </tbody>
                         </table>
                       {/if}
-                      {#each [['hair','Gaya rambut'],['face','Wajah'],['distinguishing_features','Ciri khas'],['appearance','Penampilan'],['wardrobe','Wardrobe']] as [k, label]}
+                      {#each [['face','Wajah (detail)'],['distinguishing_features','Ciri khas'],['appearance','Penampilan'],['wardrobe','Wardrobe']] as [k, label]}
                         {#if c[k]}<div class="char-line"><span class="char-key">{label}</span><span class="char-val">{c[k]}</span></div>{/if}
                       {/each}
                       {#if c.recreation_prompt}
@@ -756,7 +757,7 @@
                         </div>
                       {/if}
                       <div class="ana-btn-row">
-                        <button class="ana-copy-btn" onclick={() => copyPrompt([c.name, c.role, c.gender, c.age_range, c.build, c.height, c.skin_tone, c.hair_color, c.eye_color, c.hair, c.face, c.distinguishing_features, c.appearance, c.wardrobe].filter(Boolean).join(' · '))}>{copiedPrompt ? '✓ Tersalin' : 'Salin semua'}</button>
+                        <button class="ana-copy-btn" onclick={() => copyPrompt([c.name, c.role, c.gender, c.age_range, c.build, c.height, c.skin_tone, c.face_shape, c.eyebrows, c.eye_color, c.nose, c.lips, c.hair_color, c.hairstyle, c.facial_hair, c.glasses, c.expression, c.face, c.distinguishing_features, c.appearance, c.wardrobe].filter(Boolean).join(' · '))}>{copiedPrompt ? '✓ Tersalin' : 'Salin semua'}</button>
                       </div>
                     </div>
                   {/each}
