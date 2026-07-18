@@ -229,7 +229,12 @@ export const api = {
   sourceSegments: (source_id) => getJSON('/sources/' + source_id + '/segments'),
   sourceAnalysis: (source_id) => getJSON('/sources/' + source_id + '/analysis'),
   storyboardStatus: (youtube_url) => getJSON('/analyze/storyboard-status?youtube_url=' + encodeURIComponent(youtube_url)),
-  getGeminiBrief: (youtube_url) => getJSON('/analyze/gemini-brief?youtube_url=' + encodeURIComponent(youtube_url)),
+  getGeminiBrief: (youtube_url, { audio_start, audio_end } = {}) => {
+    const params = new URLSearchParams({ youtube_url })
+    if (audio_start !== undefined && audio_start !== null) params.set('audio_start', audio_start)
+    if (audio_end !== undefined && audio_end !== null) params.set('audio_end', audio_end)
+    return getJSON('/analyze/gemini-brief?' + params.toString())
+  },
   importStoryboard: (youtube_url, storyboard) => postJSON('/analyze/import', { youtube_url, storyboard }),
 
   chatSessions: () => getJSON('/dash/chat/sessions'),

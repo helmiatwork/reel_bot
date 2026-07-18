@@ -7073,27 +7073,83 @@ def analyze_storyboard_status(youtube_url: str):
 
 
 @app.get("/analyze/gemini-brief")
-def analyze_gemini_brief(youtube_url: str):
+def analyze_gemini_brief(youtube_url: str, audio_start: Optional[float] = None, audio_end: Optional[float] = None):
     """
     Instruction builder for Gemini analysis via Antigravity MCP.
 
-    Returns a static instruction template telling the Gemini agent to:
+    Returns instruction template telling the Gemini agent to:
     1. Call reelbot MCP get_clips(youtube_url) to get local segment files
     2. Watch each segment, produce video analysis JSON, call save_analysis
     3. Watch each segment, produce per-scene storyboard JSON, call save_storyboard
 
-    Gemini writes BOTH analysis and storyboard in one pass. Claude analyze is
-    only a manual fallback (Re-analyze button) when Gemini has trouble.
+    If audio_start/audio_end provided: generates a Suno prompt instruction instead.
+    Gemini will analyze clipped audio and generate a jazz music prompt for Suno.
 
-    Query param: youtube_url
-    Returns: {"instruction": str, "youtube_url": str}
+    Query params: youtube_url, audio_start (optional), audio_end (optional)
+    Returns: {"instruction": str, "youtube_url": str, "audio_path": str (if Suno mode)}
     """
     try:
         _validate_source_url(youtube_url)
     except HTTPException:
         raise HTTPException(status_code=400, detail="invalid youtube_url")
 
-    instruction = f"""You are analyzing video clips for a short-form content project: producing BOTH a video analysis and a per-scene storyboard.
+    # Check if Suno mode (audio parameters provided)
+    is_suno_mode = audio_start is not None or audio_end is not None
+
+    if is_suno_mode:
+        # Suno prompt generation mode: clip audio, analyze with librosa, build instruction
+        audio_path = None
+        audio_hints = {}
+        try:
+            # Download and clip audio from YouTube
+            audio_path = _download_and_clip_audio_for_suno(youtube_url, audio_start, audio_end)
+            # Analyze audio with librosa for hints
+            audio_hints = _analyze_audio(audio_path, start_sec=None, end_sec=None)
+        except Exception as e:
+            print(f"[analyze_gemini_brief] audio prep failed (non-fatal): {e}")
+            # Continue with empty hints if audio analysis fails
+
+        # Build Suno instruction
+        hints_text = _format_audio_hints_for_suno(audio_hints)
+        instruction = f"""You are analyzing audio to generate a music creation prompt for Suno.
+
+RULES:
+- You have EXACTLY ONE MCP tool available: `get_audio_for_suno`. Use it once to fetch the clipped audio file.
+- The audio file is a real audio file that you MUST LISTEN TO carefully.
+- Do NOT search, read code, call other tools, open a browser, or run commands.
+- CRITICAL: base your music prompt on what you ACTUALLY HEAR in the audio. If you cannot hear the audio, STOP and report the error.
+
+Task:
+STEP 1: Call reelbot MCP tool `get_audio_for_suno` with youtube_url="{youtube_url}" to get the local audio file path.
+
+STEP 2: Listen to the audio file carefully. Analyze:
+- Genre / style indicators
+- Tempo / BPM
+- Mood / emotion
+- Instrumentation / sounds present
+
+STEP 3: Generate a Suno music prompt that recreates this audio as a JAZZ track. The prompt must be:
+- Specific (mention actual instruments, tempo, mood you heard)
+- Between 50-150 words
+- Ready to paste directly into Suno
+
+Return a JSON object with:
+{{"audio_analysis": {{"genre": "str", "tempo": "str", "mood": "str", "instruments": "str"}}, "suno_prompt": "str"}}
+
+LIBROSA HINTS (use as reference, verify by listening):
+{hints_text}
+
+Execute step 1, listen carefully in step 2, then output the JSON with your analysis and Suno prompt."""
+
+        return {
+            "instruction": instruction,
+            "youtube_url": youtube_url,
+            "audio_path": audio_path,
+            "is_suno_mode": True
+        }
+    else:
+        # Original video analysis + storyboard mode
+        instruction = f"""You are analyzing video clips for a short-form content project: producing BOTH a video analysis and a per-scene storyboard.
 
 RULES:
 - You have EXACTLY THREE MCP tools available: `get_clips`, `save_analysis`, and `save_storyboard`. Use them in that order only.
@@ -7119,10 +7175,66 @@ STORYBOARD JSON SCHEMA (for STEP 3 — output must match this exactly):
 
 Execute steps 1, 2, and 3 in order. Use only the three MCP tools."""
 
-    return {
-        "instruction": instruction,
-        "youtube_url": youtube_url
-    }
+        return {
+            "instruction": instruction,
+            "youtube_url": youtube_url
+        }
+
+
+def _download_and_clip_audio_for_suno(youtube_url: str, audio_start: Optional[float], audio_end: Optional[float]) -> str:
+    """
+    Download audio from YouTube and clip to [audio_start, audio_end] range.
+    Returns path to clipped audio file (temp file).
+    Raises on download/ffmpeg failure.
+    """
+    # Create temp directory for downloads
+    tmp_dir = tempfile.mkdtemp(prefix="suno_audio_")
+
+    try:
+        # Download audio using yt-dlp
+        output_template = f"{tmp_dir}/audio.%(ext)s"
+        result = subprocess.run([
+            "yt-dlp",
+            "-x",
+            "--audio-format", "mp3",
+            "--audio-quality", "5",
+            "-o", output_template,
+            "--no-playlist",
+            youtube_url
+        ], capture_output=True, timeout=120, check=True, text=True)
+
+        # Find downloaded file
+        audio_files = list(Path(tmp_dir).glob("audio.*"))
+        if not audio_files:
+            raise Exception("Downloaded audio file not found")
+
+        audio_path = str(audio_files[0])
+
+        # Clip if time range provided
+        if audio_start is not None or audio_end is not None:
+            audio_path = _clip_audio(audio_path, audio_start, audio_end)
+
+        return audio_path
+    except subprocess.CalledProcessError as e:
+        raise Exception(f"yt-dlp download failed: {e.stderr}")
+
+
+def _format_audio_hints_for_suno(audio_hints: dict) -> str:
+    """Format librosa analysis results as hints text for Suno instruction."""
+    if not audio_hints or all(v is None for v in audio_hints.values()):
+        return "(Audio analysis unavailable — rely on your listening)"
+
+    parts = []
+    if audio_hints.get("bpm"):
+        parts.append(f"- BPM: {audio_hints['bpm']}")
+    if audio_hints.get("music_key"):
+        parts.append(f"- Key: {audio_hints['music_key']}")
+    if audio_hints.get("energy"):
+        parts.append(f"- Energy: {audio_hints['energy']}")
+    if audio_hints.get("duration_sec"):
+        parts.append(f"- Duration: {audio_hints['duration_sec']}s")
+
+    return "\n".join(parts) if parts else "(Audio analysis unavailable — rely on your listening)"
 
 
 @app.get("/sources/frames")
