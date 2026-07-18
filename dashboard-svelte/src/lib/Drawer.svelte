@@ -635,6 +635,7 @@
               <div class="ana-subtabs">
                 <button class="ana-subtab {anaSubTab === 'hookret' ? 'active' : ''}" onclick={() => anaSubTab = 'hookret'}>Hook &amp; Retention</button>
                 <button class="ana-subtab {anaSubTab === 'overall' ? 'active' : ''}" onclick={() => anaSubTab = 'overall'}>Overall</button>
+                <button class="ana-subtab {anaSubTab === 'karakter' ? 'active' : ''}" onclick={() => anaSubTab = 'karakter'}>Karakter{#if analysis.characters?.length} ({analysis.characters.length}){/if}</button>
               </div>
 
               {#if anaSubTab === 'hookret'}
@@ -722,6 +723,27 @@
                 {/if}
                 {#if !analysis.tags?.length && !analysis.structure && !analysis.summary && !analysis.detail}
                   <div class="mut" style="font-size:12px;padding:8px 0">Belum ada data overall.</div>
+                {/if}
+              {/if}
+
+              {#if anaSubTab === 'karakter'}
+                {#if analysis.characters?.length}
+                  {#each analysis.characters as c}
+                    <div class="ana-card char-card">
+                      <div class="char-head">
+                        <span class="char-name">{c.name || 'Karakter'}</span>
+                        {#if c.role}<span class="char-role">{c.role}</span>{/if}
+                        {#if c.age_range}<span class="score-badge">{c.age_range} th</span>{/if}
+                      </div>
+                      {#if c.appearance}<div class="char-line"><span class="char-key">Penampilan</span><span class="char-val">{c.appearance}</span></div>{/if}
+                      {#if c.wardrobe}<div class="char-line"><span class="char-key">Wardrobe</span><span class="char-val">{c.wardrobe}</span></div>{/if}
+                      <div class="ana-btn-row">
+                        <button class="ana-copy-btn" onclick={() => copyPrompt([c.name, c.role, c.age_range, c.appearance, c.wardrobe].filter(Boolean).join(' · '))}>{copiedPrompt ? '✓ Tersalin' : 'Salin karakter'}</button>
+                      </div>
+                    </div>
+                  {/each}
+                {:else}
+                  <div class="mut" style="font-size:12px;padding:8px 0">Belum ada data karakter. Re-analyze via Antigravity untuk mengisinya.</div>
                 {/if}
               {/if}
             </div>
@@ -1314,6 +1336,12 @@
   }
   .ana-subtab:hover { color:var(--fg); }
   .ana-subtab.active { background:rgba(64,81,137,.12); color:var(--accent); border-color:rgba(64,81,137,.35); }
+  .char-head { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+  .char-name { font-size:14px; font-weight:700; color:var(--txt); }
+  .char-role { font-size:11px; font-weight:600; padding:1px 8px; border-radius:8px; background:rgba(10,179,156,.14); color:var(--green); }
+  .char-line { display:flex; gap:8px; font-size:12.5px; line-height:1.55; margin-bottom:5px; }
+  .char-key { flex:0 0 80px; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--mut); padding-top:2px; }
+  .char-val { flex:1; color:var(--txt); word-break:break-word; }
 
   /* Analisa tab button rows */
   .ana-btn-row { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
