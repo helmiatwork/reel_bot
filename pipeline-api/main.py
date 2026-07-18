@@ -6998,6 +6998,55 @@ def analyze_claude_runs(limit: int = 20):
     return summaries[:limit]
 
 
+@app.get("/notifications")
+def notifications(limit: int = 15):
+    """Assemble real notifications from existing signals (no dedicated store):
+    completed/failed analyze+decompose runs, and due scheduled posts.
+    Returns: {"notifications": [{id, kind, msg, ts (unix seconds)}]} sorted newest-first.
+    Read-state is tracked client-side (localStorage last-seen ts)."""
+    items = []
+
+    # 1) Recently finished analyze/decompose runs (done or error)
+    try:
+        for r in analyze_claude_runs(30):
+            st = r.get("status")
+            if st not in ("done", "error"):
+                continue
+            label = r.get("title") or r.get("url") or "video"
+            what = "Decompose" if r.get("kind") == "decompose" else "Analisa"
+            msg = f"{what} {'selesai' if st == 'done' else 'gagal'}: {label[:70]}"
+            items.append({"id": r.get("run_id"), "kind": f"run_{st}",
+                          "msg": msg, "ts": float(r.get("created") or 0)})
+    except Exception as e:
+        print(f"[notifications] runs assembly failed (non-fatal): {e}")
+
+    # 2) Due / overdue scheduled posts
+    conn = _db_conn()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                # ponytail: scheduled_posts has no posted flag — "due" = scheduled_at
+                # in the past. May include already-posted items; add a posted flag if noisy.
+                cur.execute(
+                    "SELECT id, title, scheduled_at FROM scheduled_posts "
+                    "WHERE scheduled_at IS NOT NULL AND scheduled_at <= now() "
+                    "ORDER BY scheduled_at DESC LIMIT 20"
+                )
+                for row in cur.fetchall():
+                    sid, title, sched = row[0], row[1], row[2]
+                    ts = sched.timestamp() if sched else 0
+                    items.append({"id": f"sched-{sid}", "kind": "schedule_due",
+                                  "msg": f'Jadwal post "{(title or "tanpa judul")[:60]}" jatuh tempo',
+                                  "ts": ts})
+        except Exception as e:
+            print(f"[notifications] schedule assembly failed (non-fatal): {e}")
+        finally:
+            conn.close()
+
+    items.sort(key=lambda x: x["ts"], reverse=True)
+    return {"notifications": items[:limit]}
+
+
 @app.post("/analyze/import")
 def analyze_import(req: StoryboardImportRequest):
     """
