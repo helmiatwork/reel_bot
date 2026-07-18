@@ -9367,6 +9367,7 @@ def _schedule_init_db():
                 "ADD COLUMN IF NOT EXISTS underperforming BOOL DEFAULT false",
                 "ADD COLUMN IF NOT EXISTS flagged_at TIMESTAMPTZ",
                 "ADD COLUMN IF NOT EXISTS improvement_suggestion TEXT",
+                "ADD COLUMN IF NOT EXISTS reminded_at TIMESTAMPTZ",
             ):
                 cur.execute(f"ALTER TABLE scheduled_posts {stmt}")
             conn.commit()
@@ -10129,6 +10130,67 @@ def performance_check_targets():
     """Flag posts below their view target past the horizon + notify. Called
     daily by n8n right after /performance/refresh."""
     return _json(_check_performance_targets())
+
+
+def _remind_due_posts() -> dict:
+    """Send a one-time reminder for each scheduled post that is due
+    (scheduled_at <= now), not yet posted (platform_urls empty), and not yet
+    reminded. Marks reminded_at so hourly re-runs never spam. Never raises."""
+    result = {"due": 0, "reminded": 0, "notified_tg": 0, "errors": []}
+    conn = _db_conn()
+    if conn is None:
+        result["errors"].append("no database connection")
+        return result
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, title, platforms, scheduled_at FROM scheduled_posts "
+                "WHERE scheduled_at IS NOT NULL AND scheduled_at <= now() "
+                "AND reminded_at IS NULL "
+                "AND COALESCE(NULLIF(platform_urls, ''), '{}') = '{}' "
+                "ORDER BY scheduled_at ASC LIMIT 50"
+            )
+            due = cur.fetchall()
+    except Exception as e:
+        result["errors"].append(f"query scheduled_posts: {e}")
+        conn.close()
+        return result
+
+    for pid, title, platforms, sched in due:
+        result["due"] += 1
+        try:
+            try:
+                from zoneinfo import ZoneInfo
+                when = sched.astimezone(ZoneInfo("Asia/Jakarta")).strftime("%H:%M WIB") if sched else "?"
+            except Exception:
+                when = sched.strftime("%H:%M") if sched else "?"
+            plats = (platforms or "").replace(",", ", ") or "platform"
+            msg = f'⏰ Waktunya post: "{(title or "tanpa judul")[:70]}" di {plats} (jadwal {when}).'
+            sent = _telegram_notify(msg)
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE scheduled_posts SET reminded_at=now(), updated_at=now() WHERE id=%s",
+                    (pid,))
+                conn.commit()
+            result["reminded"] += 1
+            if sent:
+                result["notified_tg"] += 1
+        except Exception as e:
+            result["errors"].append(f"post {pid}: {type(e).__name__}: {str(e)[:120]}")
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+
+    conn.close()
+    return result
+
+
+@app.post("/schedule/remind-due")
+def schedule_remind_due():
+    """Notify (once) for every due, unposted scheduled post. Called hourly by
+    n8n — reminders, not auto-publishing; the user posts manually."""
+    return _json(_remind_due_posts())
 
 
 @app.get("/performance")
