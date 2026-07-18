@@ -1,0 +1,43 @@
+{
+  "name": "Auto-post — publish due scheduled posts",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "hours", "hoursInterval": 1 }
+          ]
+        }
+      },
+      "id": "autopost-trigger",
+      "name": "Every hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [260, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/schedule/publish-due",
+        "options": { "timeout": 600000 }
+      },
+      "id": "autopost-call",
+      "name": "POST /schedule/publish-due",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [520, 300]
+    }
+  ],
+  "connections": {
+    "Every hour": {
+      "main": [
+        [
+          { "node": "POST /schedule/publish-due", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "meta": { "note": "PUBLISHES PUBLICLY. Runs hourly: POST /schedule/publish-due — uploads every due, unposted scheduled post to its platforms (Phase 1: YouTube public; IG/FB skipped until Phase 2). Only posts rows you explicitly scheduled with platform_urls still empty. Keep DISABLED until you're sure; activate in the n8n UI (localhost:5678) only when ready to go live." }
+}
