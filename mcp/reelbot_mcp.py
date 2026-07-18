@@ -20,6 +20,7 @@ STORYBOARD FLOW: get_clips → save_analysis (optional) → save_storyboard
 import json
 import os
 import sys
+import hashlib
 from pathlib import Path
 from typing import Optional
 
@@ -697,6 +698,70 @@ def get_clips(youtube_url: str) -> dict:
         return {"error": f"query failed: {e}"}
     finally:
         conn.close()
+
+
+def _suno_audio_path(youtube_url: str) -> str:
+    """
+    Compute a deterministic path for Suno audio clips keyed by youtube_url.
+
+    IMPORTANT: This path computation MUST match the identical function in pipeline-api/main.py.
+    If you modify this, update the main.py version as well so both can find the file.
+
+    Args:
+        youtube_url: YouTube URL (may contain query params)
+
+    Returns:
+        Absolute path: <repo_root>/output/suno_audio/<sha1_hash>.mp3
+    """
+    # Normalize URL by removing trailing whitespace
+    normalized = youtube_url.strip()
+    # Create SHA1 hash of the URL (includes params, so different clips get different files)
+    url_hash = hashlib.sha1(normalized.encode()).hexdigest()
+    # Return deterministic path: output/suno_audio/<hash>.mp3
+    suno_dir = REPO_ROOT / "output" / "suno_audio"
+    suno_dir.mkdir(parents=True, exist_ok=True)
+    return str(suno_dir / f"{url_hash}.mp3")
+
+
+@server.tool()
+def get_audio_for_suno(youtube_url: str) -> dict:
+    """
+    SUNO FLOW STEP 1. Use this to fetch the clipped audio file for Suno music generation.
+
+    Get the local audio file that was prepared for Suno music creation (already clipped to the specified time range).
+
+    Args:
+        youtube_url: the YouTube URL to look up (must match the url passed to /analyze/gemini-brief)
+
+    Returns:
+        {"youtube_url": ..., "audio_path": <abs path>, "exists": true}
+        or {"error": "audio not ready yet — reelbot is still clipping it; wait and call get_audio_for_suno again"}
+    """
+    if not _valid_url(youtube_url):
+        return {"error": "invalid youtube_url"}
+
+    # Compute the deterministic path where the audio should be
+    audio_path = _suno_audio_path(youtube_url)
+
+    # Check if the audio file exists and is non-empty
+    try:
+        audio_file = Path(audio_path)
+        if not audio_file.exists():
+            return {"error": "audio not ready yet — reelbot is still clipping it; wait and call get_audio_for_suno again"}
+
+        # Check file size to ensure it's not empty/truncated
+        file_size = audio_file.stat().st_size
+        if file_size == 0:
+            return {"error": "audio not ready yet — reelbot is still clipping it; wait and call get_audio_for_suno again"}
+
+        return {
+            "youtube_url": youtube_url,
+            "audio_path": str(audio_path),
+            "exists": True,
+            "file_size_bytes": file_size
+        }
+    except Exception as e:
+        return {"error": f"failed to check audio file: {e}"}
 
 
 # ── Keywords (Google Ads Keyword Planner) ──────────────────────────────────
