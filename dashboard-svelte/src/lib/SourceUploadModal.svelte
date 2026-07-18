@@ -304,8 +304,16 @@
       // Phase B: Fetch Gemini brief & start monitoring.
       // Gemini writes BOTH analysis and storyboard (save_analysis + save_storyboard).
       // Claude is only a manual fallback via the Re-analyze button in the drawer.
+      // If audio_start/audio_end provided: generates Suno prompt instruction instead.
       storyboardPhase = 'brief'
-      const result = await api.getGeminiBrief(urlInput.trim())
+      const briefOptions = {}
+      if (includeAudio && audioStart.trim()) {
+        briefOptions.audio_start = parseFloat(audioStart)
+      }
+      if (includeAudio && audioEnd.trim()) {
+        briefOptions.audio_end = parseFloat(audioEnd)
+      }
+      const result = await api.getGeminiBrief(urlInput.trim(), briefOptions)
       if (result?.instruction) {
         geminiBrief = result.instruction
       } else {
@@ -443,6 +451,50 @@
               disabled={loading || savingGemini}
             />
           </label>
+
+          {#if analysisMode === 'gemini_mcp'}
+            <!-- Audio/Suno option for MCP mode -->
+            <label class="field">
+              <span class="field-label">Bikin prompt Suno (analisa audio) <span class="opt">(opsional)</span></span>
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  bind:checked={includeAudio}
+                  disabled={loading}
+                />
+                <span>Clip audio → analisa → output Suno prompt</span>
+              </label>
+            </label>
+
+            {#if includeAudio}
+              <div class="audio-segment-container" transition:fade={{ duration: 150 }}>
+                <label class="field">
+                  <span class="field-label">Segmen audio yang dipotong <span class="opt">(opsional — kosongkan = full)</span></span>
+                  <div class="audio-segment-inputs">
+                    <input
+                      class="inp inp-time"
+                      type="number"
+                      placeholder="Mulai (detik)"
+                      bind:value={audioStart}
+                      disabled={loading}
+                      min="0"
+                      step="0.1"
+                    />
+                    <span class="segment-dash">–</span>
+                    <input
+                      class="inp inp-time"
+                      type="number"
+                      placeholder="Akhir (detik)"
+                      bind:value={audioEnd}
+                      disabled={loading}
+                      min="0"
+                      step="0.1"
+                    />
+                  </div>
+                </label>
+              </div>
+            {/if}
+          {/if}
 
           {#if analysisMode === 'gemini_mcp'}
             <!-- MCP mode: show instruction + polling -->
@@ -598,21 +650,21 @@
           </label>
 
           <label class="field">
-            <span class="field-label">Sertakan analisa audio <span class="opt">(opsional)</span></span>
+            <span class="field-label">Bikin prompt Suno (analisa audio) <span class="opt">(opsional)</span></span>
             <label class="checkbox-label">
               <input
                 type="checkbox"
                 bind:checked={includeAudio}
                 disabled={loading}
               />
-              <span>Analisa musik/VO/SFX</span>
+              <span>Clip audio → analisa → output Suno prompt</span>
             </label>
           </label>
 
           {#if includeAudio}
             <div class="audio-segment-container" transition:fade={{ duration: 150 }}>
               <label class="field">
-                <span class="field-label">Fokus segmen <span class="opt">(opsional — kosongkan = full)</span></span>
+                <span class="field-label">Segmen audio yang dipotong <span class="opt">(opsional — kosongkan = full)</span></span>
                 <div class="audio-segment-inputs">
                   <input
                     class="inp inp-time"
@@ -686,21 +738,21 @@
           </label>
 
           <label class="field">
-            <span class="field-label">Sertakan analisa audio <span class="opt">(opsional)</span></span>
+            <span class="field-label">Bikin prompt Suno (analisa audio) <span class="opt">(opsional)</span></span>
             <label class="checkbox-label">
               <input
                 type="checkbox"
                 bind:checked={includeAudio}
                 disabled={loading}
               />
-              <span>Analisa musik/VO/SFX</span>
+              <span>Clip audio → analisa → output Suno prompt</span>
             </label>
           </label>
 
           {#if includeAudio}
             <div class="audio-segment-container" transition:fade={{ duration: 150 }}>
               <label class="field">
-                <span class="field-label">Fokus segmen <span class="opt">(opsional — kosongkan = full)</span></span>
+                <span class="field-label">Segmen audio yang dipotong <span class="opt">(opsional — kosongkan = full)</span></span>
                 <div class="audio-segment-inputs">
                   <input
                     class="inp inp-time"
