@@ -4042,9 +4042,9 @@ def _build_claude_prompt(intent: str, output_format: str = "none") -> str:
         "duration_sec": <number>,
         "shot": "<wide|medium|close-up|...>",
         "camera_movement": "<static|pan|tilt|push-in|handheld|...>",
-        "subject": "<who/what with PRECISE, generation-locking appearance. For PEOPLE: apparent ethnicity/region (e.g. East Asian, South Asian, Caucasian, Black), skin tone, hair style+color, approx age, body build, and EXACT clothing — say t-shirt vs shirt vs dress + color + notable details. For a CHARACTER/animal: species, fur/color/markings, and any costume. ALWAYS state facial EXPRESSION/emotion (e.g. cheerful wide smile, bright eyes) so it is not rendered neutral or grumpy>",
+        "subject": "<who/what with generation-locking appearance. For a REAL, identifiable person (news anchor, celebrity, public figure): use ONLY a generic role label (e.g. 'a female news anchor', 'the male host') and an APPROXIMATE generic description — NEVER the real person's name, and do NOT target their exact likeness. For a fictional/generic actor or a CHARACTER/animal: be precise — apparent ethnicity/region, skin tone, hair style+color, approx age, body build, EXACT clothing (t-shirt vs shirt vs dress + color), or species/fur/markings/costume. ALWAYS state facial EXPRESSION/emotion (e.g. cheerful wide smile, bright eyes) so it is not rendered neutral or grumpy>",
         "action": "<what the subject is doing + their body POSE/POSTURE and orientation (e.g. leaning forward over the counter, holding the bouquet with both paws, facing left)>",
-        "image_prompt": "<ONE dense, self-contained text-to-image prompt that reproduces THIS exact frame: the subject(s) with the full appearance + expression + wardrobe + pose from above, the setting/background, composition/framing, lighting, and art style. Detailed enough that a text-to-image model recreates the frame closely without a reference image>",
+        "image_prompt": "<ONE dense, self-contained text-to-image prompt for THIS frame: subject(s) with appearance + expression + wardrobe + pose, setting/background, composition/framing, lighting, art style. NEVER include a real person's name, a real show/brand/logo name, or wording that targets a real individual's exact likeness — describe a generic fictional stand-in in a similar setting. Detailed enough to recreate the frame without a reference image>",
         "lighting": "<...>",
         "color_palette": "<dominant colors>",
         "on_screen_text": "<text or ''>",
@@ -4053,7 +4053,7 @@ def _build_claude_prompt(intent: str, output_format: str = "none") -> str:
       }
     ]
   }
-  IMPORTANT for the storyboard: fill "subject", "action", and "image_prompt" with concrete, specific visual detail taken from the frames — never generic ("a man", "a cat"). Lock each person's apparent ethnicity, age, hair, skin, build, exact clothing type/color, body pose, and facial expression; lock each character/animal's exact look and costume. This is what lets the scenes be regenerated to match the source."""
+  IMPORTANT for the storyboard: fill "subject", "action", and "image_prompt" with concrete, specific visual detail taken from the frames — never lazily generic ("a man", "a cat"). Lock a fictional/generic actor's or character/animal's exact look, clothing, pose, and expression so scenes stay consistent. BUT for any REAL, identifiable person (public figure, news anchor, interview subject): NEVER use their real name or a real show/brand name, and do NOT reproduce their exact likeness — use a generic role label and an approximate description so the output is a consistent GENERIC character, not a lookalike of a real individual. This keeps generation prompts policy-safe (image/video models block real-people likenesses)."""
     return _CLAUDE_RE_PROMPT_TEMPLATE.format(intent=intent, gen_prompt_field=gen_prompt_field)
 
 _CLAUDE_CLIPPER_PROMPT_TEMPLATE = """\
@@ -5820,9 +5820,9 @@ STORYBOARD_JSON_SCHEMA = """{
       "duration_sec": "int",
       "shot": "str",
       "camera_movement": "str",
-      "subject": "str",
+      "subject": "str — generic role label for real people (e.g. 'a female news anchor'), never a real name",
       "action": "str",
-      "image_prompt": "str"
+      "image_prompt": "str — dense text-to-image prompt; NEVER a real person's name, real show/brand name, or exact-likeness targeting — a generic fictional stand-in in a similar setting"
     }
   ]
 }"""
@@ -5869,7 +5869,7 @@ ANALYSIS_JSON_SCHEMA = """{
       "footwear": "str — SHORT: shoes (type + color, e.g. 'sneakers putih'); 'tidak terlihat' if off-frame",
       "accessories": "str — SHORT: accessories seen (jepit rambut/bando/anting/kalung/gelang/jam/topi/tas); 'tidak ada' if none",
       "wardrobe": "str — full outfit summary in one sentence (colors, garments, logos, headwear)",
-      "recreation_prompt": "str — ONE complete, ready-to-paste AI image/video generation prompt that fully describes this character for consistent recreation across scenes"
+      "recreation_prompt": "str — ONE ready-to-paste AI image/video generation prompt for a consistent GENERIC character. NEVER include a real person's name or wording that targets a real, identifiable individual's exact likeness (image/video models block real-people prompts); describe a generic fictional stand-in of similar general type"
     }
   ],
   // For EVERY character field: be exhaustive and specific. If a detail is not
