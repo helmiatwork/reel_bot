@@ -221,6 +221,31 @@
     anaVideoRef.addEventListener('timeupdate', stop)
   }
 
+  // Seconds → SRT timestamp "HH:MM:SS,mmm"
+  function secToSrt(s) {
+    const p = (n, l = 2) => String(n).padStart(l, '0')
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60)
+    const sec = Math.floor(s % 60), ms = Math.round((s - Math.floor(s)) * 1000)
+    return `${p(h)}:${p(m)}:${p(sec)},${p(ms, 3)}`
+  }
+  // Build an .srt string from the transcript and trigger a download.
+  function downloadSrt() {
+    const lines = analysis?.transcript || []
+    if (!lines.length) return
+    const srt = lines.map((l, i) => {
+      const a = secToSrt(timeToSeconds(l.start)), b = secToSrt(timeToSeconds(l.end || l.start))
+      const who = l.speaker ? `${l.speaker}: ` : ''
+      return `${i + 1}\n${a} --> ${b}\n${who}${l.text}`
+    }).join('\n\n')
+    const blob = new Blob([srt], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `transcript-${d?.data?.id || 'source'}.srt`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   // Display + copy share one string: pretty-printed JSON for prompt_json, raw otherwise
   // Split a prose string with "(1)… (2)…" markers into a lead + bullet points.
   // Returns null when there are no numbered markers (render as prose instead).
@@ -636,6 +661,7 @@
                 <button class="ana-subtab {anaSubTab === 'hookret' ? 'active' : ''}" onclick={() => anaSubTab = 'hookret'}>Hook &amp; Retention</button>
                 <button class="ana-subtab {anaSubTab === 'overall' ? 'active' : ''}" onclick={() => anaSubTab = 'overall'}>Overall</button>
                 <button class="ana-subtab {anaSubTab === 'karakter' ? 'active' : ''}" onclick={() => anaSubTab = 'karakter'}>Karakter{#if analysis.characters?.length} ({analysis.characters.length}){/if}</button>
+                <button class="ana-subtab {anaSubTab === 'percakapan' ? 'active' : ''}" onclick={() => anaSubTab = 'percakapan'}>Percakapan{#if analysis.transcript?.length} ({analysis.transcript.length}){/if}</button>
               </div>
 
               {#if anaSubTab === 'hookret'}
@@ -775,6 +801,24 @@
                   {/each}
                 {:else}
                   <div class="mut" style="font-size:12px;padding:8px 0">Belum ada data karakter. Re-analyze via Antigravity untuk mengisinya.</div>
+                {/if}
+              {/if}
+
+              {#if anaSubTab === 'percakapan'}
+                {#if analysis.transcript?.length}
+                  <div class="ana-btn-row" style="margin-bottom:6px">
+                    <button class="ana-play-btn" onclick={downloadSrt}>⬇ Download .srt</button>
+                    <button class="ana-copy-btn" onclick={() => copyPrompt(analysis.transcript.map(t => (t.speaker ? t.speaker + ': ' : '') + t.text).join('\n'))}>{copiedPrompt ? '✓ Tersalin' : 'Salin teks'}</button>
+                  </div>
+                  {#each analysis.transcript as t}
+                    <div class="ana-rp-row">
+                      <button class="ana-rp-btn" onclick={() => anaVideoId && playAna(timeToSeconds(t.start), timeToSeconds(t.end || t.start))} disabled={!anaVideoId} title={anaVideoId ? `Putar ${t.start}` : 'Video tidak tersedia'}>▶</button>
+                      <span class="ana-rp-reason">{#if t.speaker}<b>{t.speaker}:</b> {/if}{t.text}</span>
+                      <span class="ana-rp-time">{t.start}{t.end ? '–' + t.end : ''}</span>
+                    </div>
+                  {/each}
+                {:else}
+                  <div class="mut" style="font-size:12px;padding:8px 0">Belum ada transkrip. Re-analyze via Antigravity untuk mengisinya.</div>
                 {/if}
               {/if}
             </div>
