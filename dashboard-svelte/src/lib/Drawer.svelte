@@ -624,15 +624,16 @@
           {/if}
           <!-- Analysis section cards -->
           {#if analysis.hook}
-            {@const hookScene = scenes.length ? scenes[0] : null}
+            {@const hookStart = analysis.hook_start || (scenes.length ? scenes[0].start : null)}
+            {@const hookEnd = analysis.hook_end || (scenes.length ? scenes[0].end : null)}
             <div class="ana-card">
               <div class="ana-label">
                 Hook
-                {#if hookScene}<span class="score-badge">{hookScene.start}–{hookScene.end}</span>{/if}
+                {#if hookStart && hookEnd}<span class="score-badge">{hookStart}–{hookEnd}</span>{/if}
               </div>
               <div class="ana-body">{analysis.hook}</div>
               <div class="ana-btn-row">
-                {#if hookScene && anaVideoId}<button class="ana-play-btn" onclick={() => playAna(timeToSeconds(hookScene.start), timeToSeconds(hookScene.end))}>▶ Putar hook</button>{/if}
+                {#if hookStart && hookEnd && anaVideoId}<button class="ana-play-btn" onclick={() => playAna(timeToSeconds(hookStart), timeToSeconds(hookEnd))}>▶ Putar hook</button>{/if}
                 <button class="ana-copy-btn" onclick={() => copyPrompt(analysis.hook)}>{copiedPrompt ? '✓ Tersalin' : 'Salin teks'}</button>
               </div>
             </div>
@@ -644,7 +645,15 @@
                 Retention
                 {#if analysis.retention_score}<span class="score-badge">{analysis.retention_score}/10</span>{/if}
               </div>
-              {#if rp}
+              {#if analysis.retention_points?.length}
+                {#each analysis.retention_points as p}
+                  <div class="ana-rp-row">
+                    <button class="ana-rp-btn" onclick={() => anaVideoId && playAna(timeToSeconds(p.start), timeToSeconds(p.end))} disabled={!anaVideoId} title={anaVideoId ? `Putar ${p.start}–${p.end}` : 'Video tidak tersedia'}>▶</button>
+                    <span class="ana-rp-reason">{p.reason}</span>
+                    <span class="ana-rp-time">{p.start}–{p.end}</span>
+                  </div>
+                {/each}
+              {:else if rp}
                 {#if rp.lead}<div class="ana-lead">{rp.lead}</div>{/if}
                 <ol class="ana-points">{#each rp.items as it}<li>{it}</li>{/each}</ol>
               {:else}
@@ -1267,4 +1276,11 @@
   .ana-play-btn:hover { opacity:.85; }
   .ana-copy-btn { font-size:12px; font-weight:600; padding:5px 12px; border-radius:6px; cursor:pointer; background:rgba(64,81,137,.1); color:var(--accent); border:1px solid rgba(64,81,137,.25); }
   .ana-copy-btn:hover { background:rgba(64,81,137,.18); }
+  .ana-rp-row { display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px solid var(--border,rgba(0,0,0,.06)); }
+  .ana-rp-row:last-child { border-bottom:none; }
+  .ana-rp-btn { flex-shrink:0; width:26px; height:26px; border-radius:5px; border:none; cursor:pointer; background:var(--accent); color:#fff; font-size:10px; display:flex; align-items:center; justify-content:center; padding:0; }
+  .ana-rp-btn:disabled { opacity:.4; cursor:default; }
+  .ana-rp-btn:not(:disabled):hover { opacity:.85; }
+  .ana-rp-reason { flex:1; font-size:12px; line-height:1.4; }
+  .ana-rp-time { flex-shrink:0; font-size:11px; color:var(--mut); white-space:nowrap; }
 </style>

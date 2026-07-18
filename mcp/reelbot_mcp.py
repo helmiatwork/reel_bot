@@ -515,7 +515,7 @@ def save_analysis(youtube_url: str, analysis_json: str) -> dict:
 
     Args:
         youtube_url: the YouTube URL to associate with the analysis
-        analysis_json: JSON string or dict with {hook, retention, retention_score, structure, summary, detail, tags, intent (optional)}
+        analysis_json: JSON string or dict with {hook, hook_start, hook_end, retention, retention_score, retention_points, structure, summary, detail, tags, intent (optional)}
 
     Returns:
         {"ok": true, "youtube_url": ..., "saved": true} on success
