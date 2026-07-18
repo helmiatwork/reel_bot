@@ -252,6 +252,8 @@
   let geminiBriefModal = $state(null)
   let geminiBriefLoading = $state(false)
   let geminiBriefCopied = $state(false)
+  // Auto-open the Gemini prompt popup once, the moment clips are ready.
+  let briefAutoShown = $state(false)
   async function showGeminiBrief() {
     const url = d?.data?.youtube_url
     if (!url) return
@@ -288,6 +290,7 @@
     stopProcPoll()
     liveStatus = null
     justDone = false
+    briefAutoShown = false
     procStage = 'saving_meta'
     decomposeRunning = false
     decomposeStage = ''
@@ -356,6 +359,16 @@
 
   // Clear the action status line when switching tabs
   $effect(() => { activeTab; reanalyzeDone = false; reanalyzeError = '' })
+
+  // Auto-open the Gemini prompt popup once, the moment clips are ready (all
+  // processing steps done). Saves the user hunting for the "Tampilkan prompt
+  // Gemini" button — the prompt they need to paste into Antigravity pops up here.
+  $effect(() => {
+    if (isProcessing && !briefAutoShown && procStepStatus('saving') === 'done' && d?.data?.youtube_url) {
+      briefAutoShown = true
+      showGeminiBrief()
+    }
+  })
 
   async function startDecompose() {
     const s = d?.data
