@@ -148,15 +148,23 @@ export const api = {
   discoverCorpus: (niche, count = 5) => postJSON('/discover/corpus', { niche, count }),
   discoverCorpusStatus: (run_id) => getJSON('/discover/corpus/status/' + run_id),
   analyzeClaude: (youtube_url, { intent = '', force = false, output_format = 'none' } = {}) => postJSON('/analyze/claude', { youtube_url, intent, force, output_format }),
-  analyzeClaudeAsync: (youtube_url, { intent = '', force = false, output_format = 'none', stages = 'full' } = {}) => postJSON('/analyze/claude/async', { youtube_url, intent, force, output_format, stages }),
+  analyzeClaudeAsync: (youtube_url, { intent = '', force = false, output_format = 'none', stages = 'full', include_audio = false, audio_start, audio_end } = {}) => {
+    const body = { youtube_url, intent, force, output_format, stages, include_audio }
+    if (audio_start !== undefined && audio_start !== null) body.audio_start = audio_start
+    if (audio_end !== undefined && audio_end !== null) body.audio_end = audio_end
+    return postJSON('/analyze/claude/async', body)
+  },
   analyzeClaudeStatus: (run_id) => getJSON('/analyze/claude/status/' + run_id),
   analyzeRuns: (limit = 20) => getJSON('/analyze/claude/runs?limit=' + limit),
-  uploadSourceAsync: async (file, { intent = '', output_format = 'none' } = {}) => {
+  uploadSourceAsync: async (file, { intent = '', output_format = 'none', include_audio = false, audio_start, audio_end } = {}) => {
     try {
       const fd = new FormData()
       fd.append('file', file)
       if (intent) fd.append('intent', intent)
       if (output_format) fd.append('output_format', output_format)
+      fd.append('include_audio', include_audio ? 'true' : 'false')
+      if (audio_start !== undefined && audio_start !== null) fd.append('audio_start', String(audio_start))
+      if (audio_end !== undefined && audio_end !== null) fd.append('audio_end', String(audio_end))
       const r = await fetch('/sources/upload/async', { method: 'POST', body: fd })
       const data = await r.json().catch(() => ({}))
       if (!r.ok) throw new Error(data.detail || ('HTTP ' + r.status))
@@ -221,7 +229,12 @@ export const api = {
   sourceSegments: (source_id) => getJSON('/sources/' + source_id + '/segments'),
   sourceAnalysis: (source_id) => getJSON('/sources/' + source_id + '/analysis'),
   storyboardStatus: (youtube_url) => getJSON('/analyze/storyboard-status?youtube_url=' + encodeURIComponent(youtube_url)),
-  getGeminiBrief: (youtube_url) => getJSON('/analyze/gemini-brief?youtube_url=' + encodeURIComponent(youtube_url)),
+  getGeminiBrief: (youtube_url, { audio_start, audio_end } = {}) => {
+    const params = new URLSearchParams({ youtube_url })
+    if (audio_start !== undefined && audio_start !== null) params.set('audio_start', audio_start)
+    if (audio_end !== undefined && audio_end !== null) params.set('audio_end', audio_end)
+    return getJSON('/analyze/gemini-brief?' + params.toString())
+  },
   importStoryboard: (youtube_url, storyboard) => postJSON('/analyze/import', { youtube_url, storyboard }),
 
   chatSessions: () => getJSON('/dash/chat/sessions'),

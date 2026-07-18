@@ -42,6 +42,11 @@
   let prepStage = $state('')
   let prepPollCount = $state(0)
   let geminiStarted = $state(false)  // true once Gemini calls get_clips (status='working')
+
+  // Audio analysis options
+  let includeAudio = $state(false)
+  let audioStart = $state('')
+  let audioEnd = $state('')
   const PREP_STAGE_LABEL = {
     downloading: 'Mengunduh video…',
     saving_meta: 'Menyimpan atribut video…',
@@ -105,6 +110,9 @@
       loading = false
       activeTab = 'url'
       existsSource = null
+      includeAudio = false
+      audioStart = ''
+      audioEnd = ''
     }
   })
 
@@ -150,7 +158,19 @@
     error = null
     existsSource = null
     try {
-      const result = await api.analyzeClaudeAsync(urlInput.trim(), { intent: urlIntent, output_format: outputFormat })
+      const options = {
+        intent: urlIntent,
+        output_format: outputFormat,
+        include_audio: includeAudio,
+      }
+      // Only include audio_start/audio_end if they're filled in
+      if (audioStart.trim()) {
+        options.audio_start = parseFloat(audioStart)
+      }
+      if (audioEnd.trim()) {
+        options.audio_end = parseFloat(audioEnd)
+      }
+      const result = await api.analyzeClaudeAsync(urlInput.trim(), options)
       if (result?.already_exists) {
         existsSource = result.source
         loading = false
@@ -177,7 +197,19 @@
     loading = true
     error = null
     try {
-      const result = await api.uploadSourceAsync(selectedFile, { intent: fileIntent, output_format: outputFormat })
+      const options = {
+        intent: fileIntent,
+        output_format: outputFormat,
+        include_audio: includeAudio,
+      }
+      // Only include audio_start/audio_end if they're filled in
+      if (audioStart.trim()) {
+        options.audio_start = parseFloat(audioStart)
+      }
+      if (audioEnd.trim()) {
+        options.audio_end = parseFloat(audioEnd)
+      }
+      const result = await api.uploadSourceAsync(selectedFile, options)
       if (!result?.run_id) {
         error = result?.message || 'Gagal memulai analisis'
         loading = false
@@ -272,8 +304,16 @@
       // Phase B: Fetch Gemini brief & start monitoring.
       // Gemini writes BOTH analysis and storyboard (save_analysis + save_storyboard).
       // Claude is only a manual fallback via the Re-analyze button in the drawer.
+      // If audio_start/audio_end provided: generates Suno prompt instruction instead.
       storyboardPhase = 'brief'
-      const result = await api.getGeminiBrief(urlInput.trim())
+      const briefOptions = {}
+      if (includeAudio && audioStart.trim()) {
+        briefOptions.audio_start = parseFloat(audioStart)
+      }
+      if (includeAudio && audioEnd.trim()) {
+        briefOptions.audio_end = parseFloat(audioEnd)
+      }
+      const result = await api.getGeminiBrief(urlInput.trim(), briefOptions)
       if (result?.instruction) {
         geminiBrief = result.instruction
       } else {
@@ -411,6 +451,50 @@
               disabled={loading || savingGemini}
             />
           </label>
+
+          {#if analysisMode === 'gemini_mcp'}
+            <!-- Audio/Suno option for MCP mode -->
+            <label class="field">
+              <span class="field-label">Bikin prompt Suno (analisa audio) <span class="opt">(opsional)</span></span>
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  bind:checked={includeAudio}
+                  disabled={loading}
+                />
+                <span>Clip audio → analisa → output Suno prompt</span>
+              </label>
+            </label>
+
+            {#if includeAudio}
+              <div class="audio-segment-container" transition:fade={{ duration: 150 }}>
+                <label class="field">
+                  <span class="field-label">Segmen audio yang dipotong <span class="opt">(opsional — kosongkan = full)</span></span>
+                  <div class="audio-segment-inputs">
+                    <input
+                      class="inp inp-time"
+                      type="number"
+                      placeholder="Mulai (detik)"
+                      bind:value={audioStart}
+                      disabled={loading}
+                      min="0"
+                      step="0.1"
+                    />
+                    <span class="segment-dash">–</span>
+                    <input
+                      class="inp inp-time"
+                      type="number"
+                      placeholder="Akhir (detik)"
+                      bind:value={audioEnd}
+                      disabled={loading}
+                      min="0"
+                      step="0.1"
+                    />
+                  </div>
+                </label>
+              </div>
+            {/if}
+          {/if}
 
           {#if analysisMode === 'gemini_mcp'}
             <!-- MCP mode: show instruction + polling -->
@@ -566,6 +650,47 @@
           </label>
 
           <label class="field">
+            <span class="field-label">Bikin prompt Suno (analisa audio) <span class="opt">(opsional)</span></span>
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                bind:checked={includeAudio}
+                disabled={loading}
+              />
+              <span>Clip audio → analisa → output Suno prompt</span>
+            </label>
+          </label>
+
+          {#if includeAudio}
+            <div class="audio-segment-container" transition:fade={{ duration: 150 }}>
+              <label class="field">
+                <span class="field-label">Segmen audio yang dipotong <span class="opt">(opsional — kosongkan = full)</span></span>
+                <div class="audio-segment-inputs">
+                  <input
+                    class="inp inp-time"
+                    type="number"
+                    placeholder="Mulai (detik)"
+                    bind:value={audioStart}
+                    disabled={loading}
+                    min="0"
+                    step="0.1"
+                  />
+                  <span class="segment-dash">–</span>
+                  <input
+                    class="inp inp-time"
+                    type="number"
+                    placeholder="Akhir (detik)"
+                    bind:value={audioEnd}
+                    disabled={loading}
+                    min="0"
+                    step="0.1"
+                  />
+                </div>
+              </label>
+            </div>
+          {/if}
+
+          <label class="field">
             <span class="field-label">Output <span class="opt">(opsional)</span></span>
             <select
               class="inp"
@@ -611,6 +736,47 @@
               rows="3"
             ></textarea>
           </label>
+
+          <label class="field">
+            <span class="field-label">Bikin prompt Suno (analisa audio) <span class="opt">(opsional)</span></span>
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                bind:checked={includeAudio}
+                disabled={loading}
+              />
+              <span>Clip audio → analisa → output Suno prompt</span>
+            </label>
+          </label>
+
+          {#if includeAudio}
+            <div class="audio-segment-container" transition:fade={{ duration: 150 }}>
+              <label class="field">
+                <span class="field-label">Segmen audio yang dipotong <span class="opt">(opsional — kosongkan = full)</span></span>
+                <div class="audio-segment-inputs">
+                  <input
+                    class="inp inp-time"
+                    type="number"
+                    placeholder="Mulai (detik)"
+                    bind:value={audioStart}
+                    disabled={loading}
+                    min="0"
+                    step="0.1"
+                  />
+                  <span class="segment-dash">–</span>
+                  <input
+                    class="inp inp-time"
+                    type="number"
+                    placeholder="Akhir (detik)"
+                    bind:value={audioEnd}
+                    disabled={loading}
+                    min="0"
+                    step="0.1"
+                  />
+                </div>
+              </label>
+            </div>
+          {/if}
 
           <label class="field">
             <span class="field-label">Output <span class="opt">(opsional)</span></span>
@@ -1074,5 +1240,45 @@
     font-size: 0.75rem;
     color: var(--mut);
     line-height: 1.4;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+  }
+
+  .checkbox-label input[type="checkbox"] {
+    cursor: pointer;
+  }
+
+  .checkbox-label span {
+    cursor: pointer;
+  }
+
+  .audio-segment-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--bg-alt);
+    border-radius: 4px;
+  }
+
+  .audio-segment-inputs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .inp-time {
+    flex: 1;
+  }
+
+  .segment-dash {
+    color: var(--mut);
+    font-size: 0.875rem;
   }
 </style>

@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 import time
 import zipfile
+import hashlib
 
 import asyncio
 from pathlib import Path
@@ -5193,9 +5194,44 @@ def _songs_init_db():
         conn.close()
 
 
-def _analyze_audio(path: str) -> dict:
+def _clip_audio(path: str, start_sec: Optional[float], end_sec: Optional[float]) -> str:
+    """
+    Clip audio to a specific time range using ffmpeg.
+    Returns the path to the clipped audio file (temp file).
+    ponytail: if start/end are None, returns original path unchanged.
+    Never raises — returns original path on any ffmpeg error.
+    """
+    if start_sec is None and end_sec is None:
+        return path
+
+    try:
+        # Clamp values
+        start = max(0, float(start_sec) if start_sec is not None else 0)
+        end = float(end_sec) if end_sec is not None else None
+
+        # Create temp file for clipped audio
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as f:
+            tmp_path = f.name
+
+        ffmpeg_args = ["ffmpeg", "-y", "-i", path, "-vn"]
+        if start > 0:
+            ffmpeg_args.extend(["-ss", str(start)])
+        if end is not None and end > start:
+            duration = end - start
+            ffmpeg_args.extend(["-t", str(duration)])
+        ffmpeg_args.append(tmp_path)
+
+        subprocess.run(ffmpeg_args, capture_output=True, timeout=30, check=True)
+        return tmp_path
+    except Exception as e:
+        print(f"[analyze_audio] clip failed (non-fatal): {e}")
+        return path
+
+
+def _analyze_audio(path: str, start_sec: Optional[float] = None, end_sec: Optional[float] = None) -> dict:
     """
     Extract objective musical features from an audio file using librosa.
+    If start_sec/end_sec provided, clips audio to that range first via ffmpeg.
     Returns dict with: bpm, music_key, energy, duration_sec.
     mood/genre/tags are intentionally left None — use _suggest_music_tags for auto
     hints or let the user tag manually.
@@ -5204,11 +5240,20 @@ def _analyze_audio(path: str) -> dict:
     result: dict = {
         "bpm": None, "music_key": None, "energy": None, "duration_sec": None,
     }
+
+    # Clip audio if time range provided
+    audio_path = path
+    clip_tmp = None
+    if start_sec is not None or end_sec is not None:
+        audio_path = _clip_audio(path, start_sec, end_sec)
+        if audio_path != path:
+            clip_tmp = audio_path  # Track for cleanup
+
     try:
         import librosa
         import numpy as np
 
-        y, sr = librosa.load(path, sr=None, mono=True)
+        y, sr = librosa.load(audio_path, sr=None, mono=True)
         result["duration_sec"] = round(float(librosa.get_duration(y=y, sr=sr)), 2)
 
         # BPM — beat_track returns ndarray in librosa ≥0.10
@@ -5226,6 +5271,10 @@ def _analyze_audio(path: str) -> dict:
 
     except Exception as e:
         print(f"[songs] _analyze_audio error (non-fatal): {e}")
+    finally:
+        # Clean up temp clip file if created
+        if clip_tmp:
+            Path(clip_tmp).unlink(missing_ok=True)
 
     return result
 
@@ -5748,6 +5797,11 @@ class AnalyzeClaudeRequest(BaseModel):
     # "full" = download→frames→analysis→prompt; "frames_only" = redo frames+analysis,
     # skip prompt; "prompt_only" = regenerate gen_prompt from the stored analysis (no download).
     stages: str = "full"
+    # Audio analysis opt-in (default OFF, respects env ANALYZE_AUDIO_TAGS)
+    include_audio: bool = False
+    # Optional time segment for audio analysis (in seconds)
+    audio_start: Optional[float] = None
+    audio_end: Optional[float] = None
 
 
 # Storyboard schema (matched to Gemini analysis output)
@@ -6529,7 +6583,9 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
 
     # Fetch audio analysis for all platforms that provide downloaded video
     try:
-        if progress_id and ANALYZE_AUDIO_TAGS:
+        # Allow audio analysis when: (1) include_audio=true from request, OR (2) env ANALYZE_AUDIO_TAGS=1 (backward compat)
+        should_analyze_audio = req.include_audio or ANALYZE_AUDIO_TAGS
+        if progress_id and should_analyze_audio:
             _log_run(progress_id, f"🎵 Analisa audio…", start_time)
         # Use the downloaded video file from frame extraction
         tmp_video_dir = f"{ANALYZE_FRAME_DIR}/{run_id}"
@@ -6540,8 +6596,8 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
             if candidate.exists():
                 video_file = str(candidate)
                 break
-        if video_file and ANALYZE_AUDIO_TAGS:
-            audio_tags = _analyze_audio(video_file)
+        if video_file and should_analyze_audio:
+            audio_tags = _analyze_audio(video_file, req.audio_start, req.audio_end)
             if audio_tags and any(v is not None for v in audio_tags.values()):
                 if progress_id:
                     _log_run(progress_id, f"✓ Audio dianalisis", start_time)
@@ -7018,27 +7074,83 @@ def analyze_storyboard_status(youtube_url: str):
 
 
 @app.get("/analyze/gemini-brief")
-def analyze_gemini_brief(youtube_url: str):
+def analyze_gemini_brief(youtube_url: str, audio_start: Optional[float] = None, audio_end: Optional[float] = None):
     """
     Instruction builder for Gemini analysis via Antigravity MCP.
 
-    Returns a static instruction template telling the Gemini agent to:
+    Returns instruction template telling the Gemini agent to:
     1. Call reelbot MCP get_clips(youtube_url) to get local segment files
     2. Watch each segment, produce video analysis JSON, call save_analysis
     3. Watch each segment, produce per-scene storyboard JSON, call save_storyboard
 
-    Gemini writes BOTH analysis and storyboard in one pass. Claude analyze is
-    only a manual fallback (Re-analyze button) when Gemini has trouble.
+    If audio_start/audio_end provided: generates a Suno prompt instruction instead.
+    Gemini will analyze clipped audio and generate a jazz music prompt for Suno.
 
-    Query param: youtube_url
-    Returns: {"instruction": str, "youtube_url": str}
+    Query params: youtube_url, audio_start (optional), audio_end (optional)
+    Returns: {"instruction": str, "youtube_url": str, "audio_path": str (if Suno mode)}
     """
     try:
         _validate_source_url(youtube_url)
     except HTTPException:
         raise HTTPException(status_code=400, detail="invalid youtube_url")
 
-    instruction = f"""You are analyzing video clips for a short-form content project: producing BOTH a video analysis and a per-scene storyboard.
+    # Check if Suno mode (audio parameters provided)
+    is_suno_mode = audio_start is not None or audio_end is not None
+
+    if is_suno_mode:
+        # Suno prompt generation mode: clip audio, analyze with librosa, build instruction
+        audio_path = None
+        audio_hints = {}
+        try:
+            # Download and clip audio from YouTube
+            audio_path = _download_and_clip_audio_for_suno(youtube_url, audio_start, audio_end)
+            # Analyze audio with librosa for hints
+            audio_hints = _analyze_audio(audio_path, start_sec=None, end_sec=None)
+        except Exception as e:
+            print(f"[analyze_gemini_brief] audio prep failed (non-fatal): {e}")
+            # Continue with empty hints if audio analysis fails
+
+        # Build Suno instruction
+        hints_text = _format_audio_hints_for_suno(audio_hints)
+        instruction = f"""You are analyzing audio to generate a music creation prompt for Suno.
+
+RULES:
+- You have EXACTLY ONE MCP tool available: `get_audio_for_suno`. Use it once to fetch the clipped audio file.
+- The audio file is a real audio file that you MUST LISTEN TO carefully.
+- Do NOT search, read code, call other tools, open a browser, or run commands.
+- CRITICAL: base your music prompt on what you ACTUALLY HEAR in the audio. If you cannot hear the audio, STOP and report the error.
+
+Task:
+STEP 1: Call reelbot MCP tool `get_audio_for_suno` with youtube_url="{youtube_url}" to get the local audio file path.
+
+STEP 2: Listen to the audio file carefully. Analyze:
+- Genre / style indicators
+- Tempo / BPM
+- Mood / emotion
+- Instrumentation / sounds present
+
+STEP 3: Generate a Suno music prompt that recreates this audio as a JAZZ track. The prompt must be:
+- Specific (mention actual instruments, tempo, mood you heard)
+- Between 50-150 words
+- Ready to paste directly into Suno
+
+Return a JSON object with:
+{{"audio_analysis": {{"genre": "str", "tempo": "str", "mood": "str", "instruments": "str"}}, "suno_prompt": "str"}}
+
+LIBROSA HINTS (use as reference, verify by listening):
+{hints_text}
+
+Execute step 1, listen carefully in step 2, then output the JSON with your analysis and Suno prompt."""
+
+        return {
+            "instruction": instruction,
+            "youtube_url": youtube_url,
+            "audio_path": audio_path,
+            "is_suno_mode": True
+        }
+    else:
+        # Original video analysis + storyboard mode
+        instruction = f"""You are analyzing video clips for a short-form content project: producing BOTH a video analysis and a per-scene storyboard.
 
 RULES:
 - You have EXACTLY THREE MCP tools available: `get_clips`, `save_analysis`, and `save_storyboard`. Use them in that order only.
@@ -7064,10 +7176,106 @@ STORYBOARD JSON SCHEMA (for STEP 3 — output must match this exactly):
 
 Execute steps 1, 2, and 3 in order. Use only the three MCP tools."""
 
-    return {
-        "instruction": instruction,
-        "youtube_url": youtube_url
-    }
+        return {
+            "instruction": instruction,
+            "youtube_url": youtube_url
+        }
+
+
+def _suno_audio_path(youtube_url: str) -> str:
+    """
+    Compute a deterministic path for Suno audio clips keyed by youtube_url.
+
+    IMPORTANT: This path computation MUST match the identical function in mcp/reelbot_mcp.py.
+    If you modify this, update the MCP tool's version as well so both can find the file.
+
+    Args:
+        youtube_url: YouTube URL (may contain query params)
+
+    Returns:
+        Absolute path: output/suno_audio/<sha1_hash>.mp3
+    """
+    # Normalize URL by removing trailing whitespace
+    normalized = youtube_url.strip()
+    # Create SHA1 hash of the URL (includes params, so different clips get different files)
+    url_hash = hashlib.sha1(normalized.encode()).hexdigest()
+    # Return deterministic path: output/suno_audio/<hash>.mp3
+    suno_dir = _REPO_ROOT / "output" / "suno_audio"
+    suno_dir.mkdir(parents=True, exist_ok=True)
+    return str(suno_dir / f"{url_hash}.mp3")
+
+
+def _download_and_clip_audio_for_suno(youtube_url: str, audio_start: Optional[float], audio_end: Optional[float]) -> str:
+    """
+    Download audio from YouTube, clip to [audio_start, audio_end] range, and save to deterministic path.
+    Returns path to clipped audio file at output/suno_audio/<url_hash>.mp3.
+    Raises on download/ffmpeg failure.
+
+    The output path is deterministic (keyed by youtube_url) so the MCP tool get_audio_for_suno
+    can locate the file later using the same URL.
+    """
+    # Compute deterministic output path (keyed by URL)
+    output_path = _suno_audio_path(youtube_url)
+
+    # Create temp directory for downloads (intermediate files)
+    tmp_dir = tempfile.mkdtemp(prefix="suno_audio_download_")
+
+    try:
+        # Download audio using yt-dlp
+        output_template = f"{tmp_dir}/audio.%(ext)s"
+        result = subprocess.run([
+            "yt-dlp",
+            "-x",
+            "--audio-format", "mp3",
+            "--audio-quality", "5",
+            "-o", output_template,
+            "--no-playlist",
+            youtube_url
+        ], capture_output=True, timeout=120, check=True, text=True)
+
+        # Find downloaded file
+        audio_files = list(Path(tmp_dir).glob("audio.*"))
+        if not audio_files:
+            raise Exception("Downloaded audio file not found")
+
+        downloaded_path = str(audio_files[0])
+
+        # Clip if time range provided; otherwise move to output path
+        if audio_start is not None or audio_end is not None:
+            clipped_path = _clip_audio(downloaded_path, audio_start, audio_end)
+        else:
+            clipped_path = downloaded_path
+
+        # Move clipped audio to deterministic output path
+        shutil.move(clipped_path, output_path)
+
+        return output_path
+    except subprocess.CalledProcessError as e:
+        raise Exception(f"yt-dlp download failed: {e.stderr}")
+    finally:
+        # Clean up temp download directory
+        try:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+        except Exception:
+            pass
+
+
+def _format_audio_hints_for_suno(audio_hints: dict) -> str:
+    """Format librosa analysis results as hints text for Suno instruction."""
+    if not audio_hints or all(v is None for v in audio_hints.values()):
+        return "(Audio analysis unavailable — rely on your listening)"
+
+    parts = []
+    if audio_hints.get("bpm"):
+        parts.append(f"- BPM: {audio_hints['bpm']}")
+    if audio_hints.get("music_key"):
+        parts.append(f"- Key: {audio_hints['music_key']}")
+    if audio_hints.get("energy"):
+        parts.append(f"- Energy: {audio_hints['energy']}")
+    if audio_hints.get("duration_sec"):
+        parts.append(f"- Duration: {audio_hints['duration_sec']}s")
+
+    return "\n".join(parts) if parts else "(Audio analysis unavailable — rely on your listening)"
 
 
 @app.get("/sources/frames")
@@ -8004,6 +8212,9 @@ async def upload_source_async(
     file: UploadFile = File(...),
     intent: str = Form(default=""),
     output_format: str = Form(default="none"),
+    include_audio: str = Form(default="false"),
+    audio_start: Optional[str] = Form(default=None),
+    audio_end: Optional[str] = Form(default=None),
     request: Request = None,
     bg: BackgroundTasks = None,
 ):
@@ -8056,6 +8267,21 @@ async def upload_source_async(
     source_key = f"file://{file_id}"
     intent = (intent or "").strip()
     safe_intent = re.sub(r"[^\w\s\-.,!?()]", "", intent)[:500] if intent else "tidak ada instruksi khusus"
+
+    # Parse audio analysis options
+    should_include_audio = include_audio.lower() == "true"
+    audio_start_sec = None
+    audio_end_sec = None
+    try:
+        if audio_start and audio_start.strip():
+            audio_start_sec = float(audio_start)
+    except (ValueError, AttributeError):
+        pass
+    try:
+        if audio_end and audio_end.strip():
+            audio_end_sec = float(audio_end)
+    except (ValueError, AttributeError):
+        pass
 
     # Start async job
     run_id = str(uuid.uuid4())
@@ -8116,9 +8342,11 @@ async def upload_source_async(
             # Analyze audio (uploads don't have transcripts, only audio)
             audio_tags = None
             try:
-                if ANALYZE_AUDIO_TAGS:
+                # Allow audio analysis when: (1) include_audio=true from request, OR (2) env ANALYZE_AUDIO_TAGS=1 (backward compat)
+                should_analyze_audio = should_include_audio or ANALYZE_AUDIO_TAGS
+                if should_analyze_audio:
                     _log_run(run_id, f"🎵 Analisa audio…", start_time)
-                    audio_tags = _analyze_audio(str(video_path))
+                    audio_tags = _analyze_audio(str(video_path), audio_start_sec, audio_end_sec)
                     if audio_tags and any(v is not None for v in audio_tags.values()):
                         _log_run(run_id, f"✓ Audio dianalisis", start_time)
             except Exception as exc:
