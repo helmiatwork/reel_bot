@@ -1417,9 +1417,12 @@ def get_frames(req: FramesRequest):
         output_template = f"{tmp_dir}/source_video.%(ext)s"
         proc = subprocess.run(
             [
-                "yt-dlp",
+                # ponytail: venv interpreter's yt_dlp has curl_cffi for --impersonate.
+                sys.executable, "-m", "yt_dlp",
                 "-f", "bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/best[ext=mp4][height<=480]/best[height<=480]/best",
                 "--merge-output-format", "mp4",
+                # YouTube 403s bare yt-dlp (bot-check); impersonate a real browser.
+                "--impersonate", "chrome",
                 "--retries", "5", "--fragment-retries", "5",
                 "--socket-timeout", "30",
                 "--max-filesize", "500M",
@@ -7229,10 +7232,14 @@ def _download_and_clip_audio_for_suno(youtube_url: str, audio_start: Optional[fl
         # Download audio using yt-dlp
         output_template = f"{tmp_dir}/audio.%(ext)s"
         result = subprocess.run([
-            "yt-dlp",
+            # ponytail: venv interpreter's yt_dlp has curl_cffi for --impersonate;
+            # bare "yt-dlp" on PATH is a pyenv shim without it.
+            sys.executable, "-m", "yt_dlp",
             "-x",
             "--audio-format", "mp3",
             "--audio-quality", "5",
+            # YouTube 403s bare yt-dlp (bot-check); impersonate a real browser.
+            "--impersonate", "chrome",
             "-o", output_template,
             "--no-playlist",
             youtube_url
@@ -7256,7 +7263,11 @@ def _download_and_clip_audio_for_suno(youtube_url: str, audio_start: Optional[fl
 
         return output_path
     except subprocess.CalledProcessError as e:
-        raise Exception(f"yt-dlp download failed: {e.stderr}")
+        # Surface the real ERROR line, not the leading yt-dlp version WARNING.
+        stderr = (e.stderr or "").strip()
+        err_lines = [l for l in stderr.splitlines() if l.strip().startswith("ERROR")]
+        msg = err_lines[-1] if err_lines else (stderr.splitlines()[-1] if stderr else str(e))
+        raise Exception(f"yt-dlp download failed: {msg}")
     finally:
         # Clean up temp download directory
         try:
