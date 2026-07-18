@@ -5847,9 +5847,12 @@ ANALYSIS_JSON_SCHEMA = """{
       "role": "str — their role in the video",
       "gender": "str — perceived gender presentation",
       "age_range": "str — approximate age range, e.g. '25-30'",
-      "build": "str — body build and posture (slim/athletic/heavyset), height impression (short/medium/tall)",
-      "skin_tone": "str — skin tone",
-      "hair": "str — length, color, style, bangs, facial hair",
+      "build": "str — SHORT: body build (slim/athletic/heavyset)",
+      "height": "str — SHORT: height impression (pendek/sedang/tinggi)",
+      "skin_tone": "str — SHORT: skin tone (e.g. terang/sawo matang/gelap)",
+      "hair_color": "str — SHORT: hair color only (e.g. coklat/hitam)",
+      "eye_color": "str — SHORT: eye color only (e.g. hitam/coklat)",
+      "hair": "str — full hair description: length, style, bangs, facial hair",
       "face": "str — face shape, eyes, eyebrows, nose, lips, expression/demeanor",
       "distinguishing_features": "str — glasses, tattoos, moles, jewelry, nail color, scars; write 'tidak terlihat' if none",
       "wardrobe": "str — DETAILED clothing and accessories (colors, garment types, logos, jewelry, headwear)",
@@ -7614,9 +7617,10 @@ def get_source_analysis(source_id: int):
                 for p in rp if isinstance(p, dict) and "start" in p and "end" in p
             ] if isinstance(rp, list) else []
             ch = raw.get("characters")
-            _char_keys = ("name", "role", "gender", "age_range", "build", "skin_tone",
-                          "hair", "face", "distinguishing_features", "appearance",
-                          "wardrobe", "recreation_prompt")
+            _char_keys = ("name", "role", "gender", "age_range", "build", "height",
+                          "skin_tone", "hair_color", "eye_color", "hair", "face",
+                          "distinguishing_features", "appearance", "wardrobe",
+                          "recreation_prompt")
             resp["characters"] = [
                 {k: c.get(k, "") for k in _char_keys if c.get(k)}
                 for c in ch if isinstance(c, dict) and (c.get("name") or c.get("appearance") or c.get("recreation_prompt"))

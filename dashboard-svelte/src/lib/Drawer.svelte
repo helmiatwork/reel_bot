@@ -736,7 +736,16 @@
                         {#if c.gender}<span class="score-badge">{c.gender}</span>{/if}
                         {#if c.age_range}<span class="score-badge">{c.age_range} th</span>{/if}
                       </div>
-                      {#each [['build','Build'],['skin_tone','Kulit'],['hair','Rambut'],['face','Wajah'],['distinguishing_features','Ciri khas'],['appearance','Penampilan'],['wardrobe','Wardrobe']] as [k, label]}
+                      {#if c.build || c.height || c.skin_tone || c.hair_color || c.eye_color}
+                        <table class="char-attr-table">
+                          <tbody>
+                            {#each [['build','Build'],['height','Tinggi'],['skin_tone','Kulit'],['hair_color','Rambut'],['eye_color','Mata']] as [k, label]}
+                              {#if c[k]}<tr><td class="attr-k">{label}</td><td class="attr-v">{c[k]}</td></tr>{/if}
+                            {/each}
+                          </tbody>
+                        </table>
+                      {/if}
+                      {#each [['hair','Gaya rambut'],['face','Wajah'],['distinguishing_features','Ciri khas'],['appearance','Penampilan'],['wardrobe','Wardrobe']] as [k, label]}
                         {#if c[k]}<div class="char-line"><span class="char-key">{label}</span><span class="char-val">{c[k]}</span></div>{/if}
                       {/each}
                       {#if c.recreation_prompt}
@@ -747,7 +756,7 @@
                         </div>
                       {/if}
                       <div class="ana-btn-row">
-                        <button class="ana-copy-btn" onclick={() => copyPrompt([c.name, c.role, c.gender, c.age_range, c.build, c.skin_tone, c.hair, c.face, c.distinguishing_features, c.appearance, c.wardrobe].filter(Boolean).join(' · '))}>{copiedPrompt ? '✓ Tersalin' : 'Salin semua'}</button>
+                        <button class="ana-copy-btn" onclick={() => copyPrompt([c.name, c.role, c.gender, c.age_range, c.build, c.height, c.skin_tone, c.hair_color, c.eye_color, c.hair, c.face, c.distinguishing_features, c.appearance, c.wardrobe].filter(Boolean).join(' · '))}>{copiedPrompt ? '✓ Tersalin' : 'Salin semua'}</button>
                       </div>
                     </div>
                   {/each}
@@ -1351,6 +1360,10 @@
   .char-line { display:flex; gap:8px; font-size:12.5px; line-height:1.55; margin-bottom:5px; }
   .char-key { flex:0 0 80px; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--mut); padding-top:2px; }
   .char-val { flex:1; color:var(--txt); word-break:break-word; }
+  .char-attr-table { width:100%; border-collapse:collapse; margin-bottom:8px; font-size:12.5px; }
+  .char-attr-table td { padding:5px 8px; border:1px solid var(--line); }
+  .char-attr-table .attr-k { width:90px; font-weight:600; color:var(--mut); background:var(--soft); text-transform:capitalize; }
+  .char-attr-table .attr-v { color:var(--txt); text-transform:capitalize; }
   .char-recreate { margin-top:8px; padding:10px; background:rgba(64,81,137,.06); border:1px solid rgba(64,81,137,.2); border-radius:6px; }
   .char-recreate-body { font-size:12.5px; line-height:1.55; color:var(--txt); word-break:break-word; }
 
