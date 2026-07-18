@@ -733,12 +733,21 @@
                       <div class="char-head">
                         <span class="char-name">{c.name || 'Karakter'}</span>
                         {#if c.role}<span class="char-role">{c.role}</span>{/if}
+                        {#if c.gender}<span class="score-badge">{c.gender}</span>{/if}
                         {#if c.age_range}<span class="score-badge">{c.age_range} th</span>{/if}
                       </div>
-                      {#if c.appearance}<div class="char-line"><span class="char-key">Penampilan</span><span class="char-val">{c.appearance}</span></div>{/if}
-                      {#if c.wardrobe}<div class="char-line"><span class="char-key">Wardrobe</span><span class="char-val">{c.wardrobe}</span></div>{/if}
+                      {#each [['build','Build'],['skin_tone','Kulit'],['hair','Rambut'],['face','Wajah'],['distinguishing_features','Ciri khas'],['appearance','Penampilan'],['wardrobe','Wardrobe']] as [k, label]}
+                        {#if c[k]}<div class="char-line"><span class="char-key">{label}</span><span class="char-val">{c[k]}</span></div>{/if}
+                      {/each}
+                      {#if c.recreation_prompt}
+                        <div class="char-recreate">
+                          <div class="char-key" style="flex:none;margin-bottom:4px">Prompt recreate (AI gen)</div>
+                          <div class="char-recreate-body">{c.recreation_prompt}</div>
+                          <button class="ana-copy-btn" style="margin-top:6px" onclick={() => copyPrompt(c.recreation_prompt)}>{copiedPrompt ? '✓ Tersalin' : 'Salin prompt recreate'}</button>
+                        </div>
+                      {/if}
                       <div class="ana-btn-row">
-                        <button class="ana-copy-btn" onclick={() => copyPrompt([c.name, c.role, c.age_range, c.appearance, c.wardrobe].filter(Boolean).join(' · '))}>{copiedPrompt ? '✓ Tersalin' : 'Salin karakter'}</button>
+                        <button class="ana-copy-btn" onclick={() => copyPrompt([c.name, c.role, c.gender, c.age_range, c.build, c.skin_tone, c.hair, c.face, c.distinguishing_features, c.appearance, c.wardrobe].filter(Boolean).join(' · '))}>{copiedPrompt ? '✓ Tersalin' : 'Salin semua'}</button>
                       </div>
                     </div>
                   {/each}
@@ -1342,6 +1351,8 @@
   .char-line { display:flex; gap:8px; font-size:12.5px; line-height:1.55; margin-bottom:5px; }
   .char-key { flex:0 0 80px; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--mut); padding-top:2px; }
   .char-val { flex:1; color:var(--txt); word-break:break-word; }
+  .char-recreate { margin-top:8px; padding:10px; background:rgba(64,81,137,.06); border:1px solid rgba(64,81,137,.2); border-radius:6px; }
+  .char-recreate-body { font-size:12.5px; line-height:1.55; color:var(--txt); word-break:break-word; }
 
   /* Analisa tab button rows */
   .ana-btn-row { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
