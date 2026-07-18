@@ -306,12 +306,16 @@
       // Claude is only a manual fallback via the Re-analyze button in the drawer.
       // If audio_start/audio_end provided: generates Suno prompt instruction instead.
       storyboardPhase = 'brief'
+      // When Suno is checked, ALWAYS send audio params so the backend serves the
+      // Suno brief — not the decompose brief. A blank start/end defaults to a
+      // 30s window from 0 (enough for music analysis) instead of silently
+      // falling back to the video-decompose flow, which confused Gemini.
       const briefOptions = {}
-      if (includeAudio && audioStart.trim()) {
-        briefOptions.audio_start = parseFloat(audioStart)
-      }
-      if (includeAudio && audioEnd.trim()) {
-        briefOptions.audio_end = parseFloat(audioEnd)
+      if (includeAudio) {
+        briefOptions.audio_start = audioStart.trim() ? parseFloat(audioStart) : 0
+        briefOptions.audio_end = audioEnd.trim()
+          ? parseFloat(audioEnd)
+          : briefOptions.audio_start + 30
       }
       const result = await api.getGeminiBrief(urlInput.trim(), briefOptions)
       if (result?.instruction) {
