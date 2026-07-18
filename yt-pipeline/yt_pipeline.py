@@ -200,7 +200,9 @@ def get_video_info(youtube_url: str) -> dict:
     print(f"\n[Step 1a] Fetching video info: {youtube_url}")
 
     result = subprocess.run([
-        "yt-dlp",
+        # ponytail: venv interpreter's yt_dlp (curl_cffi) for consistency with the
+        # download paths; metadata rarely 403s but keep one code path.
+        sys.executable, "-m", "yt_dlp",
         "--dump-json",              # metadata only, no download
         "--no-playlist",            # single video only
         youtube_url
