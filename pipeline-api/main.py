@@ -5193,9 +5193,44 @@ def _songs_init_db():
         conn.close()
 
 
-def _analyze_audio(path: str) -> dict:
+def _clip_audio(path: str, start_sec: Optional[float], end_sec: Optional[float]) -> str:
+    """
+    Clip audio to a specific time range using ffmpeg.
+    Returns the path to the clipped audio file (temp file).
+    ponytail: if start/end are None, returns original path unchanged.
+    Never raises — returns original path on any ffmpeg error.
+    """
+    if start_sec is None and end_sec is None:
+        return path
+
+    try:
+        # Clamp values
+        start = max(0, float(start_sec) if start_sec is not None else 0)
+        end = float(end_sec) if end_sec is not None else None
+
+        # Create temp file for clipped audio
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as f:
+            tmp_path = f.name
+
+        ffmpeg_args = ["ffmpeg", "-y", "-i", path, "-vn"]
+        if start > 0:
+            ffmpeg_args.extend(["-ss", str(start)])
+        if end is not None and end > start:
+            duration = end - start
+            ffmpeg_args.extend(["-t", str(duration)])
+        ffmpeg_args.append(tmp_path)
+
+        subprocess.run(ffmpeg_args, capture_output=True, timeout=30, check=True)
+        return tmp_path
+    except Exception as e:
+        print(f"[analyze_audio] clip failed (non-fatal): {e}")
+        return path
+
+
+def _analyze_audio(path: str, start_sec: Optional[float] = None, end_sec: Optional[float] = None) -> dict:
     """
     Extract objective musical features from an audio file using librosa.
+    If start_sec/end_sec provided, clips audio to that range first via ffmpeg.
     Returns dict with: bpm, music_key, energy, duration_sec.
     mood/genre/tags are intentionally left None — use _suggest_music_tags for auto
     hints or let the user tag manually.
@@ -5204,11 +5239,20 @@ def _analyze_audio(path: str) -> dict:
     result: dict = {
         "bpm": None, "music_key": None, "energy": None, "duration_sec": None,
     }
+
+    # Clip audio if time range provided
+    audio_path = path
+    clip_tmp = None
+    if start_sec is not None or end_sec is not None:
+        audio_path = _clip_audio(path, start_sec, end_sec)
+        if audio_path != path:
+            clip_tmp = audio_path  # Track for cleanup
+
     try:
         import librosa
         import numpy as np
 
-        y, sr = librosa.load(path, sr=None, mono=True)
+        y, sr = librosa.load(audio_path, sr=None, mono=True)
         result["duration_sec"] = round(float(librosa.get_duration(y=y, sr=sr)), 2)
 
         # BPM — beat_track returns ndarray in librosa ≥0.10
@@ -5226,6 +5270,10 @@ def _analyze_audio(path: str) -> dict:
 
     except Exception as e:
         print(f"[songs] _analyze_audio error (non-fatal): {e}")
+    finally:
+        # Clean up temp clip file if created
+        if clip_tmp:
+            Path(clip_tmp).unlink(missing_ok=True)
 
     return result
 
@@ -5748,6 +5796,11 @@ class AnalyzeClaudeRequest(BaseModel):
     # "full" = download→frames→analysis→prompt; "frames_only" = redo frames+analysis,
     # skip prompt; "prompt_only" = regenerate gen_prompt from the stored analysis (no download).
     stages: str = "full"
+    # Audio analysis opt-in (default OFF, respects env ANALYZE_AUDIO_TAGS)
+    include_audio: bool = False
+    # Optional time segment for audio analysis (in seconds)
+    audio_start: Optional[float] = None
+    audio_end: Optional[float] = None
 
 
 # Storyboard schema (matched to Gemini analysis output)
@@ -6529,7 +6582,9 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
 
     # Fetch audio analysis for all platforms that provide downloaded video
     try:
-        if progress_id and ANALYZE_AUDIO_TAGS:
+        # Allow audio analysis when: (1) include_audio=true from request, OR (2) env ANALYZE_AUDIO_TAGS=1 (backward compat)
+        should_analyze_audio = req.include_audio or ANALYZE_AUDIO_TAGS
+        if progress_id and should_analyze_audio:
             _log_run(progress_id, f"🎵 Analisa audio…", start_time)
         # Use the downloaded video file from frame extraction
         tmp_video_dir = f"{ANALYZE_FRAME_DIR}/{run_id}"
@@ -6540,8 +6595,8 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
             if candidate.exists():
                 video_file = str(candidate)
                 break
-        if video_file and ANALYZE_AUDIO_TAGS:
-            audio_tags = _analyze_audio(video_file)
+        if video_file and should_analyze_audio:
+            audio_tags = _analyze_audio(video_file, req.audio_start, req.audio_end)
             if audio_tags and any(v is not None for v in audio_tags.values()):
                 if progress_id:
                     _log_run(progress_id, f"✓ Audio dianalisis", start_time)
@@ -8004,6 +8059,9 @@ async def upload_source_async(
     file: UploadFile = File(...),
     intent: str = Form(default=""),
     output_format: str = Form(default="none"),
+    include_audio: str = Form(default="false"),
+    audio_start: Optional[str] = Form(default=None),
+    audio_end: Optional[str] = Form(default=None),
     request: Request = None,
     bg: BackgroundTasks = None,
 ):
@@ -8056,6 +8114,21 @@ async def upload_source_async(
     source_key = f"file://{file_id}"
     intent = (intent or "").strip()
     safe_intent = re.sub(r"[^\w\s\-.,!?()]", "", intent)[:500] if intent else "tidak ada instruksi khusus"
+
+    # Parse audio analysis options
+    should_include_audio = include_audio.lower() == "true"
+    audio_start_sec = None
+    audio_end_sec = None
+    try:
+        if audio_start and audio_start.strip():
+            audio_start_sec = float(audio_start)
+    except (ValueError, AttributeError):
+        pass
+    try:
+        if audio_end and audio_end.strip():
+            audio_end_sec = float(audio_end)
+    except (ValueError, AttributeError):
+        pass
 
     # Start async job
     run_id = str(uuid.uuid4())
@@ -8116,9 +8189,11 @@ async def upload_source_async(
             # Analyze audio (uploads don't have transcripts, only audio)
             audio_tags = None
             try:
-                if ANALYZE_AUDIO_TAGS:
+                # Allow audio analysis when: (1) include_audio=true from request, OR (2) env ANALYZE_AUDIO_TAGS=1 (backward compat)
+                should_analyze_audio = should_include_audio or ANALYZE_AUDIO_TAGS
+                if should_analyze_audio:
                     _log_run(run_id, f"🎵 Analisa audio…", start_time)
-                    audio_tags = _analyze_audio(str(video_path))
+                    audio_tags = _analyze_audio(str(video_path), audio_start_sec, audio_end_sec)
                     if audio_tags and any(v is not None for v in audio_tags.values()):
                         _log_run(run_id, f"✓ Audio dianalisis", start_time)
             except Exception as exc:
