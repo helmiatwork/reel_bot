@@ -26,6 +26,18 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [520, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/performance/check-targets",
+        "options": { "timeout": 300000 }
+      },
+      "id": "perf-check",
+      "name": "POST /performance/check-targets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [780, 300]
     }
   ],
   "connections": {
@@ -35,9 +47,16 @@
           { "node": "POST /performance/refresh", "type": "main", "index": 0 }
         ]
       ]
+    },
+    "POST /performance/refresh": {
+      "main": [
+        [
+          { "node": "POST /performance/check-targets", "type": "main", "index": 0 }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": { "executionOrder": "v1" },
-  "meta": { "note": "Runs daily 09:00: POSTs /performance/refresh so pipeline-api fetches current view counts for every posted video and upserts one snapshot per url per day (performance_snapshots). Import + activate in the n8n UI (localhost:5678) or via `n8n import:workflow`." }
+  "meta": { "note": "Runs daily 09:00: (1) POST /performance/refresh — fetch current view counts for every posted video, one snapshot per url per day; then (2) POST /performance/check-targets — flag posts below their view target past the horizon, generate an improvement suggestion, and notify (Telegram + dashboard bell). Import + activate in the n8n UI (localhost:5678)." }
 }
