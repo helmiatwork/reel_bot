@@ -5847,6 +5847,7 @@ ANALYSIS_JSON_SCHEMA = """{
       "role": "str — their role in the video",
       "gender": "str — perceived gender presentation",
       "age_range": "str — approximate age range, e.g. '25-30'",
+      "nationality": "str — nationality/origin ONLY if stated or clearly evident in the video (narration, on-screen text, flag, spoken language); do NOT guess from facial appearance. Write 'tidak disebutkan' if not indicated.",
       "build": "str — SHORT: body build in Indonesian (kurus/sedang/berisi/gemuk/atletis)",
       "height": "str — SHORT: height impression (pendek/sedang/tinggi)",
       "skin_tone": "str — SHORT: skin tone (e.g. terang/sawo matang/gelap)",
@@ -7629,7 +7630,7 @@ def get_source_analysis(source_id: int):
                 for p in rp if isinstance(p, dict) and "start" in p and "end" in p
             ] if isinstance(rp, list) else []
             ch = raw.get("characters")
-            _char_keys = ("name", "role", "gender", "age_range", "build", "height",
+            _char_keys = ("name", "role", "gender", "age_range", "nationality", "build", "height",
                           "skin_tone", "face_shape", "eyebrows", "eye_color", "nose",
                           "lips", "lip_color", "hair_color", "hair_texture", "hairstyle", "facial_hair",
                           "glasses", "expression", "hair", "face", "distinguishing_features",
