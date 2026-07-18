@@ -162,6 +162,8 @@
   let sceneJsonModal = $state(null)
   let videoRef = $state(null)
   let anaVideoRef = $state(null)
+  // Analisa sub-tab: 'hookret' (Hook & Retention) | 'overall' (Tags/Struktur/Ringkas/Detail)
+  let anaSubTab = $state('hookret')
 
   // Extract video_id from youtube_url (handle v=, /shorts/, or last path segment)
   function extractVideoId(url) {
@@ -300,6 +302,7 @@
     reanalyzeDone = false
     lightboxSrc = null
     activeTab = 'analisa'
+    anaSubTab = 'hookret'
     showRawJson = false
     d = v
     frames = []
@@ -629,83 +632,98 @@
               </div>
             {/if}
             <div class="verify-right">
-          {#if analysis.tags?.length}
-            <div class="ana-card">
-              <div class="ana-label">Tags</div>
-              <div class="tags-row">
-                {#each analysis.tags as t}
-                  <span class="tag" style="background: hsl({tagHue(t)} 70% 92%); color: hsl({tagHue(t)} 55% 32%); border-color: hsl({tagHue(t)} 55% 80%)">{t}</span>
-                {/each}
+              <div class="ana-subtabs">
+                <button class="ana-subtab {anaSubTab === 'hookret' ? 'active' : ''}" onclick={() => anaSubTab = 'hookret'}>Hook &amp; Retention</button>
+                <button class="ana-subtab {anaSubTab === 'overall' ? 'active' : ''}" onclick={() => anaSubTab = 'overall'}>Overall</button>
               </div>
-            </div>
-          {/if}
-          <!-- Analysis section cards -->
-          {#if analysis.hook}
-            {@const hookStart = analysis.hook_start || (scenes.length ? scenes[0].start : null)}
-            {@const hookEnd = analysis.hook_end || (scenes.length ? scenes[0].end : null)}
-            <div class="ana-card">
-              <div class="ana-label">
-                Hook
-                {#if hookStart && hookEnd}<span class="score-badge">{hookStart}–{hookEnd}</span>{/if}
-              </div>
-              <div class="ana-body">{analysis.hook}</div>
-              <div class="ana-btn-row">
-                {#if hookStart && hookEnd && anaVideoId}<button class="ana-play-btn" onclick={() => playAna(timeToSeconds(hookStart), timeToSeconds(hookEnd))}>▶ Putar hook</button>{/if}
-                <button class="ana-copy-btn" onclick={() => copyPrompt(analysis.hook)}>{copiedPrompt ? '✓ Tersalin' : 'Salin teks'}</button>
-              </div>
-            </div>
-          {/if}
-          {#if analysis.retention}
-            {@const rp = toPoints(analysis.retention)}
-            <div class="ana-card">
-              <div class="ana-label">
-                Retention
-                {#if analysis.retention_score}<span class="score-badge">{analysis.retention_score}/10</span>{/if}
-              </div>
-              {#if analysis.retention_points?.length}
-                {#each analysis.retention_points as p}
-                  <div class="ana-rp-row">
-                    <button class="ana-rp-btn" onclick={() => anaVideoId && playAna(timeToSeconds(p.start), timeToSeconds(p.end))} disabled={!anaVideoId} title={anaVideoId ? `Putar ${p.start}–${p.end}` : 'Video tidak tersedia'}>▶</button>
-                    <span class="ana-rp-reason">{p.reason}</span>
-                    <span class="ana-rp-time">{p.start}–{p.end}</span>
+
+              {#if anaSubTab === 'hookret'}
+                {#if analysis.hook}
+                  {@const hookStart = analysis.hook_start || (scenes.length ? scenes[0].start : null)}
+                  {@const hookEnd = analysis.hook_end || (scenes.length ? scenes[0].end : null)}
+                  <div class="ana-card">
+                    <div class="ana-label">
+                      Hook
+                      {#if hookStart && hookEnd}<span class="score-badge">{hookStart}–{hookEnd}</span>{/if}
+                    </div>
+                    <div class="ana-body">{analysis.hook}</div>
+                    <div class="ana-btn-row">
+                      {#if hookStart && hookEnd && anaVideoId}<button class="ana-play-btn" onclick={() => playAna(timeToSeconds(hookStart), timeToSeconds(hookEnd))}>▶ Putar hook</button>{/if}
+                      <button class="ana-copy-btn" onclick={() => copyPrompt(analysis.hook)}>{copiedPrompt ? '✓ Tersalin' : 'Salin teks'}</button>
+                    </div>
                   </div>
-                {/each}
-              {:else if rp}
-                {#if rp.lead}<div class="ana-lead">{rp.lead}</div>{/if}
-                <ol class="ana-points">{#each rp.items as it}<li>{it}</li>{/each}</ol>
-              {:else}
-                <div class="ana-body">{analysis.retention}</div>
+                {/if}
+                {#if analysis.retention}
+                  {@const rp = toPoints(analysis.retention)}
+                  <div class="ana-card">
+                    <div class="ana-label">
+                      Retention
+                      {#if analysis.retention_score}<span class="score-badge">{analysis.retention_score}/10</span>{/if}
+                    </div>
+                    {#if analysis.retention_points?.length}
+                      {#each analysis.retention_points as p}
+                        <div class="ana-rp-row">
+                          <button class="ana-rp-btn" onclick={() => anaVideoId && playAna(timeToSeconds(p.start), timeToSeconds(p.end))} disabled={!anaVideoId} title={anaVideoId ? `Putar ${p.start}–${p.end}` : 'Video tidak tersedia'}>▶</button>
+                          <span class="ana-rp-reason">{p.reason}</span>
+                          <span class="ana-rp-time">{p.start}–{p.end}</span>
+                        </div>
+                      {/each}
+                    {:else if rp}
+                      {#if rp.lead}<div class="ana-lead">{rp.lead}</div>{/if}
+                      <ol class="ana-points">{#each rp.items as it}<li>{it}</li>{/each}</ol>
+                    {:else}
+                      <div class="ana-body">{analysis.retention}</div>
+                    {/if}
+                    <div class="ana-btn-row">
+                      {#if scenes.length && anaVideoId}<button class="ana-play-btn" onclick={() => playAna(timeToSeconds(scenes[0].start), timeToSeconds(scenes[scenes.length-1].end))}>▶ Putar full</button>{/if}
+                      <button class="ana-copy-btn" onclick={() => copyPrompt(analysis.retention)}>{copiedPrompt ? '✓ Tersalin' : 'Salin teks'}</button>
+                    </div>
+                  </div>
+                {/if}
+                {#if !analysis.hook && !analysis.retention}
+                  <div class="mut" style="font-size:12px;padding:8px 0">Belum ada data hook/retention. Re-analyze via Antigravity untuk mengisinya.</div>
+                {/if}
               {/if}
-              <div class="ana-btn-row">
-                {#if scenes.length && anaVideoId}<button class="ana-play-btn" onclick={() => playAna(timeToSeconds(scenes[0].start), timeToSeconds(scenes[scenes.length-1].end))}>▶ Putar full</button>{/if}
-                <button class="ana-copy-btn" onclick={() => copyPrompt(analysis.retention)}>{copiedPrompt ? '✓ Tersalin' : 'Salin teks'}</button>
-              </div>
-            </div>
-          {/if}
-          {#if analysis.structure}
-            {@const sp = toPoints(analysis.structure)}
-            <div class="ana-card">
-              <div class="ana-label">Struktur</div>
-              {#if sp}
-                {#if sp.lead}<div class="ana-lead">{sp.lead}</div>{/if}
-                <ol class="ana-points">{#each sp.items as it}<li>{it}</li>{/each}</ol>
-              {:else}
-                <div class="ana-body">{analysis.structure}</div>
+
+              {#if anaSubTab === 'overall'}
+                {#if analysis.tags?.length}
+                  <div class="ana-card">
+                    <div class="ana-label">Tags</div>
+                    <div class="tags-row">
+                      {#each analysis.tags as t}
+                        <span class="tag" style="background: hsl({tagHue(t)} 70% 92%); color: hsl({tagHue(t)} 55% 32%); border-color: hsl({tagHue(t)} 55% 80%)">{t}</span>
+                      {/each}
+                    </div>
+                  </div>
+                {/if}
+                {#if analysis.structure}
+                  {@const sp = toPoints(analysis.structure)}
+                  <div class="ana-card">
+                    <div class="ana-label">Struktur</div>
+                    {#if sp}
+                      {#if sp.lead}<div class="ana-lead">{sp.lead}</div>{/if}
+                      <ol class="ana-points">{#each sp.items as it}<li>{it}</li>{/each}</ol>
+                    {:else}
+                      <div class="ana-body">{analysis.structure}</div>
+                    {/if}
+                  </div>
+                {/if}
+                {#if analysis.summary}
+                  <div class="ana-card">
+                    <div class="ana-label">Ringkas</div>
+                    <div class="ana-body">{analysis.summary}</div>
+                  </div>
+                {/if}
+                {#if analysis.detail}
+                  <div class="ana-card">
+                    <div class="ana-label">Detail</div>
+                    <div class="ana-body">{analysis.detail}</div>
+                  </div>
+                {/if}
+                {#if !analysis.tags?.length && !analysis.structure && !analysis.summary && !analysis.detail}
+                  <div class="mut" style="font-size:12px;padding:8px 0">Belum ada data overall.</div>
+                {/if}
               {/if}
-            </div>
-          {/if}
-          {#if analysis.summary}
-            <div class="ana-card">
-              <div class="ana-label">Ringkas</div>
-              <div class="ana-body">{analysis.summary}</div>
-            </div>
-          {/if}
-          {#if analysis.detail}
-            <div class="ana-card">
-              <div class="ana-label">Detail</div>
-              <div class="ana-body">{analysis.detail}</div>
-            </div>
-          {/if}
             </div>
           </div>
         </div>
@@ -1288,6 +1306,14 @@
 
   /* Analisa tab video player */
   .ana-video { width:100%; border-radius:6px; background:#000; display:block; }
+  .ana-subtabs { display:flex; gap:6px; margin-bottom:2px; }
+  .ana-subtab {
+    flex:1; padding:7px 10px; font-size:12px; font-weight:600; cursor:pointer;
+    background:var(--soft); color:var(--mut); border:1px solid var(--line);
+    border-radius:6px; transition:all .15s;
+  }
+  .ana-subtab:hover { color:var(--fg); }
+  .ana-subtab.active { background:rgba(64,81,137,.12); color:var(--accent); border-color:rgba(64,81,137,.35); }
 
   /* Analisa tab button rows */
   .ana-btn-row { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
