@@ -3123,10 +3123,7 @@ def youtube_callback(code: str = None, state: str = None, error: str = None):
         # Recreate flow to exchange code for token
         flow = flow_module.Flow.from_client_secrets_file(
             creds_file,
-            scopes=["https://www.googleapis.com/auth/youtube.force-ssl",
-                    "https://www.googleapis.com/auth/youtube.upload",
-                    "https://www.googleapis.com/auth/yt-analytics.readonly",
-                    "https://www.googleapis.com/auth/yt-analytics-monetary.readonly"],
+            scopes=youtube_v3.OAUTH_SCOPES,
             redirect_uri="http://localhost:8000/youtube-callback"
         )
 
@@ -10195,14 +10192,49 @@ def schedule_remind_due():
 
 # ── Auto-publish (Phase 1: YouTube; IG/FB are Phase 2, need token + public URL) ──
 
-def _gdrive_direct_url(url: str) -> str:
-    """Convert a Google Drive share link to a direct-download URL. Returns the
-    input unchanged if it isn't a recognizable Drive link. Large files may still
-    hit the virus-scan interstitial — handled in _download_url_to_file."""
+def _gdrive_file_id(url: str) -> Optional[str]:
+    """Extract the file id from a Google Drive share link, or None if it isn't
+    a recognizable Drive URL."""
+    if "drive.google.com" not in url:
+        return None
     m = _re.search(r"/file/d/([A-Za-z0-9_-]+)", url) or _re.search(r"[?&]id=([A-Za-z0-9_-]+)", url)
-    if "drive.google.com" in url and m:
-        return f"https://drive.google.com/uc?export=download&id={m.group(1)}&confirm=t"
-    return url
+    return m.group(1) if m else None
+
+
+def _gdrive_direct_url(url: str) -> str:
+    """Convert a Google Drive share link to a public direct-download URL (used
+    as the fallback when the Drive API path is unavailable). Returns the input
+    unchanged if it isn't a Drive link. Large files may still hit the virus-scan
+    interstitial — handled in _download_url_to_file."""
+    fid = _gdrive_file_id(url)
+    return f"https://drive.google.com/uc?export=download&id={fid}&confirm=t" if fid else url
+
+
+def _download_gdrive_api(file_id: str, account_id, dest: Path) -> None:
+    """Download a Drive file via the API using the connected Google account's
+    OAuth token (drive.readonly scope). Handles large + private files with no
+    interstitial. Raises if the account isn't connected or lacks the scope."""
+    if not account_id:
+        raise Exception("no google account_id for Drive API")
+    token_file = Path(f"credentials/youtube_token_{account_id}.json")
+    if not token_file.exists():
+        raise Exception(f"google account {account_id} not connected (no token)")
+    from google.oauth2.credentials import Credentials
+    from google.auth.transport.requests import Request as _GReq
+    from googleapiclient.discovery import build as _gbuild
+    from googleapiclient.http import MediaIoBaseDownload
+    creds = Credentials.from_authorized_user_file(str(token_file))
+    if not creds.valid and creds.expired and creds.refresh_token:
+        creds.refresh(_GReq())
+        token_file.write_text(creds.to_json())
+    drive = _gbuild("drive", "v3", credentials=creds)
+    req = drive.files().get_media(fileId=file_id)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with open(dest, "wb") as f:
+        dl = MediaIoBaseDownload(f, req, chunksize=8 * 1024 * 1024)
+        done = False
+        while not done:
+            _status, done = dl.next_chunk()
 
 
 def _download_url_to_file(url: str, dest: Path) -> None:
@@ -10241,15 +10273,26 @@ def _download_url_to_file(url: str, dest: Path) -> None:
                 f.write(chunk)
 
 
-def _resolve_content_to_file(content_ref: str) -> tuple:
+def _resolve_content_to_file(content_ref: str, google_account_id=None) -> tuple:
     """Resolve a post's content_ref to a local file path. Accepts a URL
     (downloaded, incl. Google Drive links) or an existing local path.
+    Google Drive links use the Drive API when a connected google_account_id is
+    given (handles large + private files), falling back to the public-link path.
     Returns (local_path: str, is_temp: bool). Raises if it can't be resolved."""
     ref = (content_ref or "").strip()
     if not ref:
         raise Exception("content_ref is empty — set a video URL or file path")
     if ref.startswith(("http://", "https://")):
         dest = _REPO_ROOT / "data" / "publish_tmp" / f"{uuid.uuid4()}.mp4"
+        gd_id = _gdrive_file_id(ref)
+        if gd_id and google_account_id:
+            # Prefer the Drive API (large + private files, no interstitial);
+            # fall back to the public link if it fails (e.g. not re-consented).
+            try:
+                _download_gdrive_api(gd_id, google_account_id, dest)
+                return str(dest), True
+            except Exception as e:
+                print(f"[gdrive-api] fallback to public link: {type(e).__name__}: {str(e)[:120]}")
         _download_url_to_file(_gdrive_direct_url(ref), dest)
         return str(dest), True
     p = Path(ref)
@@ -10338,7 +10381,8 @@ def _publish_scheduled_post(post_id: int, only_platforms: list = None) -> dict:
     # --- upload phase: no DB connection held. ---
     local_path, is_temp = None, False
     try:
-        local_path, is_temp = _resolve_content_to_file(content_ref)
+        local_path, is_temp = _resolve_content_to_file(
+            content_ref, google_account_id=accounts.get("youtube"))
         tags = []
         for platform in wanted:
             try:
