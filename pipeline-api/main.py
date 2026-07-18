@@ -820,6 +820,8 @@ def list_learnings(niche: str = "", kind: str = "", limit: int = 50):
                     d["updated_at"] = d["updated_at"].isoformat()
                 rows.append(d)
         return _json({"rows": rows, "total": len(rows)})
+    except Exception as e:
+        return _json({"rows": [], "total": 0, "error": str(e)})
     finally:
         conn.close()
 
@@ -855,6 +857,8 @@ def add_learning(req: LearningRequest):
             row = cur.fetchone()
         conn.commit()
         return _json({"ok": True, "id": row[0], "hits": row[1]})
+    except Exception as e:
+        return _json({"error": str(e)}, status=500)
     finally:
         conn.close()
 
