@@ -161,6 +161,9 @@
   // Per-scene JSON popup (verify view)
   let sceneJsonModal = $state(null)
   let videoRef = $state(null)
+  let anaVideoRef = $state(null)
+  // Analisa sub-tab: 'hookret' (Hook & Retention) | 'overall' (Tags/Struktur/Ringkas/Detail)
+  let anaSubTab = $state('hookret')
 
   // Extract video_id from youtube_url (handle v=, /shorts/, or last path segment)
   function extractVideoId(url) {
@@ -209,6 +212,42 @@
     videoRef.currentTime = startSec
   }
 
+  // Mirror of playScene but targets the Analisa tab video element
+  function playAna(startSec, endSec) {
+    if (!anaVideoRef) return
+    anaVideoRef.currentTime = startSec
+    anaVideoRef.play()
+    // No usable end time (e.g. transcript line without one) — play on, let user stop.
+    if (!(endSec > startSec)) return
+    const stop = () => { if (anaVideoRef.currentTime >= endSec) { anaVideoRef.pause(); anaVideoRef.removeEventListener('timeupdate', stop) } }
+    anaVideoRef.addEventListener('timeupdate', stop)
+  }
+
+  // Seconds → SRT timestamp "HH:MM:SS,mmm"
+  function secToSrt(s) {
+    const p = (n, l = 2) => String(n).padStart(l, '0')
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60)
+    const sec = Math.floor(s % 60), ms = Math.round((s - Math.floor(s)) * 1000)
+    return `${p(h)}:${p(m)}:${p(sec)},${p(ms, 3)}`
+  }
+  // Build an .srt string from the transcript and trigger a download.
+  function downloadSrt() {
+    const lines = analysis?.transcript || []
+    if (!lines.length) return
+    const srt = lines.map((l, i) => {
+      const a = secToSrt(timeToSeconds(l.start)), b = secToSrt(timeToSeconds(l.end || l.start))
+      const who = l.speaker ? `${l.speaker}: ` : ''
+      return `${i + 1}\n${a} --> ${b}\n${who}${l.text}`
+    }).join('\n\n')
+    const blob = new Blob([srt], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `transcript-${d?.data?.id || 'source'}.srt`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   // Display + copy share one string: pretty-printed JSON for prompt_json, raw otherwise
   // Split a prose string with "(1)… (2)…" markers into a lead + bullet points.
   // Returns null when there are no numbered markers (render as prose instead).
@@ -242,6 +281,8 @@
   let geminiBriefModal = $state(null)
   let geminiBriefLoading = $state(false)
   let geminiBriefCopied = $state(false)
+  // Auto-open the Gemini prompt popup once, the moment clips are ready.
+  let briefAutoShown = $state(false)
   async function showGeminiBrief() {
     const url = d?.data?.youtube_url
     if (!url) return
@@ -278,6 +319,7 @@
     stopProcPoll()
     liveStatus = null
     justDone = false
+    briefAutoShown = false
     procStage = 'saving_meta'
     decomposeRunning = false
     decomposeStage = ''
@@ -287,6 +329,7 @@
     reanalyzeDone = false
     lightboxSrc = null
     activeTab = 'analisa'
+    anaSubTab = 'hookret'
     showRawJson = false
     d = v
     frames = []
@@ -346,6 +389,16 @@
 
   // Clear the action status line when switching tabs
   $effect(() => { activeTab; reanalyzeDone = false; reanalyzeError = '' })
+
+  // Auto-open the Gemini prompt popup once, the moment clips are ready (all
+  // processing steps done). Saves the user hunting for the "Tampilkan prompt
+  // Gemini" button — the prompt they need to paste into Antigravity pops up here.
+  $effect(() => {
+    if (isProcessing && !briefAutoShown && procStepStatus('saving') === 'done' && d?.data?.youtube_url) {
+      briefAutoShown = true
+      showGeminiBrief()
+    }
+  })
 
   async function startDecompose() {
     const s = d?.data
@@ -597,63 +650,181 @@
 
       <!-- ANALISA TAB -->
       {#if !isProcessing && activeTab === 'analisa'}
+        {@const anaVideoId = extractVideoId(d.data?.youtube_url)}
         <div class="tab-panel">
-          {#if analysis.tags?.length}
-            <div class="ana-card">
-              <div class="ana-label">Tags</div>
-              <div class="tags-row">
-                {#each analysis.tags as t}
-                  <span class="tag" style="background: hsl({tagHue(t)} 70% 92%); color: hsl({tagHue(t)} 55% 32%); border-color: hsl({tagHue(t)} 55% 80%)">{t}</span>
-                {/each}
+          <div class="verify-split">
+            {#if anaVideoId}
+              <div class="verify-left">
+                <video bind:this={anaVideoRef} controls src={`/media/source/${anaVideoId}`} class="ana-video" />
               </div>
-            </div>
-          {/if}
-          <!-- Analysis section cards -->
-          {#if analysis.hook}
-            <div class="ana-card">
-              <div class="ana-label">Hook</div>
-              <div class="ana-body">{analysis.hook}</div>
-            </div>
-          {/if}
-          {#if analysis.retention}
-            {@const rp = toPoints(analysis.retention)}
-            <div class="ana-card">
-              <div class="ana-label">
-                Retention
-                {#if analysis.retention_score}<span class="score-badge">{analysis.retention_score}/10</span>{/if}
+            {/if}
+            <div class="verify-right">
+              <div class="ana-subtabs">
+                <button class="ana-subtab {anaSubTab === 'hookret' ? 'active' : ''}" onclick={() => anaSubTab = 'hookret'}>Hook &amp; Retention</button>
+                <button class="ana-subtab {anaSubTab === 'overall' ? 'active' : ''}" onclick={() => anaSubTab = 'overall'}>Overall</button>
+                <button class="ana-subtab {anaSubTab === 'karakter' ? 'active' : ''}" onclick={() => anaSubTab = 'karakter'}>Karakter{#if analysis.characters?.length} ({analysis.characters.length}){/if}</button>
+                <button class="ana-subtab {anaSubTab === 'percakapan' ? 'active' : ''}" onclick={() => anaSubTab = 'percakapan'}>Percakapan{#if analysis.transcript?.length} ({analysis.transcript.length}){/if}</button>
               </div>
-              {#if rp}
-                {#if rp.lead}<div class="ana-lead">{rp.lead}</div>{/if}
-                <ol class="ana-points">{#each rp.items as it}<li>{it}</li>{/each}</ol>
-              {:else}
-                <div class="ana-body">{analysis.retention}</div>
+
+              {#if anaSubTab === 'hookret'}
+                {#if analysis.hook}
+                  {@const hookStart = analysis.hook_start || (scenes.length ? scenes[0].start : null)}
+                  {@const hookEnd = analysis.hook_end || (scenes.length ? scenes[0].end : null)}
+                  <div class="ana-card">
+                    <div class="ana-label">
+                      Hook
+                      {#if hookStart && hookEnd}<span class="score-badge">{hookStart}–{hookEnd}</span>{/if}
+                    </div>
+                    <div class="ana-body">{analysis.hook}</div>
+                    <div class="ana-btn-row">
+                      {#if hookStart && hookEnd && anaVideoId}<button class="ana-play-btn" onclick={() => playAna(timeToSeconds(hookStart), timeToSeconds(hookEnd))}>▶ Putar hook</button>{/if}
+                      <button class="ana-copy-btn" onclick={() => copyPrompt(analysis.hook)}>{copiedPrompt ? '✓ Tersalin' : 'Salin teks'}</button>
+                    </div>
+                  </div>
+                {/if}
+                {#if analysis.retention}
+                  {@const rp = toPoints(analysis.retention)}
+                  <div class="ana-card">
+                    <div class="ana-label">
+                      Retention
+                      {#if analysis.retention_score}<span class="score-badge">{analysis.retention_score}/10</span>{/if}
+                    </div>
+                    {#if analysis.retention_points?.length}
+                      {#each analysis.retention_points as p}
+                        <div class="ana-rp-row">
+                          <button class="ana-rp-btn" onclick={() => anaVideoId && playAna(timeToSeconds(p.start), timeToSeconds(p.end))} disabled={!anaVideoId} title={anaVideoId ? `Putar ${p.start}–${p.end}` : 'Video tidak tersedia'}>▶</button>
+                          <span class="ana-rp-reason">{p.reason}</span>
+                          <span class="ana-rp-time">{p.start}–{p.end}</span>
+                        </div>
+                      {/each}
+                    {:else if rp}
+                      {#if rp.lead}<div class="ana-lead">{rp.lead}</div>{/if}
+                      <ol class="ana-points">{#each rp.items as it}<li>{it}</li>{/each}</ol>
+                    {:else}
+                      <div class="ana-body">{analysis.retention}</div>
+                    {/if}
+                    <div class="ana-btn-row">
+                      {#if scenes.length && anaVideoId}<button class="ana-play-btn" onclick={() => playAna(timeToSeconds(scenes[0].start), timeToSeconds(scenes[scenes.length-1].end))}>▶ Putar full</button>{/if}
+                      <button class="ana-copy-btn" onclick={() => copyPrompt(analysis.retention)}>{copiedPrompt ? '✓ Tersalin' : 'Salin teks'}</button>
+                    </div>
+                  </div>
+                {/if}
+                {#if !analysis.hook && !analysis.retention}
+                  <div class="mut" style="font-size:12px;padding:8px 0">Belum ada data hook/retention. Re-analyze via Antigravity untuk mengisinya.</div>
+                {/if}
+              {/if}
+
+              {#if anaSubTab === 'overall'}
+                {#if analysis.tags?.length}
+                  <div class="ana-card">
+                    <div class="ana-label">Tags</div>
+                    <div class="tags-row">
+                      {#each analysis.tags as t}
+                        <span class="tag" style="background: hsl({tagHue(t)} 70% 92%); color: hsl({tagHue(t)} 55% 32%); border-color: hsl({tagHue(t)} 55% 80%)">{t}</span>
+                      {/each}
+                    </div>
+                  </div>
+                {/if}
+                {#if analysis.structure}
+                  {@const sp = toPoints(analysis.structure)}
+                  <div class="ana-card">
+                    <div class="ana-label">Struktur</div>
+                    {#if sp}
+                      {#if sp.lead}<div class="ana-lead">{sp.lead}</div>{/if}
+                      <ol class="ana-points">{#each sp.items as it}<li>{it}</li>{/each}</ol>
+                    {:else}
+                      <div class="ana-body">{analysis.structure}</div>
+                    {/if}
+                  </div>
+                {/if}
+                {#if analysis.summary}
+                  <div class="ana-card">
+                    <div class="ana-label">Ringkas</div>
+                    <div class="ana-body">{analysis.summary}</div>
+                  </div>
+                {/if}
+                {#if analysis.detail}
+                  <div class="ana-card">
+                    <div class="ana-label">Detail</div>
+                    <div class="ana-body">{analysis.detail}</div>
+                  </div>
+                {/if}
+                {#if !analysis.tags?.length && !analysis.structure && !analysis.summary && !analysis.detail}
+                  <div class="mut" style="font-size:12px;padding:8px 0">Belum ada data overall.</div>
+                {/if}
+              {/if}
+
+              {#if anaSubTab === 'karakter'}
+                {#if analysis.characters?.length}
+                  {#each analysis.characters as c}
+                    {@const attrs = [['nationality','Kewarganegaraan'],['build','Build'],['height','Tinggi'],['skin_tone','Kulit'],['face_shape','Bentuk wajah'],['eyebrows','Alis'],['eye_color','Mata'],['nose','Hidung'],['lips','Bibir'],['lip_color','Warna bibir'],['hair_color','Rambut'],['hair_texture','Tekstur rambut'],['hairstyle','Gaya rambut'],['facial_hair','Kumis/janggut'],['glasses','Kacamata'],['expression','Ekspresi']]}
+                    {@const outfit = [['top','Atasan'],['bottom','Bawahan'],['footwear','Sepatu'],['accessories','Aksesoris']]}
+                    <div class="ana-card char-card">
+                      <div class="char-head">
+                        <span class="char-name">{c.name || 'Karakter'}</span>
+                        {#if c.role}<span class="char-role">{c.role}</span>{/if}
+                        {#if c.gender}<span class="score-badge">{c.gender}</span>{/if}
+                        {#if c.age_range}<span class="score-badge">{c.age_range} th</span>{/if}
+                      </div>
+                      {#if attrs.some(([k]) => c[k])}
+                        <div class="char-tbl-cap">Fisik</div>
+                        <table class="char-attr-table">
+                          <tbody>
+                            {#each attrs as [k, label]}
+                              {#if c[k]}<tr><td class="attr-k">{label}</td><td class="attr-v">{c[k]}</td></tr>{/if}
+                            {/each}
+                          </tbody>
+                        </table>
+                      {/if}
+                      {#if outfit.some(([k]) => c[k])}
+                        <div class="char-tbl-cap">Outfit</div>
+                        <table class="char-attr-table">
+                          <tbody>
+                            {#each outfit as [k, label]}
+                              {#if c[k]}<tr><td class="attr-k">{label}</td><td class="attr-v">{c[k]}</td></tr>{/if}
+                            {/each}
+                          </tbody>
+                        </table>
+                      {/if}
+                      {#each [['face','Wajah (detail)'],['distinguishing_features','Ciri khas'],['appearance','Penampilan'],['wardrobe','Outfit (ringkas)']] as [k, label]}
+                        {#if c[k]}<div class="char-line"><span class="char-key">{label}</span><span class="char-val">{c[k]}</span></div>{/if}
+                      {/each}
+                      {#if c.recreation_prompt}
+                        <div class="char-recreate">
+                          <div class="char-key" style="flex:none;margin-bottom:4px">Prompt recreate (AI gen)</div>
+                          <div class="char-recreate-body">{c.recreation_prompt}</div>
+                          <button class="ana-copy-btn" style="margin-top:6px" onclick={() => copyPrompt(c.recreation_prompt)}>{copiedPrompt ? '✓ Tersalin' : 'Salin prompt recreate'}</button>
+                        </div>
+                      {/if}
+                      <div class="ana-btn-row">
+                        <button class="ana-copy-btn" onclick={() => copyPrompt([c.name, c.role, c.gender, c.age_range, c.nationality, c.build, c.height, c.skin_tone, c.face_shape, c.eyebrows, c.eye_color, c.nose, c.lips, c.lip_color, c.hair_color, c.hair_texture, c.hairstyle, c.facial_hair, c.glasses, c.expression, c.face, c.distinguishing_features, c.top, c.bottom, c.footwear, c.accessories, c.appearance, c.wardrobe].filter(Boolean).join(' · '))}>{copiedPrompt ? '✓ Tersalin' : 'Salin semua'}</button>
+                      </div>
+                    </div>
+                  {/each}
+                {:else}
+                  <div class="mut" style="font-size:12px;padding:8px 0">Belum ada data karakter. Re-analyze via Antigravity untuk mengisinya.</div>
+                {/if}
+              {/if}
+
+              {#if anaSubTab === 'percakapan'}
+                {#if analysis.transcript?.length}
+                  <div class="ana-btn-row" style="margin-bottom:6px">
+                    <button class="ana-play-btn" onclick={downloadSrt}>⬇ Download .srt</button>
+                    <button class="ana-copy-btn" onclick={() => copyPrompt(analysis.transcript.map(t => (t.speaker ? t.speaker + ': ' : '') + t.text).join('\n'))}>{copiedPrompt ? '✓ Tersalin' : 'Salin teks'}</button>
+                  </div>
+                  {#each analysis.transcript as t}
+                    <div class="ana-rp-row">
+                      <button class="ana-rp-btn" onclick={() => anaVideoId && playAna(timeToSeconds(t.start), timeToSeconds(t.end || t.start))} disabled={!anaVideoId} title={anaVideoId ? `Putar ${t.start}` : 'Video tidak tersedia'}>▶</button>
+                      <span class="ana-rp-reason">{#if t.speaker}<b>{t.speaker}:</b> {/if}{t.text}</span>
+                      <span class="ana-rp-time">{t.start}{t.end ? '–' + t.end : ''}</span>
+                    </div>
+                  {/each}
+                {:else}
+                  <div class="mut" style="font-size:12px;padding:8px 0">Belum ada transkrip. Re-analyze via Antigravity untuk mengisinya.</div>
+                {/if}
               {/if}
             </div>
-          {/if}
-          {#if analysis.structure}
-            {@const sp = toPoints(analysis.structure)}
-            <div class="ana-card">
-              <div class="ana-label">Struktur</div>
-              {#if sp}
-                {#if sp.lead}<div class="ana-lead">{sp.lead}</div>{/if}
-                <ol class="ana-points">{#each sp.items as it}<li>{it}</li>{/each}</ol>
-              {:else}
-                <div class="ana-body">{analysis.structure}</div>
-              {/if}
-            </div>
-          {/if}
-          {#if analysis.summary}
-            <div class="ana-card">
-              <div class="ana-label">Ringkas</div>
-              <div class="ana-body">{analysis.summary}</div>
-            </div>
-          {/if}
-          {#if analysis.detail}
-            <div class="ana-card">
-              <div class="ana-label">Detail</div>
-              <div class="ana-body">{analysis.detail}</div>
-            </div>
-          {/if}
+          </div>
         </div>
       {/if}
 
@@ -704,8 +875,8 @@
 
               {#if storyboard.scene_order && Array.isArray(storyboard.scene_order)}
                 <div class="verify-right">
-                  {#each storyboard.scene_order as scene}
-                    <div class="scene-row">
+                  {#each storyboard.scene_order as scene, si}
+                    <div class="scene-row" class:is-hook={si === 0}>
                       <div class="scene-actions">
                         <button
                           class="scene-play"
@@ -734,6 +905,7 @@
                       >
                         <div class="scene-header">
                           #{scene.scene} · {scene.start}–{scene.end} · {scene.shot} · {scene.subject} · {scene.action}
+                          {#if si === 0}<span class="hook-tag">hook</span>{/if}
                         </div>
                         {#if scene.image_prompt}
                           <div class="scene-prompt">{scene.image_prompt}</div>
@@ -1226,4 +1398,46 @@
     color: var(--mut); transition: all .15s;
   }
   .toggle-btn:hover { background: var(--border); color: var(--fg); }
+
+  /* Hook highlight in Generated Prompt scene list */
+  .scene-row.is-hook { background: rgba(10,179,156,.10); border-color: rgba(10,179,156,.45); }
+  .hook-tag { display:inline-block; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#087f6b; background:rgba(10,179,156,.18); border-radius:4px; padding:1px 6px; margin-left:6px; vertical-align:middle; }
+
+  /* Analisa tab video player */
+  .ana-video { width:100%; border-radius:6px; background:#000; display:block; }
+  .ana-subtabs { display:flex; gap:6px; margin-bottom:2px; }
+  .ana-subtab {
+    flex:1; padding:7px 10px; font-size:12px; font-weight:600; cursor:pointer;
+    background:var(--soft); color:var(--mut); border:1px solid var(--line);
+    border-radius:6px; transition:all .15s;
+  }
+  .ana-subtab:hover { color:var(--fg); }
+  .ana-subtab.active { background:rgba(64,81,137,.12); color:var(--accent); border-color:rgba(64,81,137,.35); }
+  .char-head { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+  .char-name { font-size:14px; font-weight:700; color:var(--txt); }
+  .char-role { font-size:11px; font-weight:600; padding:1px 8px; border-radius:8px; background:rgba(10,179,156,.14); color:var(--green); }
+  .char-line { display:flex; gap:8px; font-size:12.5px; line-height:1.55; margin-bottom:5px; }
+  .char-key { flex:0 0 80px; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--mut); padding-top:2px; }
+  .char-val { flex:1; color:var(--txt); word-break:break-word; }
+  .char-tbl-cap { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--mut); margin:6px 0 4px; }
+  .char-attr-table { width:100%; border-collapse:collapse; margin-bottom:8px; font-size:12.5px; }
+  .char-attr-table td { padding:5px 8px; border:1px solid var(--line); }
+  .char-attr-table .attr-k { width:90px; font-weight:600; color:var(--mut); background:var(--soft); text-transform:capitalize; }
+  .char-attr-table .attr-v { color:var(--txt); text-transform:capitalize; }
+  .char-recreate { margin-top:8px; padding:10px; background:rgba(64,81,137,.06); border:1px solid rgba(64,81,137,.2); border-radius:6px; }
+  .char-recreate-body { font-size:12.5px; line-height:1.55; color:var(--txt); word-break:break-word; }
+
+  /* Analisa tab button rows */
+  .ana-btn-row { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .ana-play-btn { font-size:12px; font-weight:600; padding:5px 12px; border-radius:6px; border:none; cursor:pointer; background:var(--accent); color:#fff; }
+  .ana-play-btn:hover { opacity:.85; }
+  .ana-copy-btn { font-size:12px; font-weight:600; padding:5px 12px; border-radius:6px; cursor:pointer; background:rgba(64,81,137,.1); color:var(--accent); border:1px solid rgba(64,81,137,.25); }
+  .ana-copy-btn:hover { background:rgba(64,81,137,.18); }
+  .ana-rp-row { display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px solid var(--border,rgba(0,0,0,.06)); }
+  .ana-rp-row:last-child { border-bottom:none; }
+  .ana-rp-btn { flex-shrink:0; width:26px; height:26px; border-radius:5px; border:none; cursor:pointer; background:var(--accent); color:#fff; font-size:10px; display:flex; align-items:center; justify-content:center; padding:0; }
+  .ana-rp-btn:disabled { opacity:.4; cursor:default; }
+  .ana-rp-btn:not(:disabled):hover { opacity:.85; }
+  .ana-rp-reason { flex:1; font-size:12px; line-height:1.4; }
+  .ana-rp-time { flex-shrink:0; font-size:11px; color:var(--mut); white-space:nowrap; }
 </style>
