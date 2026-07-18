@@ -5845,11 +5845,21 @@ ANALYSIS_JSON_SCHEMA = """{
     {
       "name": "str — name if stated, else a role label (e.g. 'host', 'groom')",
       "role": "str — their role in the video",
+      "gender": "str — perceived gender presentation",
       "age_range": "str — approximate age range, e.g. '25-30'",
-      "appearance": "str — DETAILED and specific: overall build/posture (slim/heavyset/athletic/tall/short), hair (length, color, style), skin tone, facial features, and any distinguishing marks (glasses, tattoos, beard). Neutral physical description only — do NOT sexualize or estimate the size of specific body parts.",
-      "wardrobe": "str — DETAILED clothing and accessories (colors, garment types, logos, jewelry, headwear)"
+      "build": "str — body build and posture (slim/athletic/heavyset), height impression (short/medium/tall)",
+      "skin_tone": "str — skin tone",
+      "hair": "str — length, color, style, bangs, facial hair",
+      "face": "str — face shape, eyes, eyebrows, nose, lips, expression/demeanor",
+      "distinguishing_features": "str — glasses, tattoos, moles, jewelry, nail color, scars; write 'tidak terlihat' if none",
+      "wardrobe": "str — DETAILED clothing and accessories (colors, garment types, logos, jewelry, headwear)",
+      "recreation_prompt": "str — ONE complete, ready-to-paste AI image/video generation prompt that fully describes this character for consistent recreation across scenes"
     }
   ],
+  // For EVERY character field: be exhaustive and specific. If a detail is not
+  // visible in the clips, write "tidak terlihat" — never leave a field blank.
+  // Neutral physical description only; do NOT sexualize or estimate the size of
+  // specific body parts.
   "tags": ["str", "..."]
 }"""
 
@@ -7604,13 +7614,12 @@ def get_source_analysis(source_id: int):
                 for p in rp if isinstance(p, dict) and "start" in p and "end" in p
             ] if isinstance(rp, list) else []
             ch = raw.get("characters")
+            _char_keys = ("name", "role", "gender", "age_range", "build", "skin_tone",
+                          "hair", "face", "distinguishing_features", "appearance",
+                          "wardrobe", "recreation_prompt")
             resp["characters"] = [
-                {
-                    "name": c.get("name", ""), "role": c.get("role", ""),
-                    "age_range": c.get("age_range", ""),
-                    "appearance": c.get("appearance", ""), "wardrobe": c.get("wardrobe", ""),
-                }
-                for c in ch if isinstance(c, dict) and (c.get("name") or c.get("appearance"))
+                {k: c.get(k, "") for k in _char_keys if c.get(k)}
+                for c in ch if isinstance(c, dict) and (c.get("name") or c.get("appearance") or c.get("recreation_prompt"))
             ] if isinstance(ch, list) else []
 
             if gen_prompt:
