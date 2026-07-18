@@ -161,6 +161,7 @@
   // Per-scene JSON popup (verify view)
   let sceneJsonModal = $state(null)
   let videoRef = $state(null)
+  let anaVideoRef = $state(null)
 
   // Extract video_id from youtube_url (handle v=, /shorts/, or last path segment)
   function extractVideoId(url) {
@@ -207,6 +208,15 @@
     if (!videoRef) return
     videoRef.pause()
     videoRef.currentTime = startSec
+  }
+
+  // Mirror of playScene but targets the Analisa tab video element
+  function playAna(startSec, endSec) {
+    if (!anaVideoRef) return
+    anaVideoRef.currentTime = startSec
+    anaVideoRef.play()
+    const stop = () => { if (anaVideoRef.currentTime >= endSec) { anaVideoRef.pause(); anaVideoRef.removeEventListener('timeupdate', stop) } }
+    anaVideoRef.addEventListener('timeupdate', stop)
   }
 
   // Display + copy share one string: pretty-printed JSON for prompt_json, raw otherwise
@@ -597,7 +607,11 @@
 
       <!-- ANALISA TAB -->
       {#if !isProcessing && activeTab === 'analisa'}
+        {@const anaVideoId = extractVideoId(d.data?.youtube_url)}
         <div class="tab-panel">
+          {#if anaVideoId}
+            <video bind:this={anaVideoRef} controls src={`/media/source/${anaVideoId}`} class="ana-video" />
+          {/if}
           {#if analysis.tags?.length}
             <div class="ana-card">
               <div class="ana-label">Tags</div>
@@ -610,9 +624,17 @@
           {/if}
           <!-- Analysis section cards -->
           {#if analysis.hook}
+            {@const hookScene = scenes.length ? scenes[0] : null}
             <div class="ana-card">
-              <div class="ana-label">Hook</div>
+              <div class="ana-label">
+                Hook
+                {#if hookScene}<span class="score-badge">{hookScene.start}–{hookScene.end}</span>{/if}
+              </div>
               <div class="ana-body">{analysis.hook}</div>
+              <div class="ana-btn-row">
+                {#if hookScene && anaVideoId}<button class="ana-play-btn" onclick={() => playAna(timeToSeconds(hookScene.start), timeToSeconds(hookScene.end))}>▶ Putar hook</button>{/if}
+                <button class="ana-copy-btn" onclick={() => copyPrompt(analysis.hook)}>{copiedPrompt ? '✓ Tersalin' : 'Salin teks'}</button>
+              </div>
             </div>
           {/if}
           {#if analysis.retention}
@@ -628,6 +650,10 @@
               {:else}
                 <div class="ana-body">{analysis.retention}</div>
               {/if}
+              <div class="ana-btn-row">
+                {#if scenes.length && anaVideoId}<button class="ana-play-btn" onclick={() => playAna(timeToSeconds(scenes[0].start), timeToSeconds(scenes[scenes.length-1].end))}>▶ Putar full</button>{/if}
+                <button class="ana-copy-btn" onclick={() => copyPrompt(analysis.retention)}>{copiedPrompt ? '✓ Tersalin' : 'Salin teks'}</button>
+              </div>
             </div>
           {/if}
           {#if analysis.structure}
@@ -704,8 +730,8 @@
 
               {#if storyboard.scene_order && Array.isArray(storyboard.scene_order)}
                 <div class="verify-right">
-                  {#each storyboard.scene_order as scene}
-                    <div class="scene-row">
+                  {#each storyboard.scene_order as scene, si}
+                    <div class="scene-row" class:is-hook={si === 0}>
                       <div class="scene-actions">
                         <button
                           class="scene-play"
@@ -734,6 +760,7 @@
                       >
                         <div class="scene-header">
                           #{scene.scene} · {scene.start}–{scene.end} · {scene.shot} · {scene.subject} · {scene.action}
+                          {#if si === 0}<span class="hook-tag">hook</span>{/if}
                         </div>
                         {#if scene.image_prompt}
                           <div class="scene-prompt">{scene.image_prompt}</div>
@@ -1226,4 +1253,18 @@
     color: var(--mut); transition: all .15s;
   }
   .toggle-btn:hover { background: var(--border); color: var(--fg); }
+
+  /* Hook highlight in Generated Prompt scene list */
+  .scene-row.is-hook { background: rgba(10,179,156,.10); border-color: rgba(10,179,156,.45); }
+  .hook-tag { display:inline-block; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#087f6b; background:rgba(10,179,156,.18); border-radius:4px; padding:1px 6px; margin-left:6px; vertical-align:middle; }
+
+  /* Analisa tab video player */
+  .ana-video { width:100%; max-width:360px; border-radius:6px; background:#000; display:block; margin-bottom:4px; }
+
+  /* Analisa tab button rows */
+  .ana-btn-row { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .ana-play-btn { font-size:12px; font-weight:600; padding:5px 12px; border-radius:6px; border:none; cursor:pointer; background:var(--accent); color:#fff; }
+  .ana-play-btn:hover { opacity:.85; }
+  .ana-copy-btn { font-size:12px; font-weight:600; padding:5px 12px; border-radius:6px; cursor:pointer; background:rgba(64,81,137,.1); color:var(--accent); border:1px solid rgba(64,81,137,.25); }
+  .ana-copy-btn:hover { background:rgba(64,81,137,.18); }
 </style>
