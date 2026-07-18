@@ -622,9 +622,13 @@
       {#if !isProcessing && activeTab === 'analisa'}
         {@const anaVideoId = extractVideoId(d.data?.youtube_url)}
         <div class="tab-panel">
-          {#if anaVideoId}
-            <video bind:this={anaVideoRef} controls src={`/media/source/${anaVideoId}`} class="ana-video" />
-          {/if}
+          <div class="verify-split">
+            {#if anaVideoId}
+              <div class="verify-left">
+                <video bind:this={anaVideoRef} controls src={`/media/source/${anaVideoId}`} class="ana-video" />
+              </div>
+            {/if}
+            <div class="verify-right">
           {#if analysis.tags?.length}
             <div class="ana-card">
               <div class="ana-label">Tags</div>
@@ -702,6 +706,8 @@
               <div class="ana-body">{analysis.detail}</div>
             </div>
           {/if}
+            </div>
+          </div>
         </div>
       {/if}
 
@@ -1281,7 +1287,7 @@
   .hook-tag { display:inline-block; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#087f6b; background:rgba(10,179,156,.18); border-radius:4px; padding:1px 6px; margin-left:6px; vertical-align:middle; }
 
   /* Analisa tab video player */
-  .ana-video { width:100%; max-width:360px; border-radius:6px; background:#000; display:block; margin-bottom:4px; }
+  .ana-video { width:100%; border-radius:6px; background:#000; display:block; }
 
   /* Analisa tab button rows */
   .ana-btn-row { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
