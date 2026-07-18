@@ -7180,6 +7180,26 @@ def notifications(limit: int = 15):
         finally:
             conn.close()
 
+    # 3) Underperforming posts (flagged by /performance/check-targets)
+    conn = _db_conn()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT id, title, flagged_at FROM scheduled_posts "
+                    "WHERE underperforming = true AND flagged_at IS NOT NULL "
+                    "ORDER BY flagged_at DESC LIMIT 20"
+                )
+                for sid, title, flagged in cur.fetchall():
+                    ts = flagged.timestamp() if flagged else 0
+                    items.append({"id": f"under-{sid}", "kind": "underperform",
+                                  "msg": f'⚠️ "{(title or "post")[:60]}" di bawah target view',
+                                  "ts": ts})
+        except Exception as e:
+            print(f"[notifications] underperform assembly failed (non-fatal): {e}")
+        finally:
+            conn.close()
+
     items.sort(key=lambda x: x["ts"], reverse=True)
     return {"notifications": items[:limit]}
 
@@ -9339,6 +9359,16 @@ def _schedule_init_db():
                 ADD COLUMN IF NOT EXISTS platform_accounts TEXT DEFAULT '{}'
             """)
             conn.commit()
+            # Performance targets + underperformance flag (additive, idempotent)
+            for stmt in (
+                "ADD COLUMN IF NOT EXISTS target_views BIGINT",
+                "ADD COLUMN IF NOT EXISTS target_horizon_days INT",
+                "ADD COLUMN IF NOT EXISTS underperforming BOOL DEFAULT false",
+                "ADD COLUMN IF NOT EXISTS flagged_at TIMESTAMPTZ",
+                "ADD COLUMN IF NOT EXISTS improvement_suggestion TEXT",
+            ):
+                cur.execute(f"ALTER TABLE scheduled_posts {stmt}")
+            conn.commit()
 
 
 def _derive_schedule_counts(items, now_dt=None):
@@ -9926,6 +9956,172 @@ def performance_refresh():
     """Collect current view snapshots for all posted videos."""
     # ponytail: synchronous — few videos, slow yt-dlp calls; add BackgroundTasks if latency matters
     return _json(_collect_performance_snapshots())
+
+
+# Platform default view targets. ponytail: a constant, not a table — move to a
+# table only if you need to edit these without a redeploy. Per-post overrides
+# live in scheduled_posts.target_views / target_horizon_days.
+_PERF_TARGETS = {
+    "youtube":   {"views": 5000,  "horizon_days": 7},
+    "tiktok":    {"views": 20000, "horizon_days": 7},
+    "instagram": {"views": 10000, "horizon_days": 7},
+}
+_PERF_TARGET_DEFAULT = {"views": 5000, "horizon_days": 7}
+
+
+def _llm_text(prompt: str, model: str = None, max_tokens: int = 320) -> str:
+    """One-shot text completion via the cliproxy gateway. Returns '' on any
+    failure (never raises) — the caller treats the result as optional."""
+    cliproxy_url = os.getenv("CLIPROXY_URL", "http://localhost:8317/v1").rstrip("/")
+    cliproxy_key = os.getenv("CLIPROXY_KEY", "")
+    if not cliproxy_key:
+        return ""
+    model = model or os.getenv("OPENCLAW_DEFAULT_MODEL", "deepseek-v4-pro").split("/")[-1]
+    try:
+        import httpx
+        resp = httpx.post(
+            f"{cliproxy_url}/chat/completions",
+            headers={"Authorization": f"Bearer {cliproxy_key}",
+                     "Content-Type": "application/json"},
+            json={"model": model, "max_tokens": max_tokens,
+                  "messages": [{"role": "user", "content": prompt}]},
+            timeout=60.0,
+        )
+        resp.raise_for_status()
+        return resp.json()["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        print(f"[llm_text] {type(e).__name__}: {str(e)[:120]}")
+        return ""
+
+
+def _telegram_notify(text: str) -> bool:
+    """Best-effort push to the reelbot owner's Telegram, reusing OpenClaw's bot
+    token + owner id from env. Returns True if sent, False if not configured or
+    on error. Never raises."""
+    token = os.getenv("OPENCLAW_TELEGRAM_BOT_TOKEN_FOR_REELBOT", "")
+    chat_id = os.getenv("OPENCLAW_TELEGRAM_OWNER_ID_FOR_REELBOT", "")
+    if not token or not chat_id:
+        return False
+    try:
+        import httpx
+        resp = httpx.post(
+            f"https://api.telegram.org/bot{token}/sendMessage",
+            json={"chat_id": chat_id, "text": text, "disable_web_page_preview": True},
+            timeout=15.0,
+        )
+        return resp.status_code == 200
+    except Exception as e:
+        print(f"[telegram_notify] {type(e).__name__}: {str(e)[:120]}")
+        return False
+
+
+def _perf_improvement_suggestion(title, platform, views, target, age_days) -> str:
+    """Short LLM suggestion for an underperforming post. '' if LLM unavailable."""
+    prompt = (
+        f'Video pendek berjudul "{title or "(tanpa judul)"}" di {platform} baru '
+        f"dapat {views} view dalam {age_days} hari, targetnya {target}. "
+        f"Dalam Bahasa Indonesia: kasih analisis SINGKAT kenapa mungkin "
+        f"underperform, lalu 2 alternatif hook/judul yang lebih kuat. "
+        f"Maksimal 5 baris, langsung ke intinya, tanpa basa-basi."
+    )
+    # deepseek-v4-pro is a reasoning model — hidden reasoning tokens eat the
+    # budget first, so give generous headroom or `content` comes back empty.
+    return _llm_text(prompt, max_tokens=1200)
+
+
+def _check_performance_targets() -> dict:
+    """Compare each posted video's latest views against its target; on the
+    transition to underperforming (past its horizon, below target) flag the
+    post once, generate an improvement suggestion, and push a Telegram notice.
+    Idempotent: a post already flagged is skipped, so daily re-runs never spam.
+    Never raises — per-post errors are collected."""
+    import datetime as _dt
+    result = {"checked": 0, "flagged": 0, "already": 0, "notified_tg": 0, "errors": []}
+    conn = _db_conn()
+    if conn is None:
+        result["errors"].append("no database connection")
+        return result
+    now = _dt.datetime.now(_dt.timezone.utc)
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, title, platform_urls, scheduled_at, created_at, "
+                "target_views, target_horizon_days, underperforming "
+                "FROM scheduled_posts"
+            )
+            posts = cur.fetchall()
+    except Exception as e:
+        result["errors"].append(f"query scheduled_posts: {e}")
+        conn.close()
+        return result
+
+    for (pid, title, pu_raw, sched_at, created_at, t_views, t_horizon,
+         already_flag) in posts:
+        try:
+            pu = json.loads(pu_raw) if isinstance(pu_raw, str) else (pu_raw or {})
+        except Exception:
+            pu = {}
+        if not pu:
+            continue
+        result["checked"] += 1
+        if already_flag:
+            result["already"] += 1
+            continue
+        went_live = sched_at or created_at
+        age_days = (now - went_live).days if went_live else 0
+
+        worst = None  # (platform, views, target) — the biggest shortfall
+        try:
+            for platform, url in pu.items():
+                if not (url and isinstance(url, str)):
+                    continue
+                tgt = _PERF_TARGETS.get(platform.lower(), _PERF_TARGET_DEFAULT)
+                target = int(t_views) if t_views else tgt["views"]
+                horizon = int(t_horizon) if t_horizon else tgt["horizon_days"]
+                if age_days < horizon:
+                    continue  # too early to judge this platform
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT views FROM performance_snapshots WHERE url=%s "
+                        "ORDER BY captured_at DESC LIMIT 1", (url,))
+                    row = cur.fetchone()
+                if not row or row[0] is None:
+                    continue
+                views = int(row[0])
+                if views < target and (worst is None or views < worst[1]):
+                    worst = (platform.lower(), views, target)
+
+            if worst is None:
+                continue
+
+            platform, views, target = worst
+            suggestion = _perf_improvement_suggestion(title, platform, views, target, age_days)
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE scheduled_posts SET underperforming=true, flagged_at=now(), "
+                    "improvement_suggestion=%s, updated_at=now() WHERE id=%s",
+                    (suggestion, pid))
+                conn.commit()
+            result["flagged"] += 1
+
+            msg = (f'⚠️ Underperform: "{(title or "post")[:60]}" di {platform} — '
+                   f"{views:,} view (<{target:,} target, hari ke-{age_days}).")
+            if suggestion:
+                msg += f"\n\n💡 Saran:\n{suggestion}"
+            if _telegram_notify(msg):
+                result["notified_tg"] += 1
+        except Exception as e:
+            result["errors"].append(f"post {pid}: {type(e).__name__}: {str(e)[:120]}")
+
+    conn.close()
+    return result
+
+
+@app.post("/performance/check-targets")
+def performance_check_targets():
+    """Flag posts below their view target past the horizon + notify. Called
+    daily by n8n right after /performance/refresh."""
+    return _json(_check_performance_targets())
 
 
 @app.get("/performance")
