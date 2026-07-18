@@ -1,0 +1,43 @@
+{
+  "name": "Schedule — hourly post reminder",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "hours", "hoursInterval": 1 }
+          ]
+        }
+      },
+      "id": "sched-remind-trigger",
+      "name": "Every hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [260, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/schedule/remind-due",
+        "options": { "timeout": 120000 }
+      },
+      "id": "sched-remind-call",
+      "name": "POST /schedule/remind-due",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [520, 300]
+    }
+  ],
+  "connections": {
+    "Every hour": {
+      "main": [
+        [
+          { "node": "POST /schedule/remind-due", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "meta": { "note": "Runs hourly: POST /schedule/remind-due — for each scheduled post that is due (scheduled_at <= now), not yet posted (platform_urls empty), and not yet reminded, sends a one-time Telegram reminder and marks reminded_at (so it never repeats). Reminder only — the user publishes manually. Import + activate in the n8n UI (localhost:5678)." }
+}
