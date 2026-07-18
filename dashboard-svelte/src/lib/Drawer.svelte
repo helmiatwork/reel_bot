@@ -217,6 +217,8 @@
     if (!anaVideoRef) return
     anaVideoRef.currentTime = startSec
     anaVideoRef.play()
+    // No usable end time (e.g. transcript line without one) — play on, let user stop.
+    if (!(endSec > startSec)) return
     const stop = () => { if (anaVideoRef.currentTime >= endSec) { anaVideoRef.pause(); anaVideoRef.removeEventListener('timeupdate', stop) } }
     anaVideoRef.addEventListener('timeupdate', stop)
   }
