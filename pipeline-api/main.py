@@ -9879,8 +9879,12 @@ def _collect_performance_snapshots() -> dict:
         result["checked"] += 1
         try:
             ytdlp_args = _ytdlp_source_args(force_player_client=True, platform=platform)
+            # Use the venv module (has curl_cffi) + impersonate, else bare "yt-dlp"
+            # resolves to the pyenv shim without curl_cffi and YouTube 403s.
             cmd = (
-                ["yt-dlp", "--no-warnings", "--print", "%(view_count)s|||%(title)s"]
+                [sys.executable, "-m", "yt_dlp", "--no-warnings",
+                 "--impersonate", "chrome",
+                 "--print", "%(view_count)s|||%(title)s"]
                 + ytdlp_args
                 + [url]
             )
