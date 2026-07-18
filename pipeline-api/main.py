@@ -88,6 +88,10 @@ def startup_event():
         _keywords_init_db()
     except Exception as e:
         print(f"[startup] keywords db init failed (non-fatal): {e}")
+    try:
+        _learnings_init_db()
+    except Exception as e:
+        print(f"[startup] learnings db init failed (non-fatal): {e}")
 
 # ── SSRF guard: blocked networks (module-level constant) ────────────────────
 # Extra ranges beyond ipaddress.ip_address check (0.0.0.0/8, CGNAT, etc)
@@ -205,11 +209,11 @@ def _db_conn():
         return None
 
 
-def _json(payload):
+def _json(payload, status=200):
     """JSON response that safely serializes datetimes etc. (JSONResponse has no default=)."""
     from fastapi.responses import Response
     return Response(content=json.dumps(payload, default=str, ensure_ascii=False),
-                    media_type="application/json")
+                    media_type="application/json", status_code=status)
 
 
 def _scalar(cur, sql, default=None):
@@ -767,6 +771,90 @@ def dash_analysis(limit: int = 25, offset: int = 0):
                     row_dict["created_at"] = row_dict["created_at"].isoformat()
                 rows.append(row_dict)
         return _json({"rows": rows, "total": total, "limit": limit, "offset": offset})
+    finally:
+        conn.close()
+
+
+class LearningRequest(BaseModel):
+    niche: str = "general"
+    kind: str
+    content: str
+    source_ids: List[int] = []
+
+
+@app.get("/learnings")
+def list_learnings(niche: str = "", kind: str = "", limit: int = 50):
+    """Distilled learnings the agent reads FIRST (layer 2 memory).
+
+    Filters: niche (blank = all), kind (blank = all). Ordered by reinforcement
+    (hits) then recency. Returns rows: id, niche, kind, content, source_ids,
+    hits, updated_at (ISO). Empty list when the table is empty or DB is down.
+    """
+    limit = max(1, min(int(limit), 200))
+    conn = _db_conn()
+    if not conn:
+        return _json({"rows": [], "total": 0})
+    try:
+        clauses, params = [], []
+        if niche.strip():
+            clauses.append("niche = %s")
+            params.append(niche.strip())
+        if kind.strip():
+            clauses.append("kind = %s")
+            params.append(kind.strip())
+        where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, niche, kind, content, source_ids, hits, updated_at "
+                "FROM learnings" + where +
+                " ORDER BY hits DESC, updated_at DESC LIMIT %s",
+                params + [limit],
+            )
+            cols = [c.name for c in cur.description]
+            rows = []
+            for r in cur.fetchall():
+                d = dict(zip(cols, r))
+                if d.get("source_ids") is None:
+                    d["source_ids"] = []
+                if d.get("updated_at"):
+                    d["updated_at"] = d["updated_at"].isoformat()
+                rows.append(d)
+        return _json({"rows": rows, "total": len(rows)})
+    finally:
+        conn.close()
+
+
+@app.post("/learnings")
+def add_learning(req: LearningRequest):
+    """Write a distilled learning back (layer 2 memory improve step).
+
+    Upserts on (niche, kind, content): a duplicate bumps `hits` and merges
+    source_ids provenance instead of inserting a new row. `content` is required
+    and non-empty; `kind` should be one of question|hook|pattern|insight.
+    """
+    kind = (req.kind or "").strip()
+    content = (req.content or "").strip()
+    if not kind or not content:
+        return _json({"error": "kind and content are required"}, status=400)
+    niche = (req.niche or "general").strip() or "general"
+    conn = _db_conn()
+    if not conn:
+        return _json({"error": "db unavailable"}, status=503)
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO learnings (niche, kind, content, source_ids) "
+                "VALUES (%s, %s, %s, %s) "
+                "ON CONFLICT (niche, kind, md5(content)) DO UPDATE SET "
+                "hits = learnings.hits + 1, "
+                "source_ids = (SELECT ARRAY(SELECT DISTINCT unnest("
+                "  learnings.source_ids || EXCLUDED.source_ids))) "
+                "RETURNING id, hits",
+                (niche, kind, content, req.source_ids or []),
+            )
+            row = cur.fetchone()
+        conn.commit()
+        return _json({"ok": True, "id": row[0], "hits": row[1]})
     finally:
         conn.close()
 
@@ -2448,6 +2536,51 @@ def _accounts_init_db():
         conn.commit()
     except Exception as e:
         print(f"[accounts] init db error: {e}")
+    finally:
+        conn.close()
+
+
+def _learnings_init_db():
+    """Initialize learnings table at startup (non-fatal on failure).
+
+    Layer 2 of the agent memory: distilled patterns the agent writes back after
+    grounding in the corpus, so it improves without re-reading every transcript.
+    Mirrors db/learnings.sql — kept in sync there for manual apply.
+    """
+    conn = _db_conn()
+    if not conn:
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""CREATE TABLE IF NOT EXISTS learnings (
+                id          BIGSERIAL PRIMARY KEY,
+                niche       TEXT NOT NULL DEFAULT 'general',
+                kind        TEXT NOT NULL,
+                content     TEXT NOT NULL,
+                source_ids  BIGINT[] NOT NULL DEFAULT '{}',
+                hits        INT NOT NULL DEFAULT 1,
+                created_at  TIMESTAMPTZ DEFAULT now(),
+                updated_at  TIMESTAMPTZ DEFAULT now()
+            )""")
+            cur.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS learnings_unique_idx "
+                "ON learnings (niche, kind, md5(content))"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS learnings_lookup_idx "
+                "ON learnings (niche, kind, hits DESC, updated_at DESC)"
+            )
+            cur.execute("""CREATE OR REPLACE FUNCTION learnings_touch_updated_at()
+                RETURNS trigger AS $$
+                BEGIN NEW.updated_at = now(); RETURN NEW; END;
+                $$ LANGUAGE plpgsql""")
+            cur.execute("DROP TRIGGER IF EXISTS learnings_touch ON learnings")
+            cur.execute("""CREATE TRIGGER learnings_touch
+                BEFORE UPDATE ON learnings
+                FOR EACH ROW EXECUTE FUNCTION learnings_touch_updated_at()""")
+        conn.commit()
+    except Exception as e:
+        print(f"[learnings] init db error: {e}")
     finally:
         conn.close()
 
