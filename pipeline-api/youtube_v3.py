@@ -494,6 +494,8 @@ OAUTH_SCOPES = [
     "https://www.googleapis.com/auth/youtube.upload",
     "https://www.googleapis.com/auth/yt-analytics.readonly",
     "https://www.googleapis.com/auth/yt-analytics-monetary.readonly",
+    # Read files from the connected account's Google Drive (auto-post source).
+    "https://www.googleapis.com/auth/drive.readonly",
 ]
 
 
