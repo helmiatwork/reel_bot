@@ -156,6 +156,7 @@ export const api = {
   },
   analyzeClaudeStatus: (run_id) => getJSON('/analyze/claude/status/' + run_id),
   analyzeRuns: (limit = 20) => getJSON('/analyze/claude/runs?limit=' + limit),
+  notifications: () => getJSON('/notifications'),
   uploadSourceAsync: async (file, { intent = '', output_format = 'none', include_audio = false, audio_start, audio_end } = {}) => {
     try {
       const fd = new FormData()

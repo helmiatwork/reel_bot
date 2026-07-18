@@ -70,12 +70,22 @@
     ]}
   ]
 
-  // Sample notifications (static for shell demo — wire to real endpoint when multi-user)
-  const NOTIFS = [
-    { id: 1, msg: 'Corpus discovery selesai — 5 video baru', time: '2 mnt lalu', read: false },
-    { id: 2, msg: 'Jadwal post "Carp salt crust" jatuh tempo', time: '18 mnt lalu', read: false },
-    { id: 3, msg: 'Script baru berhasil dibuat', time: '1 jam lalu', read: true },
-  ]
+  // Notifications — assembled from real events by GET /notifications
+  // (analyze/decompose runs done|error, scheduled posts due). Read-state via localStorage.
+  let notifs = $state([])
+  let notifLastSeen = $state(0)
+  let notifTimer = null
+  let unreadCount = $derived(notifs.filter(n => n.ts > notifLastSeen).length)
+  function tsToRel(ts) {
+    const s = Math.max(0, Math.floor(Date.now() / 1000 - ts))
+    if (s < 60) return 'baru saja'
+    if (s < 3600) return `${Math.floor(s / 60)} mnt lalu`
+    if (s < 86400) return `${Math.floor(s / 3600)} jam lalu`
+    return `${Math.floor(s / 86400)} hari lalu`
+  }
+  async function pollNotifs() {
+    try { const r = await api.notifications(); notifs = r?.notifications || [] } catch {}
+  }
 
   let current = $state('dashboard')
   page.subscribe((v) => (current = v))
@@ -110,6 +120,11 @@
   function toggleNotif(e) {
     e.stopPropagation()
     notifOpen = !notifOpen
+    // Opening marks everything currently shown as seen → badge clears.
+    if (notifOpen && notifs.length) {
+      notifLastSeen = Math.max(notifLastSeen, ...notifs.map(n => n.ts))
+      localStorage.setItem('reelbot-notif-seen', String(notifLastSeen))
+    }
   }
 
   function closeNotif() { notifOpen = false }
@@ -194,12 +209,18 @@
     pollJobs()
     jobPollTimer = setInterval(pollJobs, 5000)
 
+    // Notifications (real events) — load last-seen, poll periodically
+    notifLastSeen = Number(localStorage.getItem('reelbot-notif-seen') || 0)
+    pollNotifs()
+    notifTimer = setInterval(pollNotifs, 60000)
+
     // Close notif panel on outside click
     document.addEventListener('click', closeNotif)
   })
   onDestroy(() => {
     clearInterval(timer)
     if (jobPollTimer) clearInterval(jobPollTimer)
+    if (notifTimer) clearInterval(notifTimer)
     document.removeEventListener('click', closeNotif)
   })
 </script>
@@ -322,19 +343,22 @@
       <div class="tb-notif-wrap" style="position:relative">
         <span class="tb-icon" onclick={toggleNotif} title="Notifications">
           <svg class="ic"><use href="#i-bell"/></svg>
-          {#if NOTIFS.filter(n => !n.read).length > 0}
-            <span class="cnt">{NOTIFS.filter(n => !n.read).length}</span>
+          {#if unreadCount > 0}
+            <span class="cnt">{unreadCount}</span>
           {/if}
         </span>
         {#if notifOpen}
           <div class="notif-panel" onclick={(e) => e.stopPropagation()}>
             <div class="notif-head">Notifikasi</div>
-            {#each NOTIFS as n}
-              <div class="notif-row" class:unread={!n.read}>
+            {#each notifs as n (n.id)}
+              <div class="notif-row" class:unread={n.ts > notifLastSeen}>
                 <div class="notif-msg">{n.msg}</div>
-                <div class="notif-time">{n.time}</div>
+                <div class="notif-time">{tsToRel(n.ts)}</div>
               </div>
             {/each}
+            {#if !notifs.length}
+              <div class="notif-row"><div class="notif-msg" style="color:var(--mut)">Belum ada notifikasi</div></div>
+            {/if}
           </div>
         {/if}
       </div>
