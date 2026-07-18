@@ -5857,7 +5857,8 @@ ANALYSIS_JSON_SCHEMA = """{
       "lips": "str — SHORT: lips (tipis/tebal/sedang)",
       "lip_color": "str — SHORT: lip color (natural/nude/merah/pink)",
       "hair_color": "str — SHORT: hair color only (e.g. coklat/hitam)",
-      "hairstyle": "str — SHORT: hair length + style (e.g. 'lurus panjang', 'keriting pendek', 'poni')",
+      "hair_texture": "str — SHORT: hair texture (lurus/ikal/bergelombang/keriting)",
+      "hairstyle": "str — SHORT: hair length + style (e.g. 'panjang diikat', 'pendek', 'poni')",
       "facial_hair": "str — SHORT: facial hair (tidak ada/kumis/jenggot/cambang)",
       "glasses": "str — SHORT: wearing glasses? (ya/tidak) + type if any",
       "expression": "str — SHORT: default expression/demeanor (ceria/serius/datar)",
@@ -7630,7 +7631,7 @@ def get_source_analysis(source_id: int):
             ch = raw.get("characters")
             _char_keys = ("name", "role", "gender", "age_range", "build", "height",
                           "skin_tone", "face_shape", "eyebrows", "eye_color", "nose",
-                          "lips", "lip_color", "hair_color", "hairstyle", "facial_hair",
+                          "lips", "lip_color", "hair_color", "hair_texture", "hairstyle", "facial_hair",
                           "glasses", "expression", "hair", "face", "distinguishing_features",
                           "top", "bottom", "footwear", "accessories",
                           "appearance", "wardrobe", "recreation_prompt")

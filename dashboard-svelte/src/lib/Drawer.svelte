@@ -729,7 +729,7 @@
               {#if anaSubTab === 'karakter'}
                 {#if analysis.characters?.length}
                   {#each analysis.characters as c}
-                    {@const attrs = [['build','Build'],['height','Tinggi'],['skin_tone','Kulit'],['face_shape','Bentuk wajah'],['eyebrows','Alis'],['eye_color','Mata'],['nose','Hidung'],['lips','Bibir'],['lip_color','Warna bibir'],['hair_color','Rambut'],['hairstyle','Gaya rambut'],['facial_hair','Kumis/janggut'],['glasses','Kacamata'],['expression','Ekspresi']]}
+                    {@const attrs = [['build','Build'],['height','Tinggi'],['skin_tone','Kulit'],['face_shape','Bentuk wajah'],['eyebrows','Alis'],['eye_color','Mata'],['nose','Hidung'],['lips','Bibir'],['lip_color','Warna bibir'],['hair_color','Rambut'],['hair_texture','Tekstur rambut'],['hairstyle','Gaya rambut'],['facial_hair','Kumis/janggut'],['glasses','Kacamata'],['expression','Ekspresi']]}
                     {@const outfit = [['top','Atasan'],['bottom','Bawahan'],['footwear','Sepatu'],['accessories','Aksesoris']]}
                     <div class="ana-card char-card">
                       <div class="char-head">
@@ -769,7 +769,7 @@
                         </div>
                       {/if}
                       <div class="ana-btn-row">
-                        <button class="ana-copy-btn" onclick={() => copyPrompt([c.name, c.role, c.gender, c.age_range, c.build, c.height, c.skin_tone, c.face_shape, c.eyebrows, c.eye_color, c.nose, c.lips, c.lip_color, c.hair_color, c.hairstyle, c.facial_hair, c.glasses, c.expression, c.face, c.distinguishing_features, c.top, c.bottom, c.footwear, c.accessories, c.appearance, c.wardrobe].filter(Boolean).join(' · '))}>{copiedPrompt ? '✓ Tersalin' : 'Salin semua'}</button>
+                        <button class="ana-copy-btn" onclick={() => copyPrompt([c.name, c.role, c.gender, c.age_range, c.build, c.height, c.skin_tone, c.face_shape, c.eyebrows, c.eye_color, c.nose, c.lips, c.lip_color, c.hair_color, c.hair_texture, c.hairstyle, c.facial_hair, c.glasses, c.expression, c.face, c.distinguishing_features, c.top, c.bottom, c.footwear, c.accessories, c.appearance, c.wardrobe].filter(Boolean).join(' · '))}>{copiedPrompt ? '✓ Tersalin' : 'Salin semua'}</button>
                       </div>
                     </div>
                   {/each}
