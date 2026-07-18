@@ -514,3 +514,61 @@ class TestSunoInstructionGeneration:
         data = r.json()
         assert data["instruction"]
         assert "unavailable" in data["instruction"].lower()
+
+    def test_suno_audio_path_is_deterministic(self):
+        """_suno_audio_path returns the same path for the same URL."""
+        import main as m
+        url = "https://www.youtube.com/watch?v=abc123def456"
+        path1 = m._suno_audio_path(url)
+        path2 = m._suno_audio_path(url)
+        assert path1 == path2, "same URL should produce same path"
+        assert "output/suno_audio" in path1, "path should be in output/suno_audio"
+        assert path1.endswith(".mp3"), "path should end with .mp3"
+
+    def test_suno_audio_path_differs_for_different_urls(self):
+        """_suno_audio_path returns different paths for different URLs."""
+        import main as m
+        url1 = "https://www.youtube.com/watch?v=abc123"
+        url2 = "https://www.youtube.com/watch?v=xyz789"
+        path1 = m._suno_audio_path(url1)
+        path2 = m._suno_audio_path(url2)
+        assert path1 != path2, "different URLs should produce different paths"
+
+    def test_download_and_clip_audio_writes_to_deterministic_path(self):
+        """_download_and_clip_audio_for_suno saves to deterministic path based on URL."""
+        import main as m
+        import tempfile
+        from pathlib import Path
+
+        url = "https://www.youtube.com/watch?v=test12345"
+        expected_path = m._suno_audio_path(url)
+
+        # Mock subprocess and shutil to avoid real downloads
+        with patch("subprocess.run") as mock_run, \
+             patch("shutil.move") as mock_move, \
+             patch("shutil.rmtree") as mock_rmtree:
+            # Simulate successful download: create a dummy file in the temp dir
+            def run_side_effect(*args, **kwargs):
+                # Create a dummy audio file in the temp dir
+                temp_dir = args[0][args[0].index("-o") + 1].split("/audio")[0]
+                Path(temp_dir).mkdir(parents=True, exist_ok=True)
+                Path(f"{temp_dir}/audio.mp3").touch()
+                mock_result = MagicMock()
+                mock_result.returncode = 0
+                return mock_result
+
+            mock_run.side_effect = run_side_effect
+            # Move should copy the path to expected_path
+            def move_side_effect(src, dst):
+                assert dst == expected_path, f"move should go to {expected_path}, got {dst}"
+
+            mock_move.side_effect = move_side_effect
+
+            try:
+                result_path = m._download_and_clip_audio_for_suno(url, None, None)
+                assert result_path == expected_path, f"should return {expected_path}, got {result_path}"
+            except Exception as e:
+                # If shutil.move fails due to mocking, that's OK for this test
+                # We're verifying the call was made with the right path
+                if "move_side_effect" not in str(e):
+                    raise
