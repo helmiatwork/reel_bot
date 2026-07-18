@@ -10193,6 +10193,241 @@ def schedule_remind_due():
     return _json(_remind_due_posts())
 
 
+# ── Auto-publish (Phase 1: YouTube; IG/FB are Phase 2, need token + public URL) ──
+
+def _gdrive_direct_url(url: str) -> str:
+    """Convert a Google Drive share link to a direct-download URL. Returns the
+    input unchanged if it isn't a recognizable Drive link. Large files may still
+    hit the virus-scan interstitial — handled in _download_url_to_file."""
+    m = _re.search(r"/file/d/([A-Za-z0-9_-]+)", url) or _re.search(r"[?&]id=([A-Za-z0-9_-]+)", url)
+    if "drive.google.com" in url and m:
+        return f"https://drive.google.com/uc?export=download&id={m.group(1)}&confirm=t"
+    return url
+
+
+def _download_url_to_file(url: str, dest: Path) -> None:
+    """Stream a URL to dest. Handles Google Drive's large-file confirm token.
+    Raises on HTTP error or if the response is an HTML interstitial (not media)."""
+    import requests
+    _validate_source_url(url)  # SSRF guard — no private/loopback targets
+    MAX_DOWNLOAD = 4 * 1024 * 1024 * 1024  # 4 GB — covers any realistic video
+    sess = requests.Session()
+    r = sess.get(url, stream=True, timeout=120, allow_redirects=True)
+    # Re-validate the final URL: requests follows redirects, and a redirect to a
+    # private IP would bypass the pre-fetch guard. stream=True means the body is
+    # not read yet, so raising here prevents any body exfiltration.
+    if r.url and r.url != url:
+        _validate_source_url(r.url)
+    # Google Drive large-file confirm token (classic cookie path)
+    token = next((v for k, v in r.cookies.items() if k.startswith("download_warning")), None)
+    if token:
+        r = sess.get(url, params={"confirm": token}, stream=True, timeout=120, allow_redirects=True)
+        if r.url and r.url != url:
+            _validate_source_url(r.url)
+    r.raise_for_status()
+    ctype = r.headers.get("content-type", "")
+    if ctype.startswith("text/html"):
+        raise Exception(f"URL returned HTML, not a video file ({ctype}). "
+                        "For Google Drive make the file 'anyone with link' and use a smaller file, "
+                        "or host it on a direct-download URL.")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    written = 0
+    with open(dest, "wb") as f:
+        for chunk in r.iter_content(65536):
+            if chunk:
+                written += len(chunk)
+                if written > MAX_DOWNLOAD:
+                    raise Exception("download exceeds 4 GB limit; use a direct-host URL")
+                f.write(chunk)
+
+
+def _resolve_content_to_file(content_ref: str) -> tuple:
+    """Resolve a post's content_ref to a local file path. Accepts a URL
+    (downloaded, incl. Google Drive links) or an existing local path.
+    Returns (local_path: str, is_temp: bool). Raises if it can't be resolved."""
+    ref = (content_ref or "").strip()
+    if not ref:
+        raise Exception("content_ref is empty — set a video URL or file path")
+    if ref.startswith(("http://", "https://")):
+        dest = _REPO_ROOT / "data" / "publish_tmp" / f"{uuid.uuid4()}.mp4"
+        _download_url_to_file(_gdrive_direct_url(ref), dest)
+        return str(dest), True
+    p = Path(ref)
+    if p.exists() and p.is_file():
+        return str(p), False
+    raise Exception(f"content_ref is neither a URL nor an existing file: {ref}")
+
+
+def _publish_youtube_account(video_path: str, title: str, description: str,
+                             tags: list, account_id, privacy: str = "public") -> str:
+    """Upload a local video to a per-account YouTube channel using the OAuth
+    token saved by the /youtube-callback flow. Returns the watch URL. Raises on
+    any failure (missing token, upload error)."""
+    if not account_id:
+        raise Exception("no youtube account_id — set platform_accounts.youtube")
+    token_file = Path(f"credentials/youtube_token_{account_id}.json")
+    if not token_file.exists():
+        raise Exception(f"youtube account {account_id} not connected (no token) — connect it in the dashboard")
+    from google.oauth2.credentials import Credentials
+    from google.auth.transport.requests import Request as _GReq
+    from googleapiclient.discovery import build as _gbuild
+    from googleapiclient.http import MediaFileUpload
+    creds = Credentials.from_authorized_user_file(str(token_file))
+    if not creds.valid and creds.expired and creds.refresh_token:
+        creds.refresh(_GReq())
+        token_file.write_text(creds.to_json())
+    yt = _gbuild("youtube", "v3", credentials=creds)
+    body = {
+        "snippet": {"title": (title or "Untitled")[:100],
+                    "description": description or "", "tags": tags or []},
+        "status": {"privacyStatus": privacy if privacy in ("public", "private", "unlisted") else "public"},
+    }
+    media = MediaFileUpload(video_path, chunksize=8 * 1024 * 1024, resumable=True)
+    req = yt.videos().insert(part="snippet,status", body=body, media_body=media)
+    resp = None
+    while resp is None:
+        _status, resp = req.next_chunk()
+    return f"https://www.youtube.com/watch?v={resp['id']}"
+
+
+def _publish_scheduled_post(post_id: int, only_platforms: list = None) -> dict:
+    """Publish one scheduled post to its platforms. Phase 1 implements YouTube
+    (public); Instagram/Facebook are reported as skipped (Phase 2 — need tokens
+    + a public video URL). Records platform_urls (which also marks it posted)
+    and never raises — per-platform errors are returned."""
+    result = {"post_id": post_id, "results": {}, "errors": []}
+
+    # --- read phase: release the connection BEFORE the multi-minute upload so
+    # it never sits idle-in-transaction (which a DB idle timeout would kill,
+    # losing the platform_urls write after a successful upload). ---
+    conn = _db_conn()
+    if conn is None:
+        result["errors"].append("no database connection")
+        return result
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT content_ref, title, caption, platforms, platform_accounts, platform_urls "
+                "FROM scheduled_posts WHERE id=%s", (post_id,))
+            row = cur.fetchone()
+    except Exception as e:
+        result["errors"].append(f"query: {type(e).__name__}: {str(e)[:160]}")
+        row = None
+    finally:
+        conn.close()
+    if not row:
+        result["errors"].append("post not found")
+        return result
+
+    content_ref, title, caption, platforms_csv, pa_raw, pu_raw = row
+    try:
+        accounts = json.loads(pa_raw) if isinstance(pa_raw, str) else (pa_raw or {})
+    except Exception:
+        accounts = {}
+    try:
+        posted = json.loads(pu_raw) if isinstance(pu_raw, str) else (pu_raw or {})
+    except Exception:
+        posted = {}
+    wanted = [p.strip().lower() for p in (platforms_csv or "").split(",") if p.strip()]
+    if only_platforms:
+        wanted = [p for p in wanted if p in only_platforms]
+    if not wanted:
+        result["errors"].append("no platforms set on this post")
+        return result
+
+    # --- upload phase: no DB connection held. ---
+    local_path, is_temp = None, False
+    try:
+        local_path, is_temp = _resolve_content_to_file(content_ref)
+        tags = []
+        for platform in wanted:
+            try:
+                if platform == "youtube":
+                    url = _publish_youtube_account(
+                        local_path, title, caption or "", tags,
+                        accounts.get("youtube"), privacy="public")
+                    posted["youtube"] = url
+                    result["results"]["youtube"] = {"status": "ok", "url": url}
+                elif platform in ("instagram", "facebook"):
+                    result["results"][platform] = {
+                        "status": "skipped",
+                        "reason": "Phase 2 — needs a public video URL + platform token"}
+                else:
+                    result["results"][platform] = {"status": "skipped", "reason": "unsupported platform"}
+            except Exception as e:
+                result["results"][platform] = {"status": "error", "error": f"{type(e).__name__}: {str(e)[:160]}"}
+                result["errors"].append(f"{platform}: {str(e)[:160]}")
+    except Exception as e:
+        result["errors"].append(f"{type(e).__name__}: {str(e)[:160]}")
+    finally:
+        if is_temp and local_path:
+            try:
+                Path(local_path).unlink(missing_ok=True)
+            except Exception:
+                pass
+
+    # --- write phase: fresh connection, only when a post actually succeeded. ---
+    if any(v.get("status") == "ok" for v in result["results"].values()):
+        conn2 = _db_conn()
+        if conn2 is not None:
+            try:
+                with conn2.cursor() as cur:
+                    cur.execute(
+                        "UPDATE scheduled_posts SET platform_urls=%s, updated_at=now() WHERE id=%s",
+                        (json.dumps(posted), post_id))
+                    conn2.commit()
+            except Exception as e:
+                result["errors"].append(f"save platform_urls failed: {type(e).__name__}: {str(e)[:160]}")
+                try:
+                    conn2.rollback()
+                except Exception:
+                    pass
+            finally:
+                conn2.close()
+    return result
+
+
+@app.post("/schedule/{item_id}/publish")
+def schedule_publish_now(item_id: int, platforms: str = ""):
+    """Manual 'Post sekarang' — publish one scheduled post immediately.
+    Optional ?platforms=youtube,instagram limits which platforms to post."""
+    only = [p.strip().lower() for p in platforms.split(",") if p.strip()] or None
+    return _json(_publish_scheduled_post(item_id, only_platforms=only))
+
+
+@app.post("/schedule/publish-due")
+def schedule_publish_due():
+    """Auto-publish every due, unposted scheduled post. Called by n8n at the
+    scheduled time. Posts only rows the user explicitly scheduled and hasn't
+    posted yet (platform_urls empty)."""
+    result = {"due": 0, "published": 0, "results": [], "errors": []}
+    conn = _db_conn()
+    if conn is None:
+        result["errors"].append("no database connection")
+        return result
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id FROM scheduled_posts "
+                "WHERE scheduled_at IS NOT NULL AND scheduled_at <= now() "
+                "AND COALESCE(NULLIF(platform_urls, ''), '{}') = '{}' "
+                "ORDER BY scheduled_at ASC LIMIT 20")
+            ids = [r[0] for r in cur.fetchall()]
+    except Exception as e:
+        result["errors"].append(f"query: {e}")
+        ids = []
+    finally:
+        conn.close()
+
+    for pid in ids:
+        result["due"] += 1
+        r = _publish_scheduled_post(pid)
+        result["results"].append(r)
+        if any(v.get("status") == "ok" for v in r.get("results", {}).values()):
+            result["published"] += 1
+    return result
+
+
 @app.get("/performance")
 def performance_get():
     """Return per-platform growth series, totals, video list, and per-account breakdown."""
