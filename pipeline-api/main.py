@@ -7188,6 +7188,7 @@ def notifications(limit: int = 15):
                 cur.execute(
                     "SELECT id, title, flagged_at FROM scheduled_posts "
                     "WHERE underperforming = true AND flagged_at IS NOT NULL "
+                    "AND flagged_at > now() - interval '14 days' "
                     "ORDER BY flagged_at DESC LIMIT 20"
                 )
                 for sid, title, flagged in cur.fetchall():
@@ -10047,7 +10048,7 @@ def _check_performance_targets() -> dict:
             cur.execute(
                 "SELECT id, title, platform_urls, scheduled_at, created_at, "
                 "target_views, target_horizon_days, underperforming "
-                "FROM scheduled_posts"
+                "FROM scheduled_posts WHERE underperforming IS NOT TRUE"
             )
             posts = cur.fetchall()
     except Exception as e:
@@ -10112,6 +10113,10 @@ def _check_performance_targets() -> dict:
                 result["notified_tg"] += 1
         except Exception as e:
             result["errors"].append(f"post {pid}: {type(e).__name__}: {str(e)[:120]}")
+            try:
+                conn.rollback()  # reset aborted txn so remaining posts still run
+            except Exception:
+                pass
 
     conn.close()
     return result
