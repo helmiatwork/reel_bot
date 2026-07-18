@@ -5828,8 +5828,13 @@ STORYBOARD_JSON_SCHEMA = """{
 # Analysis schema (matched to Gemini analysis output)
 ANALYSIS_JSON_SCHEMA = """{
   "hook": "str — the opening hook and why it grabs attention",
+  "hook_start": "M:SS — exact timestamp the hook begins (usually 0:00)",
+  "hook_end": "M:SS — exact timestamp the opening hook/curiosity-grab completes",
   "retention": "str — what keeps viewers watching",
   "retention_score": "int (1-10)",
+  "retention_points": [
+    {"reason": "str — one specific thing that keeps viewers watching", "start": "M:SS", "end": "M:SS"}
+  ],
   "structure": "str — the video's structural flow",
   "summary": "str — one-sentence summary",
   "detail": "str — chronological detailed walkthrough of what happens",
@@ -7508,7 +7513,8 @@ def get_source_analysis(source_id: int):
     if not conn:
         return _json({
             "hook": "", "structure": "", "retention": "", "retention_score": None,
-            "summary": "", "detail": "", "tags": []
+            "summary": "", "detail": "", "tags": [],
+            "hook_start": "", "hook_end": "", "retention_points": []
         })
 
     try:
@@ -7516,7 +7522,8 @@ def get_source_analysis(source_id: int):
             # Join sources → video_analysis by youtube_url, get latest analysis
             cur.execute("""
                 SELECT va.hook, va.structure, va.retention, va.retention_score,
-                       va.content_summary, va.content_detail, va.tags, s.gen_prompt, s.gen_prompt_format
+                       va.content_summary, va.content_detail, va.tags, s.gen_prompt, s.gen_prompt_format,
+                       va.raw_result
                 FROM sources s
                 LEFT JOIN video_analysis va ON s.youtube_url = va.youtube_url
                 WHERE s.id = %s
@@ -7530,10 +7537,11 @@ def get_source_analysis(source_id: int):
             if not row or all(v is None for v in row):
                 return _json({
                     "hook": "", "structure": "", "retention": "", "retention_score": None,
-                    "summary": "", "detail": "", "tags": []
+                    "summary": "", "detail": "", "tags": [],
+                    "hook_start": "", "hook_end": "", "retention_points": []
                 })
 
-            hook, structure, retention, retention_score, summary, detail, tags, gen_prompt, gen_prompt_format = row
+            hook, structure, retention, retention_score, summary, detail, tags, gen_prompt, gen_prompt_format, raw_result = row
 
             # Parse tags JSON (psycopg may return it pre-parsed or as string)
             parsed_tags = []
@@ -7557,6 +7565,25 @@ def get_source_analysis(source_id: int):
                 "detail": detail or "",
                 "tags": parsed_tags
             }
+
+            # Extract timestamp fields stored by Gemini in raw_result; old rows return safe defaults
+            try:
+                if isinstance(raw_result, str):
+                    raw = json.loads(raw_result)
+                elif isinstance(raw_result, dict):
+                    raw = raw_result
+                else:
+                    raw = {}
+            except Exception:
+                raw = {}
+            resp["hook_start"] = raw.get("hook_start") or ""
+            resp["hook_end"] = raw.get("hook_end") or ""
+            rp = raw.get("retention_points")
+            resp["retention_points"] = [
+                {"reason": p.get("reason", ""), "start": p["start"], "end": p["end"]}
+                for p in rp if isinstance(p, dict) and "start" in p and "end" in p
+            ] if isinstance(rp, list) else []
+
             if gen_prompt:
                 resp["gen_prompt"] = gen_prompt
                 resp["gen_prompt_format"] = gen_prompt_format
@@ -7565,7 +7592,8 @@ def get_source_analysis(source_id: int):
         print(f"[get_source_analysis] error for source_id {source_id}: {e}")
         return _json({
             "hook": "", "structure": "", "retention": "", "retention_score": None,
-            "summary": "", "detail": "", "tags": []
+            "summary": "", "detail": "", "tags": [],
+            "hook_start": "", "hook_end": "", "retention_points": []
         })
     finally:
         conn.close()
