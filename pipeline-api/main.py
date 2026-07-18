@@ -1417,9 +1417,12 @@ def get_frames(req: FramesRequest):
         output_template = f"{tmp_dir}/source_video.%(ext)s"
         proc = subprocess.run(
             [
-                "yt-dlp",
+                # ponytail: venv interpreter's yt_dlp has curl_cffi for --impersonate.
+                sys.executable, "-m", "yt_dlp",
                 "-f", "bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/best[ext=mp4][height<=480]/best[height<=480]/best",
                 "--merge-output-format", "mp4",
+                # YouTube 403s bare yt-dlp (bot-check); impersonate a real browser.
+                "--impersonate", "chrome",
                 "--retries", "5", "--fragment-retries", "5",
                 "--socket-timeout", "30",
                 "--max-filesize", "500M",
@@ -5828,11 +5831,56 @@ STORYBOARD_JSON_SCHEMA = """{
 # Analysis schema (matched to Gemini analysis output)
 ANALYSIS_JSON_SCHEMA = """{
   "hook": "str — the opening hook and why it grabs attention",
+  "hook_start": "M:SS — exact timestamp the hook begins (usually 0:00)",
+  "hook_end": "M:SS — exact timestamp the opening hook/curiosity-grab completes",
   "retention": "str — what keeps viewers watching",
   "retention_score": "int (1-10)",
+  "retention_points": [
+    {"reason": "str — one specific thing that keeps viewers watching", "start": "M:SS", "end": "M:SS"}
+  ],
   "structure": "str — the video's structural flow",
   "summary": "str — one-sentence summary",
   "detail": "str — chronological detailed walkthrough of what happens",
+  "characters": [
+    {
+      "name": "str — name if stated, else a role label (e.g. 'host', 'groom')",
+      "role": "str — their role in the video",
+      "gender": "str — perceived gender presentation",
+      "age_range": "str — approximate age range, e.g. '25-30'",
+      "nationality": "str — nationality/origin ONLY if stated or clearly evident in the video (narration, on-screen text, flag, spoken language); do NOT guess from facial appearance. Write 'tidak disebutkan' if not indicated.",
+      "build": "str — SHORT: body build in Indonesian (kurus/sedang/berisi/gemuk/atletis)",
+      "height": "str — SHORT: height impression (pendek/sedang/tinggi)",
+      "skin_tone": "str — SHORT: skin tone (e.g. terang/sawo matang/gelap)",
+      "face_shape": "str — SHORT: face shape (oval/bulat/kotak/lonjong)",
+      "eyebrows": "str — SHORT: eyebrows (tebal/tipis/melengkung)",
+      "eye_color": "str — SHORT: eye color only (e.g. hitam/coklat)",
+      "nose": "str — SHORT: nose (mancung/pesek/sedang)",
+      "lips": "str — SHORT: lips (tipis/tebal/sedang)",
+      "lip_color": "str — SHORT: lip color (natural/nude/merah/pink)",
+      "hair_color": "str — SHORT: hair color only (e.g. coklat/hitam)",
+      "hair_texture": "str — SHORT: hair texture (lurus/ikal/bergelombang/keriting)",
+      "hairstyle": "str — SHORT: hair length + style (e.g. 'panjang diikat', 'pendek', 'poni')",
+      "facial_hair": "str — SHORT: facial hair (tidak ada/kumis/jenggot/cambang)",
+      "glasses": "str — SHORT: wearing glasses? (ya/tidak) + type if any",
+      "expression": "str — SHORT: default expression/demeanor (ceria/serius/datar)",
+      "distinguishing_features": "str — tattoos, moles, piercings, nail color, scars, birthmarks; write 'tidak terlihat' if none",
+      "top": "str — SHORT: upper garment (type + color, e.g. 'sweater rajut biru')",
+      "bottom": "str — SHORT: lower garment (celana/rok + color, e.g. 'celana hitam')",
+      "footwear": "str — SHORT: shoes (type + color, e.g. 'sneakers putih'); 'tidak terlihat' if off-frame",
+      "accessories": "str — SHORT: accessories seen (jepit rambut/bando/anting/kalung/gelang/jam/topi/tas); 'tidak ada' if none",
+      "wardrobe": "str — full outfit summary in one sentence (colors, garments, logos, headwear)",
+      "recreation_prompt": "str — ONE complete, ready-to-paste AI image/video generation prompt that fully describes this character for consistent recreation across scenes"
+    }
+  ],
+  // For EVERY character field: be exhaustive and specific. If a detail is not
+  // visible in the clips, write "tidak terlihat" — never leave a field blank.
+  // Neutral physical description only; do NOT sexualize or estimate the size of
+  // specific body parts.
+  "transcript": [
+    {"start": "M:SS", "end": "M:SS", "speaker": "str — who is speaking (name/role), '' if unclear", "text": "str — spoken words, verbatim as heard"}
+  ],
+  // transcript: transcribe ALL spoken dialogue you HEAR in the clips, in order,
+  // as subtitle lines. Empty array [] if there is no speech.
   "tags": ["str", "..."]
 }"""
 
@@ -6950,6 +6998,55 @@ def analyze_claude_runs(limit: int = 20):
     return summaries[:limit]
 
 
+@app.get("/notifications")
+def notifications(limit: int = 15):
+    """Assemble real notifications from existing signals (no dedicated store):
+    completed/failed analyze+decompose runs, and due scheduled posts.
+    Returns: {"notifications": [{id, kind, msg, ts (unix seconds)}]} sorted newest-first.
+    Read-state is tracked client-side (localStorage last-seen ts)."""
+    items = []
+
+    # 1) Recently finished analyze/decompose runs (done or error)
+    try:
+        for r in analyze_claude_runs(30):
+            st = r.get("status")
+            if st not in ("done", "error"):
+                continue
+            label = r.get("title") or r.get("url") or "video"
+            what = "Decompose" if r.get("kind") == "decompose" else "Analisa"
+            msg = f"{what} {'selesai' if st == 'done' else 'gagal'}: {label[:70]}"
+            items.append({"id": r.get("run_id"), "kind": f"run_{st}",
+                          "msg": msg, "ts": float(r.get("created") or 0)})
+    except Exception as e:
+        print(f"[notifications] runs assembly failed (non-fatal): {e}")
+
+    # 2) Due / overdue scheduled posts
+    conn = _db_conn()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                # ponytail: scheduled_posts has no posted flag — "due" = scheduled_at
+                # in the past. May include already-posted items; add a posted flag if noisy.
+                cur.execute(
+                    "SELECT id, title, scheduled_at FROM scheduled_posts "
+                    "WHERE scheduled_at IS NOT NULL AND scheduled_at <= now() "
+                    "ORDER BY scheduled_at DESC LIMIT 20"
+                )
+                for row in cur.fetchall():
+                    sid, title, sched = row[0], row[1], row[2]
+                    ts = sched.timestamp() if sched else 0
+                    items.append({"id": f"sched-{sid}", "kind": "schedule_due",
+                                  "msg": f'Jadwal post "{(title or "tanpa judul")[:60]}" jatuh tempo',
+                                  "ts": ts})
+        except Exception as e:
+            print(f"[notifications] schedule assembly failed (non-fatal): {e}")
+        finally:
+            conn.close()
+
+    items.sort(key=lambda x: x["ts"], reverse=True)
+    return {"notifications": items[:limit]}
+
+
 @app.post("/analyze/import")
 def analyze_import(req: StoryboardImportRequest):
     """
@@ -7224,10 +7321,14 @@ def _download_and_clip_audio_for_suno(youtube_url: str, audio_start: Optional[fl
         # Download audio using yt-dlp
         output_template = f"{tmp_dir}/audio.%(ext)s"
         result = subprocess.run([
-            "yt-dlp",
+            # ponytail: venv interpreter's yt_dlp has curl_cffi for --impersonate;
+            # bare "yt-dlp" on PATH is a pyenv shim without it.
+            sys.executable, "-m", "yt_dlp",
             "-x",
             "--audio-format", "mp3",
             "--audio-quality", "5",
+            # YouTube 403s bare yt-dlp (bot-check); impersonate a real browser.
+            "--impersonate", "chrome",
             "-o", output_template,
             "--no-playlist",
             youtube_url
@@ -7251,7 +7352,11 @@ def _download_and_clip_audio_for_suno(youtube_url: str, audio_start: Optional[fl
 
         return output_path
     except subprocess.CalledProcessError as e:
-        raise Exception(f"yt-dlp download failed: {e.stderr}")
+        # Surface the real ERROR line, not the leading yt-dlp version WARNING.
+        stderr = (e.stderr or "").strip()
+        err_lines = [l for l in stderr.splitlines() if l.strip().startswith("ERROR")]
+        msg = err_lines[-1] if err_lines else (stderr.splitlines()[-1] if stderr else str(e))
+        raise Exception(f"yt-dlp download failed: {msg}")
     finally:
         # Clean up temp download directory
         try:
@@ -7508,7 +7613,8 @@ def get_source_analysis(source_id: int):
     if not conn:
         return _json({
             "hook": "", "structure": "", "retention": "", "retention_score": None,
-            "summary": "", "detail": "", "tags": []
+            "summary": "", "detail": "", "tags": [],
+            "hook_start": "", "hook_end": "", "retention_points": [], "characters": [], "transcript": []
         })
 
     try:
@@ -7516,7 +7622,8 @@ def get_source_analysis(source_id: int):
             # Join sources → video_analysis by youtube_url, get latest analysis
             cur.execute("""
                 SELECT va.hook, va.structure, va.retention, va.retention_score,
-                       va.content_summary, va.content_detail, va.tags, s.gen_prompt, s.gen_prompt_format
+                       va.content_summary, va.content_detail, va.tags, s.gen_prompt, s.gen_prompt_format,
+                       va.raw_result
                 FROM sources s
                 LEFT JOIN video_analysis va ON s.youtube_url = va.youtube_url
                 WHERE s.id = %s
@@ -7530,10 +7637,11 @@ def get_source_analysis(source_id: int):
             if not row or all(v is None for v in row):
                 return _json({
                     "hook": "", "structure": "", "retention": "", "retention_score": None,
-                    "summary": "", "detail": "", "tags": []
+                    "summary": "", "detail": "", "tags": [],
+                    "hook_start": "", "hook_end": "", "retention_points": [], "characters": [], "transcript": []
                 })
 
-            hook, structure, retention, retention_score, summary, detail, tags, gen_prompt, gen_prompt_format = row
+            hook, structure, retention, retention_score, summary, detail, tags, gen_prompt, gen_prompt_format, raw_result = row
 
             # Parse tags JSON (psycopg may return it pre-parsed or as string)
             parsed_tags = []
@@ -7557,6 +7665,42 @@ def get_source_analysis(source_id: int):
                 "detail": detail or "",
                 "tags": parsed_tags
             }
+
+            # Extract timestamp fields stored by Gemini in raw_result; old rows return safe defaults
+            try:
+                if isinstance(raw_result, str):
+                    raw = json.loads(raw_result)
+                elif isinstance(raw_result, dict):
+                    raw = raw_result
+                else:
+                    raw = {}
+            except Exception:
+                raw = {}
+            resp["hook_start"] = raw.get("hook_start") or ""
+            resp["hook_end"] = raw.get("hook_end") or ""
+            rp = raw.get("retention_points")
+            resp["retention_points"] = [
+                {"reason": p.get("reason", ""), "start": p["start"], "end": p["end"]}
+                for p in rp if isinstance(p, dict) and "start" in p and "end" in p
+            ] if isinstance(rp, list) else []
+            ch = raw.get("characters")
+            _char_keys = ("name", "role", "gender", "age_range", "nationality", "build", "height",
+                          "skin_tone", "face_shape", "eyebrows", "eye_color", "nose",
+                          "lips", "lip_color", "hair_color", "hair_texture", "hairstyle", "facial_hair",
+                          "glasses", "expression", "hair", "face", "distinguishing_features",
+                          "top", "bottom", "footwear", "accessories",
+                          "appearance", "wardrobe", "recreation_prompt")
+            resp["characters"] = [
+                {k: c.get(k, "") for k in _char_keys if c.get(k)}
+                for c in ch if isinstance(c, dict) and (c.get("name") or c.get("appearance") or c.get("recreation_prompt"))
+            ] if isinstance(ch, list) else []
+            tr = raw.get("transcript")
+            resp["transcript"] = [
+                {"start": t.get("start", ""), "end": t.get("end", ""),
+                 "speaker": t.get("speaker", ""), "text": t.get("text", "")}
+                for t in tr if isinstance(t, dict) and t.get("text")
+            ] if isinstance(tr, list) else []
+
             if gen_prompt:
                 resp["gen_prompt"] = gen_prompt
                 resp["gen_prompt_format"] = gen_prompt_format
@@ -7565,7 +7709,8 @@ def get_source_analysis(source_id: int):
         print(f"[get_source_analysis] error for source_id {source_id}: {e}")
         return _json({
             "hook": "", "structure": "", "retention": "", "retention_score": None,
-            "summary": "", "detail": "", "tags": []
+            "summary": "", "detail": "", "tags": [],
+            "hook_start": "", "hook_end": "", "retention_points": [], "characters": [], "transcript": []
         })
     finally:
         conn.close()
