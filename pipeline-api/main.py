@@ -5847,7 +5847,7 @@ ANALYSIS_JSON_SCHEMA = """{
       "role": "str — their role in the video",
       "gender": "str — perceived gender presentation",
       "age_range": "str — approximate age range, e.g. '25-30'",
-      "build": "str — SHORT: body build (slim/athletic/heavyset)",
+      "build": "str — SHORT: body build in Indonesian (kurus/sedang/berisi/gemuk/atletis)",
       "height": "str — SHORT: height impression (pendek/sedang/tinggi)",
       "skin_tone": "str — SHORT: skin tone (e.g. terang/sawo matang/gelap)",
       "face_shape": "str — SHORT: face shape (oval/bulat/kotak/lonjong)",
