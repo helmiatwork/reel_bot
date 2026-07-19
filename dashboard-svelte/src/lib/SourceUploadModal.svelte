@@ -12,6 +12,7 @@
   let error = $state(null)
   let panelEl = $state(null)
   let triggerEl = $state(null)
+  let dupCardEl = $state(null)
 
   // URL tab state
   let urlInput = $state('')
@@ -174,8 +175,23 @@
     }
   }
 
+  // ponytail: autofocus Batal (safe default) whenever dupConfirm dialog mounts
+  $effect(() => {
+    if (dupConfirm && dupCardEl) dupCardEl.querySelector('button:last-child')?.focus()
+  })
+
   function trapFocus(e) {
-    if (!panelEl || e.key !== 'Tab') return
+    if (e.key !== 'Tab') return
+    // When dup dialog is showing, constrain focus to its buttons only
+    if (dupConfirm && dupCardEl) {
+      const f = dupCardEl.querySelectorAll('button')
+      if (!f.length) return
+      const first = f[0], last = f[f.length - 1]
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+      return
+    }
+    if (!panelEl) return
     const focusable = panelEl.querySelectorAll(
       'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
     )
@@ -896,13 +912,15 @@
     ></div>
     <div
       class="dup-card"
+      bind:this={dupCardEl}
       role="alertdialog"
       aria-modal="true"
       aria-label="Konfirmasi duplikat"
+      aria-describedby="dup-url-text"
       transition:scale={{ duration: 180, start: 0.95, easing: cubicOut }}
     >
       <div class="dup-head">⚠ Video ini sudah pernah dianalisa</div>
-      <div class="dup-url">{dupConfirm.title || dupConfirm.youtube_url}</div>
+      <div class="dup-url" id="dup-url-text">{dupConfirm.title || dupConfirm.youtube_url}</div>
       <div class="dup-actions">
         <button class="btn-primary" onclick={overrideExisting}>Timpa &amp; analisa ulang</button>
         <button class="btn-cancel" onclick={cancelDup}>Batal</button>
