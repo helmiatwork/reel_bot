@@ -21,4 +21,4 @@ if [ ! -x "$VENV" ]; then
   exit 1
 fi
 
-exec "$VENV" main:app --host 0.0.0.0 --port "${PIPELINE_API_PORT:-8000}"
+exec "$VENV" main:app --host "${PIPELINE_API_HOST:-127.0.0.1}" --port "${PIPELINE_API_PORT:-8000}"

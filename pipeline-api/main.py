@@ -288,13 +288,14 @@ def verify_admin_key(x_api_key: str = None) -> None:
     If PIPELINE_API_KEY env var is unset/empty, allow all (localhost dev mode).
     If set, require matching X-API-Key header, else 401.
     """
+    import hmac
     env_key = os.getenv("PIPELINE_API_KEY", "").strip()
     if not env_key:
         # Env unset → allow
         return None
 
-    # Env is set → require matching header
-    if not x_api_key or x_api_key != env_key:
+    # Env is set → require matching header (timing-safe comparison)
+    if not hmac.compare_digest(x_api_key or "", env_key):
         raise HTTPException(status_code=401, detail="invalid API key")
     return None
 
@@ -882,7 +883,7 @@ OPENCLAW_MODEL = os.getenv("OPENCLAW_MODEL", "openclaw/reelbot")
 # OpenClaw pins the session, then the resulting UUID can be discovered by mtime.
 OPENCLAW_SESSIONS_DIR = os.getenv(
     "OPENCLAW_SESSIONS_DIR",
-    "/openclaw-data/agents/reelbot/sessions"
+    str(_REPO_ROOT / "agents" / "main" / "sessions")
 )
 
 import re as _re
@@ -2436,7 +2437,9 @@ def cookies_save(platform: str, req: CookieUpdate):
 
 
 @app.delete("/cookies/{platform}")
-def cookies_delete(platform: str):
+def cookies_delete(platform: str,
+    _admin: None = Depends(lambda x_api_key: verify_admin_key(x_api_key)),
+    x_api_key: str = Header(None)):
     """Remove stored cookies for a platform."""
     if platform not in COOKIE_PLATFORMS:
         raise HTTPException(status_code=400, detail=f"platform must be one of {COOKIE_PLATFORMS}")
@@ -2780,7 +2783,9 @@ def accounts_update(account_id: int, req: AccountUpdate):
 
 
 @app.delete("/accounts/{account_id}")
-def accounts_delete(account_id: int):
+def accounts_delete(account_id: int,
+    _admin: None = Depends(lambda x_api_key: verify_admin_key(x_api_key)),
+    x_api_key: str = Header(None)):
     """Delete account row and its cookie file."""
     conn = _db_conn()
     if conn is None:
@@ -2835,7 +2840,9 @@ def accounts_cookies_save(account_id: int, req: AccountCookiePost):
 
 
 @app.delete("/accounts/{account_id}/cookies")
-def accounts_cookies_delete(account_id: int):
+def accounts_cookies_delete(account_id: int,
+    _admin: None = Depends(lambda x_api_key: verify_admin_key(x_api_key)),
+    x_api_key: str = Header(None)):
     """Remove cookie file for a specific account."""
     conn = _db_conn()
     if conn is None:
@@ -2862,7 +2869,9 @@ def accounts_cookies_delete(account_id: int):
 
 
 @app.post("/accounts/{account_id}/connect-youtube")
-def accounts_connect_youtube(account_id: int):
+def accounts_connect_youtube(account_id: int,
+    _admin: None = Depends(lambda x_api_key: verify_admin_key(x_api_key)),
+    x_api_key: str = Header(None)):
     """Web OAuth flow initiation for YouTube account connection.
     Returns auth_url for user to visit (non-blocking).
     Redirect URI: http://localhost:8000/youtube-callback
@@ -2913,7 +2922,7 @@ def accounts_connect_youtube(account_id: int):
         )
 
         # Save state -> account_id mapping for callback
-        _oauth_flows[state] = account_id
+        _oauth_flows[state] = (time.time(), account_id)  # (timestamp, account_id)
 
         return {"auth_url": auth_url}
     except HTTPException:
@@ -3063,7 +3072,9 @@ def brands_update(brand_id: int, req: BrandUpdate):
 
 
 @app.delete("/brands/{brand_id}")
-def brands_delete(brand_id: int):
+def brands_delete(brand_id: int,
+    _admin: None = Depends(lambda x_api_key: verify_admin_key(x_api_key)),
+    x_api_key: str = Header(None)):
     """Delete a brand and set brand_id=NULL on its accounts."""
     conn = _db_conn()
     if conn is None:
@@ -3101,6 +3112,16 @@ def youtube_callback(code: str = None, state: str = None, error: str = None):
     from fastapi.responses import RedirectResponse
     import google_auth_oauthlib.flow as flow_module
 
+    # Prune stale OAuth flows (> 10 min old)
+    now = time.time()
+    stale = [s for s, (ts, _) in list(_oauth_flows.items())
+             if isinstance(_oauth_flows.get(s), tuple) and (now - ts) > 600]
+    for s in stale:
+        try:
+            del _oauth_flows[s]
+        except KeyError:
+            pass
+
     if error:
         return RedirectResponse(f"/?yt_connect=error&error={error}")
 
@@ -3108,9 +3129,12 @@ def youtube_callback(code: str = None, state: str = None, error: str = None):
         return RedirectResponse("/?yt_connect=error&error=missing_code_or_state")
 
     # Look up account_id from state
-    account_id = _oauth_flows.get(state)
-    if account_id is None:
+    flow_entry = _oauth_flows.get(state)
+    if flow_entry is None:
         return RedirectResponse("/?yt_connect=error&error=invalid_state")
+
+    # Extract account_id from (timestamp, account_id) tuple
+    account_id = flow_entry[1] if isinstance(flow_entry, tuple) else flow_entry
 
     try:
         # Remove state from map (single use)
@@ -3134,13 +3158,7 @@ def youtube_callback(code: str = None, state: str = None, error: str = None):
         # Save token to per-account file
         token_file = Path(f"credentials/youtube_token_{account_id}.json")
         token_file.parent.mkdir(parents=True, exist_ok=True)
-        fd = os.open(str(token_file), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-        with os.fdopen(fd, "w") as f:
-            f.write(creds.to_json())
-        try:
-            os.chmod(str(token_file), 0o600)
-        except OSError:
-            pass
+        _write_token_file(str(token_file), creds.to_json())
 
         return RedirectResponse("/?yt_connect=success")
     except Exception as e:
@@ -7453,7 +7471,6 @@ def _suno_audio_path(youtube_url: str) -> str:
     url_hash = hashlib.sha1(normalized.encode()).hexdigest()
     # Return deterministic path: output/suno_audio/<hash>.mp3
     suno_dir = _REPO_ROOT / "output" / "suno_audio"
-    suno_dir.mkdir(parents=True, exist_ok=True)
     return str(suno_dir / f"{url_hash}.mp3")
 
 
@@ -7510,6 +7527,8 @@ def _download_and_clip_audio_for_suno(youtube_url: str, audio_start: Optional[fl
         # the (rare) full-download path where no time range was given.
         clipped_path = downloaded_path if use_section else _clip_audio(downloaded_path, audio_start, audio_end)
 
+        # Ensure output directory exists
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
         # Move clipped audio to deterministic output path
         shutil.move(clipped_path, output_path)
 
@@ -7708,6 +7727,17 @@ def source_exists(youtube_url: str = ""):
     if conn is None:
         return _json({"exists": False})
     try:
+        # Try indexed canonical_key lookup first
+        if key:
+            with conn.cursor() as cur:
+                cur.execute("SELECT id, youtube_url, title, status FROM sources WHERE canonical_key=%s LIMIT 1", (key,))
+                row = cur.fetchone()
+                if row:
+                    sid, url, title, status = row
+                    return _json({"exists": True, "id": sid, "youtube_url": url,
+                                  "title": title, "status": status})
+
+        # Fallback: fetch all rows for legacy entries without canonical_key
         with conn.cursor() as cur:
             cur.execute("SELECT id, youtube_url, title, status FROM sources ORDER BY id DESC")
             for sid, url, title, status in cur.fetchall():
@@ -7721,7 +7751,9 @@ def source_exists(youtube_url: str = ""):
 
 
 @app.delete("/sources/{source_id}")
-def delete_source(source_id: int):
+def delete_source(source_id: int,
+    _admin: None = Depends(lambda x_api_key: verify_admin_key(x_api_key)),
+    x_api_key: str = Header(None)):
     """Remove a source and everything tied to it: its analysis, segments (DB +
     the on-disk segment folder), and the source row. Used by the 'timpa yang
     lama' (override) path before a fresh re-analyze."""
@@ -9459,6 +9491,12 @@ def _schedule_init_db():
             ):
                 cur.execute(f"ALTER TABLE scheduled_posts {stmt}")
             conn.commit()
+            # Atomic publish claim to prevent double-publish race (additive, idempotent)
+            cur.execute("""
+                ALTER TABLE scheduled_posts
+                ADD COLUMN IF NOT EXISTS publishing_started_at TIMESTAMPTZ
+            """)
+            conn.commit()
 
 
 def _derive_schedule_counts(items, now_dt=None):
@@ -10042,10 +10080,13 @@ def _collect_performance_snapshots() -> dict:
 
 
 @app.post("/performance/refresh")
-def performance_refresh():
-    """Collect current view snapshots for all posted videos."""
-    # ponytail: synchronous — few videos, slow yt-dlp calls; add BackgroundTasks if latency matters
-    return _json(_collect_performance_snapshots())
+def performance_refresh(bg: BackgroundTasks,
+    _admin: None = Depends(lambda x_api_key: verify_admin_key(x_api_key)),
+    x_api_key: str = Header(None)):
+    """Collect current view snapshots for all posted videos (async)."""
+    # Run collection in background; return immediately to avoid timeout
+    bg.add_task(_collect_performance_snapshots)
+    return _json({"status": "refresh_started"})
 
 
 # Platform default view targets. ponytail: a constant, not a table — move to a
@@ -10147,74 +10188,77 @@ def _check_performance_targets() -> dict:
         conn.close()
         return result
 
-    for (pid, title, pu_raw, sched_at, created_at, t_views, t_horizon,
-         already_flag) in posts:
-        try:
-            pu = json.loads(pu_raw) if isinstance(pu_raw, str) else (pu_raw or {})
-        except Exception:
-            pu = {}
-        if not pu:
-            continue
-        result["checked"] += 1
-        if already_flag:
-            result["already"] += 1
-            continue
-        went_live = sched_at or created_at
-        age_days = (now - went_live).days if went_live else 0
+    try:
+        for (pid, title, pu_raw, sched_at, created_at, t_views, t_horizon,
+             already_flag) in posts:
+            try:
+                pu = json.loads(pu_raw) if isinstance(pu_raw, str) else (pu_raw or {})
+            except Exception:
+                pu = {}
+            if not pu:
+                continue
+            result["checked"] += 1
+            if already_flag:
+                result["already"] += 1
+                continue
+            went_live = sched_at or created_at
+            age_days = (now - went_live).days if went_live else 0
 
-        worst = None  # (platform, views, target) — the biggest shortfall
-        try:
-            for platform, url in pu.items():
-                if not (url and isinstance(url, str)):
+            worst = None  # (platform, views, target) — the biggest shortfall
+            try:
+                for platform, url in pu.items():
+                    if not (url and isinstance(url, str)):
+                        continue
+                    tgt = _PERF_TARGETS.get(platform.lower(), _PERF_TARGET_DEFAULT)
+                    target = int(t_views) if t_views else tgt["views"]
+                    horizon = int(t_horizon) if t_horizon else tgt["horizon_days"]
+                    if age_days < horizon:
+                        continue  # too early to judge this platform
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            "SELECT views FROM performance_snapshots WHERE url=%s "
+                            "ORDER BY captured_at DESC LIMIT 1", (url,))
+                        row = cur.fetchone()
+                    if not row or row[0] is None:
+                        continue
+                    views = int(row[0])
+                    if views < target and (worst is None or views < worst[1]):
+                        worst = (platform.lower(), views, target)
+
+                if worst is None:
                     continue
-                tgt = _PERF_TARGETS.get(platform.lower(), _PERF_TARGET_DEFAULT)
-                target = int(t_views) if t_views else tgt["views"]
-                horizon = int(t_horizon) if t_horizon else tgt["horizon_days"]
-                if age_days < horizon:
-                    continue  # too early to judge this platform
+
+                platform, views, target = worst
+                suggestion = _perf_improvement_suggestion(title, platform, views, target, age_days)
                 with conn.cursor() as cur:
                     cur.execute(
-                        "SELECT views FROM performance_snapshots WHERE url=%s "
-                        "ORDER BY captured_at DESC LIMIT 1", (url,))
-                    row = cur.fetchone()
-                if not row or row[0] is None:
-                    continue
-                views = int(row[0])
-                if views < target and (worst is None or views < worst[1]):
-                    worst = (platform.lower(), views, target)
+                        "UPDATE scheduled_posts SET underperforming=true, flagged_at=now(), "
+                        "improvement_suggestion=%s, updated_at=now() WHERE id=%s",
+                        (suggestion, pid))
+                    conn.commit()
+                result["flagged"] += 1
 
-            if worst is None:
-                continue
-
-            platform, views, target = worst
-            suggestion = _perf_improvement_suggestion(title, platform, views, target, age_days)
-            with conn.cursor() as cur:
-                cur.execute(
-                    "UPDATE scheduled_posts SET underperforming=true, flagged_at=now(), "
-                    "improvement_suggestion=%s, updated_at=now() WHERE id=%s",
-                    (suggestion, pid))
-                conn.commit()
-            result["flagged"] += 1
-
-            msg = (f'⚠️ Underperform: "{(title or "post")[:60]}" di {platform} — '
-                   f"{views:,} view (<{target:,} target, hari ke-{age_days}).")
-            if suggestion:
-                msg += f"\n\n💡 Saran:\n{suggestion}"
-            if _telegram_notify(msg):
-                result["notified_tg"] += 1
-        except Exception as e:
-            result["errors"].append(f"post {pid}: {type(e).__name__}: {str(e)[:120]}")
-            try:
-                conn.rollback()  # reset aborted txn so remaining posts still run
-            except Exception:
-                pass
-
-    conn.close()
+                msg = (f'⚠️ Underperform: "{(title or "post")[:60]}" di {platform} — '
+                       f"{views:,} view (<{target:,} target, hari ke-{age_days}).")
+                if suggestion:
+                    msg += f"\n\n💡 Saran:\n{suggestion}"
+                if _telegram_notify(msg):
+                    result["notified_tg"] += 1
+            except Exception as e:
+                result["errors"].append(f"post {pid}: {type(e).__name__}: {str(e)[:120]}")
+                try:
+                    conn.rollback()  # reset aborted txn so remaining posts still run
+                except Exception:
+                    pass
+    finally:
+        conn.close()
     return result
 
 
 @app.post("/performance/check-targets")
-def performance_check_targets():
+def performance_check_targets(
+    _admin: None = Depends(lambda x_api_key: verify_admin_key(x_api_key)),
+    x_api_key: str = Header(None)):
     """Flag posts below their view target past the horizon + notify. Called
     daily by n8n right after /performance/refresh."""
     return _json(_check_performance_targets())
@@ -10301,6 +10345,17 @@ def _gdrive_direct_url(url: str) -> str:
     return f"https://drive.google.com/uc?export=download&id={fid}&confirm=t" if fid else url
 
 
+def _write_token_file(path: str, data: str) -> None:
+    """Write OAuth token to file with 0o600 permissions."""
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
+        f.write(data)
+    try:
+        os.chmod(path, 0o600)
+    except OSError:
+        pass
+
+
 def _download_gdrive_api(file_id: str, account_id, dest: Path) -> None:
     """Download a Drive file via the API using the connected Google account's
     OAuth token (drive.readonly scope). Handles large + private files with no
@@ -10317,15 +10372,22 @@ def _download_gdrive_api(file_id: str, account_id, dest: Path) -> None:
     creds = Credentials.from_authorized_user_file(str(token_file))
     if not creds.valid and creds.expired and creds.refresh_token:
         creds.refresh(_GReq())
-        token_file.write_text(creds.to_json())
+        _write_token_file(str(token_file), creds.to_json())
     drive = _gbuild("drive", "v3", credentials=creds)
     req = drive.files().get_media(fileId=file_id)
     dest.parent.mkdir(parents=True, exist_ok=True)
+    MAX_DOWNLOAD = 4 * 1024 * 1024 * 1024  # 4 GB
+    written = 0
     with open(dest, "wb") as f:
         dl = MediaIoBaseDownload(f, req, chunksize=8 * 1024 * 1024)
         done = False
         while not done:
             _status, done = dl.next_chunk()
+            # Track bytes written (approximate via chunk status)
+            if _status:
+                written = _status.progress() * _status.total_size
+                if written > MAX_DOWNLOAD:
+                    raise Exception("download exceeds 4 GB limit")
 
 
 def _download_url_to_file(url: str, dest: Path) -> None:
@@ -10386,7 +10448,11 @@ def _resolve_content_to_file(content_ref: str, google_account_id=None) -> tuple:
                 print(f"[gdrive-api] fallback to public link: {type(e).__name__}: {str(e)[:120]}")
         _download_url_to_file(_gdrive_direct_url(ref), dest)
         return str(dest), True
-    p = Path(ref)
+    p = Path(ref).resolve()
+    # Restrict local paths to data/ directory only
+    allowed_base = (_REPO_ROOT / "data").resolve()
+    if not str(p).startswith(str(allowed_base) + os.sep):
+        raise Exception(f"content_ref local path must be inside data/ directory, not {ref}")
     if p.exists() and p.is_file():
         return str(p), False
     raise Exception(f"content_ref is neither a URL nor an existing file: {ref}")
@@ -10409,7 +10475,7 @@ def _publish_youtube_account(video_path: str, title: str, description: str,
     creds = Credentials.from_authorized_user_file(str(token_file))
     if not creds.valid and creds.expired and creds.refresh_token:
         creds.refresh(_GReq())
-        token_file.write_text(creds.to_json())
+        _write_token_file(str(token_file), creds.to_json())
     yt = _gbuild("youtube", "v3", credentials=creds)
     body = {
         "snippet": {"title": (title or "Untitled")[:100],
@@ -10431,27 +10497,31 @@ def _publish_scheduled_post(post_id: int, only_platforms: list = None) -> dict:
     and never raises — per-platform errors are returned."""
     result = {"post_id": post_id, "results": {}, "errors": []}
 
-    # --- read phase: release the connection BEFORE the multi-minute upload so
-    # it never sits idle-in-transaction (which a DB idle timeout would kill,
-    # losing the platform_urls write after a successful upload). ---
+    # --- atomic claim phase: acquire exclusive lock before upload, fail fast if already claimed ---
     conn = _db_conn()
     if conn is None:
         result["errors"].append("no database connection")
         return result
     try:
         with conn.cursor() as cur:
+            # Atomically claim the post by setting publishing_started_at=now()
+            # This succeeds only if another worker hasn't already claimed it
             cur.execute(
-                "SELECT content_ref, title, caption, platforms, platform_accounts, platform_urls "
-                "FROM scheduled_posts WHERE id=%s", (post_id,))
+                "UPDATE scheduled_posts SET publishing_started_at = now() "
+                "WHERE id=%s AND publishing_started_at IS NULL "
+                "RETURNING content_ref, title, caption, platforms, platform_accounts, platform_urls",
+                (post_id,))
             row = cur.fetchone()
+        conn.commit()
     except Exception as e:
-        result["errors"].append(f"query: {type(e).__name__}: {str(e)[:160]}")
+        result["errors"].append(f"claim query: {type(e).__name__}: {str(e)[:160]}")
         row = None
     finally:
         conn.close()
+
     if not row:
-        result["errors"].append("post not found")
-        return result
+        result["errors"].append("post not found or already_publishing")
+        return {"status": "already_publishing", "id": post_id}
 
     content_ref, title, caption, platforms_csv, pa_raw, pu_raw = row
     try:
@@ -10467,6 +10537,8 @@ def _publish_scheduled_post(post_id: int, only_platforms: list = None) -> dict:
         wanted = [p for p in wanted if p in only_platforms]
     if not wanted:
         result["errors"].append("no platforms set on this post")
+        # Reset claim on error so it can be retried
+        _reset_publish_claim(post_id)
         return result
 
     # --- upload phase: no DB connection held. ---
@@ -10477,6 +10549,10 @@ def _publish_scheduled_post(post_id: int, only_platforms: list = None) -> dict:
         tags = []
         for platform in wanted:
             try:
+                # Skip if already posted to this platform
+                if posted.get(platform):
+                    result["results"][platform] = {"status": "already_published", "url": posted[platform]}
+                    continue
                 if platform == "youtube":
                     url = _publish_youtube_account(
                         local_path, title, caption or "", tags,
@@ -10494,6 +10570,9 @@ def _publish_scheduled_post(post_id: int, only_platforms: list = None) -> dict:
                 result["errors"].append(f"{platform}: {str(e)[:160]}")
     except Exception as e:
         result["errors"].append(f"{type(e).__name__}: {str(e)[:160]}")
+        # Reset claim on error so it can be retried
+        _reset_publish_claim(post_id)
+        return result
     finally:
         if is_temp and local_path:
             try:
@@ -10519,11 +10598,34 @@ def _publish_scheduled_post(post_id: int, only_platforms: list = None) -> dict:
                     pass
             finally:
                 conn2.close()
+    elif result["errors"]:
+        # All platforms failed or error occurred — reset claim so post can be retried
+        _reset_publish_claim(post_id)
+
     return result
 
 
+def _reset_publish_claim(post_id: int) -> None:
+    """Reset publishing_started_at to NULL so post can be retried on failure.
+    Non-fatal: if it fails, the post stays claimed (safer than releasing accidentally)."""
+    try:
+        conn = _db_conn()
+        if conn is None:
+            return
+        with conn.cursor() as cur:
+            cur.execute("UPDATE scheduled_posts SET publishing_started_at = NULL WHERE id=%s", (post_id,))
+            conn.commit()
+    except Exception:
+        pass  # Non-fatal
+    finally:
+        if conn:
+            conn.close()
+
+
 @app.post("/schedule/{item_id}/publish")
-def schedule_publish_now(item_id: int, platforms: str = ""):
+def schedule_publish_now(item_id: int, platforms: str = "",
+    _admin: None = Depends(lambda x_api_key: verify_admin_key(x_api_key)),
+    x_api_key: str = Header(None)):
     """Manual 'Post sekarang' — publish one scheduled post immediately.
     Optional ?platforms=youtube,instagram limits which platforms to post."""
     only = [p.strip().lower() for p in platforms.split(",") if p.strip()] or None
@@ -10531,7 +10633,9 @@ def schedule_publish_now(item_id: int, platforms: str = ""):
 
 
 @app.post("/schedule/publish-due")
-def schedule_publish_due():
+def schedule_publish_due(
+    _admin: None = Depends(lambda x_api_key: verify_admin_key(x_api_key)),
+    x_api_key: str = Header(None)):
     """Auto-publish every due, unposted scheduled post. Called by n8n at the
     scheduled time. Posts only rows the user explicitly scheduled and hasn't
     posted yet (platform_urls empty)."""

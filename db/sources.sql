@@ -21,3 +21,5 @@ CREATE INDEX IF NOT EXISTS sources_created_at_idx ON sources (created_at DESC);
 ALTER TABLE sources ADD COLUMN IF NOT EXISTS niche TEXT;
 ALTER TABLE sources ADD COLUMN IF NOT EXISTS gen_prompt TEXT;
 ALTER TABLE sources ADD COLUMN IF NOT EXISTS gen_prompt_format TEXT;
+ALTER TABLE sources ADD COLUMN IF NOT EXISTS canonical_key TEXT;
+CREATE INDEX IF NOT EXISTS sources_canonical_key_idx ON sources (canonical_key);

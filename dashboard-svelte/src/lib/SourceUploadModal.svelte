@@ -115,6 +115,14 @@
       includeAudio = false
       audioStart = ''
       audioEnd = ''
+      storyboardPhase = ''
+      storyboardReady = false
+      storyboardScenes = 0
+      prepStage = ''
+      prepPollCount = 0
+      geminiStarted = false
+      dupConfirm = null
+      dupResolve = null
     }
   })
 
@@ -148,6 +156,8 @@
   }
 
   function closeModal() {
+    stopStoryboardPolling()
+    if (dupResolve) cancelDup()  // M1: settle dangling coroutine before close
     isOpen = false
     setTimeout(() => triggerEl?.focus(), 50)
   }
@@ -469,6 +479,18 @@
         </label>
       </div>
 
+      <!-- Duplicate-URL confirm — hoisted above mode branch so it renders in all modes (C1) -->
+      {#if dupConfirm}
+        <div class="exists-msg" transition:fade={{ duration: 150 }}>
+          <div class="exists-head">⚠ Video ini sudah pernah dianalisa</div>
+          <div class="exists-url">{dupConfirm.title || dupConfirm.youtube_url}</div>
+          <div class="dup-actions">
+            <button class="btn-primary exists-btn" onclick={overrideExisting}>Timpa &amp; analisa ulang</button>
+            <button class="btn-ghost exists-btn" onclick={cancelDup}>Batal</button>
+          </div>
+        </div>
+      {/if}
+
       <!-- Conditional content based on analysis mode -->
       {#if analysisMode === 'gemini_mcp' || analysisMode === 'gemini_manual'}
         <!-- Gemini mode (both MCP and manual) -->
@@ -648,17 +670,6 @@
             {error}
           </div>
         {/if}
-
-      {#if dupConfirm}
-        <div class="exists-msg" transition:fade={{ duration: 150 }}>
-          <div class="exists-head">⚠ Video ini sudah pernah dianalisa</div>
-          <div class="exists-url">{dupConfirm.title || dupConfirm.youtube_url}</div>
-          <div class="dup-actions">
-            <button class="btn-primary exists-btn" onclick={overrideExisting}>Timpa &amp; analisa ulang</button>
-            <button class="btn-ghost exists-btn" onclick={cancelDup}>Batal</button>
-          </div>
-        </div>
-      {/if}
 
       {#if existsSource}
         <div class="exists-msg" transition:fade={{ duration: 150 }}>

@@ -29,6 +29,7 @@ from mcp.server.fastmcp import FastMCP
 
 # Database
 import psycopg
+from psycopg.types.json import Jsonb
 
 # HTTP to Claude bridge
 import httpx
@@ -237,6 +238,9 @@ def get_analysis(youtube_url: str) -> dict:
         {"analysis": {dict with hook, structure, retention, retention_score, tags, model, cost_usd, content_summary, content_detail}}
         or {"error": "...", "analysis": {}} if not found
     """
+    if not _valid_url(youtube_url):
+        return {"error": "invalid youtube_url", "analysis": {}}
+
     if not DATABASE_URL:
         return {"error": "DATABASE_URL not configured", "analysis": {}}
 
@@ -563,15 +567,13 @@ def save_analysis(youtube_url: str, analysis_json: str) -> dict:
     if tags is not None:
         if isinstance(tags, str):
             try:
-                tags = json.loads(tags)
+                tags = json.loads(tags)  # Parse string to list/dict
             except (json.JSONDecodeError, ValueError):
                 tags = None
-        if isinstance(tags, list):
-            tags = json.dumps(tags)  # Store as compact JSON string
-        elif isinstance(tags, dict):
-            tags = json.dumps(tags)
-        else:
+        # Wrap as JSONB for psycopg3 database insertion
+        if not isinstance(tags, (list, dict)):
             tags = None
+        tags_db = Jsonb(tags) if tags is not None else None
 
     # DB write: INSERT new row (no upsert)
     if not DATABASE_URL:
@@ -601,7 +603,7 @@ def save_analysis(youtube_url: str, analysis_json: str) -> dict:
                     retention_score,
                     content_summary,
                     content_detail,
-                    tags,
+                    tags_db,
                     raw_result_json,
                     "gemini-antigravity",
                     0  # cost_usd = 0 for Gemini (free)
@@ -719,7 +721,6 @@ def _suno_audio_path(youtube_url: str) -> str:
     url_hash = hashlib.sha1(normalized.encode()).hexdigest()
     # Return deterministic path: output/suno_audio/<hash>.mp3
     suno_dir = REPO_ROOT / "output" / "suno_audio"
-    suno_dir.mkdir(parents=True, exist_ok=True)
     return str(suno_dir / f"{url_hash}.mp3")
 
 
@@ -825,7 +826,7 @@ def query_keywords(
         source: filter by source ("google_ads" or "youtube_suggest")
         min_volume: minimum average monthly searches (optional)
         region: filter by region code (optional, e.g. "ID:id", "US:en")
-        limit: max results (default 50, clamped to 1-500)
+        limit: max results (default 50, clamped to 1-100)
 
     Returns:
         {"keywords": [{"keyword", "avg_monthly_searches", "competition", "score", ...}, ...]}
