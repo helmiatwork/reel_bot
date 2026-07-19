@@ -5436,7 +5436,11 @@ def _analyze_audio(path: str, start_sec: Optional[float] = None, end_sec: Option
 
 _MUSIC_TAG_MODEL = "gemini-2.5-flash-lite"  # ponytail: swap here if model changes
 _SUNO_AUDIO_MODEL = os.getenv("SUNO_AUDIO_MODEL", "gemini-2.5-pro")  # ponytail: stronger model for richer audio analysis
-_SUNO_WINDOW_SEC = int(os.getenv("SUNO_WINDOW_SEC", "600"))  # ponytail: when audio_end is empty, download this bounded window (10 min default); env-overridable; a true full multi-hour download avoided intentionally
+try:
+    _SUNO_WINDOW_SEC = int(os.getenv("SUNO_WINDOW_SEC") or "600")
+except (ValueError, TypeError):
+    _SUNO_WINDOW_SEC = 600
+# ponytail: when audio_end is empty, download this bounded window (10 min default); env-overridable; a true full multi-hour download avoided intentionally
 
 
 def _suggest_music_tags(path: str) -> list:

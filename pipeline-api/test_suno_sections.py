@@ -250,16 +250,16 @@ class TestDownloadWindowLogic:
             cmd = call_args[0][0]  # first positional arg is the command list
 
             # Extract --download-sections argument
-            if "--download-sections" in cmd:
-                idx = cmd.index("--download-sections")
-                sections_arg = cmd[idx + 1]
-                # Should be "*0-600" (or "*0-{SUNO_WINDOW_SEC}" if env is set)
-                assert sections_arg.startswith("*0-"), f"Expected section arg to start with '*0-', got {sections_arg}"
-                # Parse the end time from the section arg (*start-end format)
-                parts = sections_arg.split("-")
-                end_time = float(parts[-1])
-                # Should be 600 (default SUNO_WINDOW_SEC)
-                assert end_time == 600, f"Expected end=600, got {end_time}"
+            assert "--download-sections" in cmd, f"expected --download-sections in {cmd}"
+            idx = cmd.index("--download-sections")
+            sections_arg = cmd[idx + 1]
+            # Should be "*0-600" (or "*0-{SUNO_WINDOW_SEC}" if env is set)
+            assert sections_arg.startswith("*0-"), f"Expected section arg to start with '*0-', got {sections_arg}"
+            # Parse the end time from the section arg (*start-end format)
+            parts = sections_arg.split("-")
+            end_time = float(parts[-1])
+            # Should be 600 (default SUNO_WINDOW_SEC)
+            assert end_time == 600, f"Expected end=600, got {end_time}"
 
     def test_explicit_audio_end_honored(self):
         """
@@ -286,16 +286,16 @@ class TestDownloadWindowLogic:
             call_args = mock_run.call_args
             cmd = call_args[0][0]
 
-            if "--download-sections" in cmd:
-                idx = cmd.index("--download-sections")
-                sections_arg = cmd[idx + 1]
-                # Should be "*10.0-120.0" (exactly as provided, not start + 600)
-                # Parse to verify the values
-                parts = sections_arg.split("-")
-                start_time = float(parts[0].lstrip("*"))
-                end_time = float(parts[-1])
-                assert start_time == 10.0, f"Expected start=10.0, got {start_time}"
-                assert end_time == 120.0, f"Expected end=120.0, got {end_time}"
+            assert "--download-sections" in cmd, f"expected --download-sections in {cmd}"
+            idx = cmd.index("--download-sections")
+            sections_arg = cmd[idx + 1]
+            # Should be "*10.0-120.0" (exactly as provided, not start + 600)
+            # Parse to verify the values
+            parts = sections_arg.split("-")
+            start_time = float(parts[0].lstrip("*"))
+            end_time = float(parts[-1])
+            assert start_time == 10.0, f"Expected start=10.0, got {start_time}"
+            assert end_time == 120.0, f"Expected end=120.0, got {end_time}"
 
     def test_suno_window_sec_env_override(self):
         """
@@ -304,11 +304,10 @@ class TestDownloadWindowLogic:
         with patch("subprocess.run") as mock_run, \
              patch("pathlib.Path.glob") as mock_glob, \
              patch("pathlib.Path.mkdir"), \
-             patch("shutil.move"), \
-             patch.dict(os.environ, {"SUNO_WINDOW_SEC": "300"}):
+             patch("shutil.move"):
 
-            # Reimport main module to pick up the new env var (or reference it directly)
-            # Since _SUNO_WINDOW_SEC is evaluated at module load, we'll patch the function's reference
+            # Note: patch.dict(os.environ) is a no-op for _SUNO_WINDOW_SEC because it is
+            # evaluated at module import time, not at runtime. The direct assignment below drives the test.
             old_window = m._SUNO_WINDOW_SEC
             try:
                 # Temporarily override the module constant
@@ -328,12 +327,12 @@ class TestDownloadWindowLogic:
                 call_args = mock_run.call_args
                 cmd = call_args[0][0]
 
-                if "--download-sections" in cmd:
-                    idx = cmd.index("--download-sections")
-                    sections_arg = cmd[idx + 1]
-                    parts = sections_arg.split("-")
-                    end_time = float(parts[-1])
-                    assert end_time == 300, f"Expected end=300 (from env), got {end_time}"
+                assert "--download-sections" in cmd, f"expected --download-sections in {cmd}"
+                idx = cmd.index("--download-sections")
+                sections_arg = cmd[idx + 1]
+                parts = sections_arg.split("-")
+                end_time = float(parts[-1])
+                assert end_time == 300, f"Expected end=300 (from env), got {end_time}"
             finally:
                 m._SUNO_WINDOW_SEC = old_window
 
