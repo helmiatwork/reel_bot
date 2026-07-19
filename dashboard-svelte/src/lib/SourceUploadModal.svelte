@@ -12,6 +12,7 @@
   let error = $state(null)
   let panelEl = $state(null)
   let triggerEl = $state(null)
+  let dupCardEl = $state(null)
 
   // URL tab state
   let urlInput = $state('')
@@ -168,11 +169,29 @@
 
   function onKey(e) {
     if (!isOpen) return
-    if (e.key === 'Escape') closeModal()
+    if (e.key === 'Escape') {
+      if (dupConfirm) { cancelDup(); return }
+      closeModal()
+    }
   }
 
+  // ponytail: autofocus Batal (safe default) whenever dupConfirm dialog mounts
+  $effect(() => {
+    if (dupConfirm && dupCardEl) dupCardEl.querySelector('button:last-child')?.focus()
+  })
+
   function trapFocus(e) {
-    if (!panelEl || e.key !== 'Tab') return
+    if (e.key !== 'Tab') return
+    // When dup dialog is showing, constrain focus to its buttons only
+    if (dupConfirm && dupCardEl) {
+      const f = dupCardEl.querySelectorAll('button')
+      if (!f.length) return
+      const first = f[0], last = f[f.length - 1]
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+      return
+    }
+    if (!panelEl) return
     const focusable = panelEl.querySelectorAll(
       'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
     )
@@ -478,18 +497,6 @@
           </div>
         </label>
       </div>
-
-      <!-- Duplicate-URL confirm — hoisted above mode branch so it renders in all modes (C1) -->
-      {#if dupConfirm}
-        <div class="exists-msg" transition:fade={{ duration: 150 }}>
-          <div class="exists-head">⚠ Video ini sudah pernah dianalisa</div>
-          <div class="exists-url">{dupConfirm.title || dupConfirm.youtube_url}</div>
-          <div class="dup-actions">
-            <button class="btn-primary exists-btn" onclick={overrideExisting}>Timpa &amp; analisa ulang</button>
-            <button class="btn-ghost exists-btn" onclick={cancelDup}>Batal</button>
-          </div>
-        </div>
-      {/if}
 
       <!-- Conditional content based on analysis mode -->
       {#if analysisMode === 'gemini_mcp' || analysisMode === 'gemini_manual'}
@@ -894,6 +901,32 @@
       {/if}
     </div>
   </div>
+
+  <!-- Duplicate-URL confirm overlay — floats above the source modal -->
+  {#if dupConfirm}
+    <div
+      class="dup-backdrop"
+      transition:fade={{ duration: 150 }}
+      onclick={cancelDup}
+      aria-hidden="true"
+    ></div>
+    <div
+      class="dup-card"
+      bind:this={dupCardEl}
+      role="alertdialog"
+      aria-modal="true"
+      aria-label="Konfirmasi duplikat"
+      aria-describedby="dup-url-text"
+      transition:scale={{ duration: 180, start: 0.95, easing: cubicOut }}
+    >
+      <div class="dup-head">⚠ Video ini sudah pernah dianalisa</div>
+      <div class="dup-url" id="dup-url-text">{dupConfirm.title || dupConfirm.youtube_url}</div>
+      <div class="dup-actions">
+        <button class="btn-primary" onclick={overrideExisting}>Timpa &amp; analisa ulang</button>
+        <button class="btn-cancel" onclick={cancelDup}>Batal</button>
+      </div>
+    </div>
+  {/if}
 {/if}
 
 <style>
@@ -1335,5 +1368,50 @@
   .segment-dash {
     color: var(--mut);
     font-size: 0.875rem;
+  }
+
+  /* Duplicate-URL confirm sub-overlay */
+  .dup-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1001;
+  }
+
+  .dup-card {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1002;
+    background: var(--bg);
+    border-radius: 8px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    padding: 1.5rem;
+    max-width: 380px;
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .dup-head {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--accent);
+  }
+
+  .dup-url {
+    font-size: 0.8125rem;
+    font-family: 'Monaco', monospace;
+    word-break: break-all;
+    color: var(--mut);
+    line-height: 1.4;
+  }
+
+  .dup-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.25rem;
   }
 </style>
