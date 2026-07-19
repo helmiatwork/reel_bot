@@ -5670,7 +5670,7 @@ def _detect_audio_sections(path: str, min_section_sec: float = 20.0, max_section
 
         # Normalize features
         feature_sync = librosa.util.sync(features, np.arange(features.shape[1]))
-        X = librosa.feature.stack_memory(feature_sync, n_mels=1).T
+        X = librosa.feature.stack_memory(feature_sync, n_steps=2).T
         X = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-8)
 
         # Agglomerative clustering to find K+1 clusters (K boundaries)
@@ -7677,6 +7677,9 @@ def analyze_gemini_brief(youtube_url: str, audio_start: Optional[float] = None, 
 
             # Analyze each section
             for idx, (start_sec, end_sec) in enumerate(sections):
+                # Skip zero-duration segments (fallback edge case)
+                if start_sec >= end_sec:
+                    continue
                 # Format time label (mm:ss–mm:ss)
                 start_min, start_s = divmod(int(start_sec), 60)
                 end_min, end_s = divmod(int(end_sec), 60)
