@@ -48,7 +48,7 @@ class TestGeminiIdeasEndpoint:
             with patch("main._db_conn") as mock_db_conn:
                 # Mock DB connection and cursor
                 mock_cursor = MagicMock()
-                mock_cursor.fetchone.return_value = ("frugal-living", "river bath tutorial")
+                mock_cursor.fetchone.return_value = ("frugal-living",)
 
                 mock_conn = MagicMock()
                 mock_conn.cursor.return_value.__enter__.return_value = mock_cursor

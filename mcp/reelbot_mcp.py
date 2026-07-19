@@ -684,8 +684,6 @@ def save_ideas(youtube_url: str, ideas_json: str) -> dict:
 
     try:
         with conn.cursor() as cur:
-            # Compact JSON for storage
-            ideas_json_str = json.dumps(ideas_list, separators=(',', ':'))
             ideas_jsonb = Jsonb(ideas_list)
 
             # Look up source_id by youtube_url (may be NULL if no source row yet)

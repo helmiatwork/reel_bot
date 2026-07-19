@@ -8003,20 +8003,25 @@ def analyze_ideas_status(youtube_url: str):
         conn.close()
 
 
+class SelectIdeaRequest(BaseModel):
+    youtube_url: str
+    index: int
+
+
 @app.post("/analyze/ideas/select")
-def analyze_ideas_select(youtube_url: str = None, index: int = None):
+def analyze_ideas_select(req: SelectIdeaRequest):
     """
     Select a candidate idea (used by frontend after user picks one).
 
-    Query params or JSON body: youtube_url, index
+    JSON body: youtube_url, index
     Returns: {"ok": true, "selected_index": index} on success
     """
     try:
-        _validate_source_url(youtube_url)
+        _validate_source_url(req.youtube_url)
     except HTTPException:
         raise HTTPException(status_code=400, detail="invalid youtube_url")
 
-    if index is None or not isinstance(index, int):
+    if not isinstance(req.index, int):
         raise HTTPException(status_code=400, detail="index must be an integer")
 
     conn = _db_conn()
@@ -8028,7 +8033,7 @@ def analyze_ideas_select(youtube_url: str = None, index: int = None):
             # Validate that the index is in range of candidates
             cur.execute(
                 "SELECT candidates FROM source_ideas WHERE youtube_url = %s",
-                (youtube_url,)
+                (req.youtube_url,)
             )
             row = cur.fetchone()
 
@@ -8049,17 +8054,17 @@ def analyze_ideas_select(youtube_url: str = None, index: int = None):
             if not isinstance(candidates, list) or len(candidates) == 0:
                 raise HTTPException(status_code=400, detail="no candidates found for this url")
 
-            if index < 0 or index >= len(candidates):
+            if req.index < 0 or req.index >= len(candidates):
                 raise HTTPException(status_code=400, detail=f"index out of range [0, {len(candidates)-1}]")
 
             # Update selected_index
             cur.execute(
                 "UPDATE source_ideas SET selected_index = %s, updated_at = now() WHERE youtube_url = %s",
-                (index, youtube_url)
+                (req.index, req.youtube_url)
             )
 
             conn.commit()
-            return {"ok": True, "selected_index": index}
+            return {"ok": True, "selected_index": req.index}
     except HTTPException:
         raise
     except Exception as e:
