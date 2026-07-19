@@ -21,6 +21,7 @@
         "url": "http://localhost:8000/performance/refresh",
         "options": { "timeout": 300000 }
       },
+      "onError": "continueErrorOutput",
       "id": "perf-refresh",
       "name": "POST /performance/refresh",
       "type": "n8n-nodes-base.httpRequest",
@@ -33,11 +34,31 @@
         "url": "http://localhost:8000/performance/check-targets",
         "options": { "timeout": 300000 }
       },
+      "onError": "continueErrorOutput",
       "id": "perf-check",
       "name": "POST /performance/check-targets",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [780, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.OPENCLAW_TELEGRAM_BOT_TOKEN_FOR_REELBOT }}/sendMessage",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "chat_id", "value": "={{ $env.OPENCLAW_TELEGRAM_OWNER_ID_FOR_REELBOT }}" },
+            { "name": "text", "value": "=⚠️ n8n: Performance daily snapshot failed — {{ $json.error?.message || 'pipeline-api unreachable' }}" }
+          ]
+        },
+        "options": { "timeout": 15000 }
+      },
+      "id": "perf-notify-fail",
+      "name": "Notify failure (Telegram)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1040, 300]
     }
   ],
   "connections": {
@@ -52,6 +73,17 @@
       "main": [
         [
           { "node": "POST /performance/check-targets", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Notify failure (Telegram)", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "POST /performance/check-targets": {
+      "main": [
+        [],
+        [
+          { "node": "Notify failure (Telegram)", "type": "main", "index": 0 }
         ]
       ]
     }
