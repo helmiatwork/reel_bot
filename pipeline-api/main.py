@@ -7475,7 +7475,7 @@ def _download_and_clip_audio_for_suno(youtube_url: str, audio_start: Optional[fl
     try:
         # Download audio using yt-dlp
         output_template = f"{tmp_dir}/audio.%(ext)s"
-        result = subprocess.run([
+        cmd = [
             # ponytail: venv interpreter's yt_dlp has curl_cffi for --impersonate;
             # bare "yt-dlp" on PATH is a pyenv shim without it.
             sys.executable, "-m", "yt_dlp",
@@ -7486,8 +7486,18 @@ def _download_and_clip_audio_for_suno(youtube_url: str, audio_start: Optional[fl
             "--impersonate", "chrome",
             "-o", output_template,
             "--no-playlist",
-            youtube_url
-        ], capture_output=True, timeout=120, check=True, text=True)
+        ]
+        # Only fetch the requested window, not the full track. A long video
+        # (e.g. a multi-hour radio mix) times out the full audio download;
+        # --download-sections fetches just the clip, so it's fast and the file
+        # is already the section (no separate re-clip needed).
+        use_section = audio_start is not None or audio_end is not None
+        if use_section:
+            start = max(0, float(audio_start) if audio_start is not None else 0)
+            end = float(audio_end) if audio_end is not None else start + 30
+            cmd += ["--download-sections", f"*{start}-{end}"]
+        cmd.append(youtube_url)
+        result = subprocess.run(cmd, capture_output=True, timeout=120, check=True, text=True)
 
         # Find downloaded file
         audio_files = list(Path(tmp_dir).glob("audio.*"))
@@ -7496,11 +7506,9 @@ def _download_and_clip_audio_for_suno(youtube_url: str, audio_start: Optional[fl
 
         downloaded_path = str(audio_files[0])
 
-        # Clip if time range provided; otherwise move to output path
-        if audio_start is not None or audio_end is not None:
-            clipped_path = _clip_audio(downloaded_path, audio_start, audio_end)
-        else:
-            clipped_path = downloaded_path
+        # With --download-sections the file already IS the clip; only re-clip in
+        # the (rare) full-download path where no time range was given.
+        clipped_path = downloaded_path if use_section else _clip_audio(downloaded_path, audio_start, audio_end)
 
         # Move clipped audio to deterministic output path
         shutil.move(clipped_path, output_path)
