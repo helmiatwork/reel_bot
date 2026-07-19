@@ -5645,7 +5645,15 @@ def _detect_audio_sections(path: str, min_section_sec: float = 20.0, max_section
     ponytail: max_sections ceiling (env override via SUNO_MAX_SECTIONS); detection runs
     on fetched window only (no multi-hour downloads).
     """
-    max_sections = int(os.getenv("SUNO_MAX_SECTIONS", str(max_sections)))
+    try:
+        max_sections_env = os.getenv("SUNO_MAX_SECTIONS")
+        if max_sections_env:
+            try:
+                max_sections = int(max_sections_env)
+            except (ValueError, TypeError):
+                pass
+    except:
+        pass
 
     try:
         import librosa
@@ -5661,7 +5669,7 @@ def _detect_audio_sections(path: str, min_section_sec: float = 20.0, max_section
         features = np.vstack([chroma, mfcc])
 
         # Normalize features
-        feature_sync = librosa.util.sync(features, librosa.frames_to_time(np.arange(features.shape[1]), sr=sr))
+        feature_sync = librosa.util.sync(features, np.arange(features.shape[1]))
         X = librosa.feature.stack_memory(feature_sync, n_mels=1).T
         X = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-8)
 
@@ -5697,13 +5705,14 @@ def _detect_audio_sections(path: str, min_section_sec: float = 20.0, max_section
 
         # Cap at max_sections if needed
         if len(merged) > max_sections:
-            # Merge smallest-gap segments
+            # Merge shortest-duration adjacent segments
+            pre_cap = len(merged)
             while len(merged) > max_sections:
-                gaps = [merged[i+1][0] - merged[i][1] for i in range(len(merged)-1)]
-                min_gap_idx = np.argmin(gaps)
-                merged[min_gap_idx][1] = merged[min_gap_idx+1][1]
-                merged.pop(min_gap_idx + 1)
-            print(f"[suno] capped {len(segments)} detected sections to {max_sections}")
+                durations = [(merged[i][1] - merged[i][0]) + (merged[i+1][1] - merged[i+1][0]) for i in range(len(merged)-1)]
+                min_dur_idx = np.argmin(durations)
+                merged[min_dur_idx][1] = merged[min_dur_idx+1][1]
+                merged.pop(min_dur_idx + 1)
+            print(f"[suno] capped {pre_cap} → {max_sections} sections")
 
         # Return as list of tuples, duration clamped to avoid float rounding errors
         result = [(float(s), min(float(e), duration)) for s, e in merged]
@@ -5711,7 +5720,14 @@ def _detect_audio_sections(path: str, min_section_sec: float = 20.0, max_section
 
     except Exception as e:
         print(f"[suno] _detect_audio_sections error (non-fatal): {e}")
-        return [(0.0, 0.0)]  # Preserve single-segment fallback on error
+        # Try to return a valid segment with known duration, else fallback
+        try:
+            import librosa
+            y, sr = librosa.load(path, sr=None, mono=True)
+            duration = float(librosa.get_duration(y=y, sr=sr))
+            return [(0.0, duration)] if duration > 0 else [(0.0, 0.0)]
+        except:
+            return [(0.0, 0.0)]
 
 
 def _suno_audio_analysis_segment(path: str, start_sec: float, end_sec: float) -> dict:
@@ -5722,6 +5738,11 @@ def _suno_audio_analysis_segment(path: str, start_sec: float, end_sec: float) ->
     Non-fatal: returns {} on any error (analysis is optional per section).
     """
     if start_sec >= end_sec:
+        return {}
+
+    # Check for required credentials early
+    cliproxy_key = os.getenv("CLIPROXY_KEY", "")
+    if not cliproxy_key:
         return {}
 
     try:
@@ -5755,9 +5776,6 @@ def _suno_audio_analysis_segment(path: str, start_sec: float, end_sec: float) ->
                 Path(tmp_path).unlink(missing_ok=True)
 
             cliproxy_url = os.getenv("CLIPROXY_URL", "http://localhost:8317/v1").rstrip("/")
-            cliproxy_key = os.getenv("CLIPROXY_KEY", "")
-            if not cliproxy_key:
-                return {}
 
             payload = {
                 "model": _SUNO_AUDIO_MODEL,
@@ -5782,8 +5800,11 @@ def _suno_audio_analysis_segment(path: str, start_sec: float, end_sec: float) ->
             }
 
             resp = httpx.post(
-                f"{cliproxy_url}/messages",
-                headers={"Authorization": f"Bearer {cliproxy_key}"},
+                f"{cliproxy_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {cliproxy_key}",
+                    "Content-Type": "application/json",
+                },
                 json=payload,
                 timeout=60.0,
             )
@@ -7651,7 +7672,8 @@ def analyze_gemini_brief(youtube_url: str, audio_start: Optional[float] = None, 
             audio_path = _download_and_clip_audio_for_suno(youtube_url, audio_start, audio_end)
 
             # Detect natural musical sections
-            sections = _detect_audio_sections(audio_path, min_section_sec=20.0, max_sections=8)
+            # ponytail: 4 is latency-safe (4 sync Gemini calls ~2–3 min); 8 could take ~10 min
+            sections = _detect_audio_sections(audio_path, min_section_sec=20.0, max_sections=4)
 
             # Analyze each section
             for idx, (start_sec, end_sec) in enumerate(sections):
