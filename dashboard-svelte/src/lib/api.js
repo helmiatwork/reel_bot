@@ -230,7 +230,7 @@ export const api = {
   sourceSegments: (source_id) => getJSON('/sources/' + source_id + '/segments'),
   sourceAnalysis: (source_id) => getJSON('/sources/' + source_id + '/analysis'),
   sourceExists: (youtube_url) => getJSON('/sources/exists?youtube_url=' + encodeURIComponent(youtube_url)),
-  deleteSource: (source_id) => fetch('/sources/' + source_id, { method: 'DELETE' }).then(r => r.json()),
+  deleteSource: (source_id) => delJSON('/sources/' + source_id),
   storyboardStatus: (youtube_url) => getJSON('/analyze/storyboard-status?youtube_url=' + encodeURIComponent(youtube_url)),
   getGeminiBrief: (youtube_url, { audio_start, audio_end } = {}) => {
     const params = new URLSearchParams({ youtube_url })

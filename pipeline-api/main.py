@@ -7752,8 +7752,10 @@ def delete_source(source_id: int):
         return _json({"error": str(e)}, status=500)
     finally:
         conn.close()
-    # Best-effort disk cleanup of the segment folder.
-    if seg_dir:
+    # Best-effort disk cleanup of the segment folder. Guard: only remove a
+    # direct child of data/segments/ — never the segments root itself, so a
+    # malformed segment_path can't wipe every video's clips.
+    if seg_dir and Path(seg_dir).parent == (_REPO_ROOT / "data" / "segments"):
         shutil.rmtree(seg_dir, ignore_errors=True)
     return _json({"ok": True, "deleted_source": source_id})
 
