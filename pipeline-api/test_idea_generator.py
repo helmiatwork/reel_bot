@@ -195,7 +195,7 @@ class TestIdeasSelectEndpoint:
                 mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
                 mock_db_conn.return_value = mock_conn
 
-                response = client.post("/analyze/ideas/select?youtube_url=https://www.youtube.com/watch?v=test&index=1")
+                response = client.post("/analyze/ideas/select", json={"youtube_url": "https://www.youtube.com/watch?v=test", "index": 1})
 
                 assert response.status_code == 200
                 data = response.json()
@@ -217,7 +217,7 @@ class TestIdeasSelectEndpoint:
                 mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
                 mock_db_conn.return_value = mock_conn
 
-                response = client.post("/analyze/ideas/select?youtube_url=https://www.youtube.com/watch?v=test&index=10")
+                response = client.post("/analyze/ideas/select", json={"youtube_url": "https://www.youtube.com/watch?v=test", "index": 10})
 
                 assert response.status_code == 400
 
@@ -234,7 +234,7 @@ class TestIdeasSelectEndpoint:
                 mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
                 mock_db_conn.return_value = mock_conn
 
-                response = client.post("/analyze/ideas/select?youtube_url=https://www.youtube.com/watch?v=test&index=0")
+                response = client.post("/analyze/ideas/select", json={"youtube_url": "https://www.youtube.com/watch?v=test", "index": 0})
 
                 assert response.status_code == 400
 
@@ -243,7 +243,7 @@ class TestIdeasSelectEndpoint:
         with patch("socket.getaddrinfo") as mock_ga:
             mock_ga.side_effect = socket.gaierror(socket.EAI_NONAME, "Name or service not known")
 
-            response = client.post("/analyze/ideas/select?youtube_url=https://this-domain-does-not-exist-xyz.example/watch?v=abc&index=0")
+            response = client.post("/analyze/ideas/select", json={"youtube_url": "https://this-domain-does-not-exist-xyz.example/watch?v=abc", "index": 0})
 
             assert response.status_code == 400
 
