@@ -7851,26 +7851,27 @@ def analyze_gemini_ideas(youtube_url: str):
     except HTTPException:
         raise HTTPException(status_code=400, detail="invalid youtube_url")
 
-    # Query database for niche and title
+    # Query database for niche
     niche = "general"
-    title = ""
     try:
         conn = _db_conn()
         if conn:
             try:
                 with conn.cursor() as cur:
-                    cur.execute("SELECT niche, title FROM sources WHERE youtube_url = %s", (youtube_url,))
+                    cur.execute("SELECT niche FROM sources WHERE youtube_url = %s", (youtube_url,))
                     row = cur.fetchone()
                     if row:
-                        db_niche, db_title = row
+                        db_niche = row[0]
                         niche = db_niche if db_niche else "general"
-                        title = db_title if db_title else ""
             except Exception as e:
                 print(f"[analyze_gemini_ideas] db query failed (non-fatal): {e}")
             finally:
                 conn.close()
     except Exception as e:
         print(f"[analyze_gemini_ideas] db connection failed (non-fatal): {e}")
+
+    # Sanitize youtube_url before embedding in instruction string (defense-in-depth)
+    safe_url = youtube_url.replace('"', '')
 
     # Build instruction for Gemini
     instruction = f"""You are an expert viral content ideator for social media creators in the {niche} niche.
@@ -7882,7 +7883,7 @@ RULES:
 - CRITICAL: base all ideas on what you ACTUALLY SEE in the footage. Never invent, guess, or fabricate story angles. If get_clips fails or returns empty, skip wildly exaggerated ideas and propose only grounded angles from context.
 
 Task:
-STEP 1: Call `get_clips(youtube_url="{youtube_url}")` and WATCH every returned clip.
+STEP 1: Call `get_clips(youtube_url="{safe_url}")` and WATCH every returned clip.
 
 STEP 2: Based on ONLY what you saw in the clips, brainstorm **3-5 FRESH, UNIQUE, DISTINCT viral story angles/reframes** for this footage, tailored to the {niche} niche. Each angle must be a genuinely different creative direction (not minor variations of one theme) — mix grounded strategies with bold/clickbait reframes. Prioritize originality and uniqueness. It's fine for angles to be exaggerated/fictional framing (this is entertainment content ideation — the human picks which to use).
 

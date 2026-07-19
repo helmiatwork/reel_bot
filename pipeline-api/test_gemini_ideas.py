@@ -63,12 +63,12 @@ class TestGeminiIdeasEndpoint:
                 assert "get_clips" in data["instruction"]
 
     def test_invalid_youtube_url(self, client):
-        """Should return 400 error for invalid URL."""
+        """Should return 400 error for DNS failure (mocked getaddrinfo)."""
         with patch("socket.getaddrinfo") as mock_ga:
-            # Mock DNS failure for localhost
+            # Mock DNS failure for a non-localhost hostname
             mock_ga.side_effect = socket.gaierror(socket.EAI_NONAME, "Name or service not known")
 
-            response = client.get("/analyze/gemini-ideas?youtube_url=http://localhost:8000/bad")
+            response = client.get("/analyze/gemini-ideas?youtube_url=https://this-domain-does-not-exist-xyz.example/watch?v=abc")
 
             assert response.status_code == 400
             assert "invalid youtube_url" in response.json()["detail"]
