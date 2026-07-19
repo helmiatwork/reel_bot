@@ -5625,6 +5625,213 @@ def _suno_audio_analysis(path: str) -> dict:
         return {}
 
 
+def _detect_audio_sections(path: str, min_section_sec: float = 20.0, max_sections: int = 8) -> list:
+    """
+    Detect natural musical sections in audio via librosa structural segmentation.
+
+    Uses spectral features (chroma + mfcc) with agglomerative clustering to find
+    boundaries where the music changes character. Merges small segments (< min_section_sec)
+    into adjacent segments, and caps the total count at max_sections.
+
+    Args:
+        path: path to audio file
+        min_section_sec: segments shorter than this (sec) are merged
+        max_sections: hard cap on number of sections
+
+    Returns:
+        List of (start_sec, end_sec) tuples, always including at least [(0.0, duration)].
+        Never raises — returns single segment on any error.
+
+    ponytail: max_sections ceiling (env override via SUNO_MAX_SECTIONS); detection runs
+    on fetched window only (no multi-hour downloads).
+    """
+    try:
+        max_sections_env = os.getenv("SUNO_MAX_SECTIONS")
+        if max_sections_env:
+            try:
+                max_sections = int(max_sections_env)
+            except (ValueError, TypeError):
+                pass
+    except:
+        pass
+
+    try:
+        import librosa
+        import numpy as np
+
+        y, sr = librosa.load(path, sr=None, mono=True)
+        duration = float(librosa.get_duration(y=y, sr=sr))
+
+        # Extract features for structural segmentation
+        # Use chroma and mfcc stacked for a rich spectral descriptor
+        chroma = librosa.feature.chroma_stft(y=y, sr=sr)
+        mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
+        features = np.vstack([chroma, mfcc])
+
+        # Normalize features
+        feature_sync = librosa.util.sync(features, np.arange(features.shape[1]))
+        X = librosa.feature.stack_memory(feature_sync, n_steps=2).T
+        X = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-8)
+
+        # Agglomerative clustering to find K+1 clusters (K boundaries)
+        # Start with a reasonable estimate: ~1 boundary per 30-60 seconds
+        k_clusters = max(2, min(int(duration / 40.0) + 1, max_sections))
+        from scipy.cluster.hierarchy import linkage, fcluster
+        from scipy.spatial.distance import pdist
+
+        if len(X) < 2:
+            return [(0.0, duration)]
+
+        Z = linkage(X, method='ward')
+        labels = fcluster(Z, k_clusters, criterion='maxclust') - 1
+
+        # Find boundaries (label transitions)
+        boundaries_frames = np.where(np.diff(labels) != 0)[0] + 1
+        boundaries_times = librosa.frames_to_time(boundaries_frames, sr=sr)
+
+        # Build segments
+        segment_starts = [0.0] + list(boundaries_times)
+        segment_ends = list(boundaries_times) + [duration]
+        segments = list(zip(segment_starts, segment_ends))
+
+        # Merge segments shorter than min_section_sec
+        merged = []
+        for start, end in segments:
+            if end - start >= min_section_sec or not merged:
+                merged.append([start, end])
+            else:
+                # Merge with previous
+                merged[-1][1] = end
+
+        # Cap at max_sections if needed
+        if len(merged) > max_sections:
+            # Merge shortest-duration adjacent segments
+            pre_cap = len(merged)
+            while len(merged) > max_sections:
+                durations = [(merged[i][1] - merged[i][0]) + (merged[i+1][1] - merged[i+1][0]) for i in range(len(merged)-1)]
+                min_dur_idx = np.argmin(durations)
+                merged[min_dur_idx][1] = merged[min_dur_idx+1][1]
+                merged.pop(min_dur_idx + 1)
+            print(f"[suno] capped {pre_cap} → {max_sections} sections")
+
+        # Return as list of tuples, duration clamped to avoid float rounding errors
+        result = [(float(s), min(float(e), duration)) for s, e in merged]
+        return result if result else [(0.0, duration)]
+
+    except Exception as e:
+        print(f"[suno] _detect_audio_sections error (non-fatal): {e}")
+        # Try to return a valid segment with known duration, else fallback
+        try:
+            import librosa
+            y, sr = librosa.load(path, sr=None, mono=True)
+            duration = float(librosa.get_duration(y=y, sr=sr))
+            return [(0.0, duration)] if duration > 0 else [(0.0, 0.0)]
+        except:
+            return [(0.0, 0.0)]
+
+
+def _suno_audio_analysis_segment(path: str, start_sec: float, end_sec: float) -> dict:
+    """
+    Analyze a specific audio segment via Gemini (through cliproxy).
+    Clips the sub-range to a temp mp3, sends via input_audio, returns {genre,tempo,mood,instruments,description}.
+
+    Non-fatal: returns {} on any error (analysis is optional per section).
+    """
+    if start_sec >= end_sec:
+        return {}
+
+    # Check for required credentials early
+    cliproxy_key = os.getenv("CLIPROXY_KEY", "")
+    if not cliproxy_key:
+        return {}
+
+    try:
+        import base64
+        import httpx
+
+        # Clip the segment to a temp file
+        clipped_path = _clip_audio(path, start_sec, end_sec)
+        if clipped_path == path:
+            # No clipping occurred (error in _clip_audio); fall back to analyzing the full path
+            # but this is suboptimal
+            clipped_path = path
+
+        clip_tmp = None
+        if clipped_path != path:
+            clip_tmp = clipped_path
+
+        try:
+            # Trim to 30s mono mp3 (Suno window)
+            with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
+                tmp_path = f.name
+            try:
+                subprocess.run(
+                    ["ffmpeg", "-y", "-i", clipped_path,
+                     "-t", "30", "-vn", "-ac", "1", "-ar", "22050", "-b:a", "64k",
+                     tmp_path],
+                    capture_output=True, timeout=30, check=True,
+                )
+                audio_b64 = base64.b64encode(Path(tmp_path).read_bytes()).decode()
+            finally:
+                Path(tmp_path).unlink(missing_ok=True)
+
+            cliproxy_url = os.getenv("CLIPROXY_URL", "http://localhost:8317/v1").rstrip("/")
+
+            payload = {
+                "model": _SUNO_AUDIO_MODEL,
+                "max_tokens": 500,
+                "messages": [{
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": (
+                                'Listen to this audio and describe what you hear. Return ONLY JSON: '
+                                '{"genre":"","tempo":"","mood":"","instruments":"","description":""}. '
+                                'Describe the actual instruments and sounds you hear, the tempo feel (fast/slow/moderate), the mood, and 1-2 sentences about what this is.'
+                            ),
+                        },
+                        {
+                            "type": "input_audio",
+                            "input_audio": {"data": audio_b64, "format": "mp3"},
+                        },
+                    ],
+                }],
+            }
+
+            resp = httpx.post(
+                f"{cliproxy_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {cliproxy_key}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+                timeout=60.0,
+            )
+            resp.raise_for_status()
+
+            content = resp.json()["choices"][0]["message"]["content"].strip()
+
+            # Strip markdown code fences
+            if content.startswith("```"):
+                parts = content.split("```", 2)
+                inner = parts[1]
+                if inner.startswith("json"):
+                    inner = inner[4:]
+                content = inner.rsplit("```", 1)[0].strip()
+
+            data = json.loads(content)
+            return data
+
+        finally:
+            if clip_tmp:
+                Path(clip_tmp).unlink(missing_ok=True)
+
+    except Exception as e:
+        print(f"[suno] _suno_audio_analysis_segment error (non-fatal): {e}")
+        return {}
+
+
 def _log_api_usage(agent: str, model: str, raw_usage: dict, cost_usd) -> None:
     """
     Log an API/LLM call to api_usage table.
@@ -7455,75 +7662,136 @@ def analyze_gemini_brief(youtube_url: str, audio_start: Optional[float] = None, 
     is_suno_mode = audio_start is not None or audio_end is not None
 
     if is_suno_mode:
-        # Suno prompt generation mode: clip audio, analyze with librosa + backend Gemini, build instruction
+        # Suno prompt generation mode: detect sections, analyze each with librosa + backend Gemini, build instruction
         audio_path = None
-        audio_hints = {}
-        gemini_heard = {}
+        sections = []
+        section_analyses = []
+
         try:
             # Download and clip audio from YouTube
             audio_path = _download_and_clip_audio_for_suno(youtube_url, audio_start, audio_end)
-            # Analyze audio with librosa for hints (numeric supplement)
-            audio_hints = _analyze_audio(audio_path, start_sec=None, end_sec=None)
-            # Analyze audio with backend Gemini for ground-truth audio understanding
-            gemini_heard = _suno_audio_analysis(audio_path)
+
+            # Detect natural musical sections
+            # ponytail: 4 is latency-safe (4 sync Gemini calls ~2–3 min); 8 could take ~10 min
+            sections = _detect_audio_sections(audio_path, min_section_sec=20.0, max_sections=4)
+
+            # Analyze each section
+            for idx, (start_sec, end_sec) in enumerate(sections):
+                # Skip zero-duration segments (fallback edge case)
+                if start_sec >= end_sec:
+                    continue
+                # Format time label (mm:ss–mm:ss)
+                start_min, start_s = divmod(int(start_sec), 60)
+                end_min, end_s = divmod(int(end_sec), 60)
+                time_label = f"{start_min}:{start_s:02d}–{end_min}:{end_s:02d}"
+
+                # Librosa hints for this section
+                section_hints = _analyze_audio(audio_path, start_sec=start_sec, end_sec=end_sec)
+
+                # Gemini audio analysis for this section
+                section_gemini = _suno_audio_analysis_segment(audio_path, start_sec, end_sec)
+
+                section_analyses.append({
+                    "index": idx,
+                    "start_sec": round(start_sec, 2),
+                    "end_sec": round(end_sec, 2),
+                    "time_label": time_label,
+                    "librosa_hints": section_hints,
+                    "gemini_analysis": section_gemini,
+                })
         except Exception as e:
             print(f"[analyze_gemini_brief] audio prep failed (non-fatal): {e}")
-            # Continue with empty hints if audio analysis fails
+            # Continue with empty sections if audio analysis fails
 
-        # Build Suno instruction
-        hints_text = _format_audio_hints_for_suno(audio_hints)
+        # If no sections detected, create a fallback single section
+        if not section_analyses:
+            section_analyses = [{
+                "index": 0,
+                "start_sec": 0.0,
+                "end_sec": 0.0,
+                "time_label": "0:00–0:00",
+                "librosa_hints": {},
+                "gemini_analysis": {},
+            }]
 
-        # Format Gemini audio analysis for embedding in instruction (authoritative ground truth)
-        if gemini_heard:
-            audio_analysis_text = "AUDIO ANALYSIS (produced by a Gemini model that listened to the actual clip — treat as authoritative):\n"
-            if gemini_heard.get("genre"):
-                audio_analysis_text += f"- Genre: {gemini_heard['genre']}\n"
-            if gemini_heard.get("tempo"):
-                audio_analysis_text += f"- Tempo: {gemini_heard['tempo']}\n"
-            if gemini_heard.get("mood"):
-                audio_analysis_text += f"- Mood: {gemini_heard['mood']}\n"
-            if gemini_heard.get("instruments"):
-                audio_analysis_text += f"- Instruments: {gemini_heard['instruments']}\n"
-            if gemini_heard.get("description"):
-                audio_analysis_text += f"- Description: {gemini_heard['description']}\n"
-        else:
-            audio_analysis_text = "AUDIO ANALYSIS: (analysis by backend Gemini model failed; fall back to librosa hints and your own listening)\n"
+        # Build per-section analysis text for the instruction
+        sections_text_parts = []
+        for section in section_analyses:
+            section_header = f"\n--- SECTION {section['index']} ({section['time_label']}) ---"
+            sections_text_parts.append(section_header)
 
-        instruction = f"""You are analyzing audio to generate a music creation prompt for Suno.
+            # Librosa hints for this section
+            hints = section['librosa_hints']
+            if hints and any(v is not None for v in hints.values()):
+                sections_text_parts.append("Librosa Analysis (supplementary):")
+                if hints.get("bpm"):
+                    sections_text_parts.append(f"  - BPM: {hints['bpm']} (may be 2x/0.5x for sparse/ambient)")
+                if hints.get("music_key"):
+                    sections_text_parts.append(f"  - Key: {hints['music_key']}")
+                if hints.get("energy"):
+                    sections_text_parts.append(f"  - Energy: {hints['energy']}")
+                if hints.get("duration_sec"):
+                    sections_text_parts.append(f"  - Duration: {hints['duration_sec']}s")
+            else:
+                sections_text_parts.append("Librosa Analysis: (unavailable)")
+
+            # Gemini analysis for this section
+            gemini = section['gemini_analysis']
+            if gemini and any(v for v in gemini.values()):
+                sections_text_parts.append("Gemini Audio Analysis (authoritative):")
+                if gemini.get("genre"):
+                    sections_text_parts.append(f"  - Genre: {gemini['genre']}")
+                if gemini.get("tempo"):
+                    sections_text_parts.append(f"  - Tempo: {gemini['tempo']}")
+                if gemini.get("mood"):
+                    sections_text_parts.append(f"  - Mood: {gemini['mood']}")
+                if gemini.get("instruments"):
+                    sections_text_parts.append(f"  - Instruments: {gemini['instruments']}")
+                if gemini.get("description"):
+                    sections_text_parts.append(f"  - Description: {gemini['description']}")
+            else:
+                sections_text_parts.append("Gemini Audio Analysis: (unavailable; use librosa hints and your own listening)")
+
+        sections_analysis_text = "\n".join(sections_text_parts)
+
+        instruction = f"""You are analyzing audio to generate music creation prompts for Suno.
 
 RULES:
 - You have EXACTLY ONE MCP tool available: `get_audio_for_suno`. Use it once to fetch the clipped audio file.
 - The audio file is a real audio file that you MAY listen to carefully via your environment, IF your environment supports audio playback.
 - Do NOT search, read code, call other tools, open a browser, or run commands.
-- CRITICAL: base your music prompt on the AUDIO ANALYSIS provided below (ground truth from a Gemini model that listened to the actual clip). You MAY also call `get_audio_for_suno` and listen yourself if your environment can play audio — but if it cannot (e.g. unsupported audio mime type in Antigravity), DO NOT STOP. Use the provided AUDIO ANALYSIS as ground truth and write the Suno prompt from it. NEVER invent details not supported by the analysis or the librosa hints.
+- CRITICAL: base your music prompts on the AUDIO ANALYSIS provided below (ground truth from Gemini models that listened to each section). You MAY also call `get_audio_for_suno` and listen yourself if your environment can play audio — but if it cannot, DO NOT STOP. Use the provided AUDIO ANALYSIS as ground truth and write the prompts from it. NEVER invent details not supported by the analysis.
 
 TEMPO RULE:
-The AUDIO ANALYSIS (from the model that listened) is authoritative for tempo FEEL and mood. The librosa BPM is a rough machine estimate that is often doubled for calm/sparse/ambient music. If the librosa BPM implies a brisk/fast track (e.g., > ~110 BPM) but the audio analysis mood is calm/low-energy/ambient/relaxed, use approximately HALF the librosa BPM (or the perceived tempo from the audio analysis) — never describe the track as both 'brisk/140 BPM' and 'very calm/low energy'. The genre, mood, tempo feel, and BPM in your final output MUST be mutually consistent.
+The AUDIO ANALYSIS (from the model that listened) is authoritative for tempo FEEL and mood. The librosa BPM is a rough machine estimate that is often doubled for calm/sparse/ambient music. If the librosa BPM implies a brisk/fast track (e.g., > ~110 BPM) but the audio analysis mood is calm/low-energy/ambient/relaxed, use approximately HALF the librosa BPM (or the perceived tempo from the audio analysis) — never describe as both 'brisk/140 BPM' and 'very calm/low energy'. The genre, mood, tempo feel, and BPM in your final output MUST be mutually consistent.
 
 Task:
-STEP 1: Review the AUDIO ANALYSIS below (produced by listening to the actual clip).
+STEP 1: Review the AUDIO ANALYSIS sections below (produced by listening to each section).
 
 STEP 2 (optional): If your environment supports audio playback, call reelbot MCP tool `get_audio_for_suno` with youtube_url="{youtube_url}" to optionally listen for yourself. However, if this fails or your environment cannot play audio, proceed without it — the provided AUDIO ANALYSIS is authoritative.
 
-STEP 3: Generate a Suno music prompt that recreates this audio as a JAZZ track. The prompt must be:
-- Specific (mention actual instruments, tempo, mood from the AUDIO ANALYSIS you have)
+STEP 3: For EACH section, generate a Suno music prompt that recreates that section as a JAZZ track. Each prompt must be:
+- Specific (mention actual instruments, tempo, mood from the AUDIO ANALYSIS for that section)
 - Between 50-150 words
 - Ready to paste directly into Suno
 
-Return a JSON object with:
-{{"audio_analysis": {{"genre": "str", "tempo": "str", "mood": "str", "instruments": "str"}}, "suno_prompt": "str"}}
+Return a JSON ARRAY with one object per section:
+[
+  {{"section": "0:00–1:30", "audio_analysis": {{"genre": "str", "tempo": "str", "mood": "str", "instruments": "str"}}, "suno_prompt": "str"}},
+  {{"section": "1:30–3:00", "audio_analysis": {{"genre": "str", "tempo": "str", "mood": "str", "instruments": "str"}}, "suno_prompt": "str"}},
+  ...
+]
 
-{audio_analysis_text}
+AUDIO ANALYSIS (sections analyzed by Gemini):
+{sections_analysis_text}
 
-LIBROSA HINTS (use as supplementary reference):
-{hints_text}
-
-Execute steps 1, 2 (optional), and 3 in order. Output the JSON with your analysis and Suno prompt."""
+Execute steps 1, 2 (optional), and 3 in order. Output the JSON ARRAY with your analysis and Suno prompts."""
 
         return {
             "instruction": instruction,
             "youtube_url": youtube_url,
             "audio_path": audio_path,
+            "section_count": len(section_analyses),
             "is_suno_mode": True
         }
     else:
