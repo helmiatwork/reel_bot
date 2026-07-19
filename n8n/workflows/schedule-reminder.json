@@ -21,11 +21,31 @@
         "url": "http://localhost:8000/schedule/remind-due",
         "options": { "timeout": 120000 }
       },
+      "onError": "continueErrorOutput",
       "id": "sched-remind-call",
       "name": "POST /schedule/remind-due",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [520, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.OPENCLAW_TELEGRAM_BOT_TOKEN_FOR_REELBOT }}/sendMessage",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "chat_id", "value": "={{ $env.OPENCLAW_TELEGRAM_OWNER_ID_FOR_REELBOT }}" },
+            { "name": "text", "value": "=⚠️ n8n: Post reminder failed — {{ $json.error?.message || 'pipeline-api unreachable' }}" }
+          ]
+        },
+        "options": { "timeout": 15000 }
+      },
+      "id": "sched-notify-fail",
+      "name": "Notify failure (Telegram)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [780, 300]
     }
   ],
   "connections": {
@@ -33,6 +53,14 @@
       "main": [
         [
           { "node": "POST /schedule/remind-due", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "POST /schedule/remind-due": {
+      "main": [
+        [],
+        [
+          { "node": "Notify failure (Telegram)", "type": "main", "index": 0 }
         ]
       ]
     }
