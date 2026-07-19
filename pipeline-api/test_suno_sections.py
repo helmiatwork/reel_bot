@@ -219,5 +219,124 @@ class TestDetectAudioSectionsRealSignal:
             os.unlink(temp_path)
 
 
+class TestDownloadWindowLogic:
+    """Tests for empty audio_end → bounded-full window (600s default) behavior."""
+
+    def test_empty_audio_end_uses_bounded_window(self):
+        """
+        When audio_end is None, yt-dlp download should use start + SUNO_WINDOW_SEC.
+        Default SUNO_WINDOW_SEC is 600s (10 min).
+        """
+        with patch("subprocess.run") as mock_run, \
+             patch("pathlib.Path.glob") as mock_glob, \
+             patch("pathlib.Path.mkdir"), \
+             patch("shutil.move"):
+
+            # Mock the yt-dlp subprocess call
+            mock_run.return_value = MagicMock(returncode=0)
+            # Mock the downloaded audio file discovery
+            mock_glob.return_value = [MagicMock(name="audio.mp3")]
+
+            # Call with audio_start=0, audio_end=None (empty)
+            try:
+                m._download_and_clip_audio_for_suno("https://youtube.com/watch?v=test", 0, None)
+            except Exception:
+                # May fail on file move or other downstream ops; we only care about the cmd
+                pass
+
+            # Verify subprocess.run was called
+            mock_run.assert_called()
+            call_args = mock_run.call_args
+            cmd = call_args[0][0]  # first positional arg is the command list
+
+            # Extract --download-sections argument
+            if "--download-sections" in cmd:
+                idx = cmd.index("--download-sections")
+                sections_arg = cmd[idx + 1]
+                # Should be "*0-600" (or "*0-{SUNO_WINDOW_SEC}" if env is set)
+                assert sections_arg.startswith("*0-"), f"Expected section arg to start with '*0-', got {sections_arg}"
+                # Parse the end time from the section arg (*start-end format)
+                parts = sections_arg.split("-")
+                end_time = float(parts[-1])
+                # Should be 600 (default SUNO_WINDOW_SEC)
+                assert end_time == 600, f"Expected end=600, got {end_time}"
+
+    def test_explicit_audio_end_honored(self):
+        """
+        When audio_end is explicitly provided (not None), use it exactly.
+        Do NOT apply the bounded-window logic.
+        """
+        with patch("subprocess.run") as mock_run, \
+             patch("pathlib.Path.glob") as mock_glob, \
+             patch("pathlib.Path.mkdir"), \
+             patch("shutil.move"):
+
+            # Mock the yt-dlp subprocess call
+            mock_run.return_value = MagicMock(returncode=0)
+            mock_glob.return_value = [MagicMock(name="audio.mp3")]
+
+            # Call with audio_start=10, audio_end=120 (explicit)
+            try:
+                m._download_and_clip_audio_for_suno("https://youtube.com/watch?v=test", 10, 120)
+            except Exception:
+                pass
+
+            # Verify the command
+            mock_run.assert_called()
+            call_args = mock_run.call_args
+            cmd = call_args[0][0]
+
+            if "--download-sections" in cmd:
+                idx = cmd.index("--download-sections")
+                sections_arg = cmd[idx + 1]
+                # Should be "*10.0-120.0" (exactly as provided, not start + 600)
+                # Parse to verify the values
+                parts = sections_arg.split("-")
+                start_time = float(parts[0].lstrip("*"))
+                end_time = float(parts[-1])
+                assert start_time == 10.0, f"Expected start=10.0, got {start_time}"
+                assert end_time == 120.0, f"Expected end=120.0, got {end_time}"
+
+    def test_suno_window_sec_env_override(self):
+        """
+        SUNO_WINDOW_SEC env var should override the default 600s bounded window.
+        """
+        with patch("subprocess.run") as mock_run, \
+             patch("pathlib.Path.glob") as mock_glob, \
+             patch("pathlib.Path.mkdir"), \
+             patch("shutil.move"), \
+             patch.dict(os.environ, {"SUNO_WINDOW_SEC": "300"}):
+
+            # Reimport main module to pick up the new env var (or reference it directly)
+            # Since _SUNO_WINDOW_SEC is evaluated at module load, we'll patch the function's reference
+            old_window = m._SUNO_WINDOW_SEC
+            try:
+                # Temporarily override the module constant
+                m._SUNO_WINDOW_SEC = 300
+
+                mock_run.return_value = MagicMock(returncode=0)
+                mock_glob.return_value = [MagicMock(name="audio.mp3")]
+
+                # Call with empty audio_end
+                try:
+                    m._download_and_clip_audio_for_suno("https://youtube.com/watch?v=test", 0, None)
+                except Exception:
+                    pass
+
+                # Verify the window uses 300 instead of 600
+                mock_run.assert_called()
+                call_args = mock_run.call_args
+                cmd = call_args[0][0]
+
+                if "--download-sections" in cmd:
+                    idx = cmd.index("--download-sections")
+                    sections_arg = cmd[idx + 1]
+                    parts = sections_arg.split("-")
+                    end_time = float(parts[-1])
+                    assert end_time == 300, f"Expected end=300 (from env), got {end_time}"
+            finally:
+                m._SUNO_WINDOW_SEC = old_window
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

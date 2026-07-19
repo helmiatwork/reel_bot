@@ -5436,6 +5436,7 @@ def _analyze_audio(path: str, start_sec: Optional[float] = None, end_sec: Option
 
 _MUSIC_TAG_MODEL = "gemini-2.5-flash-lite"  # ponytail: swap here if model changes
 _SUNO_AUDIO_MODEL = os.getenv("SUNO_AUDIO_MODEL", "gemini-2.5-pro")  # ponytail: stronger model for richer audio analysis
+_SUNO_WINDOW_SEC = int(os.getenv("SUNO_WINDOW_SEC", "600"))  # ponytail: when audio_end is empty, download this bounded window (10 min default); env-overridable; a true full multi-hour download avoided intentionally
 
 
 def _suggest_music_tags(path: str) -> list:
@@ -7672,8 +7673,8 @@ def analyze_gemini_brief(youtube_url: str, audio_start: Optional[float] = None, 
             audio_path = _download_and_clip_audio_for_suno(youtube_url, audio_start, audio_end)
 
             # Detect natural musical sections
-            # ponytail: 4 is latency-safe (4 sync Gemini calls ~2–3 min); 8 could take ~10 min
-            sections = _detect_audio_sections(audio_path, min_section_sec=20.0, max_sections=4)
+            # ponytail: 6 is latency-safe (6 sync Gemini calls ~3–4 min); 8 could take ~10 min
+            sections = _detect_audio_sections(audio_path, min_section_sec=20.0, max_sections=6)
 
             # Analyze each section
             for idx, (start_sec, end_sec) in enumerate(sections):
@@ -7887,7 +7888,9 @@ def _download_and_clip_audio_for_suno(youtube_url: str, audio_start: Optional[fl
         use_section = audio_start is not None or audio_end is not None
         if use_section:
             start = max(0, float(audio_start) if audio_start is not None else 0)
-            end = float(audio_end) if audio_end is not None else start + 30
+            # ponytail: empty audio_end → bounded-full window (SUNO_WINDOW_SEC, default 600s);
+            # explicit audio_end honored unchanged; full multi-hour download avoided intentionally
+            end = float(audio_end) if audio_end is not None else start + _SUNO_WINDOW_SEC
             cmd += ["--download-sections", f"*{start}-{end}"]
         cmd.append(youtube_url)
         result = subprocess.run(cmd, capture_output=True, timeout=120, check=True, text=True)
