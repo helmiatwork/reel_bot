@@ -89,6 +89,8 @@
 
   // Set when the submitted URL is already in the library
   let existsSource = $state(null)
+  let dupConfirm = $state(null)   // pre-submit "URL sudah ada, timpa?" confirm
+  let dupResolve = null           // resolver for the confirm promise (non-reactive)
 
   // Reset all form state whenever modal opens — fixes stale stepper bug
   // (parent sets isOpen directly, bypassing the old openModal() call)
@@ -119,6 +121,30 @@
   function openExisting() {
     onAlreadyExists(existsSource)
     closeModal()
+  }
+
+  // Before a URL analyze/decompose, check if the same video (canonical key,
+  // so youtu.be/X == watch?v=X) already exists. If so, ask yes/no. Returns a
+  // promise: true = proceed (old one deleted on override), false = cancelled.
+  async function ensureNotDuplicate(url) {
+    try {
+      const ex = await api.sourceExists(url)
+      if (ex?.exists) {
+        dupConfirm = ex
+        return await new Promise((resolve) => { dupResolve = resolve })
+      }
+    } catch (e) { /* non-fatal — allow the submit through */ }
+    return true
+  }
+  async function overrideExisting() {
+    const ex = dupConfirm
+    dupConfirm = null
+    if (ex?.id) { try { await api.deleteSource(ex.id) } catch (e) { /* proceed anyway */ } }
+    if (dupResolve) { const r = dupResolve; dupResolve = null; r(true) }
+  }
+  function cancelDup() {
+    dupConfirm = null
+    if (dupResolve) { const r = dupResolve; dupResolve = null; r(false) }
   }
 
   function closeModal() {
@@ -154,6 +180,7 @@
       error = 'URL tidak boleh kosong'
       return
     }
+    if (!(await ensureNotDuplicate(urlInput.trim()))) return
     loading = true
     error = null
     existsSource = null
@@ -246,6 +273,7 @@
       geminiError = 'URL tidak boleh kosong'
       return
     }
+    if (!(await ensureNotDuplicate(urlInput.trim()))) return
     loading = true
     geminiError = null
     geminiBrief = ''
@@ -620,6 +648,17 @@
             {error}
           </div>
         {/if}
+
+      {#if dupConfirm}
+        <div class="exists-msg" transition:fade={{ duration: 150 }}>
+          <div class="exists-head">⚠ Video ini sudah pernah dianalisa</div>
+          <div class="exists-url">{dupConfirm.title || dupConfirm.youtube_url}</div>
+          <div class="dup-actions">
+            <button class="btn-primary exists-btn" onclick={overrideExisting}>Timpa &amp; analisa ulang</button>
+            <button class="btn-ghost exists-btn" onclick={cancelDup}>Batal</button>
+          </div>
+        </div>
+      {/if}
 
       {#if existsSource}
         <div class="exists-msg" transition:fade={{ duration: 150 }}>

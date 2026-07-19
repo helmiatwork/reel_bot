@@ -7677,6 +7677,87 @@ def serve_source_video(video_id: str):
     return FileResponse(str(video_path), media_type="video/mp4")
 
 
+def _canonical_video_key(url: str) -> Optional[str]:
+    """Stable per-platform key so the same video/post in any URL form maps to
+    one key (e.g. youtu.be/X, watch?v=X&list=…, shorts/X → 'youtube:X').
+    Returns 'platform:id' or None when the URL isn't a recognized post."""
+    u = (url or "").strip()
+    m = _re.search(r"(?:youtube\.com/(?:watch\?v=|shorts/|embed/|live/)|youtu\.be/)([A-Za-z0-9_-]{11})", u)
+    if m:
+        return f"youtube:{m.group(1)}"
+    m = _re.search(r"tiktok\.com/(?:@[\w.-]+/video/|v/)(\d+)", u)
+    if m:
+        return f"tiktok:{m.group(1)}"
+    m = _re.search(r"instagram\.com/(?:reels?|p|tv)/([A-Za-z0-9_-]+)", u)
+    if m:
+        return f"instagram:{m.group(1)}"
+    m = _re.search(r"xiaohongshu\.com/(?:explore|discovery/item)/([A-Za-z0-9]+)", u)
+    if m:
+        return f"xiaohongshu:{m.group(1)}"
+    return None
+
+
+@app.get("/sources/exists")
+def source_exists(youtube_url: str = ""):
+    """Whether a source for the same video already exists (matched by canonical
+    per-platform key, so different URL forms of one video count as the same).
+    Returns {exists, id?, youtube_url?, title?, status?}."""
+    key = _canonical_video_key(youtube_url)
+    target = (youtube_url or "").strip()
+    conn = _db_conn()
+    if conn is None:
+        return _json({"exists": False})
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, youtube_url, title, status FROM sources ORDER BY id DESC")
+            for sid, url, title, status in cur.fetchall():
+                same = (_canonical_video_key(url) == key) if key else ((url or "").strip() == target)
+                if same:
+                    return _json({"exists": True, "id": sid, "youtube_url": url,
+                                  "title": title, "status": status})
+        return _json({"exists": False})
+    finally:
+        conn.close()
+
+
+@app.delete("/sources/{source_id}")
+def delete_source(source_id: int):
+    """Remove a source and everything tied to it: its analysis, segments (DB +
+    the on-disk segment folder), and the source row. Used by the 'timpa yang
+    lama' (override) path before a fresh re-analyze."""
+    conn = _db_conn()
+    if conn is None:
+        return _json({"error": "db unavailable"}, status=503)
+    seg_dir = None
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT youtube_url FROM sources WHERE id=%s", (source_id,))
+            row = cur.fetchone()
+            if not row:
+                return _json({"error": "not found"}, status=404)
+            src_url = row[0]
+            cur.execute("SELECT segment_path FROM video_segments WHERE source_id=%s LIMIT 1", (source_id,))
+            seg = cur.fetchone()
+            if seg and seg[0]:
+                seg_dir = str(Path(seg[0]).parent)
+            cur.execute("DELETE FROM video_segments WHERE source_id=%s", (source_id,))
+            cur.execute("DELETE FROM video_analysis WHERE youtube_url=%s", (src_url,))
+            cur.execute("DELETE FROM sources WHERE id=%s", (source_id,))
+        conn.commit()
+    except Exception as e:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        return _json({"error": str(e)}, status=500)
+    finally:
+        conn.close()
+    # Best-effort disk cleanup of the segment folder.
+    if seg_dir:
+        shutil.rmtree(seg_dir, ignore_errors=True)
+    return _json({"ok": True, "deleted_source": source_id})
+
+
 @app.get("/sources/{source_id}/segments")
 def get_source_segments(source_id: int):
     """
