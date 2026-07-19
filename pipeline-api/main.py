@@ -5435,6 +5435,7 @@ def _analyze_audio(path: str, start_sec: Optional[float] = None, end_sec: Option
 
 
 _MUSIC_TAG_MODEL = "gemini-2.5-flash-lite"  # ponytail: swap here if model changes
+_SUNO_AUDIO_MODEL = os.getenv("SUNO_AUDIO_MODEL", "gemini-2.5-pro")  # ponytail: stronger model for richer audio analysis
 
 
 def _suggest_music_tags(path: str) -> list:
@@ -5536,6 +5537,92 @@ def _suggest_music_tags(path: str) -> list:
     except Exception as e:
         print(f"[songs] _suggest_music_tags error (non-fatal): {e}")
         return []
+
+
+def _suno_audio_analysis(path: str) -> dict:
+    """
+    Analyze audio via Gemini (through cliproxy gateway) to provide ground-truth audio understanding.
+    Used in Suno prompt generation when Antigravity cannot play the audio directly.
+
+    Trims first 30s to mono mp3 (full Suno window), sends as input_audio, parses JSON description.
+    Returns dict with: genre, tempo, mood, instruments, description (what Gemini actually heard).
+    Returns {} on any failure — never raises, never blocks the analysis.
+
+    Reads CLIPROXY_URL and CLIPROXY_KEY from environment.
+    Model set via SUNO_AUDIO_MODEL env (default: gemini-2.5-pro for richer analysis than flash-lite).
+    """
+    cliproxy_url = os.getenv("CLIPROXY_URL", "http://localhost:8317/v1").rstrip("/")
+    cliproxy_key = os.getenv("CLIPROXY_KEY", "")
+    if not cliproxy_key:
+        return {}
+
+    try:
+        import base64
+        import httpx
+
+        # Trim first 30s to mono mp3 in a temp file (full Suno window, not just 10s)
+        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
+            tmp_path = f.name
+        try:
+            subprocess.run(
+                ["ffmpeg", "-y", "-i", path,
+                 "-t", "30", "-vn", "-ac", "1", "-ar", "22050", "-b:a", "64k",
+                 tmp_path],
+                capture_output=True, timeout=30, check=True,
+            )
+            audio_b64 = base64.b64encode(Path(tmp_path).read_bytes()).decode()
+        finally:
+            Path(tmp_path).unlink(missing_ok=True)
+
+        payload = {
+            "model": _SUNO_AUDIO_MODEL,
+            "max_tokens": 500,
+            "messages": [{
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": (
+                            'Listen to this audio and describe what you hear. Return ONLY JSON: '
+                            '{"genre":"","tempo":"","mood":"","instruments":"","description":""}. '
+                            'Describe the actual instruments and sounds you hear, the tempo feel (fast/slow/moderate), the mood, and 1-2 sentences about what this is.'
+                        ),
+                    },
+                    {
+                        "type": "input_audio",
+                        "input_audio": {"data": audio_b64, "format": "mp3"},
+                    },
+                ],
+            }],
+        }
+
+        resp = httpx.post(
+            f"{cliproxy_url}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {cliproxy_key}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=60.0,
+        )
+        resp.raise_for_status()
+
+        content = resp.json()["choices"][0]["message"]["content"].strip()
+
+        # Strip markdown code fences if present
+        if content.startswith("```"):
+            parts = content.split("```", 2)
+            inner = parts[1]
+            if inner.startswith("json"):
+                inner = inner[4:]
+            content = inner.rsplit("```", 1)[0].strip()
+
+        data = json.loads(content)
+        return data
+
+    except Exception as e:
+        print(f"[suno] _suno_audio_analysis error (non-fatal): {e}")
+        return {}
 
 
 def _log_api_usage(agent: str, model: str, raw_usage: dict, cost_usd) -> None:
@@ -7368,49 +7455,67 @@ def analyze_gemini_brief(youtube_url: str, audio_start: Optional[float] = None, 
     is_suno_mode = audio_start is not None or audio_end is not None
 
     if is_suno_mode:
-        # Suno prompt generation mode: clip audio, analyze with librosa, build instruction
+        # Suno prompt generation mode: clip audio, analyze with librosa + backend Gemini, build instruction
         audio_path = None
         audio_hints = {}
+        gemini_heard = {}
         try:
             # Download and clip audio from YouTube
             audio_path = _download_and_clip_audio_for_suno(youtube_url, audio_start, audio_end)
-            # Analyze audio with librosa for hints
+            # Analyze audio with librosa for hints (numeric supplement)
             audio_hints = _analyze_audio(audio_path, start_sec=None, end_sec=None)
+            # Analyze audio with backend Gemini for ground-truth audio understanding
+            gemini_heard = _suno_audio_analysis(audio_path)
         except Exception as e:
             print(f"[analyze_gemini_brief] audio prep failed (non-fatal): {e}")
             # Continue with empty hints if audio analysis fails
 
         # Build Suno instruction
         hints_text = _format_audio_hints_for_suno(audio_hints)
+
+        # Format Gemini audio analysis for embedding in instruction (authoritative ground truth)
+        if gemini_heard:
+            audio_analysis_text = "AUDIO ANALYSIS (produced by a Gemini model that listened to the actual clip — treat as authoritative):\n"
+            if gemini_heard.get("genre"):
+                audio_analysis_text += f"- Genre: {gemini_heard['genre']}\n"
+            if gemini_heard.get("tempo"):
+                audio_analysis_text += f"- Tempo: {gemini_heard['tempo']}\n"
+            if gemini_heard.get("mood"):
+                audio_analysis_text += f"- Mood: {gemini_heard['mood']}\n"
+            if gemini_heard.get("instruments"):
+                audio_analysis_text += f"- Instruments: {gemini_heard['instruments']}\n"
+            if gemini_heard.get("description"):
+                audio_analysis_text += f"- Description: {gemini_heard['description']}\n"
+        else:
+            audio_analysis_text = "AUDIO ANALYSIS: (analysis by backend Gemini model failed; fall back to librosa hints and your own listening)\n"
+
         instruction = f"""You are analyzing audio to generate a music creation prompt for Suno.
 
 RULES:
 - You have EXACTLY ONE MCP tool available: `get_audio_for_suno`. Use it once to fetch the clipped audio file.
-- The audio file is a real audio file that you MUST LISTEN TO carefully.
+- The audio file is a real audio file that you MAY listen to carefully via your environment, IF your environment supports audio playback.
 - Do NOT search, read code, call other tools, open a browser, or run commands.
-- CRITICAL: base your music prompt on what you ACTUALLY HEAR in the audio. If you cannot hear the audio, STOP and report the error.
+- CRITICAL: base your music prompt on the AUDIO ANALYSIS provided below (ground truth from a Gemini model that listened to the actual clip). You MAY also call `get_audio_for_suno` and listen yourself if your environment can play audio — but if it cannot (e.g. unsupported audio mime type in Antigravity), DO NOT STOP. Use the provided AUDIO ANALYSIS as ground truth and write the Suno prompt from it. NEVER invent details not supported by the analysis or the librosa hints.
 
 Task:
-STEP 1: Call reelbot MCP tool `get_audio_for_suno` with youtube_url="{youtube_url}" to get the local audio file path.
+STEP 1: Review the AUDIO ANALYSIS below (produced by listening to the actual clip).
 
-STEP 2: Listen to the audio file carefully. Analyze:
-- Genre / style indicators
-- Tempo / BPM
-- Mood / emotion
-- Instrumentation / sounds present
+STEP 2 (optional): If your environment supports audio playback, call reelbot MCP tool `get_audio_for_suno` with youtube_url="{youtube_url}" to optionally listen for yourself. However, if this fails or your environment cannot play audio, proceed without it — the provided AUDIO ANALYSIS is authoritative.
 
 STEP 3: Generate a Suno music prompt that recreates this audio as a JAZZ track. The prompt must be:
-- Specific (mention actual instruments, tempo, mood you heard)
+- Specific (mention actual instruments, tempo, mood from the AUDIO ANALYSIS you have)
 - Between 50-150 words
 - Ready to paste directly into Suno
 
 Return a JSON object with:
 {{"audio_analysis": {{"genre": "str", "tempo": "str", "mood": "str", "instruments": "str"}}, "suno_prompt": "str"}}
 
-LIBROSA HINTS (use as reference, verify by listening):
+{audio_analysis_text}
+
+LIBROSA HINTS (use as supplementary reference):
 {hints_text}
 
-Execute step 1, listen carefully in step 2, then output the JSON with your analysis and Suno prompt."""
+Execute steps 1, 2 (optional), and 3 in order. Output the JSON with your analysis and Suno prompt."""
 
         return {
             "instruction": instruction,
