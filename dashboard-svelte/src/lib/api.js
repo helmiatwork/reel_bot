@@ -238,6 +238,7 @@ export const api = {
     if (audio_end !== undefined && audio_end !== null) params.set('audio_end', audio_end)
     return getJSON('/analyze/gemini-brief?' + params.toString())
   },
+  getGeminiIdeas: (youtube_url) => getJSON('/analyze/gemini-ideas?youtube_url=' + encodeURIComponent(youtube_url)),
   importStoryboard: (youtube_url, storyboard) => postJSON('/analyze/import', { youtube_url, storyboard }),
 
   chatSessions: () => getJSON('/dash/chat/sessions'),
