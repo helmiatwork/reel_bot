@@ -283,6 +283,32 @@
   let geminiBriefCopied = $state(false)
   // Auto-open the Gemini prompt popup once, the moment clips are ready.
   let briefAutoShown = $state(false)
+
+  // Bikin Ide popup: idea-generator brief the user pastes into Antigravity
+  let geminiIdeasModal = $state(null)
+  let geminiIdeasLoading = $state(false)
+  let geminiIdeasCopied = $state(false)
+
+  async function showGeminiIdeas() {
+    const url = d?.data?.youtube_url
+    if (!url) return
+    geminiIdeasLoading = true
+    geminiIdeasModal = ''
+    try {
+      const res = await api.getGeminiIdeas(url)
+      geminiIdeasModal = res?.instruction || res?.error || 'Gagal mengambil instruksi'
+    } catch (e) {
+      geminiIdeasModal = `Error: ${e.message}`
+    } finally {
+      geminiIdeasLoading = false
+    }
+  }
+  function copyGeminiIdeas() {
+    navigator.clipboard.writeText(geminiIdeasModal)
+    geminiIdeasCopied = true
+    setTimeout(() => { geminiIdeasCopied = false }, 2000)
+  }
+
   async function showGeminiBrief() {
     const url = d?.data?.youtube_url
     if (!url) return
@@ -322,6 +348,9 @@
       liveStatus = null
       justDone = false
       briefAutoShown = false
+      geminiIdeasModal = null
+      geminiIdeasLoading = false
+      geminiIdeasCopied = false
       procStage = 'saving_meta'
       decomposeRunning = false
       decomposeStage = ''
@@ -534,6 +563,35 @@
   </div>
 {/if}
 
+<!-- Bikin Ide popup: idea-generator brief paste into Antigravity -->
+{#if geminiIdeasModal !== null}
+  <div
+    class="lb-overlay"
+    onclick={() => geminiIdeasModal = null}
+    onkeydown={(e) => { if (e.key === 'Escape') geminiIdeasModal = null }}
+    role="dialog"
+    aria-modal="true"
+    aria-label="Bikin Ide"
+    tabindex="-1"
+  >
+    <button class="lb-close" onclick={() => geminiIdeasModal = null} aria-label="Tutup">✕</button>
+    <div class="lb-card" onclick={(e) => e.stopPropagation()} role="document" style="max-width:640px">
+      <div class="lb-info">
+        <div class="lb-frame-no">💡 Brief Ide untuk Antigravity (Gemini)</div>
+        {#if geminiIdeasLoading}
+          <div class="brief-loading"><span class="spin-sm"></span> Mengambil instruksi…</div>
+        {:else}
+          <pre class="lb-json">{geminiIdeasModal}</pre>
+          <button class="copy-btn" onclick={copyGeminiIdeas}>
+            {geminiIdeasCopied ? '✓ Tersalin' : 'Salin'}
+          </button>
+          <div class="brief-hint">Tempel ke Antigravity → Gemini kasih 3-5 ide viral dari sumber ini.</div>
+        {/if}
+      </div>
+    </div>
+  </div>
+{/if}
+
 {#if d}
   <!-- Backdrop -->
   <div
@@ -623,6 +681,15 @@
               </button>
               {#if decomposeRunning && decomposeStage}<span class="pecah-stage">{decomposeStage}</span>{/if}
               {#if decomposeError}<span class="pecah-err">{decomposeError}</span>{/if}
+            </div>
+            <div class="ide-wrap">
+              <button
+                class="ide-btn"
+                disabled={geminiIdeasLoading}
+                onclick={showGeminiIdeas}
+              >
+                {geminiIdeasLoading ? '⏳ Mengambil…' : '💡 Bikin Ide'}
+              </button>
             </div>
           </div>
         {/if}
@@ -1240,6 +1307,19 @@
   .pecah-btn:not(:disabled):hover { opacity: .85; }
   .pecah-stage { font-size: 11px; color: var(--mut); font-style: italic; }
   .pecah-err   { font-size: 11px; color: var(--red); }
+
+  .ide-wrap {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .ide-btn {
+    font-size: 12px; font-weight: 600; padding: 5px 12px;
+    border-radius: 6px; border: none; cursor: pointer;
+    background: #d97706; color: #fff; transition: opacity .15s;
+  }
+  .ide-btn:disabled { opacity: .55; cursor: default; }
+  .ide-btn:not(:disabled):hover { opacity: .85; }
+  .header-right .ide-btn { width: 100%; text-align: center; }
 
   /* frame thumbnails — clickable zoom cue */
   .frame-thumb-btn {
