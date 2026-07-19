@@ -28,4 +28,4 @@ if [ -z "$DASHBOARD_DIR" ] && [ -d "$REPO_ROOT/analytics-dashboard" ]; then
 fi
 export DASHBOARD_DIR
 
-cd "$REPO_ROOT/pipeline-api" && source .venv/bin/activate && exec uvicorn main:app --host 0.0.0.0 --port 8000
+cd "$REPO_ROOT/pipeline-api" && source .venv/bin/activate && exec uvicorn main:app --host "${PIPELINE_API_HOST:-127.0.0.1}" --port "${PIPELINE_API_PORT:-8000}"
