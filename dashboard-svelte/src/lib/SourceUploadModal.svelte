@@ -536,6 +536,7 @@
                 <textarea
                   class="inp inp-brief"
                   readonly
+                  placeholder="Mengambil instruksi… (mengunduh potongan audio)"
                   value={geminiBrief}
                 ></textarea>
                 <button
