@@ -7833,6 +7833,86 @@ Execute steps 1, 2, and 3 in order. Use only the three MCP tools."""
         }
 
 
+@app.get("/analyze/gemini-ideas")
+def analyze_gemini_ideas(youtube_url: str):
+    """
+    Instruction builder for Gemini viral idea generation.
+
+    Given a source video, returns an instruction telling Gemini to:
+    1. Call get_clips(youtube_url) to fetch and watch the clip mp4s
+    2. Brainstorm 3-5 FRESH, UNIQUE viral story angles/reframes tailored to the source's niche
+    3. Return JSON array with angle, hook, cover_caption, why_viral, caption, hashtags for each idea
+
+    Query params: youtube_url
+    Returns: {"instruction": str, "youtube_url": str, "niche": str}
+    """
+    try:
+        _validate_source_url(youtube_url)
+    except HTTPException:
+        raise HTTPException(status_code=400, detail="invalid youtube_url")
+
+    # Query database for niche and title
+    niche = "general"
+    title = ""
+    try:
+        conn = _db_conn()
+        if conn:
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT niche, title FROM sources WHERE youtube_url = %s", (youtube_url,))
+                    row = cur.fetchone()
+                    if row:
+                        db_niche, db_title = row
+                        niche = db_niche if db_niche else "general"
+                        title = db_title if db_title else ""
+            except Exception as e:
+                print(f"[analyze_gemini_ideas] db query failed (non-fatal): {e}")
+            finally:
+                conn.close()
+    except Exception as e:
+        print(f"[analyze_gemini_ideas] db connection failed (non-fatal): {e}")
+
+    # Build instruction for Gemini
+    instruction = f"""You are an expert viral content ideator for social media creators in the {niche} niche.
+
+RULES:
+- You have EXACTLY ONE MCP tool available: `get_clips`. Use it to fetch and WATCH the video clips.
+- The clips are real video files (.mp4) — WATCH them carefully via your environment.
+- Do NOT search, read code, call other tools, open a browser, or run commands.
+- CRITICAL: base all ideas on what you ACTUALLY SEE in the footage. Never invent, guess, or fabricate story angles. If get_clips fails or returns empty, skip wildly exaggerated ideas and propose only grounded angles from context.
+
+Task:
+STEP 1: Call `get_clips(youtube_url="{youtube_url}")` and WATCH every returned clip.
+
+STEP 2: Based on ONLY what you saw in the clips, brainstorm **3-5 FRESH, UNIQUE, DISTINCT viral story angles/reframes** for this footage, tailored to the {niche} niche. Each angle must be a genuinely different creative direction (not minor variations of one theme) — mix grounded strategies with bold/clickbait reframes. Prioritize originality and uniqueness. It's fine for angles to be exaggerated/fictional framing (this is entertainment content ideation — the human picks which to use).
+
+STEP 3: For EACH angle, generate:
+- hook: the first 3 seconds on-screen/spoken line that stops the scroll
+- cover_caption: clickbait cover text (1-2 sentences)
+- why_viral: why this angle will perform (1 line, e.g., controversy, relatability, shock value, humor)
+- caption: full post caption (2-3 sentences)
+- hashtags: 3-5 relevant hashtags as a JSON array
+
+Return a JSON ARRAY of 3-5 objects, each with: angle, hook, cover_caption, why_viral, caption, hashtags.
+
+If get_clips errors or returns empty clips: don't fabricate wildly — propose grounded story angles based on the title/niche context, still as the same JSON array (do NOT stop or report error as a blocker).
+
+Example output shape:
+[
+  {{"angle": "story premise in 1-2 sentences", "hook": "opening line", "cover_caption": "clickbait text", "why_viral": "1-line reason", "caption": "post caption", "hashtags": ["#tag1", "#tag2"]}},
+  {{"angle": "..."}},
+  ...
+]
+
+Execute steps 1, 2, and 3 in order. Output the JSON ARRAY."""
+
+    return {
+        "instruction": instruction,
+        "youtube_url": youtube_url,
+        "niche": niche
+    }
+
+
 def _suno_audio_path(youtube_url: str) -> str:
     """
     Compute a deterministic path for Suno audio clips keyed by youtube_url.
