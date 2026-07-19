@@ -530,7 +530,7 @@
             {#if includeAudio}
               <div class="audio-segment-container" transition:fade={{ duration: 150 }}>
                 <label class="field">
-                  <span class="field-label">Segmen audio yang dipotong <span class="opt">(opsional — kosongkan = full)</span></span>
+                  <span class="field-label">Segmen audio yang dipotong <span class="opt">(opsional — kosongkan = otomatis, analisa ~10 menit, dipecah per bagian)</span></span>
                   <div class="audio-segment-inputs">
                     <input
                       class="inp inp-time"
@@ -552,6 +552,7 @@
                       step="0.1"
                     />
                   </div>
+                  <div class="seg-hint">Isi Akhir buat batasi rentang; kosongkan buat auto.</div>
                 </label>
               </div>
             {/if}
@@ -726,7 +727,7 @@
           {#if includeAudio}
             <div class="audio-segment-container" transition:fade={{ duration: 150 }}>
               <label class="field">
-                <span class="field-label">Segmen audio yang dipotong <span class="opt">(opsional — kosongkan = full)</span></span>
+                <span class="field-label">Segmen audio yang dipotong <span class="opt">(opsional — kosongkan = otomatis, analisa ~10 menit, dipecah per bagian)</span></span>
                 <div class="audio-segment-inputs">
                   <input
                     class="inp inp-time"
@@ -748,6 +749,7 @@
                     step="0.1"
                   />
                 </div>
+                <div class="seg-hint">Isi Akhir buat batasi rentang; kosongkan buat auto.</div>
               </label>
             </div>
           {/if}
@@ -814,7 +816,7 @@
           {#if includeAudio}
             <div class="audio-segment-container" transition:fade={{ duration: 150 }}>
               <label class="field">
-                <span class="field-label">Segmen audio yang dipotong <span class="opt">(opsional — kosongkan = full)</span></span>
+                <span class="field-label">Segmen audio yang dipotong <span class="opt">(opsional — kosongkan = otomatis, analisa ~10 menit, dipecah per bagian)</span></span>
                 <div class="audio-segment-inputs">
                   <input
                     class="inp inp-time"
@@ -836,6 +838,7 @@
                     step="0.1"
                   />
                 </div>
+                <div class="seg-hint">Isi Akhir buat batasi rentang; kosongkan buat auto.</div>
               </label>
             </div>
           {/if}
@@ -1368,6 +1371,13 @@
   .segment-dash {
     color: var(--mut);
     font-size: 0.875rem;
+  }
+
+  .seg-hint {
+    font-size: 0.75rem;
+    color: var(--mut);
+    line-height: 1.4;
+    margin-top: 0.25rem;
   }
 
   /* Duplicate-URL confirm sub-overlay */
