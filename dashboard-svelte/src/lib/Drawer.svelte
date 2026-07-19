@@ -284,30 +284,129 @@
   // Auto-open the Gemini prompt popup once, the moment clips are ready.
   let briefAutoShown = $state(false)
 
-  // Bikin Ide popup: idea-generator brief the user pastes into Antigravity
-  let geminiIdeasModal = $state(null)
-  let geminiIdeasLoading = $state(false)
-  let geminiIdeasCopied = $state(false)
+  // Bikin Ide 2-stage flow
+  let ideOpen = $state(false)
+  let ideStage = $state('stage1')          // 'stage1' | 'stage1_result' | 'stage2' | 'stage2_result'
+  let ideInstruction = $state('')          // stage 1 instruction text
+  let ideInstructionLoading = $state(false)
+  let ideCandidates = $state([])           // [{title,description,premise,why_viral,cover_caption}]
+  let ideSelectedIndex = $state(null)
+  let ideDetailInstruction = $state('')    // stage 2 instruction text
+  let ideDetailLoading = $state(false)
+  let ideDetail = $state(null)             // {naskah, edit_cues, caption, hashtags}
+  let ideStatusCount = $state(0)
+  let ideCopied1 = $state(false)
+  let ideCopied2 = $state(false)
+  let ideCopiedNaskah = $state(false)
+  let ideCopiedCue = $state(false)
+  let ideCopiedCaption = $state(false)
+  let idePollInterval = null
 
-  async function showGeminiIdeas() {
+  function stopIdePoll() {
+    if (idePollInterval) { clearInterval(idePollInterval); idePollInterval = null }
+  }
+
+  function startIdePoll(url) {
+    stopIdePoll()
+    idePollInterval = setInterval(async () => {
+      const st = await api.getIdeasStatus(url)
+      if (!st) return
+      if (ideStage === 'stage1') {
+        ideStatusCount = st.count || 0
+        if (st.has_candidates) {
+          ideCandidates = st.candidates || []
+          stopIdePoll()
+          if (st.selected_index != null) {
+            ideSelectedIndex = st.selected_index
+            if (st.has_detail) {
+              ideDetail = st.detail
+              ideStage = 'stage2_result'
+            } else {
+              ideStage = 'stage2'
+              ideDetailLoading = true
+              const dr = await api.getIdeaDetail(url, st.selected_index)
+              ideDetailInstruction = dr?.instruction || 'Gagal mengambil instruksi detail'
+              ideDetailLoading = false
+              startIdePoll(url)
+            }
+          } else {
+            ideStage = 'stage1_result'
+          }
+        }
+      } else if (ideStage === 'stage2') {
+        if (st.has_detail) {
+          ideDetail = st.detail
+          ideStage = 'stage2_result'
+          stopIdePoll()
+        }
+      }
+    }, 3000)
+  }
+
+  async function openIdeModal() {
     const url = d?.data?.youtube_url
     if (!url) return
-    geminiIdeasLoading = true
-    geminiIdeasModal = ''
-    try {
-      const res = await api.getGeminiIdeas(url)
-      geminiIdeasModal = res?.instruction || res?.error || 'Gagal mengambil instruksi'
-    } catch (e) {
-      geminiIdeasModal = `Error: ${e.message}`
-    } finally {
-      geminiIdeasLoading = false
+    ideOpen = true
+    // Check current status first to know which stage to open at
+    const statusRes = await api.getIdeasStatus(url)
+    if (statusRes?.has_candidates) {
+      ideCandidates = statusRes.candidates || []
+      ideStatusCount = statusRes.count || ideCandidates.length
+      if (statusRes.selected_index != null) {
+        ideSelectedIndex = statusRes.selected_index
+        if (statusRes.has_detail) {
+          ideDetail = statusRes.detail
+          ideStage = 'stage2_result'
+          return
+        }
+        ideStage = 'stage2'
+        ideDetailLoading = true
+        const dr = await api.getIdeaDetail(url, statusRes.selected_index)
+        ideDetailInstruction = dr?.instruction || 'Gagal mengambil instruksi detail'
+        ideDetailLoading = false
+        startIdePoll(url)
+        return
+      }
+      ideStage = 'stage1_result'
+      return
     }
+    // No candidates yet — fetch stage 1 instruction + start polling
+    ideStage = 'stage1'
+    ideInstructionLoading = true
+    const ideRes = await api.getGeminiIdeas(url)
+    ideInstruction = ideRes?.instruction || ideRes?.error || 'Gagal mengambil instruksi'
+    ideInstructionLoading = false
+    startIdePoll(url)
   }
-  function copyGeminiIdeas() {
-    navigator.clipboard.writeText(geminiIdeasModal)
-    geminiIdeasCopied = true
-    setTimeout(() => { geminiIdeasCopied = false }, 2000)
+
+  async function selectIdeaCard(index) {
+    const url = d?.data?.youtube_url
+    if (!url) return
+    const res = await api.selectIdea(url, index)
+    if (!res?.ok) return
+    ideSelectedIndex = res.selected_index ?? index
+    ideStage = 'stage2'
+    stopIdePoll()
+    ideDetailLoading = true
+    const dr = await api.getIdeaDetail(url, ideSelectedIndex)
+    ideDetailInstruction = dr?.instruction || 'Gagal mengambil instruksi detail'
+    ideDetailLoading = false
+    startIdePoll(url)
   }
+
+  function copyIde1() { navigator.clipboard.writeText(ideInstruction); ideCopied1 = true; setTimeout(() => ideCopied1 = false, 2000) }
+  function copyIde2() { navigator.clipboard.writeText(ideDetailInstruction); ideCopied2 = true; setTimeout(() => ideCopied2 = false, 2000) }
+  function copyIdeNaskah() { navigator.clipboard.writeText(ideDetail?.naskah || ''); ideCopiedNaskah = true; setTimeout(() => ideCopiedNaskah = false, 2000) }
+  function copyIdeCue() {
+    const lines = (ideDetail?.edit_cues || []).map(c => `${c.ts_start}-${c.ts_end}: ${c.aksi}${c.sfx ? ' [' + c.sfx + ']' : ''}${c.teks_layar ? ' [' + c.teks_layar + ']' : ''}`).join('\n')
+    navigator.clipboard.writeText(lines); ideCopiedCue = true; setTimeout(() => ideCopiedCue = false, 2000)
+  }
+  function copyIdeCaption() {
+    const tags = (ideDetail?.hashtags || []).join(' ')
+    navigator.clipboard.writeText((ideDetail?.caption || '') + (tags ? '\n' + tags : ''))
+    ideCopiedCaption = true; setTimeout(() => ideCopiedCaption = false, 2000)
+  }
+  function closeIdeModal() { ideOpen = false; stopIdePoll() }
 
   async function showGeminiBrief() {
     const url = d?.data?.youtube_url
@@ -348,9 +447,22 @@
       liveStatus = null
       justDone = false
       briefAutoShown = false
-      geminiIdeasModal = null
-      geminiIdeasLoading = false
-      geminiIdeasCopied = false
+      stopIdePoll()
+      ideOpen = false
+      ideStage = 'stage1'
+      ideInstruction = ''
+      ideInstructionLoading = false
+      ideCandidates = []
+      ideSelectedIndex = null
+      ideDetailInstruction = ''
+      ideDetailLoading = false
+      ideDetail = null
+      ideStatusCount = 0
+      ideCopied1 = false
+      ideCopied2 = false
+      ideCopiedNaskah = false
+      ideCopiedCue = false
+      ideCopiedCaption = false
       procStage = 'saving_meta'
       decomposeRunning = false
       decomposeStage = ''
@@ -389,7 +501,7 @@
         }
       }
     })
-    return () => { unsub(); stopProcPoll(); stopPoll() }
+    return () => { unsub(); stopProcPoll(); stopPoll(); stopIdePoll() }
   })
 
   // Per-tab primary action: full re-analyze / redo frames+analysis / regenerate prompt only.
@@ -563,30 +675,121 @@
   </div>
 {/if}
 
-<!-- Bikin Ide popup: idea-generator brief paste into Antigravity -->
-{#if geminiIdeasModal !== null}
+<!-- Bikin Ide 2-stage modal -->
+{#if ideOpen}
   <div
     class="lb-overlay"
-    onclick={() => geminiIdeasModal = null}
-    onkeydown={(e) => { if (e.key === 'Escape') geminiIdeasModal = null }}
+    onclick={closeIdeModal}
+    onkeydown={(e) => { if (e.key === 'Escape') closeIdeModal() }}
     role="dialog"
     aria-modal="true"
     aria-label="Bikin Ide"
     tabindex="-1"
   >
-    <button class="lb-close" onclick={() => geminiIdeasModal = null} aria-label="Tutup">✕</button>
-    <div class="lb-card" onclick={(e) => e.stopPropagation()} role="document" style="max-width:640px">
-      <div class="lb-info">
-        <div class="lb-frame-no">💡 Brief Ide untuk Antigravity (Gemini)</div>
-        {#if geminiIdeasLoading}
-          <div class="brief-loading"><span class="spin-sm"></span> Mengambil instruksi…</div>
-        {:else}
-          <pre class="lb-json">{geminiIdeasModal}</pre>
-          <button class="copy-btn" onclick={copyGeminiIdeas}>
-            {geminiIdeasCopied ? '✓ Tersalin' : 'Salin'}
-          </button>
-          <div class="brief-hint">Tempel ke Antigravity → Gemini kasih 3-5 ide viral dari sumber ini.</div>
+    <button class="lb-close" onclick={closeIdeModal} aria-label="Tutup">✕</button>
+    <div class="lb-card ide-modal" onclick={(e) => e.stopPropagation()} role="document">
+      <div class="ide-modal-inner">
+
+        <!-- STAGE 1: Instruction -->
+        {#if ideStage === 'stage1'}
+          <div class="lb-frame-no">💡 Bikin Ide · Tahap 1 — Minta kandidat</div>
+          {#if ideInstructionLoading}
+            <div class="brief-loading"><span class="spin-sm"></span> Mengambil instruksi…</div>
+          {:else}
+            <pre class="lb-json">{ideInstruction}</pre>
+            <div class="ide-btn-row">
+              <button class="ide-modal-btn navy" onclick={copyIde1}>{ideCopied1 ? '✓ Tersalin' : '📋 Salin instruksi'}</button>
+              <button class="ide-modal-btn ghost" onclick={closeIdeModal}>Batal</button>
+            </div>
+            <div class="ide-status"><span class="ide-dot"></span> Menunggu Gemini menyimpan… {ideStatusCount}/5 kandidat</div>
+            <p class="brief-hint">Tempel ke Antigravity. Begitu Gemini panggil <code>save_ideas</code>, list muncul otomatis.</p>
+          {/if}
+
+        <!-- STAGE 1 RESULT: Candidate list -->
+        {:else if ideStage === 'stage1_result'}
+          <div class="lb-frame-no">💡 Bikin Ide · Tahap 1 — Pilih 1 dari {ideCandidates.length}</div>
+          {#each ideCandidates as cand, i}
+            <div
+              class="ide-cand {ideSelectedIndex === i ? 'sel' : ''}"
+              onclick={() => selectIdeaCard(i)}
+              onkeydown={(e) => { if (e.key === 'Enter') selectIdeaCard(i) }}
+              role="button"
+              tabindex="0"
+            >
+              <button
+                class="ide-modal-btn {ideSelectedIndex === i ? 'amber' : 'ghost'} ide-pick-btn"
+                onclick={(e) => { e.stopPropagation(); selectIdeaCard(i) }}
+              >{ideSelectedIndex === i ? '✓ Dipilih' : 'Pilih'}</button>
+              <p class="ide-cand-title">{cand.title}</p>
+              <p class="ide-cand-desc">{cand.description}</p>
+              {#if cand.premise}<p class="ide-cand-premise">{cand.premise}</p>{/if}
+              {#if cand.why_viral}<p class="ide-cand-why">▲ {cand.why_viral}</p>{/if}
+              {#if cand.cover_caption}<span class="ide-cover">{cand.cover_caption}</span>{/if}
+            </div>
+          {/each}
+
+        <!-- STAGE 2: Detail instruction -->
+        {:else if ideStage === 'stage2'}
+          <div class="lb-frame-no">💡 Bikin Ide · Tahap 2 — Minta detail</div>
+          {#if ideSelectedIndex != null && ideCandidates[ideSelectedIndex]}
+            <div class="ide-sel-head">
+              <div class="ide-sel-label">Ide dipilih</div>
+              <div class="ide-sel-title">{ideCandidates[ideSelectedIndex].title}</div>
+            </div>
+          {/if}
+          {#if ideDetailLoading}
+            <div class="brief-loading"><span class="spin-sm"></span> Mengambil instruksi detail…</div>
+          {:else}
+            <pre class="lb-json">{ideDetailInstruction}</pre>
+            <div class="ide-btn-row">
+              <button class="ide-modal-btn navy" onclick={copyIde2}>{ideCopied2 ? '✓ Tersalin' : '📋 Salin instruksi detail'}</button>
+              <button class="ide-modal-btn ghost" onclick={() => { ideStage = 'stage1_result'; stopIdePoll() }}>← Ganti ide</button>
+            </div>
+            <div class="ide-status"><span class="ide-dot"></span> Menunggu Gemini menyimpan detail…</div>
+            <p class="brief-hint">Tempel ke Antigravity. Hasil detail muncul di sini begitu Gemini simpan.</p>
+          {/if}
+
+        <!-- STAGE 2 RESULT: Naskah + edit cues + caption -->
+        {:else if ideStage === 'stage2_result'}
+          <div class="lb-frame-no">💡 Bikin Ide · Siap dibawa ke CapCut</div>
+          {#if ideSelectedIndex != null && ideCandidates[ideSelectedIndex]}
+            <div class="ide-sel-head">
+              <div class="ide-sel-label">Ide dipilih</div>
+              <div class="ide-sel-title">{ideCandidates[ideSelectedIndex].title}</div>
+            </div>
+          {/if}
+          {#if ideDetail}
+            {#if ideDetail.naskah}
+              <div class="ide-section-label">Naskah</div>
+              <pre class="ide-naskah">{ideDetail.naskah}</pre>
+            {/if}
+            {#if ideDetail.edit_cues?.length}
+              <div class="ide-section-label">✂️ Edit cue (timestamp untuk CapCut)</div>
+              <div class="ide-cue-list">
+                {#each ideDetail.edit_cues as cue}
+                  <div class="ide-cue-row">
+                    <span class="ide-cue-ts">{cue.ts_start}–{cue.ts_end}</span>
+                    <span class="ide-cue-body">
+                      {cue.aksi}
+                      {#if cue.sfx}<span class="ide-tag">{cue.sfx}</span>{/if}
+                      {#if cue.teks_layar}<span class="ide-tag">{cue.teks_layar}</span>{/if}
+                    </span>
+                  </div>
+                {/each}
+              </div>
+            {/if}
+            {#if ideDetail.caption || ideDetail.hashtags?.length}
+              <div class="ide-section-label">#️⃣ Caption + hashtag</div>
+              <pre class="ide-naskah">{ideDetail.caption || ''}{ideDetail.hashtags?.length ? '\n' + ideDetail.hashtags.join(' ') : ''}</pre>
+            {/if}
+            <div class="ide-btn-row" style="margin-top:10px">
+              {#if ideDetail.naskah}<button class="ide-modal-btn navy" onclick={copyIdeNaskah}>{ideCopiedNaskah ? '✓ Tersalin' : '📋 Salin naskah'}</button>{/if}
+              {#if ideDetail.edit_cues?.length}<button class="ide-modal-btn navy" onclick={copyIdeCue}>{ideCopiedCue ? '✓ Tersalin' : '📋 Salin edit cue'}</button>{/if}
+              {#if ideDetail.caption}<button class="ide-modal-btn ghost" onclick={copyIdeCaption}>{ideCopiedCaption ? '✓ Tersalin' : '📋 Salin caption'}</button>{/if}
+            </div>
+          {/if}
         {/if}
+
       </div>
     </div>
   </div>
@@ -685,10 +888,10 @@
             <div class="ide-wrap">
               <button
                 class="ide-btn"
-                disabled={geminiIdeasLoading}
-                onclick={showGeminiIdeas}
+                disabled={ideInstructionLoading}
+                onclick={openIdeModal}
               >
-                {geminiIdeasLoading ? '⏳ Mengambil…' : '💡 Bikin Ide'}
+                {ideInstructionLoading ? '⏳ Mengambil…' : '💡 Bikin Ide'}
               </button>
             </div>
           </div>
@@ -1524,4 +1727,53 @@
   .ana-rp-btn:not(:disabled):hover { opacity:.85; }
   .ana-rp-reason { flex:1; font-size:12px; line-height:1.4; }
   .ana-rp-time { flex-shrink:0; font-size:11px; color:var(--mut); white-space:nowrap; }
+
+  /* Bikin Ide 2-stage modal */
+  @keyframes pulse { 0%,100%{opacity:.35} 50%{opacity:1} }
+  .lb-card.ide-modal { flex-direction: column; max-width: 680px; }
+  .ide-modal-inner { padding: 2px 0; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; max-height: calc(88vh - 60px); }
+  .ide-btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .ide-modal-btn {
+    border: 0; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
+  }
+  .ide-modal-btn.navy { background: #3b4a86; color: #fff; }
+  .ide-modal-btn.navy:hover { background: #2f3c6e; }
+  .ide-modal-btn.amber { background: #d97706; color: #fff; }
+  .ide-modal-btn.amber:hover { background: #b45309; }
+  .ide-modal-btn.ghost { background: #eef1f8; color: #3a4675; }
+  .ide-modal-btn.ghost:hover { background: #dce3f5; }
+  .ide-status { display: flex; align-items: center; gap: 8px; color: #b45309; font-size: 13px; font-weight: 600; }
+  .ide-dot { width: 9px; height: 9px; border-radius: 50%; background: #d97706; flex-shrink: 0; animation: pulse 1.1s infinite; }
+  .ide-cand {
+    border: 1.5px solid var(--line); border-radius: 12px; padding: 14px; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s; position: relative;
+  }
+  .ide-cand:hover { border-color: #c2ccf0; background: #fafbff; }
+  .ide-cand.sel { border-color: #d97706; background: #fff8f0; }
+  .ide-cand-title { font-weight: 700; font-size: 15px; margin: 0 0 5px; padding-right: 80px; }
+  .ide-cand-desc { color: #3a4152; font-size: 13.5px; margin: 0 0 6px; }
+  .ide-cand-premise { color: var(--mut); font-size: 12.5px; margin: 0 0 6px; font-style: italic; }
+  .ide-cand-why { color: #0e9f6e; font-size: 12.5px; font-weight: 600; margin: 0; }
+  .ide-pick-btn { position: absolute !important; top: 12px; right: 12px; padding: 5px 10px !important; font-size: 12px !important; border-radius: 8px !important; }
+  .ide-cover {
+    display: inline-block; font-size: 12.5px; color: #8a5a00; background: #fff3e0;
+    border-radius: 8px; padding: 5px 10px; margin-top: 8px;
+  }
+  .ide-sel-head { background: #fff8f0; border: 1px solid #f0d5ac; border-radius: 10px; padding: 12px 14px; }
+  .ide-sel-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #b45309; font-weight: 700; }
+  .ide-sel-title { font-weight: 700; margin-top: 3px; color: var(--txt); }
+  .ide-section-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--mut); padding-top: 8px; border-top: 1px solid var(--line); margin-top: 4px;
+  }
+  .ide-naskah {
+    font-size: 13.5px; color: #2a3242; background: var(--soft); border-radius: 10px;
+    padding: 12px 14px; white-space: pre-wrap; word-break: break-word; margin: 0; font-family: inherit; line-height: 1.6;
+  }
+  .ide-cue-list { display: flex; flex-direction: column; }
+  .ide-cue-row { display: grid; grid-template-columns: 80px 1fr; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+  .ide-cue-row:last-child { border-bottom: none; }
+  .ide-cue-ts { font: 12.5px ui-monospace, monospace; color: #3b4a86; font-weight: 700; }
+  .ide-cue-body { font-size: 13.5px; color: #33405e; line-height: 1.5; }
+  .ide-tag { display: inline-block; background: #eef1f8; color: #40507f; border-radius: 6px; padding: 1px 7px; font-size: 11px; margin: 0 3px; }
 </style>
