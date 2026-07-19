@@ -2437,7 +2437,9 @@ def cookies_save(platform: str, req: CookieUpdate):
 
 
 @app.delete("/cookies/{platform}")
-def cookies_delete(platform: str):
+def cookies_delete(platform: str,
+    _admin: None = Depends(lambda x_api_key: verify_admin_key(x_api_key)),
+    x_api_key: str = Header(None)):
     """Remove stored cookies for a platform."""
     if platform not in COOKIE_PLATFORMS:
         raise HTTPException(status_code=400, detail=f"platform must be one of {COOKIE_PLATFORMS}")
@@ -2781,7 +2783,9 @@ def accounts_update(account_id: int, req: AccountUpdate):
 
 
 @app.delete("/accounts/{account_id}")
-def accounts_delete(account_id: int):
+def accounts_delete(account_id: int,
+    _admin: None = Depends(lambda x_api_key: verify_admin_key(x_api_key)),
+    x_api_key: str = Header(None)):
     """Delete account row and its cookie file."""
     conn = _db_conn()
     if conn is None:
@@ -2836,7 +2840,9 @@ def accounts_cookies_save(account_id: int, req: AccountCookiePost):
 
 
 @app.delete("/accounts/{account_id}/cookies")
-def accounts_cookies_delete(account_id: int):
+def accounts_cookies_delete(account_id: int,
+    _admin: None = Depends(lambda x_api_key: verify_admin_key(x_api_key)),
+    x_api_key: str = Header(None)):
     """Remove cookie file for a specific account."""
     conn = _db_conn()
     if conn is None:
@@ -9485,6 +9491,12 @@ def _schedule_init_db():
             ):
                 cur.execute(f"ALTER TABLE scheduled_posts {stmt}")
             conn.commit()
+            # Atomic publish claim to prevent double-publish race (additive, idempotent)
+            cur.execute("""
+                ALTER TABLE scheduled_posts
+                ADD COLUMN IF NOT EXISTS publishing_started_at TIMESTAMPTZ
+            """)
+            conn.commit()
 
 
 def _derive_schedule_counts(items, now_dt=None):
@@ -10068,7 +10080,9 @@ def _collect_performance_snapshots() -> dict:
 
 
 @app.post("/performance/refresh")
-def performance_refresh(bg: BackgroundTasks):
+def performance_refresh(bg: BackgroundTasks,
+    _admin: None = Depends(lambda x_api_key: verify_admin_key(x_api_key)),
+    x_api_key: str = Header(None)):
     """Collect current view snapshots for all posted videos (async)."""
     # Run collection in background; return immediately to avoid timeout
     bg.add_task(_collect_performance_snapshots)
@@ -10483,27 +10497,31 @@ def _publish_scheduled_post(post_id: int, only_platforms: list = None) -> dict:
     and never raises — per-platform errors are returned."""
     result = {"post_id": post_id, "results": {}, "errors": []}
 
-    # --- read phase: release the connection BEFORE the multi-minute upload so
-    # it never sits idle-in-transaction (which a DB idle timeout would kill,
-    # losing the platform_urls write after a successful upload). ---
+    # --- atomic claim phase: acquire exclusive lock before upload, fail fast if already claimed ---
     conn = _db_conn()
     if conn is None:
         result["errors"].append("no database connection")
         return result
     try:
         with conn.cursor() as cur:
+            # Atomically claim the post by setting publishing_started_at=now()
+            # This succeeds only if another worker hasn't already claimed it
             cur.execute(
-                "SELECT content_ref, title, caption, platforms, platform_accounts, platform_urls "
-                "FROM scheduled_posts WHERE id=%s FOR UPDATE SKIP LOCKED", (post_id,))
+                "UPDATE scheduled_posts SET publishing_started_at = now() "
+                "WHERE id=%s AND publishing_started_at IS NULL "
+                "RETURNING content_ref, title, caption, platforms, platform_accounts, platform_urls",
+                (post_id,))
             row = cur.fetchone()
+        conn.commit()
     except Exception as e:
-        result["errors"].append(f"query: {type(e).__name__}: {str(e)[:160]}")
+        result["errors"].append(f"claim query: {type(e).__name__}: {str(e)[:160]}")
         row = None
     finally:
         conn.close()
+
     if not row:
-        result["errors"].append("post not found")
-        return result
+        result["errors"].append("post not found or already_publishing")
+        return {"status": "already_publishing", "id": post_id}
 
     content_ref, title, caption, platforms_csv, pa_raw, pu_raw = row
     try:
@@ -10519,6 +10537,8 @@ def _publish_scheduled_post(post_id: int, only_platforms: list = None) -> dict:
         wanted = [p for p in wanted if p in only_platforms]
     if not wanted:
         result["errors"].append("no platforms set on this post")
+        # Reset claim on error so it can be retried
+        _reset_publish_claim(post_id)
         return result
 
     # --- upload phase: no DB connection held. ---
@@ -10550,6 +10570,9 @@ def _publish_scheduled_post(post_id: int, only_platforms: list = None) -> dict:
                 result["errors"].append(f"{platform}: {str(e)[:160]}")
     except Exception as e:
         result["errors"].append(f"{type(e).__name__}: {str(e)[:160]}")
+        # Reset claim on error so it can be retried
+        _reset_publish_claim(post_id)
+        return result
     finally:
         if is_temp and local_path:
             try:
@@ -10575,7 +10598,28 @@ def _publish_scheduled_post(post_id: int, only_platforms: list = None) -> dict:
                     pass
             finally:
                 conn2.close()
+    elif result["errors"]:
+        # All platforms failed or error occurred — reset claim so post can be retried
+        _reset_publish_claim(post_id)
+
     return result
+
+
+def _reset_publish_claim(post_id: int) -> None:
+    """Reset publishing_started_at to NULL so post can be retried on failure.
+    Non-fatal: if it fails, the post stays claimed (safer than releasing accidentally)."""
+    try:
+        conn = _db_conn()
+        if conn is None:
+            return
+        with conn.cursor() as cur:
+            cur.execute("UPDATE scheduled_posts SET publishing_started_at = NULL WHERE id=%s", (post_id,))
+            conn.commit()
+    except Exception:
+        pass  # Non-fatal
+    finally:
+        if conn:
+            conn.close()
 
 
 @app.post("/schedule/{item_id}/publish")

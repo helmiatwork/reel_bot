@@ -29,6 +29,7 @@ from mcp.server.fastmcp import FastMCP
 
 # Database
 import psycopg
+from psycopg.types.json import Jsonb
 
 # HTTP to Claude bridge
 import httpx
@@ -569,9 +570,10 @@ def save_analysis(youtube_url: str, analysis_json: str) -> dict:
                 tags = json.loads(tags)  # Parse string to list/dict
             except (json.JSONDecodeError, ValueError):
                 tags = None
-        # Keep as Python list/dict so psycopg3 Json adapter handles JSONB conversion
+        # Wrap as JSONB for psycopg3 database insertion
         if not isinstance(tags, (list, dict)):
             tags = None
+        tags_db = Jsonb(tags) if tags is not None else None
 
     # DB write: INSERT new row (no upsert)
     if not DATABASE_URL:
@@ -601,7 +603,7 @@ def save_analysis(youtube_url: str, analysis_json: str) -> dict:
                     retention_score,
                     content_summary,
                     content_detail,
-                    tags,
+                    tags_db,
                     raw_result_json,
                     "gemini-antigravity",
                     0  # cost_usd = 0 for Gemini (free)
