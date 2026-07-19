@@ -173,11 +173,11 @@
       if (u.hostname.includes('youtube.com')) {
         const v = u.searchParams.get('v')
         if (v) return v
-      } else if (u.hostname.includes('youtu.be')) {
-        return u.pathname.slice(1)
-      } else if (u.hostname.includes('youtube.com') && u.pathname.includes('/shorts/')) {
+        // ponytail: shorts check folded here — the outer if already matched youtube.com
         const m = u.pathname.match(/\/shorts\/([a-zA-Z0-9_-]+)/)
         if (m) return m[1]
+      } else if (u.hostname.includes('youtu.be')) {
+        return u.pathname.slice(1)
       }
       return u.pathname.split('/').pop() || null
     } catch { return null }
@@ -314,49 +314,53 @@
     if (e.key === 'Escape') closeLightbox()
   }
 
-  drawer.subscribe(async (v) => {
-    stopPoll()
-    stopProcPoll()
-    liveStatus = null
-    justDone = false
-    briefAutoShown = false
-    procStage = 'saving_meta'
-    decomposeRunning = false
-    decomposeStage = ''
-    decomposeError = ''
-    reanalyzeLoading = false
-    reanalyzeError = ''
-    reanalyzeDone = false
-    lightboxSrc = null
-    activeTab = 'analisa'
-    anaSubTab = 'hookret'
-    showRawJson = false
-    d = v
-    frames = []
-    segments = []
-    analysis = {}
-    if (v?.type === 'source') {
-      if (v.data?.youtube_url) {
-        framesLoading = true
-        const res = await api.sourceFrames(v.data.youtube_url)
-        frames = res?.frames ?? []
-        framesLoading = false
+  // ponytail: $effect so the unsubscribe handle is captured; return tears it down on destroy (I9)
+  $effect(() => {
+    const unsub = drawer.subscribe(async (v) => {
+      stopPoll()
+      stopProcPoll()
+      liveStatus = null
+      justDone = false
+      briefAutoShown = false
+      procStage = 'saving_meta'
+      decomposeRunning = false
+      decomposeStage = ''
+      decomposeError = ''
+      reanalyzeLoading = false
+      reanalyzeError = ''
+      reanalyzeDone = false
+      lightboxSrc = null
+      activeTab = 'analisa'
+      anaSubTab = 'hookret'
+      showRawJson = false
+      d = v
+      frames = []
+      segments = []
+      analysis = {}
+      if (v?.type === 'source') {
+        if (v.data?.youtube_url) {
+          framesLoading = true
+          const res = await api.sourceFrames(v.data.youtube_url)
+          frames = res?.frames ?? []
+          framesLoading = false
+        }
+        // ponytail: non-fatal — segments missing = silently empty
+        if (v.data?.id) {
+          const segRes = await api.sourceSegments(v.data.id)
+          segments = segRes?.segments ?? []
+          // Fetch real analysis data from backend
+          const anaRes = await api.sourceAnalysis(v.data.id)
+          analysis = anaRes ?? {}
+        }
+        // Live checklist while the source is still processing/working
+        const st = v.data?.status
+        if (st === 'processing' || st === 'working' || st === 'running') {
+          pollProcessing(v.data.youtube_url, v.data.id)
+          procPoll = setInterval(() => pollProcessing(v.data.youtube_url, v.data.id), 3000)
+        }
       }
-      // ponytail: non-fatal — segments missing = silently empty
-      if (v.data?.id) {
-        const segRes = await api.sourceSegments(v.data.id)
-        segments = segRes?.segments ?? []
-        // Fetch real analysis data from backend
-        const anaRes = await api.sourceAnalysis(v.data.id)
-        analysis = anaRes ?? {}
-      }
-      // Live checklist while the source is still processing/working
-      const st = v.data?.status
-      if (st === 'processing' || st === 'working' || st === 'running') {
-        pollProcessing(v.data.youtube_url, v.data.id)
-        procPoll = setInterval(() => pollProcessing(v.data.youtube_url, v.data.id), 3000)
-      }
-    }
+    })
+    return () => { unsub(); stopProcPoll() }
   })
 
   // Per-tab primary action: full re-analyze / redo frames+analysis / regenerate prompt only.
