@@ -7893,7 +7893,7 @@ def _download_and_clip_audio_for_suno(youtube_url: str, audio_start: Optional[fl
             end = float(audio_end) if audio_end is not None else start + _SUNO_WINDOW_SEC
             cmd += ["--download-sections", f"*{start}-{end}"]
         cmd.append(youtube_url)
-        result = subprocess.run(cmd, capture_output=True, timeout=120, check=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, timeout=max(120, _SUNO_WINDOW_SEC // 3), check=True, text=True)
 
         # Find downloaded file
         audio_files = list(Path(tmp_dir).glob("audio.*"))
