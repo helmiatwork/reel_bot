@@ -360,7 +360,7 @@
         }
       }
     })
-    return () => { unsub(); stopProcPoll() }
+    return () => { unsub(); stopProcPoll(); stopPoll() }
   })
 
   // Per-tab primary action: full re-analyze / redo frames+analysis / regenerate prompt only.
