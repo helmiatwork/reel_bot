@@ -7497,6 +7497,9 @@ RULES:
 - Do NOT search, read code, call other tools, open a browser, or run commands.
 - CRITICAL: base your music prompt on the AUDIO ANALYSIS provided below (ground truth from a Gemini model that listened to the actual clip). You MAY also call `get_audio_for_suno` and listen yourself if your environment can play audio — but if it cannot (e.g. unsupported audio mime type in Antigravity), DO NOT STOP. Use the provided AUDIO ANALYSIS as ground truth and write the Suno prompt from it. NEVER invent details not supported by the analysis or the librosa hints.
 
+TEMPO RULE:
+The AUDIO ANALYSIS (from the model that listened) is authoritative for tempo FEEL and mood. The librosa BPM is a rough machine estimate that is often doubled for calm/sparse/ambient music. If the librosa BPM implies a brisk/fast track (e.g., > ~110 BPM) but the audio analysis mood is calm/low-energy/ambient/relaxed, use approximately HALF the librosa BPM (or the perceived tempo from the audio analysis) — never describe the track as both 'brisk/140 BPM' and 'very calm/low energy'. The genre, mood, tempo feel, and BPM in your final output MUST be mutually consistent.
+
 Task:
 STEP 1: Review the AUDIO ANALYSIS below (produced by listening to the actual clip).
 
@@ -7659,7 +7662,7 @@ def _format_audio_hints_for_suno(audio_hints: dict) -> str:
 
     parts = []
     if audio_hints.get("bpm"):
-        parts.append(f"- BPM: {audio_hints['bpm']}")
+        parts.append(f"- BPM (raw librosa estimate — may be a 2x or 1/2x octave error for sparse/ambient music; trust the perceived tempo/mood and halve this if it conflicts with a calm/low-energy read): {audio_hints['bpm']}")
     if audio_hints.get("music_key"):
         parts.append(f"- Key: {audio_hints['music_key']}")
     if audio_hints.get("energy"):
