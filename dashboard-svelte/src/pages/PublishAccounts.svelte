@@ -1,6 +1,7 @@
 <script>
   import { fade, scale } from 'svelte/transition'
   import { cubicOut } from 'svelte/easing'
+  import { _ } from 'svelte-i18n'
   import { api } from '../lib/api.js'
 
   const PLATFORMS = [
@@ -99,7 +100,7 @@
   }
 
   async function deleteAccount(acct) {
-    if (!confirm(`Delete account @${acct.handle}?`)) return
+    if (!confirm($_('publishAccounts.confirm_delete', { values: { handle: acct.handle } }))) return
     await api.accountDelete(acct.id)
     await load()
   }
@@ -130,42 +131,40 @@
 
 <div class="ac">
   <div class="top">
-    <h1>Publish Accounts</h1>
-    <div class="sub">Akun earning — untuk scheduling & performance tracking. Cookie tidak pernah dipakai untuk download.</div>
+    <h1>{$_('publishAccounts.title')}</h1>
+    <div class="sub">{$_('publishAccounts.subtitle')}</div>
   </div>
 
   <div class="help">
-    Ini adalah akun-akun penghasil uangmu. Tambahkan di sini agar <strong>Jadwal Post</strong> bisa
-    memilih channel yang tepat per platform dan <strong>Performance</strong> bisa melacak views &amp; revenue-nya.
-    Cookie mereka <em>tidak pernah</em> dipakai untuk scraping — itu tugas Scrape Accounts.
+    {$_('publishAccounts.help_text')}<strong>{$_('publishAccounts.help_text_link1')}</strong>{$_('publishAccounts.help_text_middle')}<strong>{$_('publishAccounts.help_text_link2')}</strong>{$_('publishAccounts.help_text_end')}
   </div>
 
   <div class="table-header">
-    <h2 class="table-title">Daftar Akun</h2>
+    <h2 class="table-title">{$_('publishAccounts.list_title')}</h2>
     <button class="btn-add" onclick={openAddModal}>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M12 5v14M5 12h14"/></svg>
-      Tambah Akun
+      {$_('publishAccounts.add_btn')}
     </button>
   </div>
 
   {#if loading}
-    <div class="state-msg">Loading…</div>
+    <div class="state-msg">{$_('publishAccounts.loading')}</div>
   {:else if accounts.length === 0}
     <div class="empty-state">
-      <div class="empty-msg">Belum ada akun</div>
-      <button class="btn-add-empty" onclick={openAddModal}>+ Tambah Akun Pertama</button>
+      <div class="empty-msg">{$_('publishAccounts.empty_state')}</div>
+      <button class="btn-add-empty" onclick={openAddModal}>{$_('publishAccounts.add_first')}</button>
     </div>
   {:else}
     <div class="table-wrapper">
       <table class="tbl">
         <thead>
           <tr>
-            <th class="col-platform">Platform</th>
-            <th class="col-handle">Handle</th>
-            <th class="col-label">Label</th>
-            <th class="col-status">Status</th>
-            <th class="col-aktif">Aktif</th>
-            <th class="col-aksi">Aksi</th>
+            <th class="col-platform">{$_('publishAccounts.table_platform')}</th>
+            <th class="col-handle">{$_('publishAccounts.table_handle')}</th>
+            <th class="col-label">{$_('publishAccounts.table_label')}</th>
+            <th class="col-status">{$_('publishAccounts.table_status')}</th>
+            <th class="col-aktif">{$_('publishAccounts.table_active')}</th>
+            <th class="col-aksi">{$_('publishAccounts.table_actions')}</th>
           </tr>
         </thead>
         <tbody>
@@ -182,7 +181,7 @@
               <td class="col-status">
                 {#if acct.platform === 'youtube'}
                   {#if acct.connected}
-                    <span class="badge connected" title="OAuth token saved">connected</span>
+                    <span class="badge connected" title="OAuth token saved">{$_('publishAccounts.badge_connected')}</span>
                   {:else}
                     <button
                       class="btn-connect"
@@ -190,7 +189,7 @@
                       title="Connect YouTube OAuth"
                       onclick={() => connectYoutube(acct)}
                     >
-                      {connecting[acct.id] ? 'Connecting…' : 'Connect'}
+                      {connecting[acct.id] ? $_('publishAccounts.btn_connecting') : $_('publishAccounts.btn_connect')}
                     </button>
                   {/if}
                 {:else}
@@ -201,14 +200,14 @@
                 <button
                   class="btn-toggle"
                   class:active={acct.active}
-                  title={acct.active ? 'Aktif — klik nonaktifkan' : 'Nonaktif — klik aktifkan'}
+                  title={acct.active ? $_('publishAccounts.toggle_active_title') : $_('publishAccounts.toggle_inactive_title')}
                   onclick={() => toggleActive(acct)}
                 >
-                  {acct.active ? 'aktif' : 'nonaktif'}
+                  {acct.active ? $_('publishAccounts.toggle_active') : $_('publishAccounts.toggle_inactive')}
                 </button>
               </td>
               <td class="col-aksi">
-                <button class="btn-delete" title="Hapus akun" onclick={() => deleteAccount(acct)}>
+                <button class="btn-delete" title={$_('publishAccounts.btn_delete')} onclick={() => deleteAccount(acct)}>
                   <svg class="ic-del"><use href="#i-trash"/></svg>
                 </button>
               </td>
@@ -236,15 +235,15 @@
     bind:this={panelEl}
     role="dialog"
     aria-modal="true"
-    aria-label="Tambah Akun"
+    aria-label={$_('publishAccounts.modal_title')}
     tabindex="-1"
     transition:scale={{ duration: 230, start: 0.94, easing: cubicOut }}
     onkeydown={trapFocus}
   >
     <!-- Header -->
     <div class="m-head">
-      <span class="m-title">Tambah Akun Earning</span>
-      <button class="m-close" onclick={closeModal} aria-label="Tutup modal">
+      <span class="m-title">{$_('publishAccounts.modal_title')}</span>
+      <button class="m-close" onclick={closeModal} aria-label={$_('publishAccounts.modal_close_aria')}>
         <svg class="ic-x"><use href="#i-x"/></svg>
       </button>
     </div>
@@ -252,7 +251,7 @@
     <!-- Body -->
     <div class="m-body">
       <label class="field">
-        <span class="field-label">Platform</span>
+        <span class="field-label">{$_('publishAccounts.field_platform')}</span>
         <select class="inp" bind:value={modalPlatform} disabled={modalSaving}>
           {#each PLATFORMS as p}
             <option value={p.id}>{p.label}</option>
@@ -261,22 +260,22 @@
       </label>
 
       <label class="field">
-        <span class="field-label">Handle / Username</span>
+        <span class="field-label">{$_('publishAccounts.field_handle')}</span>
         <input
           class="inp"
           type="text"
-          placeholder="@username"
+          placeholder={$_('publishAccounts.field_handle_placeholder')}
           bind:value={modalHandle}
           disabled={modalSaving}
         />
       </label>
 
       <label class="field">
-        <span class="field-label">Label <span class="opt">(opsional)</span></span>
+        <span class="field-label">{$_('publishAccounts.field_label')} <span class="opt">{$_('publishAccounts.field_label_optional')}</span></span>
         <input
           class="inp"
           type="text"
-          placeholder="Label atau nickname untuk akun ini"
+          placeholder={$_('publishAccounts.field_label_placeholder')}
           bind:value={modalLabel}
           disabled={modalSaving}
         />
@@ -291,7 +290,7 @@
 
     <!-- Footer -->
     <div class="m-footer">
-      <button class="btn-cancel" onclick={closeModal} disabled={modalSaving}>Batal</button>
+      <button class="btn-cancel" onclick={closeModal} disabled={modalSaving}>{$_('publishAccounts.btn_cancel')}</button>
       <button
         class="btn-primary"
         onclick={saveAccount}
@@ -299,9 +298,9 @@
       >
         {#if modalSaving}
           <span class="spinner"></span>
-          Menyimpan…
+          {$_('publishAccounts.btn_saving')}
         {:else}
-          Simpan
+          {$_('publishAccounts.btn_save')}
         {/if}
       </button>
     </div>
