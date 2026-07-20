@@ -1,6 +1,7 @@
 <script>
   import { fade, scale } from 'svelte/transition'
   import { cubicOut } from 'svelte/easing'
+  import { _ } from 'svelte-i18n'
   import { api } from '../lib/api.js'
 
   const PLATFORMS = [
@@ -127,20 +128,24 @@
   }
 
   async function deleteBrand(brand) {
-    if (!confirm(`Delete brand "${brand.name}"?`)) return
+    const msg = $_('brands.delete_brand_confirmation', {values: {name: brand.name}})
+    if (!confirm(msg)) return
     const r = await api.brandDelete(brand.id)
     if (!r || r.detail) {
-      alert(`Delete failed: ${r?.detail || 'Unknown error'}`)
+      const errMsg = $_('brands.delete_brand_failed', {values: {error: r?.detail || 'Unknown error'}})
+      alert(errMsg)
       return
     }
     await loadBrands()
   }
 
   async function removeAccountFromBrand(acct) {
-    if (!confirm(`Remove @${acct.handle} from this brand?`)) return
+    const msg = $_('brands.remove_account_confirmation', {values: {handle: acct.handle}})
+    if (!confirm(msg)) return
     const r = await api.accountUpdate(acct.id, { brand_id: null })
     if (!r || r.detail) {
-      alert(`Failed to remove from brand: ${r?.detail || 'Unknown error'}`)
+      const errMsg = $_('brands.remove_account_failed', {values: {error: r?.detail || 'Unknown error'}})
+      alert(errMsg)
       return
     }
     await loadBrandDetail(selectedBrand.id)
@@ -217,29 +222,28 @@
   <!-- ── Brand List View ──────────────────────────────────────────────────── -->
   <div class="brands-container">
     <div class="top">
-      <h1>Brands</h1>
-      <div class="sub">Kelompok akun earning Anda per brand/produk</div>
+      <h1>{$_('brands.title')}</h1>
+      <div class="sub">{$_('brands.subtitle')}</div>
     </div>
 
     <div class="help">
-      Buat brand baru untuk mengorganisir akun earning Anda di berbagai platform.
-      Setiap brand dapat memiliki beberapa akun YouTube, TikTok, Instagram, dan Xiaohongshu.
+      {$_('brands.help_text')}
     </div>
 
     <div class="brands-header">
-      <h2 class="brands-title">Daftar Brand</h2>
+      <h2 class="brands-title">{$_('brands.list_title')}</h2>
       <button class="btn-add" onclick={openBrandModal}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M12 5v14M5 12h14"/></svg>
-        Tambah Brand
+        {$_('brands.add_brand_btn')}
       </button>
     </div>
 
     {#if loading}
-      <div class="state-msg">Loading…</div>
+      <div class="state-msg">{$_('brands.loading')}</div>
     {:else if brands.length === 0}
       <div class="empty-state">
-        <div class="empty-msg">Belum ada brand</div>
-        <button class="btn-add-empty" onclick={openBrandModal}>+ Buat Brand Pertama</button>
+        <div class="empty-msg">{$_('brands.no_brands')}</div>
+        <button class="btn-add-empty" onclick={openBrandModal}>{$_('brands.create_first_brand')}</button>
       </div>
     {:else}
       <div class="brands-grid">
@@ -254,7 +258,7 @@
               </div>
               <button
                 class="btn-delete-card"
-                title="Hapus brand"
+                title={$_('brands.delete_brand_aria')}
                 onclick={() => deleteBrand(brand)}
               >
                 <svg class="ic-del"><use href="#i-trash"/></svg>
@@ -263,14 +267,14 @@
             <div class="brand-card-body">
               <div class="acct-count">
                 <span class="count-number">{brand.account_count}</span>
-                <span class="count-label">{brand.account_count === 1 ? 'akun' : 'akun'}</span>
+                <span class="count-label">{$_('brands.account_count_label')}</span>
               </div>
             </div>
             <button
               class="brand-card-action"
               onclick={() => goToDetail(brand)}
             >
-              Kelola Akun
+              {$_('brands.manage_accounts')}
               <svg style="width:16px;height:16px;"><use href="#i-arrow-right"/></svg>
             </button>
           </div>
@@ -287,34 +291,34 @@
       bind:this={brandPanelEl}
       role="dialog"
       aria-modal="true"
-      aria-label="Tambah Brand"
+      aria-label={$_('brands.add_brand_aria')}
       tabindex="-1"
       transition:scale={{ duration: 230, start: 0.94, easing: cubicOut }}
       onkeydown={(e) => trapFocus(e, false)}
     >
       <div class="m-head">
-        <span class="m-title">Tambah Brand Baru</span>
+        <span class="m-title">{$_('brands.modal_title_add_brand')}</span>
         <button class="m-close" onclick={closeBrandModal} aria-label="Tutup modal">
           <svg class="ic-x"><use href="#i-x"/></svg>
         </button>
       </div>
       <div class="m-body">
         <label class="field">
-          <span class="field-label">Nama Brand</span>
+          <span class="field-label">{$_('brands.modal_label_brand_name')}</span>
           <input
             class="inp"
             type="text"
-            placeholder="Nama brand/produk"
+            placeholder={$_('brands.modal_label_brand_name_placeholder')}
             bind:value={brandName}
             disabled={brandModalSaving}
           />
         </label>
         <label class="field">
-          <span class="field-label">Deskripsi <span class="opt">(opsional)</span></span>
+          <span class="field-label">{$_('brands.modal_label_description')} <span class="opt">{$_('brands.modal_label_description_optional')}</span></span>
           <input
             class="inp"
             type="text"
-            placeholder="Deskripsi singkat"
+            placeholder={$_('brands.modal_label_description_placeholder')}
             bind:value={brandDesc}
             disabled={brandModalSaving}
           />
@@ -326,7 +330,7 @@
         {/if}
       </div>
       <div class="m-footer">
-        <button class="btn-cancel" onclick={closeBrandModal} disabled={brandModalSaving}>Batal</button>
+        <button class="btn-cancel" onclick={closeBrandModal} disabled={brandModalSaving}>{$_('brands.modal_btn_cancel')}</button>
         <button
           class="btn-primary"
           onclick={saveBrand}
@@ -334,9 +338,9 @@
         >
           {#if brandModalSaving}
             <span class="spinner"></span>
-            Menyimpan…
+            {$_('brands.modal_btn_saving')}
           {:else}
-            Simpan
+            {$_('brands.modal_btn_save')}
           {/if}
         </button>
       </div>
@@ -349,7 +353,7 @@
     <div class="detail-header">
       <button class="btn-back" onclick={goBack}>
         <svg style="width:20px;height:20px;"><use href="#i-chevron-left"/></svg>
-        Kembali
+        {$_('brands.detail_header_back')}
       </button>
       <div class="detail-title">
         <h1>{selectedBrand.name}</h1>
@@ -361,29 +365,29 @@
 
     <div class="accounts-section">
       <div class="accounts-header">
-        <h2 class="accounts-title">Akun {selectedBrand.name}</h2>
+        <h2 class="accounts-title">{$_('brands.accounts_section_title', {values: {name: selectedBrand.name}})}</h2>
         <button class="btn-add" onclick={openAcctModal}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M12 5v14M5 12h14"/></svg>
-          Tambah Akun
+          {$_('brands.add_account_btn')}
         </button>
       </div>
 
       {#if brandAccounts.length === 0}
         <div class="empty-state">
-          <div class="empty-msg">Belum ada akun di brand ini</div>
-          <button class="btn-add-empty" onclick={openAcctModal}>+ Tambah Akun Pertama</button>
+          <div class="empty-msg">{$_('brands.no_accounts')}</div>
+          <button class="btn-add-empty" onclick={openAcctModal}>{$_('brands.add_first_account')}</button>
         </div>
       {:else}
         <div class="table-wrapper">
           <table class="tbl">
             <thead>
               <tr>
-                <th class="col-platform">Platform</th>
-                <th class="col-handle">Handle</th>
-                <th class="col-label">Label</th>
-                <th class="col-status">Status</th>
-                <th class="col-aktif">Aktif</th>
-                <th class="col-aksi">Aksi</th>
+                <th class="col-platform">{$_('brands.table_header_platform')}</th>
+                <th class="col-handle">{$_('brands.table_header_handle')}</th>
+                <th class="col-label">{$_('brands.table_header_label')}</th>
+                <th class="col-status">{$_('brands.table_header_status')}</th>
+                <th class="col-aktif">{$_('brands.table_header_active')}</th>
+                <th class="col-aksi">{$_('brands.table_header_actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -400,15 +404,15 @@
                   <td class="col-status">
                     {#if acct.platform === 'youtube'}
                       {#if acct.connected}
-                        <span class="badge connected" title="OAuth token saved">connected</span>
+                        <span class="badge connected" title="OAuth token saved">{$_('brands.badge_connected')}</span>
                       {:else}
                         <button
                           class="btn-connect"
                           disabled={connecting[acct.id]}
-                          title="Connect YouTube OAuth"
+                          title={$_('brands.connect_youtube_oauth')}
                           onclick={() => connectYoutube(acct)}
                         >
-                          {connecting[acct.id] ? 'Connecting…' : 'Connect'}
+                          {connecting[acct.id] ? $_('brands.btn_connecting') : $_('brands.btn_connect')}
                         </button>
                       {/if}
                     {:else}
@@ -422,12 +426,12 @@
                       title={acct.active ? 'Aktif — klik nonaktifkan' : 'Nonaktif — klik aktifkan'}
                       onclick={() => toggleAccountActive(acct)}
                     >
-                      {acct.active ? 'aktif' : 'nonaktif'}
+                      {acct.active ? $_('brands.btn_active') : $_('brands.btn_inactive')}
                     </button>
                   </td>
                   <td class="col-aksi">
                     <div class="acct-actions">
-                      <button class="btn-unset" title="Lepaskan dari brand" onclick={() => removeAccountFromBrand(acct)}>
+                      <button class="btn-unset" title={$_('brands.btn_remove_from_brand')} onclick={() => removeAccountFromBrand(acct)}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M6 18L18 6M6 6l12 12"/></svg>
                       </button>
                       <button class="btn-delete" title="Hapus akun" onclick={() => deleteAccount(acct)}>
@@ -452,20 +456,20 @@
       bind:this={acctPanelEl}
       role="dialog"
       aria-modal="true"
-      aria-label="Tambah Akun"
+      aria-label={$_('brands.add_account_aria')}
       tabindex="-1"
       transition:scale={{ duration: 230, start: 0.94, easing: cubicOut }}
       onkeydown={(e) => trapFocus(e, true)}
     >
       <div class="m-head">
-        <span class="m-title">Tambah Akun ke {selectedBrand.name}</span>
+        <span class="m-title">{$_('brands.modal_title_add_account', {values: {brand: selectedBrand.name}})}</span>
         <button class="m-close" onclick={closeAcctModal} aria-label="Tutup modal">
           <svg class="ic-x"><use href="#i-x"/></svg>
         </button>
       </div>
       <div class="m-body">
         <label class="field">
-          <span class="field-label">Platform</span>
+          <span class="field-label">{$_('brands.modal_label_platform')}</span>
           <select class="inp" bind:value={acctPlatform} disabled={acctModalSaving}>
             {#each PLATFORMS as p}
               <option value={p.id}>{p.label}</option>
@@ -473,21 +477,21 @@
           </select>
         </label>
         <label class="field">
-          <span class="field-label">Handle / Username</span>
+          <span class="field-label">{$_('brands.modal_label_handle')}</span>
           <input
             class="inp"
             type="text"
-            placeholder="@username"
+            placeholder={$_('brands.modal_label_handle_placeholder')}
             bind:value={acctHandle}
             disabled={acctModalSaving}
           />
         </label>
         <label class="field">
-          <span class="field-label">Label <span class="opt">(opsional)</span></span>
+          <span class="field-label">{$_('brands.modal_label_label')} <span class="opt">{$_('brands.modal_label_label_optional')}</span></span>
           <input
             class="inp"
             type="text"
-            placeholder="Label atau nickname"
+            placeholder={$_('brands.modal_label_label_placeholder')}
             bind:value={acctLabel}
             disabled={acctModalSaving}
           />
@@ -499,7 +503,7 @@
         {/if}
       </div>
       <div class="m-footer">
-        <button class="btn-cancel" onclick={closeAcctModal} disabled={acctModalSaving}>Batal</button>
+        <button class="btn-cancel" onclick={closeAcctModal} disabled={acctModalSaving}>{$_('brands.modal_btn_cancel')}</button>
         <button
           class="btn-primary"
           onclick={saveAccount}
@@ -507,9 +511,9 @@
         >
           {#if acctModalSaving}
             <span class="spinner"></span>
-            Menyimpan…
+            {$_('brands.modal_btn_saving')}
           {:else}
-            Simpan
+            {$_('brands.modal_btn_save')}
           {/if}
         </button>
       </div>

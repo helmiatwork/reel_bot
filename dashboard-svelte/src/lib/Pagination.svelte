@@ -1,4 +1,5 @@
 <script>
+  import { _ } from 'svelte-i18n'
   // ponytail: minimal pagination bar — no framework, just two buttons + a label
   let { offset = 0, limit = 25, total = 0, onprev, onnext } = $props()
 
@@ -10,12 +11,12 @@
 
 {#if total > limit}
   <div class="pg">
-    <button disabled={atStart} onclick={onprev}>← Prev</button>
-    <span class="mut">{from}–{to} dari {total}</span>
-    <button disabled={atEnd} onclick={onnext}>Next →</button>
+    <button disabled={atStart} onclick={onprev}>{$_('pagination.prev')}</button>
+    <span class="mut">{from}–{to} {$_('pagination.of')} {total}</span>
+    <button disabled={atEnd} onclick={onnext}>{$_('pagination.next')}</button>
   </div>
 {:else if total > 0}
-  <div class="pg"><span class="mut">{from}–{to} dari {total}</span></div>
+  <div class="pg"><span class="mut">{from}–{to} {$_('pagination.of')} {total}</span></div>
 {/if}
 
 <style>

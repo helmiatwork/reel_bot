@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte'
+  import { _ } from 'svelte-i18n'
   import { api } from '../lib/api.js'
   import { AGENT_DETAIL } from '../lib/data.js'
   import { openDrawer } from '../lib/stores.js'
@@ -26,7 +27,7 @@
 </script>
 
 <div class="top">
-  <div><h1>Agents</h1><div class="sub">Otak (SOUL.md) + model routing — klik kartu buat detail</div></div>
+  <div><h1>{$_('agents.title')}</h1><div class="sub">{$_('agents.subtitle')}</div></div>
   <div class="pill">{agents.length} agent</div>
 </div>
 

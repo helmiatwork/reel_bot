@@ -2,6 +2,7 @@
   import { fade, scale } from 'svelte/transition'
   import { cubicOut } from 'svelte/easing'
   import { api } from './api.js'
+  import { _ } from 'svelte-i18n'
 
   // Props (runes mode — isOpen is bound by parent)
   let { isOpen = $bindable(false), onSuccess = () => {}, onAnalyzeStarted = (_runId, _label) => {}, onAlreadyExists = (_source) => {} } = $props()
@@ -48,22 +49,13 @@
   let includeAudio = $state(false)
   let audioStart = $state('')
   let audioEnd = $state('')
-  const PREP_STAGE_LABEL = {
-    downloading: 'Mengunduh video…',
-    saving_meta: 'Menyimpan atribut video…',
-    detecting: 'Mendeteksi scene…',
-    grouping: 'Mengelompokkan…',
-    splitting: 'Memotong klip per menit…',
-    finding: 'Menautkan klip…',
-    saving: 'Menyimpan ke database…',
-  }
   // Live step checklist for the prep phase (like the analyze stepper).
   // order = how far the pipeline has progressed; each stage maps to a step.
   const PREP_STEPS = [
-    { key: 'saving_meta', label: 'Menyimpan atribut video' },
-    { key: 'downloading', label: 'Mengunduh video' },
-    { key: 'splitting', label: 'Memotong klip per menit' },
-    { key: 'saving', label: 'Menyimpan atribut klip ke database' },
+    { key: 'saving_meta', i18nKey: 'sourceUpload.prep_step_meta' },
+    { key: 'downloading', i18nKey: 'sourceUpload.prep_step_download' },
+    { key: 'splitting', i18nKey: 'sourceUpload.prep_step_split' },
+    { key: 'saving', i18nKey: 'sourceUpload.prep_step_save' },
   ]
   const PREP_STAGE_ORDER = { saving_meta: 0, downloading: 1, detecting: 2, grouping: 2, splitting: 2, finding: 3, saving: 3, done: 4 }
   // Status of a step given the current prepStage: done | active | pending
@@ -206,7 +198,7 @@
 
   async function submitUrl() {
     if (!urlInput.trim()) {
-      error = 'URL tidak boleh kosong'
+      error = $_('sourceUpload.error_url_required')
       return
     }
     if (!(await ensureNotDuplicate(urlInput.trim()))) return
@@ -233,7 +225,7 @@
         return
       }
       if (!result?.run_id) {
-        error = result?.message || 'Gagal memulai analisis'
+        error = result?.message || $_('sourceUpload.error_analyze_failed')
         loading = false
         return
       }
@@ -247,7 +239,7 @@
 
   async function submitFile() {
     if (!selectedFile) {
-      error = 'Pilih file terlebih dahulu'
+      error = $_('sourceUpload.file_error_required')
       return
     }
     loading = true
@@ -267,7 +259,7 @@
       }
       const result = await api.uploadSourceAsync(selectedFile, options)
       if (!result?.run_id) {
-        error = result?.message || 'Gagal memulai analisis'
+        error = result?.message || $_('sourceUpload.error_analyze_failed')
         loading = false
         return
       }
@@ -282,7 +274,7 @@
   function handleFileSelect(e) {
     selectedFile = e.target.files?.[0] || null
     if (selectedFile && selectedFile.size > 200 * 1024 * 1024) {
-      error = 'File terlalu besar (max 200 MB)'
+      error = $_('sourceUpload.file_error_size')
       selectedFile = null
     }
   }
@@ -299,7 +291,7 @@
 
   async function fetchGeminiBrief() {
     if (!urlInput.trim()) {
-      geminiError = 'URL tidak boleh kosong'
+      geminiError = $_('sourceUpload.error_url_required')
       return
     }
     if (!(await ensureNotDuplicate(urlInput.trim()))) return
@@ -316,7 +308,7 @@
       storyboardPhase = 'clips'
       const decomposeResult = await api.decomposePerMinute(urlInput.trim())
       if (!decomposeResult?.run_id) {
-        geminiError = decomposeResult?.error || 'Gagal memulai persiapan klip'
+        geminiError = decomposeResult?.error || $_('sourceUpload.error_prep_failed')
         loading = false
         storyboardPhase = ''
         return
@@ -338,7 +330,7 @@
         if (statusResult?.status === 'done') {
           done = true
         } else if (statusResult?.status === 'error') {
-          geminiError = statusResult?.error || 'Persiapan klip gagal'
+          geminiError = statusResult?.error || $_('sourceUpload.error_prep_failed')
           loading = false
           storyboardPhase = ''
           return
@@ -347,7 +339,7 @@
       }
 
       if (!done) {
-        geminiError = 'Timeout menunggu persiapan klip'
+        geminiError = $_('sourceUpload.error_prep_timeout')
         loading = false
         storyboardPhase = ''
         return
@@ -378,7 +370,7 @@
       if (result?.instruction) {
         geminiBrief = result.instruction
       } else {
-        geminiError = result?.error || 'Gagal mengambil instruksi'
+        geminiError = result?.error || $_('sourceUpload.error_brief_failed')
         loading = false
         storyboardPhase = ''
         return
@@ -401,7 +393,7 @@
         } else if (pollStoryboardCount >= 200) {
           // Cap at ~200 polls (10 min at 3s interval)
           stopStoryboardPolling()
-          geminiError = 'Timeout menunggu Gemini analisa'
+          geminiError = $_('sourceUpload.error_gemini_timeout')
         }
       }, 3000)
     } catch (e) {
@@ -420,11 +412,11 @@
 
   async function saveGeminiStoryboard() {
     if (!urlInput.trim()) {
-      geminiError = 'URL tidak boleh kosong'
+      geminiError = $_('sourceUpload.error_url_required')
       return
     }
     if (!geminiPaste.trim()) {
-      geminiError = 'Tempel hasil Gemini (JSON) terlebih dahulu'
+      geminiError = $_('sourceUpload.error_gemini_paste_required')
       return
     }
     savingGemini = true
@@ -435,7 +427,7 @@
         onSuccess()
         closeModal()
       } else {
-        geminiError = result?.error || 'Gagal menyimpan storyboard'
+        geminiError = result?.error || $_('sourceUpload.error_save_failed')
       }
     } catch (e) {
       geminiError = `Error: ${e.message}`
@@ -469,8 +461,8 @@
   >
     <!-- Header -->
     <div class="m-head">
-      <span class="m-title">Tambah Source</span>
-      <button class="m-close" onclick={closeModal} aria-label="Tutup modal">
+      <span class="m-title">{$_('sourceUpload.modal_title')}</span>
+      <button class="m-close" onclick={closeModal} aria-label={$_('sourceUpload.close_aria')}>
         <svg class="ic"><use href="#i-x"/></svg>
       </button>
     </div>
@@ -480,19 +472,19 @@
       <!-- Analysis Mode Selector -->
       <div class="analysis-mode-selector">
         <label class="field">
-          <span class="field-label">Metode Analisis</span>
+          <span class="field-label">{$_('sourceUpload.analysis_method')}</span>
           <div class="mode-options">
             <label class="mode-option">
               <input type="radio" name="analysisMode" value="gemini_mcp" bind:group={analysisMode} disabled={loading || savingGemini} />
-              <span class="mode-label">Gemini (Antigravity)</span>
+              <span class="mode-label">{$_('sourceUpload.method_gemini_mcp')}</span>
             </label>
             <label class="mode-option">
               <input type="radio" name="analysisMode" value="gemini_manual" bind:group={analysisMode} disabled={loading || savingGemini} />
-              <span class="mode-label">Gemini (manual)</span>
+              <span class="mode-label">{$_('sourceUpload.method_gemini_manual')}</span>
             </label>
             <label class="mode-option">
               <input type="radio" name="analysisMode" value="claude" bind:group={analysisMode} disabled={loading || savingGemini} />
-              <span class="mode-label">Claude (auto)</span>
+              <span class="mode-label">{$_('sourceUpload.method_claude')}</span>
             </label>
           </div>
         </label>
@@ -503,11 +495,11 @@
         <!-- Gemini mode (both MCP and manual) -->
         <div class="gemini-section" transition:fade={{ duration: 150 }}>
           <label class="field">
-            <span class="field-label">YouTube / TikTok / Instagram URL</span>
+            <span class="field-label">{$_('sourceUpload.url_label')}</span>
             <input
               class="inp"
               type="text"
-              placeholder="https://youtube.com/watch?v=..."
+              placeholder={$_('sourceUpload.url_placeholder')}
               bind:value={urlInput}
               disabled={loading || savingGemini}
             />
@@ -516,26 +508,26 @@
           {#if analysisMode === 'gemini_mcp'}
             <!-- Audio/Suno option for MCP mode -->
             <label class="field">
-              <span class="field-label">Bikin prompt Suno (analisa audio) <span class="opt">(opsional)</span></span>
+              <span class="field-label">{$_('sourceUpload.suno_label')} <span class="opt">{$_('sourceUpload.suno_optional')}</span></span>
               <label class="checkbox-label">
                 <input
                   type="checkbox"
                   bind:checked={includeAudio}
                   disabled={loading}
                 />
-                <span>Clip audio → analisa → output Suno prompt</span>
+                <span>{$_('sourceUpload.suno_description')}</span>
               </label>
             </label>
 
             {#if includeAudio}
               <div class="audio-segment-container" transition:fade={{ duration: 150 }}>
                 <label class="field">
-                  <span class="field-label">Segmen audio yang dipotong <span class="opt">(opsional — kosongkan = otomatis, analisa ~10 menit, dipecah per bagian)</span></span>
+                  <span class="field-label">{$_('sourceUpload.audio_segment_label')} <span class="opt">{$_('sourceUpload.audio_segment_optional')}</span></span>
                   <div class="audio-segment-inputs">
                     <input
                       class="inp inp-time"
                       type="number"
-                      placeholder="Mulai (detik)"
+                      placeholder={$_('sourceUpload.audio_start_placeholder')}
                       bind:value={audioStart}
                       disabled={loading}
                       min="0"
@@ -545,14 +537,14 @@
                     <input
                       class="inp inp-time"
                       type="number"
-                      placeholder="Akhir (detik)"
+                      placeholder={$_('sourceUpload.audio_end_placeholder')}
                       bind:value={audioEnd}
                       disabled={loading}
                       min="0"
                       step="0.1"
                     />
                   </div>
-                  <div class="seg-hint">Isi Akhir buat batasi rentang; kosongkan buat auto.</div>
+                  <div class="seg-hint">{$_('sourceUpload.audio_segment_hint')}</div>
                 </label>
               </div>
             {/if}
@@ -568,16 +560,16 @@
               >
                 {#if loading}
                   <span class="spinner-sm"></span>
-                  Ambil instruksi…
+                  {$_('sourceUpload.fetch_brief_loading')}
                 {:else}
-                  Ambil instruksi Gemini
+                  {$_('sourceUpload.fetch_brief_btn')}
                 {/if}
               </button>
             {:else if storyboardPhase === 'clips'}
               <div class="prep-stepper" transition:fade={{ duration: 150 }}>
                 <div class="prep-hd">
-                  <span class="prep-title">Menyiapkan clip</span>
-                  <span class="prep-elapsed">{prepPollCount}s</span>
+                  <span class="prep-title">{$_('sourceUpload.prep_title')}</span>
+                  <span class="prep-elapsed">{$_('sourceUpload.prep_elapsed', { values: { elapsed: prepPollCount } })}</span>
                 </div>
                 {#each PREP_STEPS as step}
                   {@const st = prepStepStatus(step.key)}
@@ -585,7 +577,7 @@
                     <span class="prep-icon">
                       {#if st === 'done'}✓{:else if st === 'active'}<span class="spinner-sm"></span>{:else}○{/if}
                     </span>
-                    <span class="prep-label">{step.label}</span>
+                    <span class="prep-label">{$_(step.i18nKey)}</span>
                   </div>
                 {/each}
               </div>
@@ -594,47 +586,47 @@
                 <textarea
                   class="inp inp-brief"
                   readonly
-                  placeholder="Mengambil instruksi… (mengunduh potongan audio)"
+                  placeholder={$_('sourceUpload.brief_placeholder')}
                   value={geminiBrief}
                 ></textarea>
                 <button
                   class="btn-copy"
                   onclick={copyGeminiBrief}
                 >
-                  {geminiBriefCopied ? '✓ Tersalin' : 'Salin'}
+                  {geminiBriefCopied ? $_('sourceUpload.brief_copied') : $_('sourceUpload.brief_copy_btn')}
                 </button>
-                <div class="brief-note">Tempel instruksi ini ke Antigravity. Gemini menonton klip lewat reelbot MCP, lalu menyimpan analisa + storyboard sekaligus. (Claude hanya cadangan manual via tombol Re-analyze kalau Gemini bermasalah.)</div>
+                <div class="brief-note">{$_('sourceUpload.brief_note')}</div>
 
                 {#if storyboardPhase === 'analyzing'}
                   <div class="analyzing-box {geminiStarted ? 'working' : ''}" transition:fade={{ duration: 150 }}>
                     <span class="spinner-sm"></span>
                     {#if geminiStarted}
-                      <span>Gemini (Antigravity) sedang bekerja…</span>
+                      <span>{$_('sourceUpload.gemini_working')}</span>
                     {:else}
-                      <span>Menunggu Gemini mulai (tempel instruksi di Antigravity)…</span>
+                      <span>{$_('sourceUpload.gemini_waiting')}</span>
                     {/if}
-                    <button class="btn-cancel" onclick={stopStoryboardPolling}>Batal</button>
+                    <button class="btn-cancel" onclick={stopStoryboardPolling}>{$_('sourceUpload.analyzing_cancel')}</button>
                   </div>
                 {/if}
               </div>
             {:else if storyboardPhase === 'ready' && storyboardReady}
               <div class="ready-box" transition:fade={{ duration: 150 }}>
-                <div class="ready-msg">✅ Storyboard siap: {storyboardScenes} scene</div>
+                <div class="ready-msg">{$_('sourceUpload.ready_msg', { values: { count: storyboardScenes } })}</div>
                 <button
                   class="btn-primary"
                   onclick={closeModal}
                 >
-                  Tutup
+                  {$_('sourceUpload.close_btn')}
                 </button>
               </div>
             {/if}
           {:else}
             <!-- Manual mode: show paste box -->
             <label class="field">
-              <span class="field-label">Tempel hasil Gemini (JSON)</span>
+              <span class="field-label">{$_('sourceUpload.gemini_paste_label')}</span>
               <textarea
                 class="inp inp-mono"
-                placeholder="Paste hasil JSON dari Gemini di sini"
+                placeholder={$_('sourceUpload.gemini_paste_placeholder')}
                 bind:value={geminiPaste}
                 disabled={savingGemini}
                 rows="8"
@@ -659,7 +651,7 @@
             aria-selected={activeTab === 'url'}
             onclick={() => { activeTab = 'url'; error = null; }}
           >
-            URL
+            {$_('sourceUpload.tab_url')}
           </button>
           <button
             class="tab"
@@ -668,7 +660,7 @@
             aria-selected={activeTab === 'file'}
             onclick={() => { activeTab = 'file'; error = null; }}
           >
-            Upload File
+            {$_('sourceUpload.tab_file')}
           </button>
         </div>
 
@@ -681,9 +673,9 @@
 
       {#if existsSource}
         <div class="exists-msg" transition:fade={{ duration: 150 }}>
-          <div class="exists-head">⚠ Source ini sudah ada di library</div>
+          <div class="exists-head">{$_('sourceUpload.exists_title')}</div>
           <div class="exists-url">{existsSource.youtube_url}</div>
-          <button class="btn-primary exists-btn" onclick={openExisting}>Buka detail</button>
+          <button class="btn-primary exists-btn" onclick={openExisting}>{$_('sourceUpload.exists_btn')}</button>
         </div>
       {/if}
 
@@ -691,21 +683,21 @@
       {#if activeTab === 'url'}
         <div class="tab-content" role="tabpanel" transition:fade={{ duration: 150 }}>
           <label class="field">
-            <span class="field-label">YouTube / TikTok / Instagram URL</span>
+            <span class="field-label">{$_('sourceUpload.url_label')}</span>
             <input
               class="inp"
               type="text"
-              placeholder="https://youtube.com/watch?v=..."
+              placeholder={$_('sourceUpload.url_placeholder')}
               bind:value={urlInput}
               disabled={loading}
             />
           </label>
 
           <label class="field">
-            <span class="field-label">Intent <span class="opt">(opsional)</span></span>
+            <span class="field-label">{$_('sourceUpload.intent_label')} <span class="opt">{$_('sourceUpload.intent_optional')}</span></span>
             <textarea
               class="inp inp-mono"
-              placeholder="Instruksi analisis khusus (misal: fokus pada hook, retention)"
+              placeholder={$_('sourceUpload.intent_placeholder')}
               bind:value={urlIntent}
               disabled={loading}
               rows="3"
@@ -713,26 +705,26 @@
           </label>
 
           <label class="field">
-            <span class="field-label">Bikin prompt Suno (analisa audio) <span class="opt">(opsional)</span></span>
+            <span class="field-label">{$_('sourceUpload.suno_label')} <span class="opt">{$_('sourceUpload.suno_optional')}</span></span>
             <label class="checkbox-label">
               <input
                 type="checkbox"
                 bind:checked={includeAudio}
                 disabled={loading}
               />
-              <span>Clip audio → analisa → output Suno prompt</span>
+              <span>{$_('sourceUpload.suno_description')}</span>
             </label>
           </label>
 
           {#if includeAudio}
             <div class="audio-segment-container" transition:fade={{ duration: 150 }}>
               <label class="field">
-                <span class="field-label">Segmen audio yang dipotong <span class="opt">(opsional — kosongkan = otomatis, analisa ~10 menit, dipecah per bagian)</span></span>
+                <span class="field-label">{$_('sourceUpload.audio_segment_label')} <span class="opt">{$_('sourceUpload.audio_segment_optional')}</span></span>
                 <div class="audio-segment-inputs">
                   <input
                     class="inp inp-time"
                     type="number"
-                    placeholder="Mulai (detik)"
+                    placeholder={$_('sourceUpload.audio_start_placeholder')}
                     bind:value={audioStart}
                     disabled={loading}
                     min="0"
@@ -742,28 +734,28 @@
                   <input
                     class="inp inp-time"
                     type="number"
-                    placeholder="Akhir (detik)"
+                    placeholder={$_('sourceUpload.audio_end_placeholder')}
                     bind:value={audioEnd}
                     disabled={loading}
                     min="0"
                     step="0.1"
                   />
                 </div>
-                <div class="seg-hint">Isi Akhir buat batasi rentang; kosongkan buat auto.</div>
+                <div class="seg-hint">{$_('sourceUpload.audio_segment_hint')}</div>
               </label>
             </div>
           {/if}
 
           <label class="field">
-            <span class="field-label">Output <span class="opt">(opsional)</span></span>
+            <span class="field-label">{$_('sourceUpload.output_label')} <span class="opt">{$_('sourceUpload.intent_optional')}</span></span>
             <select
               class="inp"
               bind:value={outputFormat}
               disabled={loading}
             >
-              <option value="none">None</option>
-              <option value="prompt_video">Prompt video</option>
-              <option value="prompt_json">Prompt JSON</option>
+              <option value="none">{$_('sourceUpload.output_none')}</option>
+              <option value="prompt_video">{$_('sourceUpload.output_prompt_video')}</option>
+              <option value="prompt_json">{$_('sourceUpload.output_prompt_json')}</option>
             </select>
           </label>
         </div>
@@ -773,7 +765,7 @@
       {#if activeTab === 'file'}
         <div class="tab-content" role="tabpanel" transition:fade={{ duration: 150 }}>
           <label class="field">
-            <span class="field-label">Video File (mp4, mov, webm, mkv, m4v — max 200MB)</span>
+            <span class="field-label">{$_('sourceUpload.file_label')}</span>
             <input
               class="inp inp-file"
               type="file"
@@ -785,16 +777,16 @@
             {#if selectedFile}
               <div class="file-info">
                 <span>{selectedFile.name}</span>
-                <span class="file-size">{(selectedFile.size / 1024 / 1024).toFixed(1)} MB</span>
+                <span class="file-size">{(selectedFile.size / 1024 / 1024).toFixed(1)} {$_('sourceUpload.file_info_size_unit')}</span>
               </div>
             {/if}
           </label>
 
           <label class="field">
-            <span class="field-label">Intent <span class="opt">(opsional)</span></span>
+            <span class="field-label">{$_('sourceUpload.file_intent_label')} <span class="opt">{$_('sourceUpload.file_intent_optional')}</span></span>
             <textarea
               class="inp inp-mono"
-              placeholder="Instruksi analisis khusus"
+              placeholder={$_('sourceUpload.file_intent_placeholder')}
               bind:value={fileIntent}
               disabled={loading}
               rows="3"
@@ -802,26 +794,26 @@
           </label>
 
           <label class="field">
-            <span class="field-label">Bikin prompt Suno (analisa audio) <span class="opt">(opsional)</span></span>
+            <span class="field-label">{$_('sourceUpload.suno_label')} <span class="opt">{$_('sourceUpload.suno_optional')}</span></span>
             <label class="checkbox-label">
               <input
                 type="checkbox"
                 bind:checked={includeAudio}
                 disabled={loading}
               />
-              <span>Clip audio → analisa → output Suno prompt</span>
+              <span>{$_('sourceUpload.suno_description')}</span>
             </label>
           </label>
 
           {#if includeAudio}
             <div class="audio-segment-container" transition:fade={{ duration: 150 }}>
               <label class="field">
-                <span class="field-label">Segmen audio yang dipotong <span class="opt">(opsional — kosongkan = otomatis, analisa ~10 menit, dipecah per bagian)</span></span>
+                <span class="field-label">{$_('sourceUpload.audio_segment_label')} <span class="opt">{$_('sourceUpload.audio_segment_optional')}</span></span>
                 <div class="audio-segment-inputs">
                   <input
                     class="inp inp-time"
                     type="number"
-                    placeholder="Mulai (detik)"
+                    placeholder={$_('sourceUpload.audio_start_placeholder')}
                     bind:value={audioStart}
                     disabled={loading}
                     min="0"
@@ -831,28 +823,28 @@
                   <input
                     class="inp inp-time"
                     type="number"
-                    placeholder="Akhir (detik)"
+                    placeholder={$_('sourceUpload.audio_end_placeholder')}
                     bind:value={audioEnd}
                     disabled={loading}
                     min="0"
                     step="0.1"
                   />
                 </div>
-                <div class="seg-hint">Isi Akhir buat batasi rentang; kosongkan buat auto.</div>
+                <div class="seg-hint">{$_('sourceUpload.audio_segment_hint')}</div>
               </label>
             </div>
           {/if}
 
           <label class="field">
-            <span class="field-label">Output <span class="opt">(opsional)</span></span>
+            <span class="field-label">{$_('sourceUpload.output_label')} <span class="opt">{$_('sourceUpload.intent_optional')}</span></span>
             <select
               class="inp"
               bind:value={outputFormat}
               disabled={loading}
             >
-              <option value="none">None</option>
-              <option value="prompt_video">Prompt video</option>
-              <option value="prompt_json">Prompt JSON</option>
+              <option value="none">{$_('sourceUpload.output_none')}</option>
+              <option value="prompt_video">{$_('sourceUpload.output_prompt_video')}</option>
+              <option value="prompt_json">{$_('sourceUpload.output_prompt_json')}</option>
             </select>
           </label>
         </div>
@@ -863,11 +855,11 @@
     <!-- Footer -->
     <div class="m-footer">
       {#if analysisMode === 'gemini_mcp'}
-        <span class="flow-label">Ambil instruksi → Tempel ke Antigravity</span>
-        <button class="btn-cancel" onclick={closeModal} disabled={loading}>Batal</button>
+        <span class="flow-label">{$_('sourceUpload.flow_label_gemini_mcp')}</span>
+        <button class="btn-cancel" onclick={closeModal} disabled={loading}>{$_('sourceUpload.btn_cancel')}</button>
       {:else if analysisMode === 'gemini_manual'}
-        <span class="flow-label">Paste hasil Gemini → Simpan</span>
-        <button class="btn-cancel" onclick={closeModal} disabled={savingGemini}>Batal</button>
+        <span class="flow-label">{$_('sourceUpload.flow_label_gemini_manual')}</span>
+        <button class="btn-cancel" onclick={closeModal} disabled={savingGemini}>{$_('sourceUpload.btn_cancel')}</button>
         <button
           class="btn-primary"
           onclick={saveGeminiStoryboard}
@@ -875,19 +867,19 @@
         >
           {#if savingGemini}
             <span class="spinner"></span>
-            Menyimpan…
+            {$_('sourceUpload.btn_save_loading')}
           {:else}
-            Simpan
+            {$_('sourceUpload.btn_save')}
           {/if}
         </button>
       {:else}
-        <span class="flow-label">Input → Analyze{outputFormat === 'prompt_video' ? ' → Prompt video' : outputFormat === 'prompt_json' ? ' → Prompt JSON' : ''}</span>
+        <span class="flow-label">{$_('sourceUpload.flow_label_claude', { values: { output: outputFormat === 'prompt_video' ? $_('sourceUpload.flow_label_output_suffix_video') : outputFormat === 'prompt_json' ? $_('sourceUpload.flow_label_output_suffix_json') : '' } })}</span>
         <button
           class="btn-cancel"
           onclick={closeModal}
           disabled={loading}
         >
-          Batal
+          {$_('sourceUpload.btn_cancel')}
         </button>
         <button
           class="btn-primary"
@@ -896,9 +888,9 @@
         >
           {#if loading}
             <span class="spinner"></span>
-            Menganalisis...
+            {$_('sourceUpload.btn_analyze_loading')}
           {:else}
-            Analisis
+            {$_('sourceUpload.btn_analyze')}
           {/if}
         </button>
       {/if}
@@ -918,15 +910,15 @@
       bind:this={dupCardEl}
       role="alertdialog"
       aria-modal="true"
-      aria-label="Konfirmasi duplikat"
+      aria-label={$_('sourceUpload.dup_aria')}
       aria-describedby="dup-url-text"
       transition:scale={{ duration: 180, start: 0.95, easing: cubicOut }}
     >
-      <div class="dup-head">⚠ Video ini sudah pernah dianalisa</div>
+      <div class="dup-head">{$_('sourceUpload.dup_title')}</div>
       <div class="dup-url" id="dup-url-text">{dupConfirm.title || dupConfirm.youtube_url}</div>
       <div class="dup-actions">
-        <button class="btn-primary" onclick={overrideExisting}>Timpa &amp; analisa ulang</button>
-        <button class="btn-cancel" onclick={cancelDup}>Batal</button>
+        <button class="btn-primary" onclick={overrideExisting}>{$_('sourceUpload.dup_override_btn')}</button>
+        <button class="btn-cancel" onclick={cancelDup}>{$_('sourceUpload.dup_cancel_btn')}</button>
       </div>
     </div>
   {/if}

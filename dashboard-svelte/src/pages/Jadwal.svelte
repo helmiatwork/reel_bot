@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte'
+  import { _ } from 'svelte-i18n'
   import { api } from '../lib/api.js'
 
   // ── State ────────────────────────────────────────────────────────────────────
@@ -36,18 +37,30 @@
     youtube: 'i-yt', tiktok: 'i-tt', instagram: 'i-ig', xiaohongshu: 'i-xhs'
   }
 
-  const STATUS_LABEL = {
-    draft: 'Draft', scheduled: 'Terjadwal', posted: 'Diposting', overdue: 'Terlambat'
+  // Helper to get status label from i18n
+  function getStatusLabel(status) {
+    const labels = {
+      draft: 'jadwal.status_draft',
+      scheduled: 'jadwal.status_scheduled',
+      posted: 'jadwal.status_posted',
+      overdue: 'jadwal.status_overdue'
+    }
+    return $_( labels[status] || status )
   }
 
-  const TABS = [
-    { id: 'semua', label: 'Semua' },
-    { id: 'today', label: 'Hari Ini' },
-    { id: 'overdue', label: 'Overdue' },
-    { id: 'scheduled', label: 'Scheduled' },
-    { id: 'draft', label: 'Draft' },
-    { id: 'posted', label: 'Diposting' }
-  ]
+  // Helper to get tabs with i18n labels
+  function getTabs() {
+    return [
+      { id: 'semua', label: $_('jadwal.tab_all') },
+      { id: 'today', label: $_('jadwal.tab_today') },
+      { id: 'overdue', label: $_('jadwal.tab_overdue') },
+      { id: 'scheduled', label: $_('jadwal.tab_scheduled') },
+      { id: 'draft', label: $_('jadwal.tab_draft') },
+      { id: 'posted', label: $_('jadwal.tab_posted') }
+    ]
+  }
+
+  let TABS = $derived(getTabs())
 
   function emptyForm() {
     return {
@@ -172,12 +185,12 @@
       closeModal()
       await loadItems()
     } else {
-      saveErr = 'Gagal menyimpan, coba lagi.'
+      saveErr = $_('jadwal.error_save')
     }
   }
 
   async function deleteItem(id) {
-    if (!confirm('Hapus jadwal ini?')) return
+    if (!confirm($_('jadwal.confirm_delete'))) return
     await api.scheduleDelete(id)
     closeModal()
     await loadItems()
@@ -226,7 +239,7 @@
       createStep = 0
       await loadItems()
     } else {
-      saveErr = 'Gagal membuat jadwal.'
+      saveErr = $_('jadwal.error_create')
     }
   }
 
@@ -260,10 +273,10 @@
   <!-- Header -->
   <div class="ph">
     <div>
-      <div class="ptitle">Jadwal Post</div>
-      <div class="pbread">Produce › Jadwal Post</div>
+      <div class="ptitle">{$_('jadwal.title')}</div>
+      <div class="pbread">{$_('jadwal.breadcrumb')}</div>
     </div>
-    <button class="btn" onclick={openCreate}>+ Jadwalkan Post</button>
+    <button class="btn" onclick={openCreate}>{$_('jadwal.btn_create')}</button>
   </div>
 
   <!-- Stat cards -->
@@ -271,9 +284,9 @@
     <div class="card">
       <div class="card-inner">
         <div>
-          <div class="card-label">TOTAL TERJADWAL</div>
+          <div class="card-label">{$_('jadwal.card_total_scheduled')}</div>
           <div class="card-num">{counts.total}</div>
-          <div class="card-trend neutral">{counts.scheduled} aktif</div>
+          <div class="card-trend neutral">{counts.scheduled} {$_('jadwal.card_active')}</div>
         </div>
         <div class="card-ico accent">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>
@@ -283,11 +296,11 @@
     <div class="card">
       <div class="card-inner">
         <div>
-          <div class="card-label">HARI INI</div>
+          <div class="card-label">{$_('jadwal.card_today')}</div>
           <div class="card-num">{counts.today}</div>
           <div class="card-trend up">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 17 17 7M7 7h10v10"/></svg>
-            {counts.today} hari ini
+            {counts.today} {$_('jadwal.card_today_count')}
           </div>
         </div>
         <div class="card-ico green">
@@ -298,14 +311,14 @@
     <div class="card">
       <div class="card-inner">
         <div>
-          <div class="card-label">OVERDUE</div>
+          <div class="card-label">{$_('jadwal.card_overdue')}</div>
           <div class="card-num">{counts.overdue}</div>
           <div class="card-trend" class:down={counts.overdue > 0} class:neutral={counts.overdue === 0}>
             {#if counts.overdue > 0}
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 7l10 10M17 7v10H7"/></svg>
-              perlu perhatian
+              {$_('jadwal.card_attention')}
             {:else}
-              semua on track
+              {$_('jadwal.card_on_track')}
             {/if}
           </div>
         </div>
@@ -317,11 +330,11 @@
     <div class="card">
       <div class="card-inner">
         <div>
-          <div class="card-label">SUDAH DIPOSTING</div>
+          <div class="card-label">{$_('jadwal.card_posted')}</div>
           <div class="card-num">{counts.posted}</div>
           <div class="card-trend up">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 17 17 7M7 7h10v10"/></svg>
-            {counts.posted} selesai
+            {counts.posted} {$_('jadwal.card_completed')}
           </div>
         </div>
         <div class="card-ico amber">
@@ -342,9 +355,9 @@
 
   <!-- Grid -->
   {#if loading}
-    <div class="empty-state">Memuat jadwal…</div>
+    <div class="empty-state">{$_('jadwal.loading')}</div>
   {:else if filtered.length === 0}
-    <div class="empty-state">Tidak ada item. <button class="link" onclick={openCreate}>+ Buat jadwal baru</button></div>
+    <div class="empty-state">{$_('jadwal.empty')} <button class="link" onclick={openCreate}>{$_('jadwal.empty_create')}</button></div>
   {:else}
     <div class="grid">
       {#each filtered as item (item.id)}
@@ -385,7 +398,7 @@
   <div class="overlay" onclick={closeModal}>
     <div class="modal" onclick={(e) => e.stopPropagation()}>
       <div class="modal-head">
-        <div class="modal-title">{modal.id ? 'Edit Jadwal' : 'Jadwal Baru'}</div>
+        <div class="modal-title">{modal.id ? $_('jadwal.modal_edit_title') : $_('jadwal.modal_new_title')}</div>
         <button class="close-btn" onclick={closeModal}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
@@ -405,12 +418,12 @@
       <!-- Form -->
       <div class="modal-form">
         <label>
-          <span>Judul</span>
-          <input bind:value={modal.title} placeholder="Judul konten…">
+          <span>{$_('jadwal.field_title')}</span>
+          <input bind:value={modal.title} placeholder={$_('jadwal.field_title_placeholder')}>
         </label>
 
         <label>
-          <span>Platform tujuan</span>
+          <span>{$_('jadwal.field_platform')}</span>
           <div class="chip-row">
             {#each PLATFORMS as p}
               {@const state = chipState(p)}
@@ -439,22 +452,22 @@
                   <div class="url-row">
                     <input
                       class="url-input"
-                      placeholder="Tempel URL hasil upload…"
+                      placeholder={$_('jadwal.field_url_placeholder')}
                       bind:value={urlInputs[p]}
                     >
-                    <button class="btn-sm" onclick={() => savePlatformUrl(p)} disabled={!urlInputs[p]}>Simpan</button>
+                    <button class="btn-sm" onclick={() => savePlatformUrl(p)} disabled={!urlInputs[p]}>{$_('jadwal.btn_save_url')}</button>
                   </div>
                   {#if (acctsByPlatform[p] || []).filter(a => a.active).length > 0}
                     <select class="acct-select"
                       value={platformAccounts[p] != null ? platformAccounts[p] : ''}
                       onchange={(e) => platformAccounts = { ...platformAccounts, [p]: e.target.value ? Number(e.target.value) : null }}>
-                      <option value="">Pilih akun…</option>
+                      <option value="">{$_('jadwal.field_account')}</option>
                       {#each (acctsByPlatform[p] || []).filter(a => a.active) as a}
                         <option value={a.id}>{a.label || a.handle}</option>
                       {/each}
                     </select>
                   {:else if acctsByPlatform[p] !== undefined}
-                    <div class="acct-hint">Belum ada akun — <a href="/accounts" class="acct-link">tambah di Accounts</a></div>
+                    <div class="acct-hint">{$_('jadwal.acct_none_hint')}</div>
                   {/if}
                 {/if}
               </div>
@@ -463,14 +476,14 @@
         </label>
 
         <label>
-          <span>Tanggal & waktu post</span>
+          <span>{$_('jadwal.field_datetime')}</span>
           <input type="datetime-local" value={toDatetimeLocal(modal.scheduled_at)}
             oninput={(e) => modal = { ...modal, scheduled_at: e.target.value ? new Date(e.target.value).toISOString() : '' }}>
         </label>
 
         <label>
-          <span>Caption</span>
-          <textarea bind:value={modal.caption} rows="3" placeholder="Caption untuk semua platform…"></textarea>
+          <span>{$_('jadwal.field_caption')}</span>
+          <textarea bind:value={modal.caption} rows="3" placeholder={$_('jadwal.field_caption_placeholder')}></textarea>
         </label>
 
         {#if saveErr}
@@ -479,11 +492,11 @@
 
         <div class="modal-actions">
           {#if modal.id}
-            <button class="btn-danger" onclick={() => deleteItem(modal.id)}>Hapus</button>
+            <button class="btn-danger" onclick={() => deleteItem(modal.id)}>{$_('jadwal.btn_delete')}</button>
           {/if}
-          <button class="btn-outline" onclick={closeModal}>Batal</button>
+          <button class="btn-outline" onclick={closeModal}>{$_('jadwal.btn_cancel')}</button>
           <button class="btn" onclick={saveModal} disabled={saving}>
-            {saving ? 'Menyimpan…' : 'Simpan'}
+            {saving ? $_('jadwal.btn_saving') : $_('jadwal.btn_save')}
           </button>
         </div>
       </div>
@@ -496,15 +509,15 @@
   <div class="overlay" onclick={() => createStep = 0}>
     <div class="modal modal-lg" onclick={(e) => e.stopPropagation()}>
       <div class="modal-head">
-        <div class="modal-title">Pilih Konten (1/2)</div>
+        <div class="modal-title">{$_('jadwal.modal_picker_title')}</div>
         <button class="close-btn" onclick={() => createStep = 0}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
       {#if corpusLoading}
-        <div class="empty-state">Memuat corpus…</div>
+        <div class="empty-state">{$_('jadwal.empty_corpus_loading')}</div>
       {:else if corpus.length === 0}
-        <div class="empty-state">Tidak ada konten teranalisis. Jalankan Discover terlebih dahulu.</div>
+        <div class="empty-state">{$_('jadwal.empty_corpus_none')}</div>
       {:else}
         <div class="corpus-grid">
           {#each corpus as c}
@@ -518,14 +531,14 @@
               {/if}
               <div class="corpus-title">{c.title || c.ref}</div>
               {#if c.retention}
-                <div class="corpus-ret">{c.retention}% retensi</div>
+                <div class="corpus-ret">{$_('jadwal.corpus_retention', { values: { pct: c.retention } })}</div>
               {/if}
             </div>
           {/each}
         </div>
       {/if}
       <div class="modal-actions">
-        <button class="btn-outline" onclick={() => { pickedRef = null; createStep = 2 }}>Lewati — buat manual</button>
+        <button class="btn-outline" onclick={() => { pickedRef = null; createStep = 2 }}>{$_('jadwal.btn_skip_manual')}</button>
       </div>
     </div>
   </div>
@@ -536,7 +549,7 @@
   <div class="overlay" onclick={() => createStep = 0}>
     <div class="modal" onclick={(e) => e.stopPropagation()}>
       <div class="modal-head">
-        <div class="modal-title">Atur Jadwal (2/2)</div>
+        <div class="modal-title">{$_('jadwal.modal_schedule_title')}</div>
         <button class="close-btn" onclick={() => createStep = 0}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
@@ -548,12 +561,12 @@
 
       <div class="modal-form">
         <label>
-          <span>Judul</span>
-          <input bind:value={newForm.title} placeholder="Judul konten…">
+          <span>{$_('jadwal.field_title')}</span>
+          <input bind:value={newForm.title} placeholder={$_('jadwal.field_title_placeholder')}>
         </label>
 
         <label>
-          <span>Platform tujuan</span>
+          <span>{$_('jadwal.field_platform')}</span>
           <div class="chip-row">
             {#each PLATFORMS as p}
               {@const isOn = newForm.platforms.includes(p)}
@@ -566,13 +579,13 @@
                     <select class="acct-select"
                       value={newPlatformAccounts[p] != null ? newPlatformAccounts[p] : ''}
                       onchange={(e) => newPlatformAccounts = { ...newPlatformAccounts, [p]: e.target.value ? Number(e.target.value) : null }}>
-                      <option value="">Pilih akun…</option>
+                      <option value="">{$_('jadwal.field_account_placeholder')}</option>
                       {#each (acctsByPlatform[p] || []).filter(a => a.active) as a}
                         <option value={a.id}>{a.label || a.handle}</option>
                       {/each}
                     </select>
                   {:else if acctsByPlatform[p] !== undefined}
-                    <div class="acct-hint">Belum ada akun — <a href="/accounts" class="acct-link">tambah</a></div>
+                    <div class="acct-hint">{$_('jadwal.acct_none_hint')}</div>
                   {/if}
                 {/if}
               </div>
@@ -581,13 +594,13 @@
         </label>
 
         <label>
-          <span>Tanggal & waktu post</span>
+          <span>{$_('jadwal.field_datetime')}</span>
           <input type="datetime-local" bind:value={newForm.scheduled_at}>
         </label>
 
         <label>
-          <span>Caption</span>
-          <textarea bind:value={newForm.caption} rows="3" placeholder="Caption untuk semua platform…"></textarea>
+          <span>{$_('jadwal.field_caption')}</span>
+          <textarea bind:value={newForm.caption} rows="3" placeholder={$_('jadwal.field_caption_placeholder')}></textarea>
         </label>
 
         {#if saveErr}
@@ -595,9 +608,9 @@
         {/if}
 
         <div class="modal-actions">
-          <button class="btn-outline" onclick={() => createStep = 1}>Kembali</button>
+          <button class="btn-outline" onclick={() => createStep = 1}>{$_('jadwal.btn_back')}</button>
           <button class="btn" onclick={submitCreate} disabled={saving}>
-            {saving ? 'Menyimpan…' : 'Jadwalkan'}
+            {saving ? $_('jadwal.btn_saving') : $_('jadwal.btn_schedule')}
           </button>
         </div>
       </div>

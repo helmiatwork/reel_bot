@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte'
+  import { _ } from 'svelte-i18n'
   import { api } from '../lib/api.js'
   import { POSTS } from '../lib/data.js'
   import Pagination from '../lib/Pagination.svelte'
@@ -35,7 +36,7 @@
 
   // group by day label (string before time)
   function dayOf(j) {
-    if (!j || j === '—') return 'Belum dijadwalkan'
+    if (!j || j === '—') return $_('posts.not_scheduled')
     return String(j).replace(/\s*\d{1,2}:\d{2}.*$/, '').trim() || j
   }
   function timeOf(j) {
@@ -52,8 +53,8 @@
 </script>
 
 <div class="top">
-  <div><h1>Posts</h1><div class="sub">Kalender jadwal — slot prime-time disorot</div></div>
-  <div class="pill">prime time 12:00 / 19:00 WIB</div>
+  <div><h1>{$_('posts.title')}</h1><div class="sub">{$_('posts.subtitle')}</div></div>
+  <div class="pill">{$_('posts.prime_time')}</div>
 </div>
 
 <div class="kanban" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
@@ -78,4 +79,4 @@
 
 <Pagination {offset} {limit} {total} onprev={prev} onnext={next} />
 
-{#if mock}<div class="note">⚠️ Tabel posts kosong — kalender menampilkan contoh mock. Begitu ada post terjadwal di DB, kalender ngisi otomatis.</div>{/if}
+{#if mock}<div class="note">{$_('posts.empty_posts')}</div>{/if}

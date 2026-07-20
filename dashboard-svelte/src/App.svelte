@@ -1,7 +1,9 @@
 <script>
   import { onMount, onDestroy } from 'svelte'
+  import { _, locale } from 'svelte-i18n'
   import { page, jobs, pushToast, beepSuccess, beepError } from './lib/stores.js'
   import { api } from './lib/api.js'
+  import { setLang } from './lib/i18n.js'
   import Drawer from './lib/Drawer.svelte'
   import Toasts from './lib/Toasts.svelte'
   import HowItWorks from './components/HowItWorks.svelte'
@@ -35,38 +37,38 @@
   const I = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`
 
   const NAV_GROUPS = [
-    { title: 'Overview', items: [
-      { p: 'dashboard', ico: I('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>'), label: 'Dashboard' },
-      { p: 'performance', ico: I('<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>'), label: 'Performance' },
-      { p: 'cost', ico: I('<line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'), label: 'Cost' }
+    { title_key: 'nav.overview', items: [
+      { p: 'dashboard', ico: I('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>'), key: 'nav.dashboard' },
+      { p: 'performance', ico: I('<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>'), key: 'nav.performance' },
+      { p: 'cost', ico: I('<line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'), key: 'nav.cost' }
     ]},
-    { title: 'Discover & Analyze', items: [
-      { p: 'discover', ico: I('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>'), label: 'Discover' },
-      { p: 'seo', ico: I('<line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/>'), label: 'SEO' },
-      { p: 'sources', ico: I('<path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/>'), label: 'Sources' },
-      { p: 'snoop', ico: I('<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>'), label: 'Snoop' },
-      { p: 'creators', ico: I('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'), label: 'Creators' },
-      { p: 'songs', ico: I('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'), label: 'Songs' },
-      { p: 'analysis', ico: I('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><circle cx="11.5" cy="14.5" r="2.5"/><path d="M13.3 16.3 15 18"/>'), label: 'Analysis' },
-      { p: 'formulas', ico: I('<path d="M10 2v7.31"/><path d="M14 9.3V2"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>'), label: 'Formulas' },
-      { p: 'decompose', ico: I('<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>'), label: 'Pecah Kompilasi' },
-      { p: 'cookies', ico: I('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'), label: 'Scrape Accounts' },
-      { p: 'brands', ico: I('<path d="M19 12a7 7 0 1 0-7 7M12 5v7l4 2"/><circle cx="12" cy="12" r="7"/>'), label: 'Brands' }
+    { title_key: 'nav.discover_analyze', items: [
+      { p: 'discover', ico: I('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>'), key: 'nav.discover' },
+      { p: 'seo', ico: I('<line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/>'), key: 'nav.seo' },
+      { p: 'sources', ico: I('<path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/>'), key: 'nav.sources' },
+      { p: 'snoop', ico: I('<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>'), key: 'nav.snoop' },
+      { p: 'creators', ico: I('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'), key: 'nav.creators' },
+      { p: 'songs', ico: I('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'), key: 'nav.songs' },
+      { p: 'analysis', ico: I('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><circle cx="11.5" cy="14.5" r="2.5"/><path d="M13.3 16.3 15 18"/>'), key: 'nav.analysis' },
+      { p: 'formulas', ico: I('<path d="M10 2v7.31"/><path d="M14 9.3V2"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>'), key: 'nav.formulas' },
+      { p: 'decompose', ico: I('<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>'), key: 'nav.decompose' },
+      { p: 'cookies', ico: I('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'), key: 'nav.scrape_accounts' },
+      { p: 'brands', ico: I('<path d="M19 12a7 7 0 1 0-7 7M12 5v7l4 2"/><circle cx="12" cy="12" r="7"/>'), key: 'nav.brands' }
     ]},
-    { title: 'Produce', items: [
-      { p: 'generate', ico: I('<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>'), label: 'Generate' },
-      { p: 'clipper', ico: I('<path d="M7 4v16"/><path d="M17 4v16"/><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h4"/><path d="M17 9h4"/><path d="M3 15h4"/><path d="M17 15h4"/>'), label: 'Clipper' },
-      { p: 'clips', ico: I('<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/>'), label: 'Clips' },
-      { p: 'pipeline', ico: I('<line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/>'), label: 'Pipeline' },
-      { p: 'posts', ico: I('<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>'), label: 'Posts' },
-      { p: 'publish-accounts', ico: I('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M19 8l2 2 4-4"/>'), label: 'Publish Accounts' },
-      { p: 'jadwal', ico: I('<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/>'), label: 'Jadwal Post', badge: 'New' },
-      { p: 'prep', ico: I('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'), label: 'Prep' },
-      { p: 'studio', ico: I('<rect x="3" y="3" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="17" width="18" height="4" rx="1"/>'), label: 'Studio', badge: 'New' }
+    { title_key: 'nav.produce', items: [
+      { p: 'generate', ico: I('<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>'), key: 'nav.generate' },
+      { p: 'clipper', ico: I('<path d="M7 4v16"/><path d="M17 4v16"/><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h4"/><path d="M17 9h4"/><path d="M3 15h4"/><path d="M17 15h4"/>'), key: 'nav.clipper' },
+      { p: 'clips', ico: I('<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/>'), key: 'nav.clips' },
+      { p: 'pipeline', ico: I('<line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/>'), key: 'nav.pipeline' },
+      { p: 'posts', ico: I('<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>'), key: 'nav.posts' },
+      { p: 'publish-accounts', ico: I('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M19 8l2 2 4-4"/>'), key: 'nav.publish_accounts' },
+      { p: 'jadwal', ico: I('<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/>'), key: 'nav.jadwal_post', badge: 'New' },
+      { p: 'prep', ico: I('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'), key: 'nav.prep' },
+      { p: 'studio', ico: I('<rect x="3" y="3" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="17" width="18" height="4" rx="1"/>'), key: 'nav.studio', badge: 'New' }
     ]},
-    { title: 'Agents', items: [
-      { p: 'openclaw', ico: I('<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/>'), label: 'OpenClaw' },
-      { p: 'agents', ico: I('<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>'), label: 'Agents' }
+    { title_key: 'nav.agents', items: [
+      { p: 'openclaw', ico: I('<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/>'), key: 'nav.openclaw' },
+      { p: 'agents', ico: I('<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>'), key: 'nav.agents_title' }
     ]}
   ]
 
@@ -270,11 +272,11 @@
     <div class="brand">reel<span class="ba">bot</span></div>
     <nav class="nav">
       {#each NAV_GROUPS as g}
-        <div class="nav-group">{g.title}</div>
+        <div class="nav-group">{$_(g.title_key)}</div>
         {#each g.items as n}
           <a class:active={current === n.p} onclick={() => page.set(n.p)}>
             <span class="ico">{@html n.ico}</span>
-            {n.label}
+            {$_(n.key)}
             {#if n.badge}<span class="badge-new">{n.badge}</span>{/if}
           </a>
         {/each}
@@ -282,13 +284,17 @@
     </nav>
     <div class="foot">
       <div class="badge-row">
-        <div class="badge-live" class:partial={live < total}>stack — {live}/{total} live</div>
+        <div class="badge-live" class:partial={live < total}>{$_('app.stack_live', { values: { live, total } })}</div>
         <button
           class="btn-restart-all"
           disabled={restartingAll}
           onclick={restartAllSvcs}
-          title="Restart all services"
-        >{restartingAll ? '⟳' : '⟳ all'}</button>
+          title={$_('app.restart_all_services')}
+        >{restartingAll ? '⟳' : '⟳ ' + $_('app.all')}</button>
+      </div>
+      <div class="lang-toggle">
+        <button class="lang-btn" class:active={$locale === 'id'} onclick={() => setLang('id')}>ID</button>
+        <button class="lang-btn" class:active={$locale === 'en'} onclick={() => setLang('en')}>EN</button>
       </div>
       {#if restartAllResult}
         <div class="restart-result" class:err={restartAllResult === 'error'}>{restartAllResult}</div>
@@ -314,7 +320,7 @@
           </div>
         {/each}
         {#if !services.length}
-          <div class="svc down"><span class="led"></span> menghubungkan…</div>
+          <div class="svc down"><span class="led"></span> {$_('app.connecting')}</div>
         {/if}
       </div>
     </div>
@@ -326,22 +332,22 @@
         <span class="si">
           <svg class="ic"><use href="#i-search"/></svg>
         </span>
-        <input placeholder="Cari konten, tag, niche…" aria-label="Search">
+        <input placeholder={$_('app.search_placeholder')} aria-label={$_('app.search_aria')}>
       </div>
       <div class="tb-spacer"></div>
       <!-- right cluster: help · expand · moon/sun · bell · avatar -->
       <span class="tb-icon" title="How Reelbot works" onclick={() => tourOpen = true} role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && (tourOpen = true)} aria-label="Open walkthrough">
         <svg class="ic"><use href="#i-help"/></svg>
       </span>
-      <span class="tb-icon" title="Fullscreen" onclick={() => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()}>
+      <span class="tb-icon" title={$_('app.fullscreen')} onclick={() => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()}>
         <svg class="ic"><use href="#i-expand"/></svg>
       </span>
-      <span class="tb-icon" onclick={toggleTheme} title="Ganti tema">
+      <span class="tb-icon" onclick={toggleTheme} title={$_('app.change_theme')}>
         <svg class="ic"><use href={isDark ? '#i-sun' : '#i-moon'}/></svg>
       </span>
       <!-- notification bell + dropdown -->
       <div class="tb-notif-wrap" style="position:relative">
-        <span class="tb-icon" onclick={toggleNotif} title="Notifications">
+        <span class="tb-icon" onclick={toggleNotif} title={$_('app.notifications')}>
           <svg class="ic"><use href="#i-bell"/></svg>
           {#if unreadCount > 0}
             <span class="cnt">{unreadCount}</span>
@@ -349,7 +355,7 @@
         </span>
         {#if notifOpen}
           <div class="notif-panel" onclick={(e) => e.stopPropagation()}>
-            <div class="notif-head">Notifikasi</div>
+            <div class="notif-head">{$_('app.notif_head')}</div>
             {#each notifs as n (n.id)}
               <div class="notif-row" class:unread={n.ts > notifLastSeen}>
                 <div class="notif-msg">{n.msg}</div>
@@ -357,7 +363,7 @@
               </div>
             {/each}
             {#if !notifs.length}
-              <div class="notif-row"><div class="notif-msg" style="color:var(--mut)">Belum ada notifikasi</div></div>
+              <div class="notif-row"><div class="notif-msg" style="color:var(--mut)">{$_('app.no_notifs')}</div></div>
             {/if}
           </div>
         {/if}
@@ -367,7 +373,7 @@
         <div class="tb-avatar">H</div>
         <div>
           <div class="tb-nm">Helmi</div>
-          <div class="tb-rl">Owner</div>
+          <div class="tb-rl">{$_('app.owner')}</div>
         </div>
       </div>
     </div>
@@ -421,4 +427,9 @@
   .notif-row.unread .notif-msg{font-weight:600}
   .notif-msg{font-size:13px;line-height:1.4}
   .notif-time{font-size:11px;color:var(--mut);margin-top:3px}
+  /* Language toggle */
+  .lang-toggle{display:flex;gap:6px;padding:8px 12px;justify-content:center;margin:8px 0 0 0}
+  .lang-btn{padding:4px 12px;font-size:11px;font-weight:600;border:1px solid var(--line);border-radius:4px;background:var(--soft);color:var(--txt);cursor:pointer;transition:all 0.2s}
+  .lang-btn:hover{background:var(--bg)}
+  .lang-btn.active{background:var(--txt);color:var(--bg);border-color:var(--txt)}
 </style>

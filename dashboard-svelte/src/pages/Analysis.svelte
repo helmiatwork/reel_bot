@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte'
+  import { _ } from 'svelte-i18n'
   import { api } from '../lib/api.js'
   import Pagination from '../lib/Pagination.svelte'
 
@@ -68,24 +69,24 @@
 </script>
 
 <div class="top">
-  <div><h1>Analysis</h1><div class="sub">Claude video-analysis results — klik baris buat detail</div></div>
+  <div><h1>{$_('analysis.title')}</h1><div class="sub">{$_('analysis.subtitle')}</div></div>
   <div class="pill">{total || rows.length} hasil</div>
 </div>
 
 <div class="filters">
-  <input placeholder="cari URL atau hook..." bind:value={q} />
+  <input placeholder={$_('analysis.search_placeholder')} bind:value={q} />
 </div>
 
 <div class="card">
   <table>
     <thead>
       <tr>
-        <th>Video</th>
-        <th>Hook</th>
-        <th>Tags</th>
-        <th>Model</th>
-        <th style="text-align:right">Cost</th>
-        <th>Tanggal</th>
+        <th>{$_('analysis.video_header')}</th>
+        <th>{$_('analysis.hook_header')}</th>
+        <th>{$_('analysis.tags_header')}</th>
+        <th>{$_('analysis.model_header')}</th>
+        <th style="text-align:right">{$_('analysis.cost_header')}</th>
+        <th>{$_('analysis.date_header')}</th>
       </tr>
     </thead>
     <tbody>
@@ -111,19 +112,19 @@
             <td colspan="6">
               <div class="detail">
                 <div class="detail-section">
-                  <strong>Intent:</strong> {row.intent || '-'}
+                  <strong>{$_('analysis.intent_label')}</strong> {row.intent || '-'}
                 </div>
                 <div class="detail-section">
-                  <strong>Hook:</strong> {row.hook || '-'}
+                  <strong>{$_('analysis.hook_label')}</strong> {row.hook || '-'}
                 </div>
                 <div class="detail-section">
-                  <strong>Structure:</strong> {row.structure || '-'}
+                  <strong>{$_('analysis.structure_label')}</strong> {row.structure || '-'}
                 </div>
                 <div class="detail-section">
-                  <strong>Retention:</strong> {row.retention || '-'}
+                  <strong>{$_('analysis.retention_label')}</strong> {row.retention || '-'}
                 </div>
                 <div class="detail-section">
-                  <strong>Tags:</strong>
+                  <strong>{$_('analysis.tags_label')}</strong>
                   <div class="tags-list">
                     {#each row.tags || [] as t}
                       <span class="tag">{t}</span>
@@ -136,7 +137,7 @@
         {/if}
       {/each}
       {#if !filtered.length}
-        <tr><td colspan="6" class="mut">Belum ada analisa di DB.</td></tr>
+        <tr><td colspan="6" class="mut">{$_('analysis.no_analysis')}</td></tr>
       {/if}
     </tbody>
   </table>

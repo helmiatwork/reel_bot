@@ -1,5 +1,6 @@
 <script>
   import { slide } from 'svelte/transition'
+  import { _ } from 'svelte-i18n'
   import { toasts, dismissToast } from './stores.js'
 </script>
 
@@ -28,7 +29,7 @@
       <button
         class="toast-close"
         onclick={() => dismissToast(toast.id)}
-        aria-label="Dismiss"
+        aria-label={$_('toast.dismiss')}
       >
         ×
       </button>

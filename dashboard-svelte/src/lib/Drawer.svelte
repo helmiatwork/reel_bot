@@ -1,6 +1,8 @@
 <script>
   import { fade, scale } from 'svelte/transition'
   import { cubicOut } from 'svelte/easing'
+  import { get } from 'svelte/store'
+  import { _ } from 'svelte-i18n'
   import { drawer, closeDrawer } from './stores.js'
   import { api } from './api.js'
 
@@ -95,11 +97,12 @@
   // Live processing checklist (mirrors the Add-Source popup stepper)
   let procStage = $state('saving_meta')
   let procPoll = null
+  // ponytail: labels resolved at render time via $_()
   const PROC_STEPS = [
-    { key: 'saving_meta', label: 'Menyimpan atribut video' },
-    { key: 'downloading', label: 'Mengunduh video' },
-    { key: 'splitting', label: 'Memotong klip per menit' },
-    { key: 'saving', label: 'Menyimpan atribut klip ke database' },
+    { key: 'saving_meta', labelKey: 'drawer.proc_saving_meta' },
+    { key: 'downloading', labelKey: 'drawer.proc_downloading' },
+    { key: 'splitting', labelKey: 'drawer.proc_splitting' },
+    { key: 'saving', labelKey: 'drawer.proc_saving' },
   ]
   const PROC_STAGE_ORDER = {
     saving_meta: 0, downloading: 1, detecting: 2, grouping: 2, splitting: 2,
@@ -325,7 +328,7 @@
               ideStage = 'stage2'
               ideDetailLoading = true
               const dr = await api.getIdeaDetail(url, st.selected_index)
-              ideDetailInstruction = dr?.instruction || 'Gagal mengambil instruksi detail'
+              ideDetailInstruction = dr?.instruction || get(_)('drawer.err_get_detail_instruction')
               ideDetailLoading = false
               startIdePoll(url)
             }
@@ -362,7 +365,7 @@
         ideStage = 'stage2'
         ideDetailLoading = true
         const dr = await api.getIdeaDetail(url, statusRes.selected_index)
-        ideDetailInstruction = dr?.instruction || 'Gagal mengambil instruksi detail'
+        ideDetailInstruction = dr?.instruction || get(_)('drawer.err_get_detail_instruction')
         ideDetailLoading = false
         startIdePoll(url)
         return
@@ -374,7 +377,7 @@
     ideStage = 'stage1'
     ideInstructionLoading = true
     const ideRes = await api.getGeminiIdeas(url)
-    ideInstruction = ideRes?.instruction || ideRes?.error || 'Gagal mengambil instruksi'
+    ideInstruction = ideRes?.instruction || ideRes?.error || get(_)('drawer.err_get_instruction')
     ideInstructionLoading = false
     startIdePoll(url)
   }
@@ -389,7 +392,7 @@
     stopIdePoll()
     ideDetailLoading = true
     const dr = await api.getIdeaDetail(url, ideSelectedIndex)
-    ideDetailInstruction = dr?.instruction || 'Gagal mengambil instruksi detail'
+    ideDetailInstruction = dr?.instruction || get(_)('drawer.err_get_detail_instruction')
     ideDetailLoading = false
     startIdePoll(url)
   }
@@ -415,7 +418,7 @@
     geminiBriefModal = ''
     try {
       const res = await api.getGeminiBrief(url)
-      geminiBriefModal = res?.instruction || res?.error || 'Gagal mengambil instruksi'
+      geminiBriefModal = res?.instruction || res?.error || get(_)('drawer.err_get_instruction')
     } catch (e) {
       geminiBriefModal = `Error: ${e.message}`
     } finally {
@@ -526,7 +529,7 @@
     const r = await api.analyzeClaudeAsync(s.youtube_url, { force: true, output_format: fmt, stages })
     reanalyzeLoading = false
     if (!r || r.error || r.detail || !r.run_id) {
-      reanalyzeError = r?.error || r?.detail || 'Gagal.'
+      reanalyzeError = r?.error || r?.detail || get(_)('drawer.err_general')
       return
     }
     reanalyzeDone = true
@@ -554,7 +557,7 @@
 
     const resp = await api.decompose(s.youtube_url)
     if (!resp?.run_id) {
-      decomposeError = resp?.error || 'Gagal memulai decompose.'
+      decomposeError = resp?.error || get(_)('drawer.err_decompose_failed')
       decomposeRunning = false
       return
     }
@@ -597,13 +600,13 @@
     onkeydown={onLightboxKey}
     role="dialog"
     aria-modal="true"
-    aria-label="Detail frame"
+    aria-label={$_('drawer.detail_frame')}
     tabindex="-1"
   >
-    <button class="lb-close" onclick={closeLightbox} aria-label="Tutup">✕</button>
+    <button class="lb-close" onclick={closeLightbox} aria-label={$_('drawer.close')}>✕</button>
     <!-- ponytail: stopPropagation on the card keeps clicks inside from closing the overlay -->
     <div class="lb-card" onclick={(e) => e.stopPropagation()} role="document">
-      <img src={lightboxSrc} alt="frame diperbesar" class="lb-img" />
+      <img src={lightboxSrc} alt={$_('drawer.frame_enlarged')} class="lb-img" />
       <div class="lb-info">
         <div class="lb-frame-no">Frame {lightboxIndex + 1}{frames.length ? ` / ${frames.length}` : ''}</div>
         {#if sc}
@@ -611,11 +614,11 @@
             <div class="lb-desc">{sc.description || sc.action}</div>
           {/if}
           <div class="lb-scene-cap">
-            Scene cocok (dari Generated Prompt){sc.scene != null ? ` · #${sc.scene}` : ''}{sc.start ? ` · ${sc.start}${sc.end ? '–' + sc.end : ''}` : ''}
+            {$_('drawer.scene_matched')}{sc.scene != null ? ` · #${sc.scene}` : ''}{sc.start ? ` · ${sc.start}${sc.end ? '–' + sc.end : ''}` : ''}
           </div>
           <pre class="lb-json">{JSON.stringify(sc, null, 2)}</pre>
         {:else}
-          <div class="mut" style="font-size:12px">Belum ada storyboard buat dicocokkan — jalankan analisa dengan output Prompt JSON dulu.</div>
+          <div class="mut" style="font-size:12px">{$_('drawer.scene_no_storyboard')}</div>
         {/if}
       </div>
     </div>
@@ -630,16 +633,16 @@
     onkeydown={(e) => { if (e.key === 'Escape') sceneJsonModal = null }}
     role="dialog"
     aria-modal="true"
-    aria-label="JSON scene"
+    aria-label={$_('drawer.json_scene')}
     tabindex="-1"
   >
-    <button class="lb-close" onclick={() => sceneJsonModal = null} aria-label="Tutup">✕</button>
+    <button class="lb-close" onclick={() => sceneJsonModal = null} aria-label={$_('drawer.close')}>✕</button>
     <div class="lb-card" onclick={(e) => e.stopPropagation()} role="document" style="max-width:640px">
       <div class="lb-info">
         <div class="lb-frame-no">Scene{sceneJsonModal.scene != null ? ` #${sceneJsonModal.scene}` : ''}{sceneJsonModal.start ? ` · ${sceneJsonModal.start}${sceneJsonModal.end ? '–' + sceneJsonModal.end : ''}` : ''}</div>
         <pre class="lb-json">{JSON.stringify(sceneJsonModal, null, 2)}</pre>
         <button class="copy-btn" onclick={() => copyPrompt(JSON.stringify(sceneJsonModal, null, 2))}>
-          {copiedPrompt ? '✓ Tersalin' : 'Salin JSON'}
+          {copiedPrompt ? $_('drawer.copied') : $_('drawer.copy_json')}
         </button>
       </div>
     </div>
@@ -654,21 +657,21 @@
     onkeydown={(e) => { if (e.key === 'Escape') geminiBriefModal = null }}
     role="dialog"
     aria-modal="true"
-    aria-label="Prompt Gemini"
+    aria-label={$_('drawer.prompt_gemini')}
     tabindex="-1"
   >
-    <button class="lb-close" onclick={() => geminiBriefModal = null} aria-label="Tutup">✕</button>
+    <button class="lb-close" onclick={() => geminiBriefModal = null} aria-label={$_('drawer.close')}>✕</button>
     <div class="lb-card" onclick={(e) => e.stopPropagation()} role="document" style="max-width:640px">
       <div class="lb-info">
-        <div class="lb-frame-no">Prompt untuk Antigravity (Gemini)</div>
+        <div class="lb-frame-no">{$_('drawer.gemini_prompt_title')}</div>
         {#if geminiBriefLoading}
-          <div class="brief-loading"><span class="spin-sm"></span> Mengambil instruksi…</div>
+          <div class="brief-loading"><span class="spin-sm"></span> {$_('drawer.getting_instruction')}</div>
         {:else}
           <pre class="lb-json">{geminiBriefModal}</pre>
           <button class="copy-btn" onclick={copyGeminiBrief}>
-            {geminiBriefCopied ? '✓ Tersalin' : 'Salin prompt'}
+            {geminiBriefCopied ? $_('drawer.copied') : $_('drawer.copy_prompt')}
           </button>
-          <div class="brief-hint">Tempel ke Antigravity. Gemini akan panggil reelbot MCP, analisa klip, simpan hasil otomatis.</div>
+          <div class="brief-hint">{$_('drawer.paste_antigravity_hint')}</div>
         {/if}
       </div>
     </div>
@@ -683,31 +686,31 @@
     onkeydown={(e) => { if (e.key === 'Escape') closeIdeModal() }}
     role="dialog"
     aria-modal="true"
-    aria-label="Bikin Ide"
+    aria-label={$_('drawer.make_idea_aria')}
     tabindex="-1"
   >
-    <button class="lb-close" onclick={closeIdeModal} aria-label="Tutup">✕</button>
+    <button class="lb-close" onclick={closeIdeModal} aria-label={$_('drawer.close')}>✕</button>
     <div class="lb-card ide-modal" onclick={(e) => e.stopPropagation()} role="document">
       <div class="ide-modal-inner">
 
         <!-- STAGE 1: Instruction -->
         {#if ideStage === 'stage1'}
-          <div class="lb-frame-no">💡 Bikin Ide · Tahap 1 — Minta kandidat</div>
+          <div class="lb-frame-no">{$_('drawer.ide_stage1_title')}</div>
           {#if ideInstructionLoading}
-            <div class="brief-loading"><span class="spin-sm"></span> Mengambil instruksi…</div>
+            <div class="brief-loading"><span class="spin-sm"></span> {$_('drawer.getting_instruction')}</div>
           {:else}
             <pre class="lb-json">{ideInstruction}</pre>
             <div class="ide-btn-row">
-              <button class="ide-modal-btn navy" onclick={copyIde1}>{ideCopied1 ? '✓ Tersalin' : '📋 Salin instruksi'}</button>
-              <button class="ide-modal-btn ghost" onclick={closeIdeModal}>Batal</button>
+              <button class="ide-modal-btn navy" onclick={copyIde1}>{ideCopied1 ? $_('drawer.copied') : $_('drawer.ide_copy_instruction')}</button>
+              <button class="ide-modal-btn ghost" onclick={closeIdeModal}>{$_('drawer.ide_cancel')}</button>
             </div>
-            <div class="ide-status"><span class="ide-dot"></span> Menunggu Gemini menyimpan… {ideStatusCount}/5 kandidat</div>
-            <p class="brief-hint">Tempel ke Antigravity. Begitu Gemini panggil <code>save_ideas</code>, list muncul otomatis.</p>
+            <div class="ide-status"><span class="ide-dot"></span> {$_('drawer.ide_status_waiting', { values: { count: ideStatusCount } })}</div>
+            <p class="brief-hint">{$_('drawer.ide_paste_hint')}</p>
           {/if}
 
         <!-- STAGE 1 RESULT: Candidate list -->
         {:else if ideStage === 'stage1_result'}
-          <div class="lb-frame-no">💡 Bikin Ide · Tahap 1 — Pilih 1 dari {ideCandidates.length}</div>
+          <div class="lb-frame-no">{$_('drawer.ide_stage1_result_title', { values: { count: ideCandidates.length } })}</div>
           {#each ideCandidates as cand, i}
             <div
               class="ide-cand {ideSelectedIndex === i ? 'sel' : ''}"
@@ -719,7 +722,7 @@
               <button
                 class="ide-modal-btn {ideSelectedIndex === i ? 'amber' : 'ghost'} ide-pick-btn"
                 onclick={(e) => { e.stopPropagation(); selectIdeaCard(i) }}
-              >{ideSelectedIndex === i ? '✓ Dipilih' : 'Pilih'}</button>
+              >{ideSelectedIndex === i ? $_('drawer.ide_selected') : $_('drawer.ide_pick')}</button>
               <p class="ide-cand-title">{cand.title}</p>
               <p class="ide-cand-desc">{cand.description}</p>
               {#if cand.premise}<p class="ide-cand-premise">{cand.premise}</p>{/if}
@@ -730,41 +733,41 @@
 
         <!-- STAGE 2: Detail instruction -->
         {:else if ideStage === 'stage2'}
-          <div class="lb-frame-no">💡 Bikin Ide · Tahap 2 — Minta detail</div>
+          <div class="lb-frame-no">{$_('drawer.ide_stage2_title')}</div>
           {#if ideSelectedIndex != null && ideCandidates[ideSelectedIndex]}
             <div class="ide-sel-head">
-              <div class="ide-sel-label">Ide dipilih</div>
+              <div class="ide-sel-label">{$_('drawer.ide_idea_selected')}</div>
               <div class="ide-sel-title">{ideCandidates[ideSelectedIndex].title}</div>
             </div>
           {/if}
           {#if ideDetailLoading}
-            <div class="brief-loading"><span class="spin-sm"></span> Mengambil instruksi detail…</div>
+            <div class="brief-loading"><span class="spin-sm"></span> {$_('drawer.getting_instruction')}</div>
           {:else}
             <pre class="lb-json">{ideDetailInstruction}</pre>
             <div class="ide-btn-row">
-              <button class="ide-modal-btn navy" onclick={copyIde2}>{ideCopied2 ? '✓ Tersalin' : '📋 Salin instruksi detail'}</button>
-              <button class="ide-modal-btn ghost" onclick={() => { ideStage = 'stage1_result'; stopIdePoll() }}>← Ganti ide</button>
+              <button class="ide-modal-btn navy" onclick={copyIde2}>{ideCopied2 ? $_('drawer.copied') : $_('drawer.ide_copy_detail_instruction')}</button>
+              <button class="ide-modal-btn ghost" onclick={() => { ideStage = 'stage1_result'; stopIdePoll() }}>{$_('drawer.ide_change_idea')}</button>
             </div>
-            <div class="ide-status"><span class="ide-dot"></span> Menunggu Gemini menyimpan detail…</div>
-            <p class="brief-hint">Tempel ke Antigravity. Hasil detail muncul di sini begitu Gemini simpan.</p>
+            <div class="ide-status"><span class="ide-dot"></span> {$_('drawer.ide_waiting_detail')}</div>
+            <p class="brief-hint">{$_('drawer.ide_paste_hint')}</p>
           {/if}
 
         <!-- STAGE 2 RESULT: Naskah + edit cues + caption -->
         {:else if ideStage === 'stage2_result'}
-          <div class="lb-frame-no">💡 Bikin Ide · Siap dibawa ke CapCut</div>
+          <div class="lb-frame-no">{$_('drawer.ide_stage2_result_title')}</div>
           {#if ideSelectedIndex != null && ideCandidates[ideSelectedIndex]}
             <div class="ide-sel-head">
-              <div class="ide-sel-label">Ide dipilih</div>
+              <div class="ide-sel-label">{$_('drawer.ide_idea_selected')}</div>
               <div class="ide-sel-title">{ideCandidates[ideSelectedIndex].title}</div>
             </div>
           {/if}
           {#if ideDetail}
             {#if ideDetail.naskah}
-              <div class="ide-section-label">Naskah</div>
+              <div class="ide-section-label">{$_('drawer.ide_naskah_label')}</div>
               <pre class="ide-naskah">{ideDetail.naskah}</pre>
             {/if}
             {#if ideDetail.edit_cues?.length}
-              <div class="ide-section-label">✂️ Edit cue (timestamp untuk CapCut)</div>
+              <div class="ide-section-label">{$_('drawer.ide_edit_cue_label')}</div>
               <div class="ide-cue-list">
                 {#each ideDetail.edit_cues as cue}
                   <div class="ide-cue-row">
@@ -779,13 +782,13 @@
               </div>
             {/if}
             {#if ideDetail.caption || ideDetail.hashtags?.length}
-              <div class="ide-section-label">#️⃣ Caption + hashtag</div>
+              <div class="ide-section-label">{$_('drawer.ide_caption_hashtag_label')}</div>
               <pre class="ide-naskah">{ideDetail.caption || ''}{ideDetail.hashtags?.length ? '\n' + ideDetail.hashtags.join(' ') : ''}</pre>
             {/if}
             <div class="ide-btn-row" style="margin-top:10px">
-              {#if ideDetail.naskah}<button class="ide-modal-btn navy" onclick={copyIdeNaskah}>{ideCopiedNaskah ? '✓ Tersalin' : '📋 Salin naskah'}</button>{/if}
-              {#if ideDetail.edit_cues?.length}<button class="ide-modal-btn navy" onclick={copyIdeCue}>{ideCopiedCue ? '✓ Tersalin' : '📋 Salin edit cue'}</button>{/if}
-              {#if ideDetail.caption}<button class="ide-modal-btn ghost" onclick={copyIdeCaption}>{ideCopiedCaption ? '✓ Tersalin' : '📋 Salin caption'}</button>{/if}
+              {#if ideDetail.naskah}<button class="ide-modal-btn navy" onclick={copyIdeNaskah}>{ideCopiedNaskah ? $_('drawer.copied') : $_('drawer.ide_copy_naskah')}</button>{/if}
+              {#if ideDetail.edit_cues?.length}<button class="ide-modal-btn navy" onclick={copyIdeCue}>{ideCopiedCue ? $_('drawer.copied') : $_('drawer.ide_copy_edit_cue')}</button>{/if}
+              {#if ideDetail.caption}<button class="ide-modal-btn ghost" onclick={copyIdeCaption}>{ideCopiedCaption ? $_('drawer.copied') : $_('drawer.ide_copy_caption')}</button>{/if}
             </div>
           {/if}
         {/if}
@@ -813,7 +816,7 @@
   >
     <!-- Header -->
     <div class="modal-header">
-      <span class="x" onclick={closeDrawer} role="button" tabindex="0" aria-label="Tutup">✕</span>
+      <span class="x" onclick={closeDrawer} role="button" tabindex="0" aria-label={$_('drawer.close')}>✕</span>
     </div>
 
     <!-- Tab Bar (for source type only; hidden while still processing) -->
@@ -823,21 +826,21 @@
           class="tab-btn {activeTab === 'analisa' ? 'active' : ''}"
           onclick={() => activeTab = 'analisa'}
         >
-          Analisa{#if curStatus}<span class="status-chip tab-chip {curStatus === 'analyzed' ? 'chip-green' : curStatus === 'working' ? 'chip-blue' : curStatus === 'processing' || curStatus === 'running' ? 'chip-amber' : curStatus === 'error' ? 'chip-red' : 'chip-mut'}">{curStatus}</span>{/if}
+          {$_('drawer.tab_analisa')}{#if curStatus}<span class="status-chip tab-chip {curStatus === 'analyzed' ? 'chip-green' : curStatus === 'working' ? 'chip-blue' : curStatus === 'processing' || curStatus === 'running' ? 'chip-amber' : curStatus === 'error' ? 'chip-red' : 'chip-mut'}">{curStatus}</span>{/if}
         </button>
         {#if frames.length}
           <button
             class="tab-btn {activeTab === 'frames' ? 'active' : ''}"
             onclick={() => activeTab = 'frames'}
           >
-            Frames ({frames.length})
+            {$_('drawer.tab_frames')} ({frames.length})
           </button>
         {/if}
         <button
           class="tab-btn {activeTab === 'prompt' ? 'active' : ''}"
           onclick={() => activeTab = 'prompt'}
         >
-          Generated Prompt{sceneCount ? ` (${sceneCount})` : ''}
+          {$_('drawer.tab_prompt')}{sceneCount ? ` (${sceneCount})` : ''}
         </button>
       </div>
     {/if}
@@ -871,7 +874,7 @@
               >
                 {reanalyzeLoading ? tabAction.busy : tabAction.label}
               </button>
-              {#if reanalyzeDone}<span class="reana-ok">✓ masuk antrean — lihat Proses</span>{/if}
+              {#if reanalyzeDone}<span class="reana-ok">✓ {$_('drawer.queued')}</span>{/if}
               {#if reanalyzeError}<span class="reana-err">{reanalyzeError}</span>{/if}
             </div>
             <div class="pecah-wrap">
@@ -880,7 +883,7 @@
                 disabled={decomposeRunning}
                 onclick={startDecompose}
               >
-                {decomposeRunning ? '⏳ Memecah…' : segments.length ? 'Pecah ulang' : 'Pecah kompilasi'}
+                {decomposeRunning ? $_('drawer.decomposing') : segments.length ? $_('drawer.decompose_again') : $_('drawer.decompose')}
               </button>
               {#if decomposeRunning && decomposeStage}<span class="pecah-stage">{decomposeStage}</span>{/if}
               {#if decomposeError}<span class="pecah-err">{decomposeError}</span>{/if}
@@ -891,7 +894,7 @@
                 disabled={ideInstructionLoading}
                 onclick={openIdeModal}
               >
-                {ideInstructionLoading ? '⏳ Mengambil…' : '💡 Bikin Ide'}
+                {ideInstructionLoading ? $_('drawer.getting_ideas') : $_('drawer.make_idea')}
               </button>
             </div>
           </div>
@@ -899,13 +902,13 @@
       </div>
 
       {#if justDone}
-        <div class="done-banner" transition:fade={{ duration: 150 }}>✅ Selesai — analisa & storyboard sudah ke-load</div>
+        <div class="done-banner" transition:fade={{ duration: 150 }}>{$_('drawer.done_banner')}</div>
       {/if}
 
       <!-- Processing: analysis not ready yet — show loading instead of tabs -->
       {#if isProcessing}
         <div class="processing-panel">
-          <div class="processing-title">Sedang diproses…</div>
+          <div class="processing-title">{$_('drawer.processing_title')}</div>
           <div class="proc-steps">
             {#each PROC_STEPS as step}
               {@const ps = procStepStatus(step.key)}
@@ -913,12 +916,12 @@
                 <span class="proc-icon">
                   {#if ps === 'done'}✓{:else if ps === 'active'}<span class="spin-sm"></span>{:else}○{/if}
                 </span>
-                <span class="proc-label">{step.label}</span>
+                <span class="proc-label">{$_(step.labelKey)}</span>
               </div>
             {/each}
           </div>
-          <button class="proc-brief-btn" onclick={showGeminiBrief}>Tampilkan prompt Gemini</button>
-          <div class="processing-sub">Klip siap. Analisa & storyboard Gemini dipantau di daftar Proses / status baris — hasil muncul di sini otomatis saat selesai.</div>
+          <button class="proc-brief-btn" onclick={showGeminiBrief}>{$_('drawer.show_gemini_prompt')}</button>
+          <div class="processing-sub">{$_('drawer.processing_subtitle')}</div>
         </div>
       {/if}
 
@@ -934,10 +937,10 @@
             {/if}
             <div class="verify-right">
               <div class="ana-subtabs">
-                <button class="ana-subtab {anaSubTab === 'hookret' ? 'active' : ''}" onclick={() => anaSubTab = 'hookret'}>Hook &amp; Retention</button>
-                <button class="ana-subtab {anaSubTab === 'overall' ? 'active' : ''}" onclick={() => anaSubTab = 'overall'}>Overall</button>
-                <button class="ana-subtab {anaSubTab === 'karakter' ? 'active' : ''}" onclick={() => anaSubTab = 'karakter'}>Karakter{#if analysis.characters?.length} ({analysis.characters.length}){/if}</button>
-                <button class="ana-subtab {anaSubTab === 'percakapan' ? 'active' : ''}" onclick={() => anaSubTab = 'percakapan'}>Percakapan{#if analysis.transcript?.length} ({analysis.transcript.length}){/if}</button>
+                <button class="ana-subtab {anaSubTab === 'hookret' ? 'active' : ''}" onclick={() => anaSubTab = 'hookret'}>{@html $_('drawer.subtab_hookret')}</button>
+                <button class="ana-subtab {anaSubTab === 'overall' ? 'active' : ''}" onclick={() => anaSubTab = 'overall'}>{$_('drawer.subtab_overall')}</button>
+                <button class="ana-subtab {anaSubTab === 'karakter' ? 'active' : ''}" onclick={() => anaSubTab = 'karakter'}>{$_('drawer.subtab_karakter')}{#if analysis.characters?.length} ({analysis.characters.length}){/if}</button>
+                <button class="ana-subtab {anaSubTab === 'percakapan' ? 'active' : ''}" onclick={() => anaSubTab = 'percakapan'}>{$_('drawer.subtab_percakapan')}{#if analysis.transcript?.length} ({analysis.transcript.length}){/if}</button>
               </div>
 
               {#if anaSubTab === 'hookret'}
@@ -946,13 +949,13 @@
                   {@const hookEnd = analysis.hook_end || (scenes.length ? scenes[0].end : null)}
                   <div class="ana-card">
                     <div class="ana-label">
-                      Hook
+                      {$_('drawer.label_hook')}
                       {#if hookStart && hookEnd}<span class="score-badge">{hookStart}–{hookEnd}</span>{/if}
                     </div>
                     <div class="ana-body">{analysis.hook}</div>
                     <div class="ana-btn-row">
-                      {#if hookStart && hookEnd && anaVideoId}<button class="ana-play-btn" onclick={() => playAna(timeToSeconds(hookStart), timeToSeconds(hookEnd))}>▶ Putar hook</button>{/if}
-                      <button class="ana-copy-btn" onclick={() => copyPrompt(analysis.hook)}>{copiedPrompt ? '✓ Tersalin' : 'Salin teks'}</button>
+                      {#if hookStart && hookEnd && anaVideoId}<button class="ana-play-btn" onclick={() => playAna(timeToSeconds(hookStart), timeToSeconds(hookEnd))}>{$_('drawer.play_hook')}</button>{/if}
+                      <button class="ana-copy-btn" onclick={() => copyPrompt(analysis.hook)}>{copiedPrompt ? $_('drawer.copied') : $_('drawer.copy_text')}</button>
                     </div>
                   </div>
                 {/if}
@@ -960,13 +963,13 @@
                   {@const rp = toPoints(analysis.retention)}
                   <div class="ana-card">
                     <div class="ana-label">
-                      Retention
+                      {$_('drawer.label_retention')}
                       {#if analysis.retention_score}<span class="score-badge">{analysis.retention_score}/10</span>{/if}
                     </div>
                     {#if analysis.retention_points?.length}
                       {#each analysis.retention_points as p}
                         <div class="ana-rp-row">
-                          <button class="ana-rp-btn" onclick={() => anaVideoId && playAna(timeToSeconds(p.start), timeToSeconds(p.end))} disabled={!anaVideoId} title={anaVideoId ? `Putar ${p.start}–${p.end}` : 'Video tidak tersedia'}>▶</button>
+                          <button class="ana-rp-btn" onclick={() => anaVideoId && playAna(timeToSeconds(p.start), timeToSeconds(p.end))} disabled={!anaVideoId} title={anaVideoId ? `Putar ${p.start}–${p.end}` : $_('drawer.play_video_error')}>▶</button>
                           <span class="ana-rp-reason">{p.reason}</span>
                           <span class="ana-rp-time">{p.start}–{p.end}</span>
                         </div>
@@ -978,20 +981,20 @@
                       <div class="ana-body">{analysis.retention}</div>
                     {/if}
                     <div class="ana-btn-row">
-                      {#if scenes.length && anaVideoId}<button class="ana-play-btn" onclick={() => playAna(timeToSeconds(scenes[0].start), timeToSeconds(scenes[scenes.length-1].end))}>▶ Putar full</button>{/if}
-                      <button class="ana-copy-btn" onclick={() => copyPrompt(analysis.retention)}>{copiedPrompt ? '✓ Tersalin' : 'Salin teks'}</button>
+                      {#if scenes.length && anaVideoId}<button class="ana-play-btn" onclick={() => playAna(timeToSeconds(scenes[0].start), timeToSeconds(scenes[scenes.length-1].end))}>{$_('drawer.play_full')}</button>{/if}
+                      <button class="ana-copy-btn" onclick={() => copyPrompt(analysis.retention)}>{copiedPrompt ? $_('drawer.copied') : $_('drawer.copy_text')}</button>
                     </div>
                   </div>
                 {/if}
                 {#if !analysis.hook && !analysis.retention}
-                  <div class="mut" style="font-size:12px;padding:8px 0">Belum ada data hook/retention. Re-analyze via Antigravity untuk mengisinya.</div>
+                  <div class="mut" style="font-size:12px;padding:8px 0">{$_('drawer.no_hook_retention')}</div>
                 {/if}
               {/if}
 
               {#if anaSubTab === 'overall'}
                 {#if analysis.tags?.length}
                   <div class="ana-card">
-                    <div class="ana-label">Tags</div>
+                    <div class="ana-label">{$_('drawer.label_tags')}</div>
                     <div class="tags-row">
                       {#each analysis.tags as t}
                         <span class="tag" style="background: hsl({tagHue(t)} 70% 92%); color: hsl({tagHue(t)} 55% 32%); border-color: hsl({tagHue(t)} 55% 80%)">{t}</span>
@@ -1002,7 +1005,7 @@
                 {#if analysis.structure}
                   {@const sp = toPoints(analysis.structure)}
                   <div class="ana-card">
-                    <div class="ana-label">Struktur</div>
+                    <div class="ana-label">{$_('drawer.label_struktur')}</div>
                     {#if sp}
                       {#if sp.lead}<div class="ana-lead">{sp.lead}</div>{/if}
                       <ol class="ana-points">{#each sp.items as it}<li>{it}</li>{/each}</ol>
@@ -1013,35 +1016,35 @@
                 {/if}
                 {#if analysis.summary}
                   <div class="ana-card">
-                    <div class="ana-label">Ringkas</div>
+                    <div class="ana-label">{$_('drawer.label_ringkas')}</div>
                     <div class="ana-body">{analysis.summary}</div>
                   </div>
                 {/if}
                 {#if analysis.detail}
                   <div class="ana-card">
-                    <div class="ana-label">Detail</div>
+                    <div class="ana-label">{$_('drawer.label_detail')}</div>
                     <div class="ana-body">{analysis.detail}</div>
                   </div>
                 {/if}
                 {#if !analysis.tags?.length && !analysis.structure && !analysis.summary && !analysis.detail}
-                  <div class="mut" style="font-size:12px;padding:8px 0">Belum ada data overall.</div>
+                  <div class="mut" style="font-size:12px;padding:8px 0">{$_('drawer.no_overall_data')}</div>
                 {/if}
               {/if}
 
               {#if anaSubTab === 'karakter'}
                 {#if analysis.characters?.length}
                   {#each analysis.characters as c}
-                    {@const attrs = [['nationality','Kewarganegaraan'],['build','Build'],['height','Tinggi'],['skin_tone','Kulit'],['face_shape','Bentuk wajah'],['eyebrows','Alis'],['eye_color','Mata'],['nose','Hidung'],['lips','Bibir'],['lip_color','Warna bibir'],['hair_color','Rambut'],['hair_texture','Tekstur rambut'],['hairstyle','Gaya rambut'],['facial_hair','Kumis/janggut'],['glasses','Kacamata'],['expression','Ekspresi']]}
-                    {@const outfit = [['top','Atasan'],['bottom','Bawahan'],['footwear','Sepatu'],['accessories','Aksesoris']]}
+                    {@const attrs = [['nationality',$_('drawer.nationality')],['build',$_('drawer.build')],['height',$_('drawer.height')],['skin_tone',$_('drawer.skin_tone')],['face_shape',$_('drawer.face_shape')],['eyebrows',$_('drawer.eyebrows')],['eye_color',$_('drawer.eye_color')],['nose',$_('drawer.nose')],['lips',$_('drawer.lips')],['lip_color',$_('drawer.lip_color')],['hair_color',$_('drawer.hair_color')],['hair_texture',$_('drawer.hair_texture')],['hairstyle',$_('drawer.hairstyle')],['facial_hair',$_('drawer.facial_hair')],['glasses',$_('drawer.glasses')],['expression',$_('drawer.expression')]]}
+                    {@const outfit = [['top',$_('drawer.top')],['bottom',$_('drawer.bottom')],['footwear',$_('drawer.footwear')],['accessories',$_('drawer.accessories')]]}
                     <div class="ana-card char-card">
                       <div class="char-head">
-                        <span class="char-name">{c.name || 'Karakter'}</span>
+                        <span class="char-name">{c.name || $_('drawer.label_character')}</span>
                         {#if c.role}<span class="char-role">{c.role}</span>{/if}
                         {#if c.gender}<span class="score-badge">{c.gender}</span>{/if}
                         {#if c.age_range}<span class="score-badge">{c.age_range} th</span>{/if}
                       </div>
                       {#if attrs.some(([k]) => c[k])}
-                        <div class="char-tbl-cap">Fisik</div>
+                        <div class="char-tbl-cap">{$_('drawer.physical_label')}</div>
                         <table class="char-attr-table">
                           <tbody>
                             {#each attrs as [k, label]}
@@ -1051,7 +1054,7 @@
                         </table>
                       {/if}
                       {#if outfit.some(([k]) => c[k])}
-                        <div class="char-tbl-cap">Outfit</div>
+                        <div class="char-tbl-cap">{$_('drawer.outfit_label')}</div>
                         <table class="char-attr-table">
                           <tbody>
                             {#each outfit as [k, label]}
@@ -1060,41 +1063,41 @@
                           </tbody>
                         </table>
                       {/if}
-                      {#each [['face','Wajah (detail)'],['distinguishing_features','Ciri khas'],['appearance','Penampilan'],['wardrobe','Outfit (ringkas)']] as [k, label]}
+                      {#each [['face',$_('drawer.face_detail')],['distinguishing_features',$_('drawer.distinguishing_features')],['appearance',$_('drawer.appearance')],['wardrobe',$_('drawer.wardrobe')]] as [k, label]}
                         {#if c[k]}<div class="char-line"><span class="char-key">{label}</span><span class="char-val">{c[k]}</span></div>{/if}
                       {/each}
                       {#if c.recreation_prompt}
                         <div class="char-recreate">
-                          <div class="char-key" style="flex:none;margin-bottom:4px">Prompt recreate (AI gen)</div>
+                          <div class="char-key" style="flex:none;margin-bottom:4px">{$_('drawer.recreation_prompt')}</div>
                           <div class="char-recreate-body">{c.recreation_prompt}</div>
-                          <button class="ana-copy-btn" style="margin-top:6px" onclick={() => copyPrompt(c.recreation_prompt)}>{copiedPrompt ? '✓ Tersalin' : 'Salin prompt recreate'}</button>
+                          <button class="ana-copy-btn" style="margin-top:6px" onclick={() => copyPrompt(c.recreation_prompt)}>{copiedPrompt ? $_('drawer.copied') : $_('drawer.copy')}</button>
                         </div>
                       {/if}
                       <div class="ana-btn-row">
-                        <button class="ana-copy-btn" onclick={() => copyPrompt([c.name, c.role, c.gender, c.age_range, c.nationality, c.build, c.height, c.skin_tone, c.face_shape, c.eyebrows, c.eye_color, c.nose, c.lips, c.lip_color, c.hair_color, c.hair_texture, c.hairstyle, c.facial_hair, c.glasses, c.expression, c.face, c.distinguishing_features, c.top, c.bottom, c.footwear, c.accessories, c.appearance, c.wardrobe].filter(Boolean).join(' · '))}>{copiedPrompt ? '✓ Tersalin' : 'Salin semua'}</button>
+                        <button class="ana-copy-btn" onclick={() => copyPrompt([c.name, c.role, c.gender, c.age_range, c.nationality, c.build, c.height, c.skin_tone, c.face_shape, c.eyebrows, c.eye_color, c.nose, c.lips, c.lip_color, c.hair_color, c.hair_texture, c.hairstyle, c.facial_hair, c.glasses, c.expression, c.face, c.distinguishing_features, c.top, c.bottom, c.footwear, c.accessories, c.appearance, c.wardrobe].filter(Boolean).join(' · '))}>{copiedPrompt ? $_('drawer.copied') : $_('drawer.copy_all')}</button>
                       </div>
                     </div>
                   {/each}
                 {:else}
-                  <div class="mut" style="font-size:12px;padding:8px 0">Belum ada data karakter. Re-analyze via Antigravity untuk mengisinya.</div>
+                  <div class="mut" style="font-size:12px;padding:8px 0">{$_('drawer.no_character_data')}</div>
                 {/if}
               {/if}
 
               {#if anaSubTab === 'percakapan'}
                 {#if analysis.transcript?.length}
                   <div class="ana-btn-row" style="margin-bottom:6px">
-                    <button class="ana-play-btn" onclick={downloadSrt}>⬇ Download .srt</button>
-                    <button class="ana-copy-btn" onclick={() => copyPrompt(analysis.transcript.map(t => (t.speaker ? t.speaker + ': ' : '') + t.text).join('\n'))}>{copiedPrompt ? '✓ Tersalin' : 'Salin teks'}</button>
+                    <button class="ana-play-btn" onclick={downloadSrt}>{$_('drawer.download_srt')}</button>
+                    <button class="ana-copy-btn" onclick={() => copyPrompt(analysis.transcript.map(t => (t.speaker ? t.speaker + ': ' : '') + t.text).join('\n'))}>{copiedPrompt ? $_('drawer.copied') : $_('drawer.copy_text')}</button>
                   </div>
                   {#each analysis.transcript as t}
                     <div class="ana-rp-row">
-                      <button class="ana-rp-btn" onclick={() => anaVideoId && playAna(timeToSeconds(t.start), timeToSeconds(t.end || t.start))} disabled={!anaVideoId} title={anaVideoId ? `Putar ${t.start}` : 'Video tidak tersedia'}>▶</button>
+                      <button class="ana-rp-btn" onclick={() => anaVideoId && playAna(timeToSeconds(t.start), timeToSeconds(t.end || t.start))} disabled={!anaVideoId} title={anaVideoId ? `Putar ${t.start}` : $_('drawer.play_video_error')}>▶</button>
                       <span class="ana-rp-reason">{#if t.speaker}<b>{t.speaker}:</b> {/if}{t.text}</span>
                       <span class="ana-rp-time">{t.start}{t.end ? '–' + t.end : ''}</span>
                     </div>
                   {/each}
                 {:else}
-                  <div class="mut" style="font-size:12px;padding:8px 0">Belum ada transkrip. Re-analyze via Antigravity untuk mengisinya.</div>
+                  <div class="mut" style="font-size:12px;padding:8px 0">{$_('drawer.no_transcript')}</div>
                 {/if}
               {/if}
             </div>
@@ -1107,18 +1110,18 @@
         <div class="tab-panel">
           <div class="frames">
             {#if framesLoading}
-              <div class="mut" style="font-size:12px;padding:8px 0">Memuat frames…</div>
+              <div class="mut" style="font-size:12px;padding:8px 0">{$_('drawer.loading_frames')}</div>
             {:else if frames.length}
               {#each frames as f, i}
-                <button class="frame-thumb-btn" onclick={() => openLightbox(f.url, i)} title={f.desc || 'Klik untuk detail'} aria-label="Detail frame">
+                <button class="frame-thumb-btn" onclick={() => openLightbox(f.url, i)} title={f.desc || $_('drawer.frame_click_detail')} aria-label={$_('drawer.close_detail_frame')}>
                   <img src={f.url} alt={f.desc || 'frame'} loading="lazy" class="frame-thumb" />
                   <span class="frame-no">{i + 1}</span>
                 </button>
               {/each}
             {:else if s.youtube_url}
-              <div class="mut" style="font-size:12px;padding:8px 0">No frames tersimpan untuk video ini.</div>
+              <div class="mut" style="font-size:12px;padding:8px 0">{$_('drawer.no_frames')}</div>
             {:else}
-              <div class="mut" style="font-size:12px;padding:8px 0">youtube_url tidak tersedia di baris ini — frames tidak dapat dimuat. (Lihat blocker note di kode.)</div>
+              <div class="mut" style="font-size:12px;padding:8px 0">{$_('drawer.no_frames_url')}</div>
             {/if}
           </div>
         </div>
@@ -1155,16 +1158,16 @@
                         <button
                           class="scene-play"
                           onclick={() => playScene(timeToSeconds(scene.start), timeToSeconds(scene.end))}
-                          title="Putar scene"
-                          aria-label="Putar"
+                          title={$_('drawer.play_scene')}
+                          aria-label={$_('drawer.play_scene')}
                         >
                           ▶
                         </button>
                         <button
                           class="scene-json-btn"
                           onclick={() => sceneJsonModal = scene}
-                          title="Lihat JSON scene"
-                          aria-label="JSON"
+                          title={$_('drawer.view_scene_json')}
+                          aria-label={$_('drawer.json_aria')}
                         >
                           {'{ }'}
                         </button>
@@ -1175,7 +1178,7 @@
                         onkeydown={(e) => { if (e.key === 'Enter') seekScene(timeToSeconds(scene.start)) }}
                         role="button"
                         tabindex="0"
-                        title="Lihat frame (jeda di scene ini)"
+                        title={$_('drawer.seek_frame')}
                       >
                         <div class="scene-header">
                           #{scene.scene} · {scene.start}–{scene.end} · {scene.shot} · {scene.subject} · {scene.action}
@@ -1197,7 +1200,7 @@
                 class="toggle-btn"
                 onclick={() => showRawJson = !showRawJson}
               >
-                {showRawJson ? 'Sembunyikan JSON' : 'Lihat JSON'}
+                {showRawJson ? $_('drawer.hide_json') : $_('drawer.view_json')}
               </button>
             </div>
 
@@ -1205,7 +1208,7 @@
               <div class="gen-prompt-box" transition:fade={{ duration: 150 }}>
                 <pre class="gen-prompt-json">{promptDisplay(analysis)}</pre>
                 <button class="copy-btn" onclick={() => copyPrompt(promptDisplay(analysis))}>
-                  {copiedPrompt ? '✓ Tersalin' : 'Salin'}
+                  {copiedPrompt ? $_('drawer.copied') : $_('drawer.copy')}
                 </button>
               </div>
             {/if}
@@ -1216,10 +1219,10 @@
                   <div class="gen-prompt-text">{analysis.gen_prompt}</div>
                 </div>
                 <button class="copy-btn" onclick={() => copyPrompt(promptDisplay(analysis))}>
-                  {copiedPrompt ? '✓ Copied!' : 'Copy'}
+                  {copiedPrompt ? $_('drawer.copied') : $_('drawer.copy')}
                 </button>
               {:else}
-                No generated prompt tersedia.
+                {$_('drawer.no_generated_prompt')}
               {/if}
             </div>
           {/if}
