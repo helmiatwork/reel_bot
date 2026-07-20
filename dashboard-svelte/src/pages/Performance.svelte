@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte'
+  import { get } from 'svelte/store'
   import { _ } from 'svelte-i18n'
   import { api, fmtViews } from '../lib/api.js'
   import LineChart from '../lib/LineChart.svelte'
@@ -227,7 +228,7 @@
 
     const res = await api.winnersClone(payload)
     if (!res?.run_id) {
-      cloneState = { ...cloneState, [url]: { ...cloneState[url], running: false, error: 'Clone failed to start' } }
+      cloneState = { ...cloneState, [url]: { ...cloneState[url], running: false, error: get(_)('performance.err_clone_failed') } }
       return
     }
     cloneState = { ...cloneState, [url]: { ...cloneState[url], total: n } }

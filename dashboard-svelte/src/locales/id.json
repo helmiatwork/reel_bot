@@ -280,7 +280,8 @@
     "chart_table": "Table",
     "chart_bar": "Bar",
     "chart_line": "Line",
-    "chart_area": "Area"
+    "chart_area": "Area",
+    "err_clone_failed": "Clone gagal dimulai"
   },
   "brands": {
     "title": "Brands",
@@ -835,9 +836,19 @@
     "field_title": "Judul",
     "field_title_placeholder": "Judul konten…",
     "field_platform": "Platform tujuan",
+    "field_datetime": "Tanggal & waktu post",
+    "field_caption": "Caption",
+    "field_caption_placeholder": "Caption untuk semua platform…",
     "field_url_placeholder": "Tempel URL hasil upload…",
     "btn_save_url": "Simpan",
     "field_account": "Pilih akun…",
+    "field_account_placeholder": "Pilih akun…",
+    "acct_none_hint": "Belum ada akun — tambah di Accounts",
+    "modal_picker_title": "Pilih Konten (1/2)",
+    "empty_corpus_loading": "Memuat corpus…",
+    "empty_corpus_none": "Tidak ada konten teranalisis. Jalankan Discover terlebih dahulu.",
+    "corpus_retention": "{pct}% retensi",
+    "btn_skip_manual": "Lewati — buat manual",
     "btn_delete": "Hapus",
     "btn_cancel": "Batal",
     "btn_back": "Kembali",
@@ -985,7 +996,11 @@
     "proc_saving_meta": "Menyimpan atribut video",
     "proc_downloading": "Mengunduh video",
     "proc_splitting": "Memotong klip per menit",
-    "proc_saving": "Menyimpan atribut klip ke database"
+    "proc_saving": "Menyimpan atribut klip ke database",
+    "err_get_detail_instruction": "Gagal mengambil instruksi detail",
+    "err_get_instruction": "Gagal mengambil instruksi",
+    "err_general": "Gagal.",
+    "err_decompose_failed": "Gagal memulai decompose."
   },
   "sourceUpload": {
     "modal_title": "Tambah Source",

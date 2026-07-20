@@ -280,7 +280,8 @@
     "chart_table": "Table",
     "chart_bar": "Bar",
     "chart_line": "Line",
-    "chart_area": "Area"
+    "chart_area": "Area",
+    "err_clone_failed": "Clone failed to start"
   },
   "brands": {
     "title": "Brands",
@@ -835,9 +836,19 @@
     "field_title": "Title",
     "field_title_placeholder": "Content title…",
     "field_platform": "Target platforms",
+    "field_datetime": "Date & time to post",
+    "field_caption": "Caption",
+    "field_caption_placeholder": "Caption for all platforms…",
     "field_url_placeholder": "Paste upload URL…",
     "btn_save_url": "Save",
     "field_account": "Select account…",
+    "field_account_placeholder": "Select account…",
+    "acct_none_hint": "No accounts yet — add in Accounts",
+    "modal_picker_title": "Choose Content (1/2)",
+    "empty_corpus_loading": "Loading corpus…",
+    "empty_corpus_none": "No analyzed content. Run Discover first.",
+    "corpus_retention": "{pct}% retention",
+    "btn_skip_manual": "Skip — create manually",
     "btn_delete": "Delete",
     "btn_cancel": "Cancel",
     "btn_back": "Back",
@@ -985,7 +996,11 @@
     "proc_saving_meta": "Saving video attributes",
     "proc_downloading": "Downloading video",
     "proc_splitting": "Splitting clips per minute",
-    "proc_saving": "Saving clip attributes to database"
+    "proc_saving": "Saving clip attributes to database",
+    "err_get_detail_instruction": "Failed to fetch detail instruction",
+    "err_get_instruction": "Failed to fetch instruction",
+    "err_general": "Failed.",
+    "err_decompose_failed": "Failed to start decompose."
   },
   "sourceUpload": {
     "modal_title": "Add Source",
