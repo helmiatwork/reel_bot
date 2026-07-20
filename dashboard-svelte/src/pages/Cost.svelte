@@ -1,5 +1,6 @@
 <script>
   import { onMount, onDestroy } from 'svelte'
+  import { _ } from 'svelte-i18n'
   import { api } from '../lib/api.js'
   import Chart from 'chart.js/auto'
 
@@ -46,30 +47,30 @@
 </script>
 
 <div class="top">
-  <div><h1>Cost</h1><div class="sub">Token spend asli (api_usage) + request volume cliproxy</div></div>
+  <div><h1>{$_('cost.title')}</h1><div class="sub">{$_('cost.subtitle')}</div></div>
   <div class="pill">{tk.totals.calls} call</div>
 </div>
 
 <div class="kpis">
-  <div class="card kpi"><div class="label">Biaya token (asli)</div><div class="val num">{usd(tk.totals.cost_usd)}</div><div class="delta up">dari usage tercatat</div></div>
-  <div class="card kpi"><div class="label">Total token</div><div class="val num">{fmtTok(tk.totals.total_tokens)}</div><div class="delta mut">{tk.totals.calls} LLM call</div></div>
-  <div class="card kpi"><div class="label">Request cliproxy</div><div class="val num">{cx.totals?.requests || 0}</div><div class="delta {cx.totals?.failed ? 'down' : 'mut'}">{cxRate}% sukses</div></div>
-  <div class="card kpi"><div class="label">Model dipakai</div><div class="val num">{tk.rows.length}</div><div class="delta mut">unik</div></div>
+  <div class="card kpi"><div class="label">{$_('cost.token_cost')}</div><div class="val num">{usd(tk.totals.cost_usd)}</div><div class="delta up">{$_('cost.from_recorded')}</div></div>
+  <div class="card kpi"><div class="label">{$_('cost.total_tokens')}</div><div class="val num">{fmtTok(tk.totals.total_tokens)}</div><div class="delta mut">{$_('cost.llm_calls', { values: { calls: tk.totals.calls } })}</div></div>
+  <div class="card kpi"><div class="label">{$_('cost.cliproxy_requests')}</div><div class="val num">{cx.totals?.requests || 0}</div><div class="delta {cx.totals?.failed ? 'down' : 'mut'}">{cxRate}% sukses</div></div>
+  <div class="card kpi"><div class="label">{$_('cost.models_used')}</div><div class="val num">{tk.rows.length}</div><div class="delta mut">{$_('cost.unique')}</div></div>
 </div>
 
 <div class="grid2">
   <div class="card">
-    <h3>Token per hari <span class="mut">— api_usage</span></h3>
+    <h3>{$_('cost.tokens_per_day')} <span class="mut">{$_('cost.api_usage')}</span></h3>
     {#if tk.series.length}
       <div style="height:140px;position:relative"><canvas bind:this={canvas}></canvas></div>
     {:else}
-      <p class="mut" style="font-size:12.5px">Belum ada call tercatat. Trigger pipeline buat ngisi (analyze/script pakai LLM).</p>
+      <p class="mut" style="font-size:12.5px">{$_('cost.no_calls_recorded')}</p>
     {/if}
   </div>
   <div class="card">
-    <h3>Biaya per model <span class="mut">— harga × token</span></h3>
+    <h3>{$_('cost.cost_per_model')} <span class="mut">{$_('cost.price_tokens')}</span></h3>
     <table>
-      <thead><tr><th>Model</th><th class="num" style="text-align:right">Token</th><th class="num" style="text-align:right">Call</th><th class="num" style="text-align:right">Biaya</th></tr></thead>
+      <thead><tr><th>{$_('cost.model_header')}</th><th class="num" style="text-align:right">{$_('cost.token_header')}</th><th class="num" style="text-align:right">{$_('cost.call_header')}</th><th class="num" style="text-align:right">{$_('cost.cost_header')}</th></tr></thead>
       <tbody>
         {#each tk.rows as r}
           <tr>
@@ -79,16 +80,16 @@
             <td class="num" style="text-align:right">{usd(r.cost_usd)}</td>
           </tr>
         {/each}
-        {#if !tk.rows.length}<tr><td colspan="4" class="mut">Belum ada data token.</td></tr>{/if}
+        {#if !tk.rows.length}<tr><td colspan="4" class="mut">{$_('cost.no_token_data')}</td></tr>{/if}
       </tbody>
     </table>
   </div>
 </div>
 
 <div class="card" style="margin-top:14px">
-  <h3>Biaya per agent <span class="mut">— claude -p per flow</span></h3>
+  <h3>{$_('cost.cost_per_agent')} <span class="mut">{$_('cost.claude_flow')}</span></h3>
   <table>
-    <thead><tr><th>Agent</th><th class="num" style="text-align:right">Call</th><th class="num" style="text-align:right">Token</th><th class="num" style="text-align:right">Biaya</th></tr></thead>
+    <thead><tr><th>{$_('cost.agent_header')}</th><th class="num" style="text-align:right">{$_('cost.call_header')}</th><th class="num" style="text-align:right">{$_('cost.token_header')}</th><th class="num" style="text-align:right">{$_('cost.cost_header')}</th></tr></thead>
     <tbody>
       {#each tk.by_agent as a}
         <tr>
@@ -98,22 +99,22 @@
           <td class="num" style="text-align:right">{usd(a.cost_usd)}</td>
         </tr>
       {/each}
-      {#if !tk.by_agent.length}<tr><td colspan="4" class="mut">Belum ada call agent tercatat.</td></tr>{/if}
+      {#if !tk.by_agent.length}<tr><td colspan="4" class="mut">{$_('cost.no_agent_calls')}</td></tr>{/if}
     </tbody>
   </table>
 </div>
 
 <div class="card" style="margin-top:14px">
-  <h3>Request volume cliproxy <span class="mut">— liveness per provider</span></h3>
+  <h3>{$_('cost.request_volume')} <span class="mut">{$_('cost.liveness_provider')}</span></h3>
   <table>
-    <thead><tr><th>Provider</th><th class="num" style="text-align:right">Request</th><th class="num" style="text-align:right">Gagal</th></tr></thead>
+    <thead><tr><th>{$_('cost.provider_header')}</th><th class="num" style="text-align:right">{$_('cost.request_header')}</th><th class="num" style="text-align:right">{$_('cost.failed_header')}</th></tr></thead>
     <tbody>
       {#each cx.providers as p}
         <tr><td>{p.name}</td><td class="num" style="text-align:right">{p.requests}</td><td class="num {p.failed ? 'down' : 'mut'}" style="text-align:right">{p.failed}</td></tr>
       {/each}
-      {#if !cx.providers.length}<tr><td colspan="3" class="mut">Belum ada request.</td></tr>{/if}
+      {#if !cx.providers.length}<tr><td colspan="3" class="mut">{$_('cost.no_requests')}</td></tr>{/if}
     </tbody>
   </table>
 </div>
 
-<div class="note">✅ Biaya token = <b>asli</b> (tiap call LLM dicatat di <code>api_usage</code> dgn prompt/completion token, dihargai pakai price table di pipeline-api). Request volume cliproxy buat liveness. {#if err}· <span class="down">{err}</span>{/if}</div>
+<div class="note">✅ {$_('cost.cost_note')} {#if err}· <span class="down">{err}</span>{/if}</div>

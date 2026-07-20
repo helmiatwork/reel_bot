@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte'
+  import { _ } from 'svelte-i18n'
   import { api, fmtViews } from '../lib/api.js'
   import { FORMULAS } from '../lib/data.js'
   import { openDrawer } from '../lib/stores.js'
@@ -24,13 +25,13 @@
 </script>
 
 <div class="top">
-  <div><h1>Formulas</h1><div class="sub">Struktur viral — diurut performa (avg views per formula)</div></div>
+  <div><h1>{$_('formulas.title')}</h1><div class="sub">{$_('formulas.subtitle')}</div></div>
   <div class="pill">{formulas.length} formula</div>
 </div>
 
 {#if hasPerf}
   <div class="note" style="background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.25);color:#6ee7b7;margin-top:0;margin-bottom:14px">
-    ✅ Diurut dari avg views tertinggi — formula paling atas = paling perform di source kamu.
+    {$_('formulas.sorted_by_views')}
   </div>
 {/if}
 
@@ -40,7 +41,7 @@
       <div class="fcard" onclick={() => openDrawer('formula', f)}>
         <div class="t" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           {f.slug}
-          {#if f.db}<span class="m-chip s-active">di DB</span>{:else}<span class="m-chip s-mod">usul</span>{/if}
+          {#if f.db}<span class="m-chip s-active">{$_('formulas.in_db')}</span>{:else}<span class="m-chip s-mod">{$_('formulas.suggested')}</span>{/if}
           {#if f.n > 0}<span class="m-chip m-vision" style="margin-left:auto">{fmtViews(f.avg_views)} avg · {f.n} src</span>{/if}
         </div>
         <div class="s">{f.face} · Best: {f.best}</div>

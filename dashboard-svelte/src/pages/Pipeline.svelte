@@ -1,5 +1,6 @@
 <script>
   import { onMount, onDestroy } from 'svelte'
+  import { _ } from 'svelte-i18n'
   import { api } from '../lib/api.js'
   import { PIECES, KANBAN_COLS } from '../lib/data.js'
   import { openDrawer } from '../lib/stores.js'
@@ -71,30 +72,30 @@
 </script>
 
 <div class="top">
-  <div><h1>Pipeline</h1><div class="sub">content_pieces (mock) + live runs dari pipeline-api</div></div>
+  <div><h1>{$_('pipeline.title')}</h1><div class="sub">{$_('pipeline.subtitle')}</div></div>
   <div class="pill">{runs.length} run</div>
 </div>
 
 <!-- trigger -->
 <div class="card" style="margin-bottom:16px">
-  <h3>Trigger pipeline</h3>
+  <h3>{$_('pipeline.trigger_pipeline')}</h3>
   <div class="filters" style="margin-bottom:10px">
     <select bind:value={mode}>
-      <option value="discover">Discover (AI cari video dari niche)</option>
-      <option value="url">URL (analisa video spesifik)</option>
+      <option value="discover">{$_('pipeline.discover_niche')}</option>
+      <option value="url">{$_('pipeline.analyze_url')}</option>
     </select>
   </div>
   {#if mode === 'discover'}
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <input class="input" style="max-width:240px" placeholder="niche, mis. kuliner viral Indonesia" bind:value={niche} />
-      <input class="input" style="max-width:240px" placeholder="topic (opsional)" bind:value={topic} />
-      <button class="btn" disabled={busy} onclick={trigger}>{busy ? '…' : 'Cari + produksi'}</button>
+      <input class="input" style="max-width:240px" placeholder={$_('pipeline.niche_placeholder')} bind:value={niche} />
+      <input class="input" style="max-width:240px" placeholder={$_('pipeline.topic_optional')} bind:value={topic} />
+      <button class="btn" disabled={busy} onclick={trigger}>{busy ? '…' : $_('pipeline.search_produce')}</button>
     </div>
   {:else}
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <input class="input" style="max-width:320px" placeholder="https://youtube.com/shorts/…" bind:value={url} />
-      <input class="input" style="max-width:200px" placeholder="topic (opsional)" bind:value={topic} />
-      <button class="btn" disabled={busy} onclick={trigger}>{busy ? '…' : 'Riset video'}</button>
+      <input class="input" style="max-width:320px" placeholder={$_('pipeline.url_placeholder')} bind:value={url} />
+      <input class="input" style="max-width:200px" placeholder={$_('pipeline.topic_optional')} bind:value={topic} />
+      <button class="btn" disabled={busy} onclick={trigger}>{busy ? '…' : $_('pipeline.research_video')}</button>
     </div>
   {/if}
   {#if msg}<div class="mut" style="font-size:12px;margin-top:8px">{msg}</div>{/if}
@@ -103,9 +104,9 @@
 <!-- live runs + detail -->
 <div class="grid2" style="margin-bottom:16px">
   <div class="card">
-    <h3>Run terbaru</h3>
+    <h3>{$_('pipeline.latest_runs')}</h3>
     <table>
-      <thead><tr><th>Topic / URL</th><th>Step</th><th>Status</th></tr></thead>
+      <thead><tr><th>{$_('pipeline.topic_url_header')}</th><th>{$_('pipeline.step_header')}</th><th>{$_('pipeline.status_header')}</th></tr></thead>
       <tbody>
         {#each runs as r}
           <tr onclick={() => openRun(r.run_id)}>
@@ -117,13 +118,13 @@
             </td>
           </tr>
         {/each}
-        {#if !runs.length}<tr><td colspan="3" class="mut">Belum ada run. Trigger di atas.</td></tr>{/if}
+        {#if !runs.length}<tr><td colspan="3" class="mut">{$_('pipeline.no_runs')}</td></tr>{/if}
       </tbody>
     </table>
   </div>
 
   <div class="card">
-    <h3>Detail run</h3>
+    <h3>{$_('pipeline.run_detail')}</h3>
     {#if selected}
       <div class="kv" style="border:0;padding:4px 0"><span>{selected.topic || selected.youtube_url || ''}</span></div>
 
@@ -149,33 +150,33 @@
 
       {#if selected.discover?.picks?.length || Array.isArray(selected.discover)}
         {@const picks = selected.discover.picks || selected.discover}
-        <h3 style="margin:14px 0 6px;font-size:13px">Kandidat discover</h3>
+        <h3 style="margin:14px 0 6px;font-size:13px">{$_('pipeline.discover_candidates')}</h3>
         {#each picks.slice(0, 5) as c, i}
           <div class="kv"><span>#{i + 1} {c.title || c.video_id || c.url || '-'}</span><span class="num mut">{c.score ?? c.rank ?? ''}</span></div>
         {/each}
       {/if}
 
       {#if selected.audio}
-        <h3 style="margin:14px 0 6px;font-size:13px">Audio</h3>
-        {#if selected.audio.loudness_lufs ?? selected.audio.lufs}<div class="kv"><span>Loudness</span><span class="num">{selected.audio.loudness_lufs ?? selected.audio.lufs} LUFS</span></div>{/if}
-        {#if selected.audio.peak_db ?? selected.audio.peak}<div class="kv"><span>Peak</span><span class="num">{selected.audio.peak_db ?? selected.audio.peak} dB</span></div>{/if}
-        {#if selected.audio.onsets || selected.audio.silence_count}<div class="kv"><span>Onsets / silence</span><span class="num">{selected.audio.onsets ?? '-'} / {selected.audio.silence_count ?? '-'}</span></div>{/if}
+        <h3 style="margin:14px 0 6px;font-size:13px">{$_('pipeline.audio_section')}</h3>
+        {#if selected.audio.loudness_lufs ?? selected.audio.lufs}<div class="kv"><span>{$_('pipeline.loudness')}</span><span class="num">{selected.audio.loudness_lufs ?? selected.audio.lufs} {$_('pipeline.lufs')}</span></div>{/if}
+        {#if selected.audio.peak_db ?? selected.audio.peak}<div class="kv"><span>{$_('pipeline.peak')}</span><span class="num">{selected.audio.peak_db ?? selected.audio.peak} {$_('pipeline.db')}</span></div>{/if}
+        {#if selected.audio.onsets || selected.audio.silence_count}<div class="kv"><span>{$_('pipeline.onsets_silence')}</span><span class="num">{selected.audio.onsets ?? '-'} / {selected.audio.silence_count ?? '-'}</span></div>{/if}
         {#if selected.audio.transcript}<p class="mut" style="font-size:12px;margin-top:6px">{String(selected.audio.transcript).slice(0, 240)}…</p>{/if}
       {/if}
 
       {#if selected.script}
-        <h3 style="margin:14px 0 6px;font-size:13px">Script</h3>
-        <div class="kv"><span>Judul</span><span style="text-align:right;max-width:62%">{selected.script.title || '-'}</span></div>
-        <div class="kv"><span>Formula</span><span>{selected.script.formula || '-'}</span></div>
-        <div class="kv"><span>Hook</span><span style="text-align:right;max-width:62%">{selected.script.hook || '-'}</span></div>
-        <div class="kv"><span>Durasi</span><span>{selected.script.target_duration_sec || '-'}s</span></div>
+        <h3 style="margin:14px 0 6px;font-size:13px">{$_('pipeline.script_section')}</h3>
+        <div class="kv"><span>{$_('pipeline.title')}</span><span style="text-align:right;max-width:62%">{selected.script.title || '-'}</span></div>
+        <div class="kv"><span>{$_('pipeline.formula')}</span><span>{selected.script.formula || '-'}</span></div>
+        <div class="kv"><span>{$_('pipeline.hook')}</span><span style="text-align:right;max-width:62%">{selected.script.hook || '-'}</span></div>
+        <div class="kv"><span>{$_('pipeline.duration')}</span><span>{selected.script.target_duration_sec || '-'}s</span></div>
       {/if}
 
       {#if selected.save?.output_file || selected.status === 'done'}
-        <h3 style="margin:14px 0 6px;font-size:13px">Artifact hasil</h3>
+        <h3 style="margin:14px 0 6px;font-size:13px">{$_('pipeline.artifact_results')}</h3>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn" onclick={loadArtifact} disabled={artLoading}>{artLoading ? '…' : 'Lihat output'}</button>
-          <a class="btn" style="background:#1b2433;color:var(--txt)" href={api.artifactDownloadUrl(selected.run_id)} download>⬇ Download JSON</a>
+          <button class="btn" onclick={loadArtifact} disabled={artLoading}>{artLoading ? '…' : $_('pipeline.view_output')}</button>
+          <a class="btn" style="background:#1b2433;color:var(--txt)" href={api.artifactDownloadUrl(selected.run_id)} download>{$_('pipeline.download_json')}</a>
         </div>
         {#if artifact?.content?.beats || artifact?.content?.script?.beats}
           {@const beats = artifact.content.beats || artifact.content.script.beats}
@@ -190,14 +191,14 @@
         {/if}
       {/if}
     {:else}
-      <p class="mut" style="font-size:12.5px">Klik salah satu run buat lihat step + script + artifact.</p>
+      <p class="mut" style="font-size:12.5px">{$_('pipeline.click_to_view')}</p>
     {/if}
   </div>
 </div>
 
 <!-- kanban (mock) -->
 <div class="card">
-  <h3>Board content_pieces <span class="mut">— mock (belum ada endpoint)</span></h3>
+  <h3>{$_('pipeline.content_pieces_board')} <span class="mut">{$_('pipeline.mock_no_endpoint')}</span></h3>
   <div class="kanban">
     {#each KANBAN_COLS as col}
       <div class="col">

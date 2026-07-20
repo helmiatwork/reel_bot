@@ -1,9 +1,16 @@
 <script>
   import { onDestroy } from 'svelte'
+  import { _ } from 'svelte-i18n'
   import { api } from '../lib/api.js'
 
   const STAGES = ['idea', 'script', 'prep', 'scheduled', 'posted']
-  const STAGE_LABELS = { idea: 'Idea', script: 'Script', prep: 'Prep', scheduled: 'Scheduled', posted: 'Posted' }
+  const STAGE_LABELS = {
+    idea: 'Idea',
+    script: 'Script',
+    prep: 'Prep',
+    scheduled: 'Scheduled',
+    posted: 'Posted'
+  }
 
   // ── Board state ───────────────────────────────────────────────────────────────
   let board = $state({ idea: [], script: [], prep: [], scheduled: [], posted: [] })
@@ -15,7 +22,7 @@
     boardError = ''
     const r = await api.studioBoard()
     boardLoading = false
-    if (!r) { boardError = 'Failed to load board — is the backend running?'; return }
+    if (!r) { boardError = $_('studio.board_load_error'); return }
     board = r
   }
 
@@ -138,19 +145,19 @@
 <div class="studio">
   <div class="page-top">
     <div>
-      <h1>Studio</h1>
-      <div class="sub">Batch-generate scripts and track every piece from idea to posted.</div>
+      <h1>{$_('studio.title')}</h1>
+      <div class="sub">{$_('studio.subtitle')}</div>
     </div>
   </div>
 
   <!-- Batch generate form -->
   <div class="batch-form panel">
     <div class="form-row">
-      <input class="inp" placeholder="Niche (required)" bind:value={batchNiche} disabled={batchBusy} />
-      <input class="inp" placeholder="Topic (optional — auto-derived if blank)" bind:value={batchTopic} disabled={batchBusy} />
-      <input class="inp num" type="number" min="1" max="20" bind:value={batchCount} disabled={batchBusy} title="Count (max 20)" />
+      <input class="inp" placeholder={$_('studio.niche_placeholder')} bind:value={batchNiche} disabled={batchBusy} />
+      <input class="inp" placeholder={$_('studio.topic_placeholder')} bind:value={batchTopic} disabled={batchBusy} />
+      <input class="inp num" type="number" min="1" max="20" bind:value={batchCount} disabled={batchBusy} title={$_('studio.count_title')} />
       <button class="btn-primary" onclick={startBatch} disabled={batchBusy || !batchNiche.trim()}>
-        {batchBusy ? 'Generating…' : 'Generate'}
+        {batchBusy ? $_('studio.generating_btn') : $_('studio.generate_btn')}
       </button>
     </div>
     {#if batchError}<div class="err">{batchError}</div>{/if}
@@ -159,11 +166,11 @@
         <div class="prog-bar"><div class="prog-fill" style="width:{batchProgress.total > 0 ? Math.round(batchProgress.done / batchProgress.total * 100) : 0}%"></div></div>
         <span class="prog-label">
           {#if batchProgress.status === 'done'}
-            Done — {batchProgress.created_ids?.length ?? 0} scripts created
+            {$_('studio.done_progress', { values: { count: batchProgress.created_ids?.length ?? 0 } })}
           {:else if batchProgress.status === 'error'}
-            Error: {batchProgress.error || 'unknown'}
+            {$_('studio.error_progress', { values: { error: batchProgress.error || 'unknown' } })}
           {:else}
-            {batchProgress.done}/{batchProgress.total} generated…
+            {$_('studio.progress_generating', { values: { done: batchProgress.done, total: batchProgress.total } })}
           {/if}
         </span>
       </div>
@@ -180,8 +187,8 @@
           <rect x="3" y="3" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="17" width="18" height="4" rx="1"/>
         </svg>
       </div>
-      <div class="empty-title">Board is empty</div>
-      <div class="mut">Batch-generate scripts above, or add an idea manually below.</div>
+      <div class="empty-title">{$_('studio.board_empty_title')}</div>
+      <div class="mut">{$_('studio.board_empty_msg')}</div>
     </div>
   {:else}
     <div class="board">
@@ -201,10 +208,10 @@
                 {/if}
                 <div class="card-actions" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="group" aria-label="Move card">
                   {#if prevStage(stage)}
-                    <button class="move-btn" title="Move to {STAGE_LABELS[prevStage(stage)]}" onclick={() => moveCard(card.id, prevStage(stage))}>←</button>
+                    <button class="move-btn" title={$_('studio.move_to', { values: { stage: STAGE_LABELS[prevStage(stage)] } })} onclick={() => moveCard(card.id, prevStage(stage))}>←</button>
                   {/if}
                   {#if nextStage(stage)}
-                    <button class="move-btn" title="Move to {STAGE_LABELS[nextStage(stage)]}" onclick={() => moveCard(card.id, nextStage(stage))}>→</button>
+                    <button class="move-btn" title={$_('studio.move_to', { values: { stage: STAGE_LABELS[nextStage(stage)] } })} onclick={() => moveCard(card.id, nextStage(stage))}>→</button>
                   {/if}
                 </div>
               </div>
@@ -212,8 +219,8 @@
 
             {#if stage === 'idea'}
               <div class="add-idea">
-                <input class="inp add-inp" placeholder="+ Add idea…" bind:value={addTitle} onkeydown={onAddKey} disabled={addBusy} />
-                <button class="btn-ghost" onclick={addIdea} disabled={addBusy || !addTitle.trim()}>Add</button>
+                <input class="inp add-inp" placeholder={$_('studio.add_idea_placeholder')} bind:value={addTitle} onkeydown={onAddKey} disabled={addBusy} />
+                <button class="btn-ghost" onclick={addIdea} disabled={addBusy || !addTitle.trim()}>{$_('studio.add_idea_btn')}</button>
               </div>
             {/if}
           </div>
@@ -228,12 +235,12 @@
   <div class="overlay" role="dialog" aria-modal="true" onclick={closeModal} onkeydown={(e) => e.key === 'Escape' && closeModal()}>
     <div class="modal" role="document" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
       <div class="modal-head">
-        <input class="modal-title-inp" bind:value={modal.editTitle} placeholder="Title" />
-        <button class="icon-btn" onclick={closeModal} title="Close" aria-label="Close">✕</button>
+        <input class="modal-title-inp" bind:value={modal.editTitle} placeholder={$_('studio.title_placeholder')} />
+        <button class="icon-btn" onclick={closeModal} title={$_('studio.close_btn')} aria-label={$_('studio.close_btn')}>✕</button>
       </div>
 
       {#if modalLoading}
-        <div class="mut" style="padding:16px">Loading…</div>
+        <div class="mut" style="padding:16px">{$_('studio.modal_loading')}</div>
       {:else}
         <div class="modal-meta">
           {#if modal.item.niche}<span class="niche-badge">{modal.item.niche}</span>{/if}
@@ -243,12 +250,12 @@
         <textarea class="modal-script" rows="14" bind:value={modal.editScript} placeholder="Script will appear here…"></textarea>
         <div class="modal-foot">
           <button class="btn-danger" onclick={() => deleteCard(modal.item.id)} disabled={modal.deleting}>
-            {modal.deleting ? 'Deleting…' : 'Delete'}
+            {modal.deleting ? $_('studio.deleting_btn') : $_('studio.delete_btn')}
           </button>
           <div style="flex:1"></div>
-          <button class="btn-ghost" onclick={closeModal}>Cancel</button>
+          <button class="btn-ghost" onclick={closeModal}>{$_('studio.cancel_btn')}</button>
           <button class="btn-primary" onclick={saveModal} disabled={modal.saving}>
-            {modal.saving ? 'Saving…' : 'Save'}
+            {modal.saving ? $_('studio.saving_btn') : $_('studio.save_btn')}
           </button>
         </div>
       {/if}

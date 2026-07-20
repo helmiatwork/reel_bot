@@ -1,61 +1,51 @@
 <script>
+  import { _ } from 'svelte-i18n'
   import { fade, fly, scale } from 'svelte/transition'
   import { cubicOut } from 'svelte/easing'
 
   let { open = $bindable(false) } = $props()
 
+  let stepTitles = []
+  let stepBodies = []
+
+  $effect(() => {
+    stepTitles = [
+      $_('howItWorks.ingest_title'),
+      $_('howItWorks.analyze_title'),
+      $_('howItWorks.discover_corpus_title'),
+      $_('howItWorks.studio_title'),
+      $_('howItWorks.prep_title'),
+      $_('howItWorks.roughcut_title'),
+      $_('howItWorks.download_title'),
+      $_('howItWorks.schedule_title'),
+      $_('howItWorks.performance_title'),
+      $_('howItWorks.winner_title')
+    ]
+    stepBodies = [
+      $_('howItWorks.ingest_body'),
+      $_('howItWorks.analyze_body'),
+      $_('howItWorks.discover_corpus_body'),
+      $_('howItWorks.studio_body'),
+      $_('howItWorks.prep_body'),
+      $_('howItWorks.roughcut_body'),
+      $_('howItWorks.download_body'),
+      $_('howItWorks.schedule_body'),
+      $_('howItWorks.performance_body'),
+      $_('howItWorks.winner_body')
+    ]
+  })
+
   const STEPS = [
-    {
-      icon: '#i-yt',
-      title: 'Ingest',
-      body: 'Download source videos from YouTube, TikTok, Instagram, and Xiaohongshu. Cookies are managed per account so you never hit auth walls.',
-      brand: true
-    },
-    {
-      icon: '#i-film',
-      title: 'Analyze',
-      body: 'Frame-by-frame + viral-structure analysis extracts your hook quality, retention curve, structure map, and auto-tags — all stored in the corpus.'
-    },
-    {
-      icon: '#i-search',
-      title: 'Discover corpus',
-      body: 'Auto-find top-performing competitor videos by niche, pull them in, and analyze them. Your reference library grows without manual hunting.'
-    },
-    {
-      icon: '#i-spark',
-      title: 'Studio',
-      body: 'Batch-generate ready-to-shoot scripts that clone the winning formula. Track every piece on a Kanban board — idea → script → prep → scheduled → posted.'
-    },
-    {
-      icon: '#i-bot',
-      title: 'Prep',
-      body: 'Per content piece, gather everything in one place: HD source, clips, chosen BGM, transcript, strategy notes, and the full SEO pack.'
-    },
-    {
-      icon: '#i-film',
-      title: 'Rough-cut + captions',
-      body: 'Auto-assemble a 9:16 reference draft with burned-in captions and your background music — a preview cut, not the final edit.'
-    },
-    {
-      icon: '#i-expand',
-      title: 'Download ZIP → CapCut',
-      body: 'One click bundles all assets into a ZIP. Finish the precise edit in CapCut where you have full manual control over every cut.'
-    },
-    {
-      icon: '#i-cal',
-      title: 'Schedule (Jadwal Post)',
-      body: 'Plan and schedule posts per platform across multiple accounts. Set the calendar once; Reelbot handles the queue.'
-    },
-    {
-      icon: '#i-dollar',
-      title: 'Performance',
-      body: 'Track views, revenue, and RPM per platform and account over time. See exactly which niches and formats are earning.'
-    },
-    {
-      icon: '#i-spark',
-      title: 'Winner-clone',
-      body: 'Turn your best-performing videos into fresh variation scripts, dropped back into Studio. The loop repeats — research → produce → publish → measure → double-down.'
-    }
+    { icon: '#i-yt', brand: true },
+    { icon: '#i-film' },
+    { icon: '#i-search' },
+    { icon: '#i-spark' },
+    { icon: '#i-bot' },
+    { icon: '#i-film' },
+    { icon: '#i-expand' },
+    { icon: '#i-cal' },
+    { icon: '#i-dollar' },
+    { icon: '#i-spark' }
   ]
 
   let step = $state(0)
@@ -137,10 +127,10 @@
     <div class="hiw-head">
       <div class="hiw-title-row">
         <svg class="ic hiw-logo-icon"><use href="#i-spark"/></svg>
-        <span class="hiw-title">How Reelbot works</span>
-        <span class="hiw-counter">Step {step + 1} of {STEPS.length}</span>
+        <span class="hiw-title">{$_('howItWorks.title')}</span>
+        <span class="hiw-counter">{$_('howItWorks.step_counter', { values: { step: step + 1, total: STEPS.length } })}</span>
       </div>
-      <button class="hiw-close" onclick={close} aria-label="Close walkthrough">
+      <button class="hiw-close" onclick={close} aria-label={$_('howItWorks.close')}>
         <svg class="ic"><use href="#i-x"/></svg>
       </button>
     </div>
@@ -162,8 +152,8 @@
             <svg class="hiw-step-icon"><use href={STEPS[step].icon}/></svg>
           </div>
           <div class="hiw-step-num">0{step + 1}</div>
-          <h2 class="hiw-step-title">{STEPS[step].title}</h2>
-          <p class="hiw-step-body">{STEPS[step].body}</p>
+          <h2 class="hiw-step-title">{stepTitles[step]}</h2>
+          <p class="hiw-step-body">{stepBodies[step]}</p>
         </div>
       {/key}
     </div>
@@ -188,16 +178,16 @@
         class="hiw-btn hiw-btn-ghost"
         onclick={prev}
         disabled={step === 0}
-        aria-label="Previous step"
-      >← Back</button>
+        aria-label={$_('howItWorks.prev_step')}
+      >{$_('howItWorks.back')}</button>
 
       {#if step < STEPS.length - 1}
-        <button class="hiw-btn hiw-btn-primary" onclick={next} aria-label="Next step">
-          Next →
+        <button class="hiw-btn hiw-btn-primary" onclick={next} aria-label={$_('howItWorks.next_step')}>
+          {$_('howItWorks.next')}
         </button>
       {:else}
-        <button class="hiw-btn hiw-btn-primary" onclick={close} aria-label="Close walkthrough">
-          Got it ✓
+        <button class="hiw-btn hiw-btn-primary" onclick={close} aria-label={$_('howItWorks.close_final')}>
+          {$_('howItWorks.done')}
         </button>
       {/if}
     </div>

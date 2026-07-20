@@ -1,5 +1,6 @@
 <script>
   import { onDestroy } from 'svelte'
+  import { _ } from 'svelte-i18n'
   import { api } from '../lib/api.js'
 
   let tab = $state('script')  // 'script' | 'corpus'
@@ -19,10 +20,10 @@
     result = null
     const r = await api.generateScript(topic.trim(), niche.trim(), Number(top_n))
     genLoading = false
-    if (!r) { genError = 'Request failed — is the backend running?'; return }
+    if (!r) { genError = $_('generate.request_failed'); return }
     if (r.detail) { genError = r.detail; return }
     if (r.error)  { genError = r.error;  return }
-    if (!r.script) { genError = 'No corpus found for this niche — fill the corpus first.'; return }
+    if (!r.script) { genError = $_('generate.no_corpus_error'); return }
     result = r
   }
 
@@ -59,7 +60,7 @@
     const r = await api.discoverCorpus(corpusNiche.trim(), Number(corpusCount))
     if (!r || !r.run_id) {
       corpusLoading = false
-      corpusError = r?.error || r?.detail || 'Failed to start — is the backend running?'
+      corpusError = r?.error || r?.detail || $_('generate.request_failed')
       return
     }
     // poll every 15 s; also fire immediately
@@ -73,15 +74,15 @@
 <div class="gen">
   <div class="top">
     <div>
-      <h1>Generate</h1>
-      <div class="sub">Generate a script from the corpus, or fill the corpus with new sources from a niche.</div>
+      <h1>{$_('generate.title')}</h1>
+      <div class="sub">{$_('generate.subtitle')}</div>
     </div>
   </div>
 
   <!-- tabs — same pattern as Discover.svelte -->
   <div class="tabs">
-    <button class="tab" class:on={tab === 'script'} onclick={() => { tab = 'script' }}>Script</button>
-    <button class="tab" class:on={tab === 'corpus'} onclick={() => { tab = 'corpus' }}>Fill corpus</button>
+    <button class="tab" class:on={tab === 'script'} onclick={() => { tab = 'script' }}>{$_('generate.script_tab')}</button>
+    <button class="tab" class:on={tab === 'corpus'} onclick={() => { tab = 'corpus' }}>{$_('generate.corpus_tab')}</button>
   </div>
 
   {#if tab === 'script'}
@@ -92,8 +93,8 @@
         <input
           bind:value={topic}
           onkeydown={onTopicKey}
-          placeholder="Topic — e.g. street food viral di Tokyo"
-          aria-label="Topic"
+          placeholder={$_('generate.topic_placeholder')}
+          aria-label={$_('generate.topic_placeholder')}
           disabled={genLoading}
         />
       </label>
@@ -101,23 +102,23 @@
         <span class="ico">🏷</span>
         <input
           bind:value={niche}
-          placeholder="Niche (optional)"
-          aria-label="Niche"
+          placeholder={$_('generate.niche_placeholder')}
+          aria-label={$_('generate.niche_placeholder')}
           disabled={genLoading}
         />
       </label>
       <label class="num-label" aria-label="top_n sources">
-        <span class="mut" style="font-size:11px">top_n</span>
+        <span class="mut" style="font-size:11px">{$_('generate.top_n_label')}</span>
         <input type="number" class="num-inp" bind:value={top_n} min="1" max="20"
                disabled={genLoading} aria-label="top_n" />
       </label>
       <button class="run-btn" onclick={generate} disabled={genLoading || !topic.trim()}>
-        {genLoading ? '…' : 'Generate'}
+        {genLoading ? '…' : $_('generate.generate_btn')}
       </button>
     </div>
 
     {#if genLoading}
-      <div class="state-msg mut">Generating… this can take 1–2 min.</div>
+      <div class="state-msg mut">{$_('generate.generating_state')}</div>
     {/if}
 
     {#if genError && !genLoading}
@@ -136,7 +137,7 @@
 
         {#if result.based_on?.length}
           <div class="based-on">
-            <div class="based-label mut">Based on {result.based_on.length} source{result.based_on.length !== 1 ? 's' : ''}</div>
+            <div class="based-label mut">{$_('generate.based_on', { values: { count: result.based_on.length, plural: result.based_on.length !== 1 ? 's' : '' } })}</div>
             <div class="based-list">
               {#each result.based_on as url}
                 <a href={url} target="_blank" rel="noopener noreferrer" class="src-link">{url}</a>
@@ -148,7 +149,7 @@
     {/if}
 
     {#if !genLoading && !genError && !result}
-      <div class="state-msg mut">Enter a topic and press Generate.</div>
+      <div class="state-msg mut">{$_('generate.enter_topic_state')}</div>
     {/if}
 
   {:else}
@@ -158,19 +159,19 @@
         <span class="ico">🔖</span>
         <input
           bind:value={corpusNiche}
-          placeholder="Niche — e.g. japanese street food"
-          aria-label="Niche"
+          placeholder={$_('generate.corpus_placeholder')}
+          aria-label={$_('generate.niche_placeholder')}
           disabled={corpusLoading}
           onkeydown={(e) => e.key === 'Enter' && startCorpus()}
         />
       </label>
       <label class="num-label" aria-label="Count">
-        <span class="mut" style="font-size:11px">count</span>
+        <span class="mut" style="font-size:11px">{$_('generate.count_label')}</span>
         <input type="number" class="num-inp" bind:value={corpusCount} min="1" max="50"
                disabled={corpusLoading} aria-label="count" />
       </label>
       <button class="run-btn" onclick={startCorpus} disabled={corpusLoading || !corpusNiche.trim()}>
-        {corpusLoading ? '…' : 'Start'}
+        {corpusLoading ? '…' : $_('generate.start_btn')}
       </button>
     </div>
 
@@ -194,11 +195,11 @@
           {/if}
         </div>
         {#if st.status === 'running'}
-          <div class="mut" style="font-size:12px;margin-top:6px">Polling every 15 s…</div>
+          <div class="mut" style="font-size:12px;margin-top:6px">{$_('generate.polling_state')}</div>
         {/if}
       </div>
     {:else if !corpusLoading}
-      <div class="state-msg mut">Enter a niche and press Start to fill the corpus.</div>
+      <div class="state-msg mut">{$_('generate.enter_niche_state')}</div>
     {/if}
   {/if}
 </div>

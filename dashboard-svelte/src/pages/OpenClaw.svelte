@@ -1,5 +1,6 @@
 <script>
   import { onMount, onDestroy, tick } from 'svelte'
+  import { _ } from 'svelte-i18n'
   import { api, extractRunId } from '../lib/api.js'
 
   // ── Session sidebar state ─────────────────────────────────────────────────
@@ -76,7 +77,7 @@
 
   async function deleteSession(e, key) {
     e.stopPropagation()
-    if (!window.confirm('Delete this session? This cannot be undone.')) return
+    if (!window.confirm($_('openclaw.delete_session_confirmation'))) return
     const res = await api.chatSessionDelete(key)
     if (res && (res.deleted >= 1 || res.sid)) {
       // Remove from list immediately
@@ -102,7 +103,7 @@
   function WELCOME_MSG() {
     return {
       role: 'assistant',
-      text: 'Halo! Kirim URL YouTube atau topik. Untuk video panjang, aku bisa cariin momen clippable terbaik. 🎬',
+      text: $_('openclaw.welcome_message') || 'Halo! Kirim URL YouTube atau topik. Untuk video panjang, aku bisa cariin momen clippable terbaik. 🎬',
       streaming: false,
       runId: null
     }
@@ -122,12 +123,17 @@
   // The agent dropdown is cosmetic; backend uses a fixed OPENCLAW_MODEL.
   // Tooltip on select reads "agent routing pending backend support".
 
-  const CHIPS = [
-    { label: '📋 Cari clip dari URL', prompt: 'tolong cari clip terbaik dari video ini: ' },
-    { label: '✍️ Tulis script Short', prompt: 'tolong tulis script Short viral untuk topik: ' },
-    { label: '📊 Analisa video', prompt: 'tolong analisa video ini dan berikan insight: ' },
-    { label: '🎯 Saran formula viral', prompt: 'berikan saran formula konten viral untuk niche: ' }
-  ]
+  // Chips will be initialized with translations in effect
+  let CHIPS = $state([])
+
+  $effect(() => {
+    CHIPS = [
+      { label: $_('openclaw.chip_find_clips'), prompt: $_('openclaw.chip_find_clips_prompt') },
+      { label: $_('openclaw.chip_write_script'), prompt: $_('openclaw.chip_write_script_prompt') },
+      { label: $_('openclaw.chip_analyze_video'), prompt: $_('openclaw.chip_analyze_video_prompt') },
+      { label: $_('openclaw.chip_viral_formula'), prompt: $_('openclaw.chip_viral_formula_prompt') }
+    ]
+  })
 
   const timers = new Set()
   let abortChat = null
@@ -211,7 +217,8 @@
           scrollDown()
         },
         onError: (err) => {
-          messages[ai].text += (messages[ai].text ? '\n\n' : '') + `Gagal: ${err}`
+          const errorPrefix = $_('openclaw.error_message_prefix')
+          messages[ai].text += (messages[ai].text ? '\n\n' : '') + `${errorPrefix} ${err}`
           messages[ai].streaming = false
           busy = false
           abortChat = null
@@ -276,14 +283,14 @@
   <!-- ── Session Sidebar ──────────────────────────────────────────────── -->
   <aside class="oc-sidebar">
     <button class="oc-new-btn" onclick={newChat} aria-label="New chat">
-      <span class="oc-new-icon">＋</span> New chat
+      <span class="oc-new-icon">＋</span> {$_('openclaw.new_chat_btn')}
     </button>
 
     <div class="oc-session-list" role="list" aria-label="Chat sessions">
       {#if sidebarLoading && sessions.length === 0}
-        <div class="oc-sidebar-empty">Loading…</div>
+        <div class="oc-sidebar-empty">{$_('openclaw.session_list_loading')}</div>
       {:else if sessions.length === 0}
-        <div class="oc-sidebar-empty">No sessions yet</div>
+        <div class="oc-sidebar-empty">{$_('openclaw.session_list_empty')}</div>
       {:else}
         {#each sessions as s}
           <div
@@ -319,7 +326,7 @@
     <!-- Footer: active session short-id -->
     {#if activeKey}
       <div class="oc-sidebar-footer" title={activeKey}>
-        session: {activeKey.slice(0, 8)}
+        {$_('openclaw.session_footer')} {activeKey.slice(0, 8)}
       </div>
     {/if}
   </aside>
@@ -328,13 +335,13 @@
   <div class="oc-page">
     <!-- Header -->
     <div class="oc-top">
-      <h1 class="oc-title">🦅 OpenClaw</h1>
+      <h1 class="oc-title">{$_('openclaw.title')}</h1>
       <span class="oc-status" class:down={connStatus === 'down'} class:connecting={connStatus === 'connecting'}>
         <span class="oc-dot"></span>
-        {connStatus === 'connected' ? 'connected' : connStatus === 'down' ? 'down' : 'connecting…'}
+        {connStatus === 'connected' ? $_('openclaw.status_connected') : connStatus === 'down' ? $_('openclaw.status_down') : $_('openclaw.status_connecting')}
       </span>
       <span class="oc-agent-wrap" title="agent routing pending backend support">
-        <span class="oc-agent-label">agent</span>
+        <span class="oc-agent-label">{$_('openclaw.agent_label')}</span>
         <select class="oc-select" bind:value={selectedAgent} aria-label="Select agent">
           {#each AGENTS as a}
             <option value={a}>{a}</option>
@@ -350,7 +357,7 @@
           <div class="oc-row oc-row-me">
             <div class="oc-av" aria-hidden="true">🙂</div>
             <div class="oc-bubble oc-bubble-user">
-              <div class="oc-who">Kamu</div>
+              <div class="oc-who">{$_('openclaw.user_name')}</div>
               <p class="oc-text">{m.text}</p>
             </div>
           </div>
@@ -359,8 +366,8 @@
             <div class="oc-av" aria-hidden="true">🦅</div>
             <div class="oc-bubble oc-bubble-bot">
               <div class="oc-who">
-                OpenClaw · {selectedAgent}
-                {#if m.runId}<span class="oc-badge">run {m.runId.slice(0, 8)}</span>{/if}
+                {$_('openclaw.assistant_name')} · {selectedAgent}
+                {#if m.runId}<span class="oc-badge">{$_('openclaw.run_badge')} {m.runId.slice(0, 8)}</span>{/if}
               </div>
               {#if m.streaming && !m.text}
                 <span class="oc-typing" aria-label="Typing">
@@ -395,24 +402,24 @@
         <textarea
           class="oc-textarea"
           rows="1"
-          placeholder="Kirim URL atau perintah ke OpenClaw…"
+          placeholder={$_('openclaw.textarea_placeholder')}
           bind:value={input}
           onkeydown={onKey}
           disabled={busy}
           use:autoGrow
-          aria-label="Message input"
+          aria-label={$_('openclaw.send_aria')}
           aria-multiline="true"
         ></textarea>
         <button
           class="oc-send"
           onclick={() => send()}
           disabled={busy || !input.trim()}
-          aria-label="Send message"
+          aria-label={$_('openclaw.send_aria')}
         >{busy ? '…' : '↑'}</button>
       </div>
       <div class="oc-hint">
-        <span>Enter kirim · Shift+Enter baris baru</span>
-        <span>via /dash/chat (streaming)</span>
+        <span>{$_('openclaw.hint_send')}</span>
+        <span>{$_('openclaw.hint_via')}</span>
       </div>
     </div>
   </div>

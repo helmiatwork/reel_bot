@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte'
+  import { _ } from 'svelte-i18n'
   import { api } from '../lib/api.js'
   import Pagination from '../lib/Pagination.svelte'
 
@@ -52,28 +53,28 @@
 </script>
 
 <div class="top">
-  <div><h1>Clips</h1><div class="sub">Engine retrieval — filter atribut → timecode buat dirakit</div></div>
+  <div><h1>{$_('clips.title')}</h1><div class="sub">{$_('clips.subtitle')}</div></div>
   <div class="pill">{total || rows.length} clip</div>
 </div>
 
 <div class="filters">
   <select bind:value={gender}>
-    <option value="">Semua gender</option>
+    <option value="">{$_('clips.all_genders')}</option>
     {#each genders as g}<option value={g}>{g}</option>{/each}
   </select>
   <select bind:value={age}>
-    <option value="">Semua umur</option>
+    <option value="">{$_('clips.all_ages')}</option>
     {#each ages as a}<option value={a}>{a}</option>{/each}
   </select>
   <select bind:value={activity}>
-    <option value="">Semua aktivitas</option>
+    <option value="">{$_('clips.all_activities')}</option>
     {#each activities as a}<option value={a}>{a}</option>{/each}
   </select>
   <select bind:value={minHook}>
-    <option value={0}>Hook ≥ 0</option>
-    <option value={5}>Hook ≥ 5</option>
-    <option value={7}>Hook ≥ 7</option>
-    <option value={9}>Hook ≥ 9</option>
+    <option value={0}>{$_('clips.hook_gte_0')}</option>
+    <option value={5}>{$_('clips.hook_gte_5')}</option>
+    <option value={7}>{$_('clips.hook_gte_7')}</option>
+    <option value={9}>{$_('clips.hook_gte_9')}</option>
   </select>
 </div>
 
@@ -81,8 +82,8 @@
   <table>
     <thead>
       <tr>
-        <th>Source</th><th>Rentang</th><th>Gender</th><th>Umur</th>
-        <th>Aktivitas</th><th>Setting</th><th style="text-align:right">Hook</th>
+        <th>{$_('clips.source_header')}</th><th>{$_('clips.range_header')}</th><th>{$_('clips.gender_header')}</th><th>{$_('clips.age_header')}</th>
+        <th>{$_('clips.activity_header')}</th><th>{$_('clips.setting_header')}</th><th style="text-align:right">{$_('clips.hook_header')}</th>
       </tr>
     </thead>
     <tbody>
@@ -99,7 +100,7 @@
       {/each}
       {#if loaded && !filtered.length}
         <tr><td colspan="7" class="mut">
-          {rows.length ? 'Gak ada clip cocok filter.' : 'Tabel clips masih kosong — engine retrieval belum diisi. UI siap begitu clip masuk.'}
+          {rows.length ? $_('clips.no_matching_clips') : $_('clips.empty_clips_table')}
         </td></tr>
       {/if}
     </tbody>
@@ -108,4 +109,4 @@
 
 <Pagination {offset} {limit} {total} onprev={prev} onnext={next} />
 
-<div class="note">ℹ️ Atribut netral aja (gender-presentation, age-bracket, aktivitas, hair, setting, hook score) — sesuai desain engine. Begitu pipeline analyze ngisi <code>clips</code>, baris muncul + filter live.</div>
+<div class="note">{$_('clips.info_note')}</div>
