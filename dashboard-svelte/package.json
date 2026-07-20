@@ -14,7 +14,8 @@
     "vite": "^6.0.7"
   },
   "dependencies": {
-    "chart.js": "^4.4.7"
+    "chart.js": "^4.4.7",
+    "svelte-i18n": "^4.0.1"
   },
   "allowScripts": {
     "esbuild@0.25.12": true,
