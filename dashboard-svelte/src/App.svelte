@@ -289,7 +289,7 @@
           class="btn-restart-all"
           disabled={restartingAll}
           onclick={restartAllSvcs}
-          title="Restart all services"
+          title={$_('app.restart_all_services')}
         >{restartingAll ? '⟳' : '⟳ ' + $_('app.all')}</button>
       </div>
       <div class="lang-toggle">
@@ -332,22 +332,22 @@
         <span class="si">
           <svg class="ic"><use href="#i-search"/></svg>
         </span>
-        <input placeholder="Cari konten, tag, niche…" aria-label="Search">
+        <input placeholder={$_('app.search_placeholder')} aria-label={$_('app.search_aria')}>
       </div>
       <div class="tb-spacer"></div>
       <!-- right cluster: help · expand · moon/sun · bell · avatar -->
       <span class="tb-icon" title="How Reelbot works" onclick={() => tourOpen = true} role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && (tourOpen = true)} aria-label="Open walkthrough">
         <svg class="ic"><use href="#i-help"/></svg>
       </span>
-      <span class="tb-icon" title="Fullscreen" onclick={() => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()}>
+      <span class="tb-icon" title={$_('app.fullscreen')} onclick={() => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()}>
         <svg class="ic"><use href="#i-expand"/></svg>
       </span>
-      <span class="tb-icon" onclick={toggleTheme} title="Ganti tema">
+      <span class="tb-icon" onclick={toggleTheme} title={$_('app.change_theme')}>
         <svg class="ic"><use href={isDark ? '#i-sun' : '#i-moon'}/></svg>
       </span>
       <!-- notification bell + dropdown -->
       <div class="tb-notif-wrap" style="position:relative">
-        <span class="tb-icon" onclick={toggleNotif} title="Notifications">
+        <span class="tb-icon" onclick={toggleNotif} title={$_('app.notifications')}>
           <svg class="ic"><use href="#i-bell"/></svg>
           {#if unreadCount > 0}
             <span class="cnt">{unreadCount}</span>
@@ -355,7 +355,7 @@
         </span>
         {#if notifOpen}
           <div class="notif-panel" onclick={(e) => e.stopPropagation()}>
-            <div class="notif-head">Notifikasi</div>
+            <div class="notif-head">{$_('app.notif_head')}</div>
             {#each notifs as n (n.id)}
               <div class="notif-row" class:unread={n.ts > notifLastSeen}>
                 <div class="notif-msg">{n.msg}</div>
@@ -363,7 +363,7 @@
               </div>
             {/each}
             {#if !notifs.length}
-              <div class="notif-row"><div class="notif-msg" style="color:var(--mut)">Belum ada notifikasi</div></div>
+              <div class="notif-row"><div class="notif-msg" style="color:var(--mut)">{$_('app.no_notifs')}</div></div>
             {/if}
           </div>
         {/if}
@@ -373,7 +373,7 @@
         <div class="tb-avatar">H</div>
         <div>
           <div class="tb-nm">Helmi</div>
-          <div class="tb-rl">Owner</div>
+          <div class="tb-rl">{$_('app.owner')}</div>
         </div>
       </div>
     </div>

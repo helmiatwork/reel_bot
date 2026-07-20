@@ -258,7 +258,7 @@
               </div>
               <button
                 class="btn-delete-card"
-                title="Hapus brand"
+                title={$_('brands.delete_brand_aria')}
                 onclick={() => deleteBrand(brand)}
               >
                 <svg class="ic-del"><use href="#i-trash"/></svg>
@@ -291,7 +291,7 @@
       bind:this={brandPanelEl}
       role="dialog"
       aria-modal="true"
-      aria-label="Tambah Brand"
+      aria-label={$_('brands.add_brand_aria')}
       tabindex="-1"
       transition:scale={{ duration: 230, start: 0.94, easing: cubicOut }}
       onkeydown={(e) => trapFocus(e, false)}
@@ -409,7 +409,7 @@
                         <button
                           class="btn-connect"
                           disabled={connecting[acct.id]}
-                          title="Connect YouTube OAuth"
+                          title={$_('brands.connect_youtube_oauth')}
                           onclick={() => connectYoutube(acct)}
                         >
                           {connecting[acct.id] ? $_('brands.btn_connecting') : $_('brands.btn_connect')}
@@ -456,7 +456,7 @@
       bind:this={acctPanelEl}
       role="dialog"
       aria-modal="true"
-      aria-label="Tambah Akun"
+      aria-label={$_('brands.add_account_aria')}
       tabindex="-1"
       transition:scale={{ duration: 230, start: 0.94, easing: cubicOut }}
       onkeydown={(e) => trapFocus(e, true)}
