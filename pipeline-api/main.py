@@ -7872,9 +7872,10 @@ def analyze_gemini_ideas(youtube_url: str):
 
     # Sanitize youtube_url before embedding in instruction string (defense-in-depth)
     safe_url = youtube_url.replace('"', '')
+    safe_niche = niche.replace('"', '')
 
     # Build instruction for Gemini
-    instruction = f"""You are an expert viral content ideator for social media creators in the {niche} niche.
+    instruction = f"""You are an expert viral content ideator for social media creators in the {safe_niche} niche.
 
 RULES:
 - You have TWO MCP tools available: `get_clips` (fetch video clips) and `save_ideas` (save candidates back to reelbot).
@@ -7887,7 +7888,7 @@ IDEA FLOW STAGE 1: Brainstorm 5 Candidates
 Task:
 STEP 1: Call `get_clips(youtube_url="{safe_url}")` and WATCH every returned clip.
 
-STEP 2: Based on ONLY what you saw in the clips, brainstorm **EXACTLY 5 FRESH, UNIQUE, DISTINCT viral story candidates** for this footage, tailored to the {niche} niche. Each candidate must be a genuinely different creative direction (not minor variations of one theme) — mix grounded strategies with bold/clickbait reframes. Prioritize originality and uniqueness. It's fine for angles to be exaggerated/fictional framing (this is entertainment content ideation — the human picks which to use).
+STEP 2: Based on ONLY what you saw in the clips, brainstorm **EXACTLY 5 FRESH, UNIQUE, DISTINCT viral story candidates** for this footage, tailored to the {safe_niche} niche. Each candidate must be a genuinely different creative direction (not minor variations of one theme) — mix grounded strategies with bold/clickbait reframes. Prioritize originality and uniqueness. It's fine for angles to be exaggerated/fictional framing (this is entertainment content ideation — the human picks which to use).
 
 STEP 3: For EACH of the 5 candidates, generate:
 - title: the candidate's story name (2-3 words)
