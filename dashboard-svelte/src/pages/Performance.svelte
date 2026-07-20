@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte'
+  import { _ } from 'svelte-i18n'
   import { api, fmtViews } from '../lib/api.js'
   import LineChart from '../lib/LineChart.svelte'
   import { rangeFilter, bucket } from '../lib/perfBuckets.js'
@@ -316,7 +317,7 @@
   }
 
   async function deleteRevenue(id) {
-    if (!confirm('Delete this revenue entry?')) return
+    if (!confirm($_('performance.delete_confirmation'))) return
     await api.revenueDelete(id)
     loadRevenue()
   }
@@ -327,46 +328,46 @@
 <!-- ── Page header ──────────────────────────────────────────────────────────── -->
 <div class="top">
   <div>
-    <h1>Performance</h1>
-    <div class="sub">Views video yang sudah di-post — snapshot harian per platform</div>
+    <h1>{$_('performance.title')}</h1>
+    <div class="sub">{$_('performance.subtitle')}</div>
   </div>
   <button class="btn" onclick={doRefresh} disabled={refreshing}>
-    {refreshing ? 'Mengambil data…' : 'Refresh views'}
+    {refreshing ? $_('performance.refresh_fetching') : $_('performance.refresh_btn')}
   </button>
 </div>
 
 {#if lastRefresh}
-  <div class="sub" style="margin-bottom:12px;font-size:11.5px">Terakhir refresh: {lastRefresh}</div>
+  <div class="sub" style="margin-bottom:12px;font-size:11.5px">{$_('performance.last_refresh')} {lastRefresh}</div>
 {/if}
 
 <!-- ── Stat cards ───────────────────────────────────────────────────────────── -->
 <div class="kpis" style="margin-bottom:16px">
   <div class="card kpi">
-    <div class="label">Total Views</div>
+    <div class="label">{$_('performance.total_views')}</div>
     <div class="val">{totals.length ? fmtViews(totalViews) : '—'}</div>
   </div>
   <div class="card kpi">
-    <div class="label">Platforms tracked</div>
+    <div class="label">{$_('performance.platforms_tracked')}</div>
     <div class="val">{totals.length || '—'}</div>
   </div>
   <div class="card kpi">
-    <div class="label">Videos tracked</div>
+    <div class="label">{$_('performance.videos_tracked')}</div>
     <div class="val">{videos.length || '—'}</div>
   </div>
   <div class="card kpi">
-    <div class="label">Top platform</div>
+    <div class="label">{$_('performance.top_platform')}</div>
     <div class="val" style="font-size:18px;text-transform:capitalize">{topPlatform}</div>
   </div>
   <div class="card kpi kpi-money">
-    <div class="label">Total Revenue</div>
+    <div class="label">{$_('performance.total_revenue')}</div>
     <div class="val">{revLoading ? '…' : fmtUsd(grandRevenue)}</div>
   </div>
   <div class="card kpi kpi-money">
-    <div class="label">RPM</div>
+    <div class="label">{$_('performance.rpm')}</div>
     <div class="val">{revLoading ? '…' : fmtRpm(grandRPM)}</div>
   </div>
   <div class="card kpi kpi-money">
-    <div class="label">Total Clicks</div>
+    <div class="label">{$_('performance.total_clicks')}</div>
     <div class="val">{revLoading ? '…' : (grandClicks || '—')}</div>
   </div>
 </div>
@@ -376,7 +377,7 @@
   <!-- Platform chips -->
   <div class="pf-chips">
     <button class="pfchip" class:active={filterPlatform === 'all'} onclick={() => { filterPlatform = 'all'; filterAccount = 'all' }}>
-      Semua
+      {$_('app.all')}
     </button>
     {#each PLATFORMS_ALL as p}
       <button class="pfchip {p}" class:active={filterPlatform === p} onclick={() => { filterPlatform = p; filterAccount = 'all' }}>
@@ -389,7 +390,7 @@
   <!-- Account dropdown — only when accounts are available -->
   {#if accounts.length}
     <select class="acct-sel" value={filterAccount} onchange={e => pickAccount(e.currentTarget.value)}>
-      <option value="all">Semua akun</option>
+      <option value="all">{$_('performance.all_accounts')}</option>
       {#each accounts as a}
         <option value={String(a.id)}>
           {a.handle}{a.label && a.label !== a.handle ? ` (${a.label})` : ''}
@@ -421,7 +422,7 @@
 <!-- ── Growth chart ─────────────────────────────────────────────────────────── -->
 <div class="card" style="margin-bottom:16px">
   <div class="chart-hdr">
-    <h3 style="margin:0">Pertumbuhan views <span class="mut">— per platform</span></h3>
+    <h3 style="margin:0">{$_('performance.chart_title')} <span class="mut">— {$_('performance.chart_subtitle')}</span></h3>
     <!-- Chart-type toggle -->
     <div class="ct-btns" role="group" aria-label="Chart type">
       {#each CHART_TYPES as ct}
@@ -443,19 +444,19 @@
   </div>
 
   {#if loading}
-    <p class="mut" style="font-size:12.5px">Memuat…</p>
+    <p class="mut" style="font-size:12.5px">{$_('performance.loading')}</p>
   {:else if chartType === 'table'}
     <!-- Table view -->
     <div style="overflow-x:auto;max-height:400px;overflow-y:auto">
       {#if !_chartReady}
         <p class="mut" style="font-size:12.5px;padding:20px 0;text-align:center">
-          {datasets.length ? 'Tidak ada data untuk filter ini' : 'Belum ada data'}
+          {datasets.length ? $_('performance.no_data_for_filter') : $_('performance.no_data_yet')}
         </p>
       {:else}
         <table>
           <thead>
             <tr>
-              <th>Date</th>
+              <th>{$_('performance.table_header_date')}</th>
               {#each _chartReady.datasets as ds}<th class="num" style="text-align:right">{ds.label}</th>{/each}
             </tr>
           </thead>
@@ -477,11 +478,11 @@
       <LineChart labels={chartLabels} datasets={chartDatasets} height={160} chartType={chartType} />
       {#if !datasets.length}
         <div class="chart-overlay">
-          <p>Belum ada data — video yang kamu tandai posted di Jadwal Post akan muncul di sini setelah worker fetch views</p>
+          <p>{$_('performance.no_chart_data')}</p>
         </div>
       {:else if !_chartReady}
         <div class="chart-overlay">
-          <p>Tidak ada data untuk filter ini</p>
+          <p>{$_('performance.no_data_for_filter')}</p>
         </div>
       {/if}
     </div>
@@ -490,13 +491,13 @@
 
 <!-- ── Platform roll-up table ──────────────────────────────────────────────── -->
 <div class="card" style="margin-bottom:16px">
-  <h3>Views per platform</h3>
+  <h3>{$_('performance.views_per_platform')}</h3>
   <table>
     <thead>
       <tr>
-        <th>Platform</th>
-        <th class="num" style="text-align:right">Total views</th>
-        <th class="num" style="text-align:right">Jumlah video</th>
+        <th>{$_('performance.table_header_platform')}</th>
+        <th class="num" style="text-align:right">{$_('performance.table_header_total_views')}</th>
+        <th class="num" style="text-align:right">{$_('performance.table_header_video_count')}</th>
       </tr>
     </thead>
     <tbody>
@@ -517,10 +518,10 @@
 <!-- ── Per-account breakdown ────────────────────────────────────────────────── -->
 {#if accounts.length}
 <div class="card" style="margin-bottom:16px">
-  <h3>Views per akun <span class="mut">— breakdown per channel</span></h3>
+  <h3>{$_('performance.views_per_account')} <span class="mut">— {$_('performance.views_per_account_subtitle')}</span></h3>
 
   {#if !visibleAccounts.length}
-    <p class="mut" style="font-size:12.5px">Tidak ada akun untuk filter ini.</p>
+    <p class="mut" style="font-size:12.5px">{$_('performance.no_accounts_for_filter')}</p>
   {:else}
     {#each Object.entries(visibleAccountsByPlatform) as [platform, accts]}
       {@const ptotal = totals.find(t => t.platform === platform)}
@@ -541,9 +542,9 @@
         <table style="margin-top:4px">
           <thead>
             <tr>
-              <th>Akun</th>
-              <th class="num" style="text-align:right">Total views</th>
-              <th class="num" style="text-align:right">Video</th>
+              <th>{$_('performance.table_header_account')}</th>
+              <th class="num" style="text-align:right">{$_('performance.table_header_total_views')}</th>
+              <th class="num" style="text-align:right">{$_('performance.table_header_video_count')}</th>
             </tr>
           </thead>
           <tbody>
@@ -572,14 +573,14 @@
 <!-- ── Video detail table ───────────────────────────────────────────────────── -->
 {#if visibleVideos.length}
 <div class="card" style="margin-bottom:16px">
-  <h3>Detail video <span class="mut">— views terkini per video</span></h3>
+  <h3>{$_('performance.detail_video')} <span class="mut">— {$_('performance.detail_video_subtitle')}</span></h3>
   <table>
     <thead>
       <tr>
-        <th>Platform</th>
-        <th>Judul</th>
-        <th class="num" style="text-align:right">Views</th>
-        <th class="num" style="text-align:right">Pertama tercatat</th>
+        <th>{$_('performance.table_header_platform')}</th>
+        <th>{$_('performance.table_header_title')}</th>
+        <th class="num" style="text-align:right">{$_('performance.table_header_views')}</th>
+        <th class="num" style="text-align:right">{$_('performance.table_header_first_seen')}</th>
       </tr>
     </thead>
     <tbody>
@@ -606,29 +607,29 @@
 <!-- ── Top performers ────────────────────────────────────────────────────────── -->
 <div class="card" style="margin-bottom:16px">
   <div class="rev-hdr">
-    <h3 style="margin:0">Top performers <span class="mut">— clone winner formula into Studio</span></h3>
+    <h3 style="margin:0">{$_('performance.top_performers')} <span class="mut">— {$_('performance.top_performers_subtitle')}</span></h3>
     {#if winners.length}
-      <span class="mut" style="font-size:12px">{winners.length} video</span>
+      <span class="mut" style="font-size:12px">{winners.length} {$_('performance.video_count_label')}</span>
     {/if}
   </div>
 
   {#if winnersLoading}
-    <p class="mut" style="font-size:12.5px;margin-top:8px">Memuat…</p>
+    <p class="mut" style="font-size:12.5px;margin-top:8px">{$_('performance.loading')}</p>
   {:else if !winners.length}
     <p class="mut" style="font-size:12.5px;margin-top:8px">
-      Belum ada video yang di-post. Setelah refresh views, video terposting akan muncul di sini dan bisa langsung di-clone variasi scriptnya.
+      {$_('performance.no_posted_videos')}
     </p>
   {:else}
     <div style="overflow-x:auto;margin-top:8px">
       <table>
         <thead>
           <tr>
-            <th>Platform</th>
-            <th>Judul</th>
-            <th class="num" style="text-align:right">Views</th>
-            <th class="num" style="text-align:right">Revenue</th>
-            <th class="num" style="text-align:right">RPM</th>
-            <th style="text-align:right">Clone ke Studio</th>
+            <th>{$_('performance.table_header_platform')}</th>
+            <th>{$_('performance.table_header_title')}</th>
+            <th class="num" style="text-align:right">{$_('performance.table_header_views')}</th>
+            <th class="num" style="text-align:right">{$_('performance.table_header_revenue')}</th>
+            <th class="num" style="text-align:right">{$_('performance.table_header_rpm')}</th>
+            <th style="text-align:right">{$_('performance.clone_to_studio')}</th>
           </tr>
         </thead>
         <tbody>
@@ -650,10 +651,10 @@
               <td class="num" style="text-align:right">{w.rpm > 0 ? fmtRpm(w.rpm) : '—'}</td>
               <td style="text-align:right;white-space:nowrap">
                 {#if cs.running}
-                  <span class="mut" style="font-size:12px">{cs.done}/{cs.total} dibuat…</span>
+                  <span class="mut" style="font-size:12px">{cs.done}/{cs.total} {$_('performance.cloning_status')}</span>
                 {:else if cs.createdIds.length && !cs.error}
                   <span class="clone-ok">
-                    {cs.createdIds.length} script → <a href="#" onclick={e => { e.preventDefault(); document.querySelector('[data-page="studio"]')?.click() }} style="color:var(--accent)">Studio</a>
+                    {cs.createdIds.length} {$_('performance.clone_ok_scripts')} <a href="#" onclick={e => { e.preventDefault(); document.querySelector('[data-page="studio"]')?.click() }} style="color:var(--accent)">{$_('performance.clone_ok_studio')}</a>
                   </span>
                 {:else}
                   <span class="clone-ctrl">
@@ -661,7 +662,7 @@
                       oninput={e => cloneState = { ...cloneState, [w.url]: { ...cs, n: Math.max(1, Math.min(10, parseInt(e.currentTarget.value) || 3)) } }}
                     >
                     <button class="btn btn-sm" onclick={() => startClone(w)} disabled={cs.running}>
-                      Clone × {cs.n}
+                      {$_('performance.clone_label')} {cs.n}
                     </button>
                   </span>
                   {#if cs.error}
@@ -680,29 +681,29 @@
 <!-- ── Revenue section ───────────────────────────────────────────────────────── -->
 <div class="card">
   <div class="rev-hdr">
-    <h3 style="margin:0">Revenue <span class="mut">— pendapatan per video (manual)</span></h3>
-    <button class="btn btn-sm" onclick={openAddModal}>+ Add revenue</button>
+    <h3 style="margin:0">{$_('performance.revenue_section_title')} <span class="mut">— {$_('performance.revenue_section_subtitle')}</span></h3>
+    <button class="btn btn-sm" onclick={openAddModal}>{$_('performance.add_revenue_btn')}</button>
   </div>
 
   {#if revLoading}
-    <p class="mut" style="font-size:12.5px;margin-top:8px">Memuat…</p>
+    <p class="mut" style="font-size:12.5px;margin-top:8px">{$_('performance.loading')}</p>
   {:else if !visibleRevEntries.length}
     <p class="mut" style="font-size:12.5px;margin-top:8px">
-      Belum ada entri revenue{filterPlatform !== 'all' ? ` untuk ${filterPlatform}` : ''}.
-      Tambahkan dengan "+ Add revenue".
+      {$_('performance.no_revenue_entries')}{filterPlatform !== 'all' ? ` ${$_('performance.no_revenue_entries_platform', {values: {platform: filterPlatform}})}` : ''}.
+      {$_('performance.add_revenue_instruction')}
     </p>
   {:else}
     <div style="overflow-x:auto;margin-top:8px">
       <table>
         <thead>
           <tr>
-            <th>Platform</th>
-            <th>Video URL</th>
-            <th class="num" style="text-align:right">Views</th>
-            <th class="num" style="text-align:right">Revenue</th>
-            <th class="num" style="text-align:right">RPM</th>
-            <th class="num" style="text-align:right">Clicks</th>
-            <th style="text-align:right">Date</th>
+            <th>{$_('performance.table_header_platform')}</th>
+            <th>{$_('performance.table_header_video_url')}</th>
+            <th class="num" style="text-align:right">{$_('performance.table_header_views')}</th>
+            <th class="num" style="text-align:right">{$_('performance.table_header_revenue')}</th>
+            <th class="num" style="text-align:right">{$_('performance.table_header_rpm')}</th>
+            <th class="num" style="text-align:right">{$_('performance.table_header_clicks')}</th>
+            <th style="text-align:right">{$_('performance.table_header_entry_date')}</th>
             <th></th>
           </tr>
         </thead>
@@ -747,13 +748,13 @@
 <div class="modal-backdrop" onclick={e => { if (e.target === e.currentTarget) showRevModal = false }}>
   <div class="modal-box" role="dialog" aria-modal="true">
     <div class="modal-hdr">
-      <span style="font-weight:600;font-size:14px">{editingEntry ? 'Edit revenue entry' : 'Add revenue entry'}</span>
+      <span style="font-weight:600;font-size:14px">{editingEntry ? $_('performance.modal_title_edit') : $_('performance.modal_title_add')}</span>
       <button class="act-btn" onclick={() => showRevModal = false} style="font-size:16px">✕</button>
     </div>
 
     <div class="modal-body">
       <label class="field">
-        <span>Platform</span>
+        <span>{$_('performance.modal_label_platform')}</span>
         <select class="acct-sel" bind:value={revForm.platform}>
           {#each PLATFORMS_ALL as p}
             <option value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
@@ -762,31 +763,31 @@
       </label>
 
       <label class="field">
-        <span>Video URL <span class="mut">(optional)</span></span>
-        <input type="url" class="acct-sel inp" bind:value={revForm.video_url} placeholder="https://…">
+        <span>{$_('performance.modal_label_video_url')} <span class="mut">{$_('performance.modal_label_video_url_optional')}</span></span>
+        <input type="url" class="acct-sel inp" bind:value={revForm.video_url} placeholder={$_('performance.modal_placeholder_video_url')}>
       </label>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <label class="field">
-          <span>Revenue (USD)</span>
+          <span>{$_('performance.modal_label_revenue_usd')}</span>
           <input type="number" class="acct-sel inp" bind:value={revForm.revenue_usd}
                  min="0" step="0.01" placeholder="0.00">
         </label>
         <label class="field">
-          <span>Link clicks <span class="mut">(optional)</span></span>
+          <span>{$_('performance.modal_label_link_clicks')} <span class="mut">{$_('performance.modal_label_video_url_optional')}</span></span>
           <input type="number" class="acct-sel inp" bind:value={revForm.link_clicks}
                  min="0" step="1" placeholder="0">
         </label>
       </div>
 
       <label class="field">
-        <span>Entry date</span>
+        <span>{$_('performance.modal_label_entry_date')}</span>
         <input type="date" class="acct-sel inp" bind:value={revForm.entry_date}>
       </label>
 
       <label class="field">
-        <span>Note <span class="mut">(optional)</span></span>
-        <input type="text" class="acct-sel inp" bind:value={revForm.note} placeholder="e.g. AdSense payout June">
+        <span>{$_('performance.modal_label_note')} <span class="mut">{$_('performance.modal_label_video_url_optional')}</span></span>
+        <input type="text" class="acct-sel inp" bind:value={revForm.note} placeholder={$_('performance.modal_placeholder_note')}>
       </label>
 
       {#if revError}
@@ -795,9 +796,9 @@
     </div>
 
     <div class="modal-foot">
-      <button class="btn-ghost" onclick={() => showRevModal = false}>Cancel</button>
+      <button class="btn-ghost" onclick={() => showRevModal = false}>{$_('performance.modal_btn_cancel')}</button>
       <button class="btn" onclick={saveRevenue} disabled={revSaving}>
-        {revSaving ? 'Saving…' : (editingEntry ? 'Save changes' : 'Add entry')}
+        {revSaving ? $_('performance.modal_btn_saving') : (editingEntry ? $_('performance.modal_btn_save') : $_('performance.modal_btn_add'))}
       </button>
     </div>
   </div>
