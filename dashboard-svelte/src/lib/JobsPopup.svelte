@@ -2,6 +2,7 @@
   import { fade, scale } from 'svelte/transition'
   import { cubicOut } from 'svelte/easing'
   import { untrack } from 'svelte'
+  import { _ } from 'svelte-i18n'
   import { api, isActiveRunning } from './api.js'
   import { onDestroy } from 'svelte'
   import AnalyzeStepper from './AnalyzeStepper.svelte'
@@ -113,9 +114,9 @@
   function jobLive(job) {
     const ss = job.sourceStatus
     if (!ss) return null
-    if (ss === 'analyzed') return { text: 'Selesai', active: false }
-    if (ss === 'working') return { text: 'Gemini (Antigravity) bekerja…', active: true }
-    if (ss === 'processing') return { text: 'Sedang diproses…', active: true }
+    if (ss === 'analyzed') return { text: $_('jobsPopup.status_done'), active: false }
+    if (ss === 'working') return { text: $_('jobsPopup.status_gemini_working'), active: true }
+    if (ss === 'processing') return { text: $_('jobsPopup.status_processing'), active: true }
     return null
   }
 
@@ -150,25 +151,29 @@
 
   function getDecomposeStageLabel(stage) {
     const stageMap = {
-      'downloading': 'Mengunduh video…',
-      'detecting': 'Mendeteksi scene…',
-      'grouping': 'Mengelompokkan…',
-      'splitting': 'Memotong klip per menit…',
-      'finding': 'Menautkan klip…',
-      'saving': 'Menyimpan…',
-      'done': 'Selesai',
-      'error': 'Gagal'
+      'downloading': 'jobsPopup.stage_downloading',
+      'detecting': 'jobsPopup.stage_detecting',
+      'grouping': 'jobsPopup.stage_grouping',
+      'splitting': 'jobsPopup.stage_splitting',
+      'finding': 'jobsPopup.stage_finding',
+      'saving': 'jobsPopup.stage_saving',
+      'done': 'jobsPopup.status_done',
+      'error': 'jobsPopup.stage_error'
     }
-    return stageMap[stage] || stage
+    return $_(stageMap[stage] || stage)
   }
 
   // Same prep checklist as the Add-Source form, so the detail view matches.
-  const PREP_STEPS = [
-    { key: 'saving_meta', label: 'Menyimpan atribut video' },
-    { key: 'downloading', label: 'Mengunduh video' },
-    { key: 'splitting', label: 'Memotong klip per menit' },
-    { key: 'saving', label: 'Menyimpan atribut klip ke database' },
-  ]
+  function getPrepSteps() {
+    return [
+      { key: 'saving_meta', label: $_('jobsPopup.prep_saving_meta') },
+      { key: 'downloading', label: $_('jobsPopup.prep_downloading') },
+      { key: 'splitting', label: $_('jobsPopup.prep_splitting') },
+      { key: 'saving', label: $_('jobsPopup.prep_saving') },
+    ]
+  }
+
+  let PREP_STEPS = $derived(getPrepSteps())
   const PREP_STAGE_ORDER = { saving_meta: 0, downloading: 1, detecting: 2, grouping: 2, splitting: 2, finding: 3, saving: 3, done: 4, analyzed: 4 }
   function prepStepStatus(cur, key) {
     const c = PREP_STAGE_ORDER[cur] ?? 0
@@ -224,14 +229,14 @@
     bind:this={panelEl}
     role="dialog"
     aria-modal="true"
-    aria-label="Proses"
+    aria-label={$_('jobsPopup.title')}
     tabindex="-1"
     transition:scale={{ duration: 230, start: 0.94, easing: cubicOut }}
   >
     <!-- Header -->
     <div class="m-head">
-      <span class="m-title">Proses</span>
-      <button class="m-close" onclick={closeModal} aria-label="Tutup modal">
+      <span class="m-title">{$_('jobsPopup.title')}</span>
+      <button class="m-close" onclick={closeModal} aria-label={$_('jobsPopup.close_aria')}>
         <svg class="ic"><use href="#i-x"/></svg>
       </button>
     </div>
@@ -281,7 +286,7 @@
               </div>
             {/each}
           {:else}
-            <div class="empty">Belum ada proses</div>
+            <div class="empty">{$_('jobsPopup.empty')}</div>
           {/if}
         </div>
       {:else}
@@ -290,7 +295,7 @@
           <!-- Back button + title -->
           <div class="detail-header">
             <button class="back-btn" onclick={() => { selectedRunId = null; if (pollDetailInterval) clearInterval(pollDetailInterval) }}>
-              ← Kembali
+              {$_('jobsPopup.btn_back')}
             </button>
             <div class="detail-status">
               {#if selectedJobDetail?.kind === 'decompose'}

@@ -1,6 +1,7 @@
 <script>
   import { fade, scale } from 'svelte/transition'
   import { cubicOut } from 'svelte/easing'
+  import { _ } from 'svelte-i18n'
   import { api } from '../lib/api.js'
 
   const PLATFORMS = [
@@ -120,7 +121,7 @@
     if (modal.mode === 'add') {
       const r = await api.accountCreate({ platform: mPlatform, handle, label, role: 'scrape' })
       if (!r || r.detail) {
-        mMsg    = { ok: false, text: r?.detail || 'Gagal membuat akun' }
+        mMsg    = { ok: false, text: r?.detail || $_('cookies.error_create') }
         mSaving = false
         return
       }
@@ -129,7 +130,7 @@
         const cr = await api.accountSaveCookies(r.id, cookies)
         if (!cr || cr.detail) {
           // account created but cookie failed — surface it, don't delete account
-          mMsg    = { ok: false, text: `Akun dibuat, tapi cookies gagal: ${cr?.detail || 'error'}` }
+          mMsg    = { ok: false, text: $_('cookies.error_cookies_create', { values: { error: cr?.detail || 'error' } }) }
           mSaving = false
           await load()
           return
@@ -144,14 +145,14 @@
       const acct = modal.acct
       const pr = await api.accountUpdate(acct.id, { handle, label })
       if (!pr || pr.detail) {
-        mMsg    = { ok: false, text: pr?.detail || 'Gagal menyimpan' }
+        mMsg    = { ok: false, text: pr?.detail || $_('cookies.error_save') }
         mSaving = false
         return
       }
       if (cookies) {
         const cr = await api.accountSaveCookies(acct.id, cookies)
         if (!cr || cr.detail) {
-          mMsg    = { ok: false, text: `Profil disimpan, cookies gagal: ${cr?.detail || 'error'}` }
+          mMsg    = { ok: false, text: $_('cookies.error_cookies_save', { values: { error: cr?.detail || 'error' } }) }
           mSaving = false
           await load()
           return
@@ -166,7 +167,7 @@
   // ── delete account ────────────────────────────────────────────────────────────
 
   async function deleteAccount(acct) {
-    if (!confirm(`Hapus akun @${acct.handle}?`)) return
+    if (!confirm($_('cookies.confirm_delete', { values: { handle: acct.handle } }))) return
     await api.accountDelete(acct.id)
     await load()
   }
@@ -178,41 +179,39 @@
   <div class="top">
     <div class="top-row">
       <div>
-        <h1>Scrape Accounts</h1>
-        <div class="sub">Burner accounts untuk download/scraping. Download dirotasi otomatis antar akun aktif.</div>
+        <h1>{$_('cookies.title')}</h1>
+        <div class="sub">{$_('cookies.subtitle')}</div>
       </div>
       <button class="btn-primary" onclick={openAdd}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>
-        Tambah akun
+        {$_('cookies.add_btn')}
       </button>
     </div>
   </div>
 
   <div class="help">
-    Akun-akun ini dirotasi saat download video. Export cookies dengan ekstensi
-    "Get cookies.txt LOCALLY" saat login, lalu tempel per akun dalam format Netscape tab-separated.
-    Akun earning ada di menu <strong>Publish Accounts</strong> — terpisah dan tidak dipakai untuk download.
+    {$_('cookies.help_text')}<strong>{$_('cookies.help_text_link')}</strong>{$_('cookies.help_text_end')}
   </div>
 
   {#if loading}
-    <div class="state-msg">Loading…</div>
+    <div class="state-msg">{$_('cookies.loading')}</div>
   {:else if accounts.length === 0}
     <div class="empty-state">
       <div class="empty-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:32px;height:32px;color:var(--mut)"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
       </div>
-      <div class="empty-txt">Belum ada akun scraping</div>
-      <button class="btn-primary" onclick={openAdd}>+ Tambah akun pertama</button>
+      <div class="empty-txt">{$_('cookies.empty_state')}</div>
+      <button class="btn-primary" onclick={openAdd}>{$_('cookies.add_first')}</button>
     </div>
   {:else}
     <div class="tbl-wrap">
       <table class="tbl">
         <thead>
           <tr>
-            <th>Channel</th>
-            <th>Platform</th>
-            <th>Status</th>
-            <th>Terakhir dipakai</th>
+            <th>{$_('cookies.table_channel')}</th>
+            <th>{$_('cookies.table_platform')}</th>
+            <th>{$_('cookies.table_status')}</th>
+            <th>{$_('cookies.table_last_used')}</th>
             <th></th>
           </tr>
         </thead>
@@ -235,9 +234,9 @@
               </td>
               <td>
                 {#if acct.has_cookies}
-                  <span class="badge ok" title="Cookies tersedia">✅ Cookies</span>
+                  <span class="badge ok" title={$_('cookies.badge_cookies_ok')}>✅ Cookies</span>
                 {:else}
-                  <span class="badge na" title="Belum ada cookies">❌ Belum ada</span>
+                  <span class="badge na" title={$_('cookies.badge_cookies_na')}>❌ {$_('cookies.badge_cookies_na')}</span>
                 {/if}
               </td>
               <td>
@@ -251,8 +250,8 @@
               </td>
               <td>
                 <div class="row-actions">
-                  <button class="btn-row" onclick={() => openEdit(acct)}>Edit</button>
-                  <button class="btn-row danger" onclick={() => deleteAccount(acct)} title="Hapus akun">
+                  <button class="btn-row" onclick={() => openEdit(acct)}>{$_('cookies.btn_edit')}</button>
+                  <button class="btn-row danger" onclick={() => deleteAccount(acct)} title={$_('cookies.btn_delete')}>
                     <svg class="ic"><use href="#i-trash"/></svg>
                   </button>
                 </div>
@@ -280,15 +279,15 @@
     bind:this={panelEl}
     role="dialog"
     aria-modal="true"
-    aria-label={modal.mode === 'add' ? 'Tambah akun scraping' : 'Edit akun scraping'}
+    aria-label={modal.mode === 'add' ? $_('cookies.modal_add_aria') : $_('cookies.modal_edit_aria')}
     tabindex="-1"
     transition:scale={{ duration: 230, start: 0.94, easing: cubicOut }}
     onkeydown={trapFocus}
   >
     <!-- header -->
     <div class="m-head">
-      <span class="m-title">{modal.mode === 'add' ? 'Tambah akun scraping' : 'Edit akun'}</span>
-      <button class="m-close" onclick={closeModal} aria-label="Tutup modal">
+      <span class="m-title">{modal.mode === 'add' ? $_('cookies.modal_add_title') : $_('cookies.modal_edit_title')}</span>
+      <button class="m-close" onclick={closeModal} aria-label={$_('cookies.modal_close_aria')}>
         <svg class="ic"><use href="#i-x"/></svg>
       </button>
     </div>
@@ -297,7 +296,7 @@
     <div class="m-body">
       <!-- Platform -->
       <label class="field">
-        <span class="field-label">Platform</span>
+        <span class="field-label">{$_('cookies.field_platform')}</span>
         {#if modal.mode === 'add'}
           <select class="inp" bind:value={mPlatform}>
             {#each PLATFORMS as p}
@@ -315,10 +314,10 @@
 
       <!-- Handle -->
       <label class="field">
-        <span class="field-label">Handle / username</span>
+        <span class="field-label">{$_('cookies.field_handle')}</span>
         <input
           class="inp"
-          placeholder="contoh: @burner_akun_yt"
+          placeholder={$_('cookies.field_handle_placeholder')}
           bind:value={mHandle}
           spellcheck="false"
           autocomplete="off"
@@ -327,10 +326,10 @@
 
       <!-- Label -->
       <label class="field">
-        <span class="field-label">Label <span class="opt">(opsional)</span></span>
+        <span class="field-label">{$_('cookies.field_label')} <span class="opt">{$_('cookies.field_label_optional')}</span></span>
         <input
           class="inp"
-          placeholder="Nama mudah diingat, misal: Burner YT 1"
+          placeholder={$_('cookies.field_label_placeholder')}
           bind:value={mLabel}
           spellcheck="false"
           autocomplete="off"
@@ -340,15 +339,15 @@
       <!-- Cookies -->
       <label class="field">
         <span class="field-label">
-          Cookies
+          {$_('cookies.field_cookies')}
           {#if modal.mode === 'edit'}
-            <span class="opt"> — biarkan kosong untuk mempertahankan cookies lama</span>
+            <span class="opt">{$_('cookies.field_cookies_optional_edit')}</span>
           {/if}
         </span>
         <textarea
           class="inp inp-mono"
           rows="7"
-          placeholder="Tempel Netscape cookies.txt di sini…"
+          placeholder={$_('cookies.field_cookies_placeholder')}
           bind:value={mCookies}
           spellcheck="false"
         ></textarea>
@@ -361,12 +360,12 @@
 
     <!-- footer -->
     <div class="m-foot">
-      <button class="btn-ghost" onclick={closeModal}>Batal</button>
+      <button class="btn-ghost" onclick={closeModal}>{$_('cookies.btn_cancel')}</button>
       <button
         class="btn-primary"
         disabled={mSaving || !mHandle.trim()}
         onclick={save}
-      >{mSaving ? 'Menyimpan…' : 'Simpan'}</button>
+      >{mSaving ? $_('cookies.btn_saving') : $_('cookies.btn_save')}</button>
     </div>
   </div>
 {/if}
