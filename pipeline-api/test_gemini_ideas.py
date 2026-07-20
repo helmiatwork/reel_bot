@@ -36,7 +36,7 @@ class TestGeminiIdeasEndpoint:
                 assert data["youtube_url"] == "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                 assert data["niche"] == "general"
                 assert "get_clips" in data["instruction"]
-                assert "3-5" in data["instruction"].lower() or "3–5" in data["instruction"]
+                assert "EXACTLY 5" in data["instruction"] or "5 candidates" in data["instruction"].lower()
                 assert "JSON" in data["instruction"]
 
     def test_valid_youtube_url_with_db_source(self, client):
@@ -48,7 +48,7 @@ class TestGeminiIdeasEndpoint:
             with patch("main._db_conn") as mock_db_conn:
                 # Mock DB connection and cursor
                 mock_cursor = MagicMock()
-                mock_cursor.fetchone.return_value = ("frugal-living", "river bath tutorial")
+                mock_cursor.fetchone.return_value = ("frugal-living",)
 
                 mock_conn = MagicMock()
                 mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
@@ -92,16 +92,18 @@ class TestGeminiIdeasEndpoint:
                 assert response.status_code == 200
                 instruction = response.json()["instruction"]
 
-                # Check key required elements
+                # Check key required elements (stage 1: brainstorm 5 candidates)
                 assert "get_clips" in instruction
+                assert "save_ideas" in instruction
                 assert "STEP 1" in instruction
                 assert "STEP 2" in instruction
                 assert "STEP 3" in instruction
+                assert "STEP 4" in instruction
                 assert "JSON" in instruction
-                assert "hook" in instruction
+                assert "title" in instruction
+                assert "description" in instruction
+                assert "premise" in instruction
                 assert "cover_caption" in instruction
-                assert "hashtags" in instruction
-                assert "angle" in instruction
 
     def test_instruction_warns_against_fabrication(self, client):
         """Should warn against inventing ideas without actually watching clips."""

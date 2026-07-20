@@ -7836,12 +7836,12 @@ Execute steps 1, 2, and 3 in order. Use only the three MCP tools."""
 @app.get("/analyze/gemini-ideas")
 def analyze_gemini_ideas(youtube_url: str):
     """
-    Instruction builder for Gemini viral idea generation.
+    Instruction builder for Gemini viral idea generation (STAGE 1).
 
     Given a source video, returns an instruction telling Gemini to:
     1. Call get_clips(youtube_url) to fetch and watch the clip mp4s
-    2. Brainstorm 3-5 FRESH, UNIQUE viral story angles/reframes tailored to the source's niche
-    3. Return JSON array with angle, hook, cover_caption, why_viral, caption, hashtags for each idea
+    2. Brainstorm EXACTLY 5 FRESH, UNIQUE viral story candidates tailored to the source's niche
+    3. Call save_ideas(youtube_url, ideas_json) to save candidates back to reelbot
 
     Query params: youtube_url
     Returns: {"instruction": str, "youtube_url": str, "niche": str}
@@ -7872,45 +7872,320 @@ def analyze_gemini_ideas(youtube_url: str):
 
     # Sanitize youtube_url before embedding in instruction string (defense-in-depth)
     safe_url = youtube_url.replace('"', '')
+    safe_niche = niche.replace('"', '')
 
     # Build instruction for Gemini
-    instruction = f"""You are an expert viral content ideator for social media creators in the {niche} niche.
+    instruction = f"""You are an expert viral content ideator for social media creators in the {safe_niche} niche.
 
 RULES:
-- You have EXACTLY ONE MCP tool available: `get_clips`. Use it to fetch and WATCH the video clips.
+- You have TWO MCP tools available: `get_clips` (fetch video clips) and `save_ideas` (save candidates back to reelbot).
 - The clips are real video files (.mp4) — WATCH them carefully via your environment.
 - Do NOT search, read code, call other tools, open a browser, or run commands.
 - CRITICAL: base all ideas on what you ACTUALLY SEE in the footage. Never invent, guess, or fabricate story angles. If get_clips fails or returns empty, skip wildly exaggerated ideas and propose only grounded angles from context.
+- You MUST call save_ideas at the end — do NOT just print ideas.
 
+IDEA FLOW STAGE 1: Brainstorm 5 Candidates
 Task:
 STEP 1: Call `get_clips(youtube_url="{safe_url}")` and WATCH every returned clip.
 
-STEP 2: Based on ONLY what you saw in the clips, brainstorm **3-5 FRESH, UNIQUE, DISTINCT viral story angles/reframes** for this footage, tailored to the {niche} niche. Each angle must be a genuinely different creative direction (not minor variations of one theme) — mix grounded strategies with bold/clickbait reframes. Prioritize originality and uniqueness. It's fine for angles to be exaggerated/fictional framing (this is entertainment content ideation — the human picks which to use).
+STEP 2: Based on ONLY what you saw in the clips, brainstorm **EXACTLY 5 FRESH, UNIQUE, DISTINCT viral story candidates** for this footage, tailored to the {safe_niche} niche. Each candidate must be a genuinely different creative direction (not minor variations of one theme) — mix grounded strategies with bold/clickbait reframes. Prioritize originality and uniqueness. It's fine for angles to be exaggerated/fictional framing (this is entertainment content ideation — the human picks which to use).
 
-STEP 3: For EACH angle, generate:
-- hook: the first 3 seconds on-screen/spoken line that stops the scroll
-- cover_caption: clickbait cover text (1-2 sentences)
+STEP 3: For EACH of the 5 candidates, generate:
+- title: the candidate's story name (2-3 words)
+- description: short premise (1 sentence)
+- premise: the angle premise in 1-2 sentences
 - why_viral: why this angle will perform (1 line, e.g., controversy, relatability, shock value, humor)
-- caption: full post caption (2-3 sentences)
-- hashtags: 3-5 relevant hashtags as a JSON array
+- cover_caption: clickbait cover text (1-2 sentences)
 
-Return a JSON ARRAY of 3-5 objects, each with: angle, hook, cover_caption, why_viral, caption, hashtags.
+STEP 4: Call `save_ideas(youtube_url="{safe_url}", ideas_json=<JSON array of 5 candidates>)` to save back to reelbot. Do NOT just print — MUST call save_ideas.
 
-If get_clips errors or returns empty clips: don't fabricate wildly — propose grounded story angles based on the title/niche context, still as the same JSON array (do NOT stop or report error as a blocker).
-
-Example output shape:
+Return format (JSON ARRAY of 5 candidates):
 [
-  {{"angle": "story premise in 1-2 sentences", "hook": "opening line", "cover_caption": "clickbait text", "why_viral": "1-line reason", "caption": "post caption", "hashtags": ["#tag1", "#tag2"]}},
-  {{"angle": "..."}},
+  {{"title": "story name", "description": "1-sentence premise", "premise": "full angle (1-2 sentences)", "why_viral": "reason it viral", "cover_caption": "clickbait text"}},
+  {{"title": "..."}},
   ...
 ]
 
-Execute steps 1, 2, and 3 in order. Output the JSON ARRAY."""
+If get_clips errors or returns empty clips: don't fabricate wildly — propose grounded story angles based on the title/niche context, still as a 5-item JSON array, then call save_ideas.
+
+Execute steps 1, 2, 3, and 4 in order. STEP 4 MUST call save_ideas — this is critical."""
 
     return {
         "instruction": instruction,
         "youtube_url": youtube_url,
         "niche": niche
+    }
+
+
+@app.get("/analyze/ideas-status")
+def analyze_ideas_status(youtube_url: str):
+    """
+    Check the status of idea generation (both stages) for a source.
+
+    Returns:
+      {
+        "has_candidates": bool,                  # true if candidates exist
+        "count": int,                            # number of candidates (0 if none)
+        "candidates": [...] | null,              # the 5 candidate ideas (null if not ready)
+        "selected_index": int | null,            # which candidate user picked (null if not picked)
+        "has_detail": bool,                      # true if detail exists for selected candidate
+        "detail": {...} | null,                  # expanded detail (null if not ready)
+        "status": str                            # source status (empty if no source)
+      }
+    """
+    try:
+        _validate_source_url(youtube_url)
+    except HTTPException:
+        raise HTTPException(status_code=400, detail="invalid youtube_url")
+
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=500, detail="database not configured")
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT candidates, selected_index, detail FROM source_ideas WHERE youtube_url = %s",
+                (youtube_url,)
+            )
+            row = cur.fetchone()
+
+            if not row:
+                # No ideas row yet
+                return {
+                    "has_candidates": False,
+                    "count": 0,
+                    "candidates": None,
+                    "selected_index": None,
+                    "has_detail": False,
+                    "detail": None,
+                    "status": ""
+                }
+
+            candidates_jsonb, selected_index, detail_jsonb = row
+
+            # Parse candidates
+            candidates = None
+            count = 0
+            if candidates_jsonb:
+                try:
+                    if isinstance(candidates_jsonb, str):
+                        candidates = json.loads(candidates_jsonb)
+                    else:
+                        candidates = candidates_jsonb
+                    if isinstance(candidates, list):
+                        count = len(candidates)
+                except (json.JSONDecodeError, ValueError):
+                    pass
+
+            # Parse detail
+            detail = None
+            has_detail = False
+            if detail_jsonb:
+                try:
+                    if isinstance(detail_jsonb, str):
+                        detail = json.loads(detail_jsonb)
+                    else:
+                        detail = detail_jsonb
+                    has_detail = bool(detail)
+                except (json.JSONDecodeError, ValueError):
+                    pass
+
+            return {
+                "has_candidates": count > 0,
+                "count": count,
+                "candidates": candidates,
+                "selected_index": selected_index,
+                "has_detail": has_detail,
+                "detail": detail,
+                "status": ""
+            }
+    finally:
+        conn.close()
+
+
+class SelectIdeaRequest(BaseModel):
+    youtube_url: str
+    index: int
+
+
+@app.post("/analyze/ideas/select")
+def analyze_ideas_select(req: SelectIdeaRequest):
+    """
+    Select a candidate idea (used by frontend after user picks one).
+
+    JSON body: youtube_url, index
+    Returns: {"ok": true, "selected_index": index} on success
+    """
+    try:
+        _validate_source_url(req.youtube_url)
+    except HTTPException:
+        raise HTTPException(status_code=400, detail="invalid youtube_url")
+
+    if not isinstance(req.index, int):
+        raise HTTPException(status_code=400, detail="index must be an integer")
+
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=500, detail="database not configured")
+
+    try:
+        with conn.cursor() as cur:
+            # Validate that the index is in range of candidates
+            cur.execute(
+                "SELECT candidates FROM source_ideas WHERE youtube_url = %s",
+                (req.youtube_url,)
+            )
+            row = cur.fetchone()
+
+            if not row:
+                raise HTTPException(status_code=400, detail="no candidates found for this url")
+
+            candidates_jsonb = row[0]
+            candidates = []
+            if candidates_jsonb:
+                try:
+                    if isinstance(candidates_jsonb, str):
+                        candidates = json.loads(candidates_jsonb)
+                    else:
+                        candidates = candidates_jsonb
+                except (json.JSONDecodeError, ValueError):
+                    pass
+
+            if not isinstance(candidates, list) or len(candidates) == 0:
+                raise HTTPException(status_code=400, detail="no candidates found for this url")
+
+            if req.index < 0 or req.index >= len(candidates):
+                raise HTTPException(status_code=400, detail=f"index out of range [0, {len(candidates)-1}]")
+
+            # Update selected_index
+            cur.execute(
+                "UPDATE source_ideas SET selected_index = %s, updated_at = now() WHERE youtube_url = %s",
+                (req.index, req.youtube_url)
+            )
+
+            conn.commit()
+            return {"ok": True, "selected_index": req.index}
+    except HTTPException:
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=f"database error: {e}")
+    finally:
+        conn.close()
+
+
+@app.get("/analyze/gemini-idea-detail")
+def analyze_gemini_idea_detail(youtube_url: str, index: int = None):
+    """
+    Instruction builder for Gemini idea expansion (STAGE 2).
+
+    Given a source and a selected candidate, returns an instruction telling Gemini to:
+    1. Call get_clips(youtube_url) to re-watch the clips
+    2. Expand the selected candidate into a full production package
+    3. Call save_idea_detail(youtube_url, detail_json) to save back to reelbot
+
+    Query params: youtube_url, index
+    Returns: {"instruction": str, "youtube_url": str, "index": int, "candidate": {...}}
+    """
+    try:
+        _validate_source_url(youtube_url)
+    except HTTPException:
+        raise HTTPException(status_code=400, detail="invalid youtube_url")
+
+    if index is None or not isinstance(index, int):
+        raise HTTPException(status_code=400, detail="index must be an integer")
+
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=500, detail="database not configured")
+
+    try:
+        with conn.cursor() as cur:
+            # Fetch candidates to validate index and extract the selected one
+            cur.execute(
+                "SELECT candidates FROM source_ideas WHERE youtube_url = %s",
+                (youtube_url,)
+            )
+            row = cur.fetchone()
+
+            if not row:
+                raise HTTPException(status_code=400, detail="no candidates found for this url")
+
+            candidates_jsonb = row[0]
+            candidates = []
+            if candidates_jsonb:
+                try:
+                    if isinstance(candidates_jsonb, str):
+                        candidates = json.loads(candidates_jsonb)
+                    else:
+                        candidates = candidates_jsonb
+                except (json.JSONDecodeError, ValueError):
+                    pass
+
+            if not isinstance(candidates, list) or len(candidates) == 0:
+                raise HTTPException(status_code=400, detail="no candidates found for this url")
+
+            if index < 0 or index >= len(candidates):
+                raise HTTPException(status_code=400, detail=f"index out of range [0, {len(candidates)-1}]")
+
+            selected_candidate = candidates[index]
+    finally:
+        conn.close()
+
+    # Sanitize youtube_url and candidate fields for embedding
+    safe_url = youtube_url.replace('"', '')
+    candidate_title = selected_candidate.get("title", "Idea").replace('"', '')
+    candidate_premise = selected_candidate.get("premise", "").replace('"', '')
+
+    # Build instruction for Gemini
+    instruction = f"""You are an expert video content producer and storyteller. Your task is to expand a viral content idea into a full production package.
+
+RULES:
+- You have TWO MCP tools available: `get_clips` (fetch video clips) and `save_idea_detail` (save the expanded detail back to reelbot).
+- The clips are real video files (.mp4) — WATCH them carefully via your environment.
+- Do NOT search, read code, call other tools, open a browser, or run commands.
+- You MUST call save_idea_detail at the end — do NOT just print the output.
+
+IDEA FLOW STAGE 2: Expand Selected Idea
+Selected Idea: "{candidate_title}"
+Premise: "{candidate_premise}"
+
+Task:
+STEP 1: Call `get_clips(youtube_url="{safe_url}")` and WATCH every returned clip again.
+
+STEP 2: Based on what you saw, expand the selected idea into a FULL PRODUCTION PACKAGE for CapCut editing. Generate:
+- naskah: the complete story/narrative (hook/body/punchline structure, 3-5 sentences, Indonesian-friendly)
+- edit_cues: array of timestamped editing cues for CapCut, each with:
+  - ts_start: start timestamp in seconds (e.g., 10.5)
+  - ts_end: end timestamp in seconds (e.g., 15.2)
+  - aksi: the action/moment to highlight (e.g., "detik 10-15 muka kaget")
+  - sfx: sound effect to add (or null)
+  - teks_layar: on-screen text/caption (or null, in Indonesian if needed)
+- caption: full social media caption (2-3 sentences, Instagram/TikTok ready)
+- hashtags: relevant hashtags as a JSON array (5-10 tags)
+
+STEP 3: Call `save_idea_detail(youtube_url="{safe_url}", detail_json=<the full object>)` to save back to reelbot. Do NOT just print — MUST call save_idea_detail.
+
+Return format (JSON object):
+{{
+  "naskah": "full story narrative (hook/body/punchline)",
+  "edit_cues": [
+    {{"ts_start": 0.0, "ts_end": 3.0, "aksi": "opening shot", "sfx": null, "teks_layar": "hook text"}},
+    {{"ts_start": 3.0, "ts_end": 8.0, "aksi": "main moment", "sfx": "buildup", "teks_layar": "development"}},
+    ...
+  ],
+  "caption": "full social media caption text",
+  "hashtags": ["#tag1", "#tag2", ...]
+}}
+
+Execute steps 1, 2, and 3 in order. STEP 3 MUST call save_idea_detail — this is critical."""
+
+    return {
+        "instruction": instruction,
+        "youtube_url": youtube_url,
+        "index": index,
+        "candidate": selected_candidate
     }
 
 
