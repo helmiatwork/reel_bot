@@ -599,7 +599,7 @@
     onkeydown={onLightboxKey}
     role="dialog"
     aria-modal="true"
-    aria-label="Detail frame"
+    aria-label={$_('drawer.detail_frame')}
     tabindex="-1"
   >
     <button class="lb-close" onclick={closeLightbox} aria-label={$_('drawer.close')}>✕</button>
@@ -632,7 +632,7 @@
     onkeydown={(e) => { if (e.key === 'Escape') sceneJsonModal = null }}
     role="dialog"
     aria-modal="true"
-    aria-label="JSON scene"
+    aria-label={$_('drawer.json_scene')}
     tabindex="-1"
   >
     <button class="lb-close" onclick={() => sceneJsonModal = null} aria-label={$_('drawer.close')}>✕</button>
@@ -656,7 +656,7 @@
     onkeydown={(e) => { if (e.key === 'Escape') geminiBriefModal = null }}
     role="dialog"
     aria-modal="true"
-    aria-label="Prompt Gemini"
+    aria-label={$_('drawer.prompt_gemini')}
     tabindex="-1"
   >
     <button class="lb-close" onclick={() => geminiBriefModal = null} aria-label={$_('drawer.close')}>✕</button>
@@ -685,7 +685,7 @@
     onkeydown={(e) => { if (e.key === 'Escape') closeIdeModal() }}
     role="dialog"
     aria-modal="true"
-    aria-label="Bikin Ide"
+    aria-label={$_('drawer.make_idea_aria')}
     tabindex="-1"
   >
     <button class="lb-close" onclick={closeIdeModal} aria-label={$_('drawer.close')}>✕</button>
@@ -1166,7 +1166,7 @@
                           class="scene-json-btn"
                           onclick={() => sceneJsonModal = scene}
                           title={$_('drawer.view_scene_json')}
-                          aria-label="JSON"
+                          aria-label={$_('drawer.json_aria')}
                         >
                           {'{ }'}
                         </button>
