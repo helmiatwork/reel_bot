@@ -398,7 +398,7 @@
   <div class="overlay" onclick={closeModal}>
     <div class="modal" onclick={(e) => e.stopPropagation()}>
       <div class="modal-head">
-        <div class="modal-title">{modal.id ? 'Edit Jadwal' : 'Jadwal Baru'}</div>
+        <div class="modal-title">{modal.id ? $_('jadwal.modal_edit_title') : $_('jadwal.modal_new_title')}</div>
         <button class="close-btn" onclick={closeModal}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
@@ -467,7 +467,7 @@
                       {/each}
                     </select>
                   {:else if acctsByPlatform[p] !== undefined}
-                    <div class="acct-hint">Belum ada akun — <a href="/accounts" class="acct-link">tambah di Accounts</a></div>
+                    <div class="acct-hint">{$_('jadwal.acct_none_hint')}</div>
                   {/if}
                 {/if}
               </div>
@@ -476,14 +476,14 @@
         </label>
 
         <label>
-          <span>Tanggal & waktu post</span>
+          <span>{$_('jadwal.field_datetime')}</span>
           <input type="datetime-local" value={toDatetimeLocal(modal.scheduled_at)}
             oninput={(e) => modal = { ...modal, scheduled_at: e.target.value ? new Date(e.target.value).toISOString() : '' }}>
         </label>
 
         <label>
-          <span>Caption</span>
-          <textarea bind:value={modal.caption} rows="3" placeholder="Caption untuk semua platform…"></textarea>
+          <span>{$_('jadwal.field_caption')}</span>
+          <textarea bind:value={modal.caption} rows="3" placeholder={$_('jadwal.field_caption_placeholder')}></textarea>
         </label>
 
         {#if saveErr}
@@ -509,15 +509,15 @@
   <div class="overlay" onclick={() => createStep = 0}>
     <div class="modal modal-lg" onclick={(e) => e.stopPropagation()}>
       <div class="modal-head">
-        <div class="modal-title">Pilih Konten (1/2)</div>
+        <div class="modal-title">{$_('jadwal.modal_picker_title')}</div>
         <button class="close-btn" onclick={() => createStep = 0}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
       {#if corpusLoading}
-        <div class="empty-state">Memuat corpus…</div>
+        <div class="empty-state">{$_('jadwal.empty_corpus_loading')}</div>
       {:else if corpus.length === 0}
-        <div class="empty-state">Tidak ada konten teranalisis. Jalankan Discover terlebih dahulu.</div>
+        <div class="empty-state">{$_('jadwal.empty_corpus_none')}</div>
       {:else}
         <div class="corpus-grid">
           {#each corpus as c}
@@ -531,14 +531,14 @@
               {/if}
               <div class="corpus-title">{c.title || c.ref}</div>
               {#if c.retention}
-                <div class="corpus-ret">{c.retention}% retensi</div>
+                <div class="corpus-ret">{$_('jadwal.corpus_retention', { values: { pct: c.retention } })}</div>
               {/if}
             </div>
           {/each}
         </div>
       {/if}
       <div class="modal-actions">
-        <button class="btn-outline" onclick={() => { pickedRef = null; createStep = 2 }}>Lewati — buat manual</button>
+        <button class="btn-outline" onclick={() => { pickedRef = null; createStep = 2 }}>{$_('jadwal.btn_skip_manual')}</button>
       </div>
     </div>
   </div>
@@ -549,7 +549,7 @@
   <div class="overlay" onclick={() => createStep = 0}>
     <div class="modal" onclick={(e) => e.stopPropagation()}>
       <div class="modal-head">
-        <div class="modal-title">Atur Jadwal (2/2)</div>
+        <div class="modal-title">{$_('jadwal.modal_schedule_title')}</div>
         <button class="close-btn" onclick={() => createStep = 0}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
@@ -561,12 +561,12 @@
 
       <div class="modal-form">
         <label>
-          <span>Judul</span>
-          <input bind:value={newForm.title} placeholder="Judul konten…">
+          <span>{$_('jadwal.field_title')}</span>
+          <input bind:value={newForm.title} placeholder={$_('jadwal.field_title_placeholder')}>
         </label>
 
         <label>
-          <span>Platform tujuan</span>
+          <span>{$_('jadwal.field_platform')}</span>
           <div class="chip-row">
             {#each PLATFORMS as p}
               {@const isOn = newForm.platforms.includes(p)}
@@ -579,13 +579,13 @@
                     <select class="acct-select"
                       value={newPlatformAccounts[p] != null ? newPlatformAccounts[p] : ''}
                       onchange={(e) => newPlatformAccounts = { ...newPlatformAccounts, [p]: e.target.value ? Number(e.target.value) : null }}>
-                      <option value="">Pilih akun…</option>
+                      <option value="">{$_('jadwal.field_account_placeholder')}</option>
                       {#each (acctsByPlatform[p] || []).filter(a => a.active) as a}
                         <option value={a.id}>{a.label || a.handle}</option>
                       {/each}
                     </select>
                   {:else if acctsByPlatform[p] !== undefined}
-                    <div class="acct-hint">Belum ada akun — <a href="/accounts" class="acct-link">tambah</a></div>
+                    <div class="acct-hint">{$_('jadwal.acct_none_hint')}</div>
                   {/if}
                 {/if}
               </div>
@@ -594,13 +594,13 @@
         </label>
 
         <label>
-          <span>Tanggal & waktu post</span>
+          <span>{$_('jadwal.field_datetime')}</span>
           <input type="datetime-local" bind:value={newForm.scheduled_at}>
         </label>
 
         <label>
-          <span>Caption</span>
-          <textarea bind:value={newForm.caption} rows="3" placeholder="Caption untuk semua platform…"></textarea>
+          <span>{$_('jadwal.field_caption')}</span>
+          <textarea bind:value={newForm.caption} rows="3" placeholder={$_('jadwal.field_caption_placeholder')}></textarea>
         </label>
 
         {#if saveErr}

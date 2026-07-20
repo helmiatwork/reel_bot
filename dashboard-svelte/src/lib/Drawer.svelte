@@ -1,6 +1,7 @@
 <script>
   import { fade, scale } from 'svelte/transition'
   import { cubicOut } from 'svelte/easing'
+  import { get } from 'svelte/store'
   import { _ } from 'svelte-i18n'
   import { drawer, closeDrawer } from './stores.js'
   import { api } from './api.js'
@@ -327,7 +328,7 @@
               ideStage = 'stage2'
               ideDetailLoading = true
               const dr = await api.getIdeaDetail(url, st.selected_index)
-              ideDetailInstruction = dr?.instruction || 'Gagal mengambil instruksi detail'
+              ideDetailInstruction = dr?.instruction || get(_)('drawer.err_get_detail_instruction')
               ideDetailLoading = false
               startIdePoll(url)
             }
@@ -364,7 +365,7 @@
         ideStage = 'stage2'
         ideDetailLoading = true
         const dr = await api.getIdeaDetail(url, statusRes.selected_index)
-        ideDetailInstruction = dr?.instruction || 'Gagal mengambil instruksi detail'
+        ideDetailInstruction = dr?.instruction || get(_)('drawer.err_get_detail_instruction')
         ideDetailLoading = false
         startIdePoll(url)
         return
@@ -376,7 +377,7 @@
     ideStage = 'stage1'
     ideInstructionLoading = true
     const ideRes = await api.getGeminiIdeas(url)
-    ideInstruction = ideRes?.instruction || ideRes?.error || 'Gagal mengambil instruksi'
+    ideInstruction = ideRes?.instruction || ideRes?.error || get(_)('drawer.err_get_instruction')
     ideInstructionLoading = false
     startIdePoll(url)
   }
@@ -391,7 +392,7 @@
     stopIdePoll()
     ideDetailLoading = true
     const dr = await api.getIdeaDetail(url, ideSelectedIndex)
-    ideDetailInstruction = dr?.instruction || 'Gagal mengambil instruksi detail'
+    ideDetailInstruction = dr?.instruction || get(_)('drawer.err_get_detail_instruction')
     ideDetailLoading = false
     startIdePoll(url)
   }
@@ -417,7 +418,7 @@
     geminiBriefModal = ''
     try {
       const res = await api.getGeminiBrief(url)
-      geminiBriefModal = res?.instruction || res?.error || 'Gagal mengambil instruksi'
+      geminiBriefModal = res?.instruction || res?.error || get(_)('drawer.err_get_instruction')
     } catch (e) {
       geminiBriefModal = `Error: ${e.message}`
     } finally {
@@ -528,7 +529,7 @@
     const r = await api.analyzeClaudeAsync(s.youtube_url, { force: true, output_format: fmt, stages })
     reanalyzeLoading = false
     if (!r || r.error || r.detail || !r.run_id) {
-      reanalyzeError = r?.error || r?.detail || 'Gagal.'
+      reanalyzeError = r?.error || r?.detail || get(_)('drawer.err_general')
       return
     }
     reanalyzeDone = true
@@ -556,7 +557,7 @@
 
     const resp = await api.decompose(s.youtube_url)
     if (!resp?.run_id) {
-      decomposeError = resp?.error || 'Gagal memulai decompose.'
+      decomposeError = resp?.error || get(_)('drawer.err_decompose_failed')
       decomposeRunning = false
       return
     }
