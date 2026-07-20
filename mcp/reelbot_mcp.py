@@ -634,6 +634,153 @@ def save_analysis(youtube_url: str, analysis_json: str) -> dict:
 
 
 @server.tool()
+def save_ideas(youtube_url: str, ideas_json: str) -> dict:
+    """
+    IDEA FLOW STEP 1 (final save). Call this after brainstorming candidate ideas to persist them to the database. This is the ONLY correct way to save candidates.
+
+    Save candidate ideas to the source_ideas table.
+
+    Args:
+        youtube_url: the YouTube URL to associate with the ideas
+        ideas_json: JSON string or list of candidate ideas, each with at least {title, description}. Must be non-empty.
+
+    Returns:
+        {"ok": true, "youtube_url": ..., "count": N} on success
+        {"error": "..."} on failure (invalid URL, bad JSON, empty list)
+    """
+    # Validate URL
+    if not _valid_url(youtube_url):
+        return {"error": "invalid youtube_url"}
+
+    # Parse ideas_json (accept string or list)
+    if isinstance(ideas_json, str):
+        try:
+            ideas_list = json.loads(ideas_json)
+        except (json.JSONDecodeError, ValueError):
+            return {"error": "ideas_json is not valid JSON"}
+    elif isinstance(ideas_json, list):
+        ideas_list = ideas_json
+    else:
+        return {"error": "ideas_json must be a JSON string or list"}
+
+    # Require a non-empty list
+    if not isinstance(ideas_list, list) or not ideas_list:
+        return {"error": "ideas_json must be a non-empty list"}
+
+    # Lenient validation: each item should be a dict-like object (require at least one field)
+    # Don't hard-fail on missing optional keys, but reject if not iterable as dicts
+    for idea in ideas_list:
+        if not isinstance(idea, dict):
+            return {"error": "each idea must be a dict/object"}
+
+    # DB write: UPSERT into source_ideas
+    if not DATABASE_URL:
+        return {"error": "DATABASE_URL not configured"}
+
+    try:
+        conn = psycopg.connect(DATABASE_URL, connect_timeout=5)
+    except Exception as e:
+        return {"error": f"database connection failed: {e}"}
+
+    try:
+        with conn.cursor() as cur:
+            ideas_jsonb = Jsonb(ideas_list)
+
+            # Look up source_id by youtube_url (may be NULL if no source row yet)
+            cur.execute("SELECT id FROM sources WHERE youtube_url = %s", (youtube_url,))
+            source_row = cur.fetchone()
+            source_id = source_row[0] if source_row else None
+
+            # UPSERT: insert or update candidates, resetting selected_index and detail
+            cur.execute(
+                """INSERT INTO source_ideas (source_id, youtube_url, candidates, candidates_at, selected_index, detail, updated_at)
+                   VALUES (%s, %s, %s, now(), NULL, NULL, now())
+                   ON CONFLICT (youtube_url) DO UPDATE SET
+                     candidates = EXCLUDED.candidates,
+                     candidates_at = now(),
+                     selected_index = NULL,
+                     detail = NULL,
+                     updated_at = now()""",
+                (source_id, youtube_url, ideas_jsonb)
+            )
+
+            conn.commit()
+        return {"ok": True, "youtube_url": youtube_url, "count": len(ideas_list)}
+    except Exception as e:
+        conn.rollback()
+        return {"error": f"database error: {e}"}
+    finally:
+        conn.close()
+
+
+@server.tool()
+def save_idea_detail(youtube_url: str, detail_json: str) -> dict:
+    """
+    IDEA FLOW STEP 2 (final). Call this after expanding the selected idea to persist the full production package. This is the final save for the idea generator flow.
+
+    Save expanded idea detail to the source_ideas table.
+
+    Args:
+        youtube_url: the YouTube URL to associate with the detail
+        detail_json: JSON string or dict with {naskah, edit_cues, caption, hashtags, ...}. Must be a non-empty object.
+
+    Returns:
+        {"ok": true, "youtube_url": ...} on success
+        {"error": "..."} on failure (invalid URL, bad JSON, no candidates saved yet)
+    """
+    # Validate URL
+    if not _valid_url(youtube_url):
+        return {"error": "invalid youtube_url"}
+
+    # Parse detail_json (accept string or dict)
+    if isinstance(detail_json, str):
+        try:
+            detail_dict = json.loads(detail_json)
+        except (json.JSONDecodeError, ValueError):
+            return {"error": "detail_json is not valid JSON"}
+    elif isinstance(detail_json, dict):
+        detail_dict = detail_json
+    else:
+        return {"error": "detail_json must be a JSON string or dict"}
+
+    # Require a non-empty object
+    if not isinstance(detail_dict, dict) or not detail_dict:
+        return {"error": "detail_json must be a non-empty object"}
+
+    # DB write: UPDATE source_ideas
+    if not DATABASE_URL:
+        return {"error": "DATABASE_URL not configured"}
+
+    try:
+        conn = psycopg.connect(DATABASE_URL, connect_timeout=5)
+    except Exception as e:
+        return {"error": f"database connection failed: {e}"}
+
+    try:
+        with conn.cursor() as cur:
+            # Wrap detail as JSONB
+            detail_jsonb = Jsonb(detail_dict)
+
+            # UPDATE source_ideas — fail if no row (candidates must be saved first)
+            cur.execute(
+                """UPDATE source_ideas SET detail = %s, detail_at = now(), updated_at = now()
+                   WHERE youtube_url = %s""",
+                (detail_jsonb, youtube_url)
+            )
+
+            if cur.rowcount == 0:
+                return {"error": "no idea candidates saved yet for this url — run save_ideas first"}
+
+            conn.commit()
+        return {"ok": True, "youtube_url": youtube_url}
+    except Exception as e:
+        conn.rollback()
+        return {"error": f"database error: {e}"}
+    finally:
+        conn.close()
+
+
+@server.tool()
 def get_clips(youtube_url: str) -> dict:
     """
     STORYBOARD FLOW STEP 1. Use this to fetch the local video clip files (seg_NN.mp4) for a decomposed video. This is the FIRST tool to call when building a Gemini storyboard.
