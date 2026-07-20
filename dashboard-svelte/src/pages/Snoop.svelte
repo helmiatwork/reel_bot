@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte'
+  import { _ } from 'svelte-i18n'
   import { api } from '../lib/api.js'
 
   let targets = $state([])
@@ -72,31 +73,31 @@
 
 <div class="top">
   <div>
-    <h1>Snoop</h1>
-    <p class="sub">Mengintip target channel — tiap ada upload baru, videonya otomatis di-clip.</p>
+    <h1>{$_('snoop.title')}</h1>
+    <p class="sub">{$_('snoop.subtitle')}</p>
   </div>
   <div class="pill">{targets.length} target</div>
 </div>
 
 <div class="metrics">
-  <div class="metric"><div class="ml">Target dipantau</div><div class="mv">{targets.length}</div></div>
-  <div class="metric"><div class="ml">Upload baru hari ini</div><div class="mv">{newToday}</div></div>
-  <div class="metric"><div class="ml">Clip dibuat</div><div class="mv">{clipTotal}</div></div>
+  <div class="metric"><div class="ml">{$_('snoop.targets_monitored')}</div><div class="mv">{targets.length}</div></div>
+  <div class="metric"><div class="ml">{$_('snoop.uploads_today')}</div><div class="mv">{newToday}</div></div>
+  <div class="metric"><div class="ml">{$_('snoop.clips_created')}</div><div class="mv">{clipTotal}</div></div>
 </div>
 
 <div class="input-group">
   <input
     type="text"
-    placeholder="@channel atau URL YouTube…"
+    placeholder={$_('snoop.channel_placeholder')}
     bind:value={channel}
     disabled={loading}
     onkeydown={(e) => e.key === 'Enter' && addTarget()}
   />
   <button onclick={addTarget} disabled={loading || !channel.trim()}>
-    {loading ? 'menambah…' : 'Tambah target'}
+    {loading ? $_('snoop.adding') : $_('snoop.add_target_btn')}
   </button>
 </div>
-<div class="schedule">Cek otomatis harian 08:00 (n8n) · videonya di-clip pakai Claude Sonnet</div>
+<div class="schedule">{$_('snoop.auto_schedule')}</div>
 
 {#if error}
   <div class="error-msg">{error}</div>
@@ -106,7 +107,7 @@
   {#if targets.length === 0}
     <div class="empty">
       <div class="empty-icon">🕵️</div>
-      <div class="empty-text">Belum ada target. Tambah channel di atas buat mulai mengintip.</div>
+      <div class="empty-text">{$_('snoop.no_targets')}</div>
     </div>
   {:else}
     {#each targets as t (t.channel_id)}
@@ -118,32 +119,32 @@
             <div class="avatar">{(t.handle || t.channel_id || '?').replace('@', '').slice(0, 2).toUpperCase()}</div>
             <div>
               <div class="name">{t.handle || t.channel_id}</div>
-              <div class="meta">{t.runs || 0} run · {res ? `terakhir ${fmtDate(res.created_at)}` : 'belum ada upload terdeteksi'}</div>
+              <div class="meta">{t.runs || 0} {$_('snoop.runs')} · {res ? `${$_('snoop.last')} ${fmtDate(res.created_at)}` : $_('snoop.no_upload_detected')}</div>
             </div>
           </div>
           <div class="right">
             {#if res}
-              <span class="badge ok">upload baru · {Array.isArray(res.clips) ? res.clips.length : 0} clip</span>
+              <span class="badge ok">{$_('snoop.new_upload')} · {Array.isArray(res.clips) ? res.clips.length : 0} {$_('snoop.clips')}</span>
             {:else}
-              <span class="badge wait">menunggu upload</span>
+              <span class="badge wait">{$_('snoop.waiting_upload')}</span>
             {/if}
-            <button class="icon" title="Hapus target" onclick={() => removeTarget(t.channel_id)}>✕</button>
+            <button class="icon" title={$_('snoop.delete_target')} onclick={() => removeTarget(t.channel_id)}>✕</button>
           </div>
         </div>
 
         {#if res}
-          <div class="video">▶ {res.video_title || res.video_id}</div>
+          <div class="video">{$_('snoop.play_icon')} {res.video_title || res.video_id}</div>
           {#if rec}
             <div class="rec">
               <div class="rec-head">
-                <span class="rec-badge">★ Recommended</span>
+                <span class="rec-badge">{$_('snoop.recommended_badge')}</span>
                 <span class="rec-time">{fmtTime(rec.start_sec)} – {fmtTime(rec.end_sec)}</span>
               </div>
-              <div class="rec-title">{rec.title || '(untitled clip)'}</div>
+              <div class="rec-title">{rec.title || $_('snoop.untitled_clip')}</div>
               {#if rec.why}<div class="rec-why">{rec.why}</div>{/if}
             </div>
             {#if Array.isArray(res.clips) && res.clips.length > 1}
-              <div class="more">+ {res.clips.length - 1} clip lainnya</div>
+              <div class="more">{$_('snoop.plus_sign')} {res.clips.length - 1} {$_('snoop.more_clips')}</div>
             {/if}
           {/if}
         {/if}

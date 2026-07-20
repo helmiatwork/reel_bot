@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte'
+  import { _ } from 'svelte-i18n'
   import { api, fmtViews, isActiveRunning } from '../lib/api.js'
   import { SOURCE_DETAIL } from '../lib/data.js'
   import { openDrawer, jobs } from '../lib/stores.js'
@@ -114,34 +115,34 @@
 
 <div class="top">
   <div class="top-row">
-    <div><h1>Sources</h1><div class="sub">Library riset — klik baris buat detail</div></div>
+    <div><h1>{$_('sources.title')}</h1><div class="sub">{$_('sources.subtitle')}</div></div>
   </div>
   <div class="pill">{total || rows.length} source</div>
 </div>
 
 <div class="filters">
   <select bind:value={niche}>
-    <option value="">Semua niche</option>
+    <option value="">{$_('sources.all_niches')}</option>
     {#each niches as n}<option value={n}>{n}</option>{/each}
   </select>
-  <input placeholder="cari judul..." bind:value={q} />
-  <button class="btn-secondary" onclick={() => jobsOpen = true} title="Lihat daftar proses">
+  <input placeholder={$_('sources.search_title')} bind:value={q} />
+  <button class="btn-secondary" onclick={() => jobsOpen = true} title={$_('sources.view_processes')}>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-    Proses
+    {$_('sources.processes')}
     {#if runningCount > 0}
       <span class="badge">{runningCount}</span>
     {/if}
   </button>
   <button class="btn-primary" onclick={() => modalOpen = true}>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>
-    Tambah source
+    {$_('sources.add_source')}
   </button>
 </div>
 
 <div class="card">
   <table>
     <thead>
-      <tr><th>Judul</th><th>Niche</th><th>Platform</th><th>Tags</th><th>Prompt</th><th style="text-align:right">Views</th><th>Status</th></tr>
+      <tr><th>{$_('sources.title_header')}</th><th>{$_('sources.niche_header')}</th><th>{$_('sources.platform_header')}</th><th>{$_('sources.tags_header')}</th><th>{$_('sources.prompt_header')}</th><th style="text-align:right">{$_('sources.views_header')}</th><th>{$_('sources.status_header')}</th></tr>
     </thead>
     <tbody>
       {#each filtered as s}
@@ -160,15 +161,15 @@
             {/if}
           </td>
           <td>{#each s.tags.slice(0, 3) as t}<span class="tag">{t}</span>{/each}</td>
-          <td>{#if s.gen_prompt_format === 'prompt_json'}<span class="chip c-prompt-json">JSON</span>{:else if s.gen_prompt_format === 'prompt_video'}<span class="chip c-prompt-text">Text</span>{:else}<span class="mut">—</span>{/if}</td>
+          <td>{#if s.gen_prompt_format === 'prompt_json'}<span class="chip c-prompt-json">{$_('sources.format_json')}</span>{:else if s.gen_prompt_format === 'prompt_video'}<span class="chip c-prompt-text">{$_('sources.format_text')}</span>{:else}<span class="mut">—</span>{/if}</td>
           <td class="num" style="text-align:right">{s.viewsLabel}</td>
           <td>
             {#if s.status === 'running'}
-              <span class="chip c-running"><span class="spin"></span>running</span>
+              <span class="chip c-running"><span class="spin"></span>{$_('sources.status_running')}</span>
             {:else if s.status === 'processing'}
-              <span class="chip c-processing">processing</span>
+              <span class="chip c-processing">{$_('sources.status_processing')}</span>
             {:else if s.status === 'working'}
-              <span class="chip c-working"><span class="spin"></span>working</span>
+              <span class="chip c-working"><span class="spin"></span>{$_('sources.status_working')}</span>
             {:else}
               <span class="chip {s.status === 'error' ? 'c-error' : s.status === 'used' ? 'c-used' : 'c-done'}">{s.status}</span>
             {/if}
@@ -176,7 +177,7 @@
         </tr>
       {/each}
       {#if !filtered.length}
-        <tr><td colspan="7" class="mut">Belum ada source di DB.</td></tr>
+        <tr><td colspan="7" class="mut">{$_('sources.no_sources')}</td></tr>
       {/if}
     </tbody>
   </table>

@@ -1,4 +1,5 @@
 <script>
+  import { _ } from 'svelte-i18n'
   let { logs = [] } = $props()
 
   let elapsed = $derived(logs.length > 0 ? Math.max(...logs.map(e => e.t)).toFixed(1) : '0.0')
@@ -20,29 +21,29 @@
     }
 
     const DEFS = [
-      { label: 'Download video',
+      { label: $_('analyzeStepper.download_video'),
         match: m => /download video/i.test(m) || /terunduh/i.test(m),
-        done: m => /terunduh/i.test(m),
+        done: m => new RegExp($_('analyzeStepper.downloaded'), 'i').test(m),
         sub: () => null },
-      { label: 'Ekstrak frame',
+      { label: $_('analyzeStepper.extract_frames'),
         match: m => /ekstrak.*frame/i.test(m) || /diekstrak/i.test(m),
-        done: m => /diekstrak/i.test(m),
-        sub: () => frameCount ? `${frameCount} frame` : null },
-      { label: 'Transkrip',
+        done: m => new RegExp($_('analyzeStepper.extracted'), 'i').test(m),
+        sub: () => frameCount ? $_('analyzeStepper.frames', { values: { count: frameCount } }) : null },
+      { label: $_('analyzeStepper.transcript'),
         match: m => /transkrip/i.test(m),
-        done: m => /transkrip diambil/i.test(m),
-        sub: () => segmentCount ? `${segmentCount} segments` : null },
-      { label: 'Analisa frame',
+        done: m => new RegExp($_('analyzeStepper.transcript_taken'), 'i').test(m),
+        sub: () => segmentCount ? $_('analyzeStepper.segments', { values: { count: segmentCount } }) : null },
+      { label: $_('analyzeStepper.analyze_frames'),
         match: m => /analisa frame/i.test(m),
         done: () => false,
         sub: () => batchInfo },
-      { label: 'Sintesis prompt JSON',
+      { label: $_('analyzeStepper.synthesize_json'),
         match: m => /sintesis/i.test(m),
         done: () => false,
-        sub: () => 'Sonnet 4.6' },
-      { label: 'Simpan ke database',
+        sub: () => $_('analyzeStepper.sonnet_model') },
+      { label: $_('analyzeStepper.save_database'),
         match: m => /simpan/i.test(m) || /database/i.test(m),
-        done: m => /tersimpan/i.test(m),
+        done: m => new RegExp($_('analyzeStepper.saved'), 'i').test(m),
         sub: () => null },
     ]
 
@@ -68,7 +69,7 @@
 
 <div class="stepper-panel">
   <div class="stepper-hd">
-    <span class="stepper-title">Analyze</span>
+    <span class="stepper-title">{$_('analyzeStepper.title')}</span>
     <span class="stepper-elapsed">{elapsed}s</span>
   </div>
   {#each stepList as step}
@@ -79,7 +80,7 @@
           <polyline points="6,10 9,13 14,7" stroke="#4ade80" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       {:else if step.status === 'running'}
-        <span class="step-spinner" role="status" aria-label="sedang berjalan"></span>
+        <span class="step-spinner" role="status" aria-label={$_('analyzeStepper.running_label')}></span>
       {:else if step.status === 'error'}
         <svg class="step-ic" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
           <circle cx="10" cy="10" r="8" fill="#f87171" fill-opacity="0.15" stroke="#f87171" stroke-width="1.5"/>

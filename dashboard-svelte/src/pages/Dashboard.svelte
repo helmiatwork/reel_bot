@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte'
+  import { _ } from 'svelte-i18n'
   import { api, fmtViews } from '../lib/api.js'
   import { FALLBACK_MOVERS } from '../lib/data.js'
   import LineChart from '../lib/LineChart.svelte'
@@ -53,54 +54,54 @@
 
 <div class="top">
   <div>
-    <h1>Dashboard</h1>
-    <div class="sub">Overview — data dari content_automation</div>
+    <h1>{$_('dashboard.title')}</h1>
+    <div class="sub">{$_('dashboard.subtitle')}</div>
   </div>
   <div class="pill">⟳ live · @HReelBot</div>
 </div>
 
 <div class="kpis">
   <div class="card kpi">
-    <div class="label">Source dianalisa</div>
+    <div class="label">{$_('dashboard.sources_analyzed')}</div>
     <div class="val num">{kpis.sources}</div>
-    <div class="delta up">library riset</div>
+    <div class="delta up">{$_('dashboard.from_research_lib')}</div>
   </div>
   <div class="card kpi">
-    <div class="label">Total views channel</div>
+    <div class="label">{$_('dashboard.total_views')}</div>
     {#if channel.error}
-      <div class="val mut" style="font-size:13px">channel analytics belum siap</div>
+      <div class="val mut" style="font-size:13px">{$_('dashboard.analytics_not_ready')}</div>
     {:else}
       <div class="val num">{fmtViews(channel.total_views)}</div>
     {/if}
-    <div class="delta up">▲ YouTube Analytics (90 hari)</div>
+    <div class="delta up">{$_('dashboard.youtube_90d')}</div>
   </div>
   <div class="card kpi">
-    <div class="label">Avg retention</div>
+    <div class="label">{$_('dashboard.avg_retention')}</div>
     <div class="val num">{channel.avg_view_pct.toFixed(1)}%</div>
-    <div class="delta mut">avg view · durasi {channel.avg_duration}s</div>
+    <div class="delta mut">{$_('dashboard.avg_view_duration', { values: { duration: channel.avg_duration } })}</div>
   </div>
   <div class="card kpi">
-    <div class="label">Formula + klip</div>
+    <div class="label">{$_('dashboard.formulas_clips')}</div>
     <div class="val num">{kpis.formulas} <span class="mut" style="font-size:14px">/ {kpis.clips}</span></div>
-    <div class="delta mut">formula di DB · klip</div>
+    <div class="delta mut">{$_('dashboard.formula_clip_desc')}</div>
   </div>
 </div>
 
 <div class="grid2">
   <div class="card">
-    <h3>Tren views <span class="mut">— 90 hari (channel YouTube)</span></h3>
+    <h3>{$_('dashboard.trend_views')} <span class="mut">{$_('dashboard.trend_views_90d')}</span></h3>
     {#if loaded && datasets.length}
       <LineChart {labels} {datasets} height={118} />
     {:else}
       <p class="mut" style="font-size:12.5px">
-        {#if channel.error}Channel analytics belum siap — {channel.error}.{:else}Belum ada data views channel.{/if}
+        {#if channel.error}{$_('dashboard.analytics_error', { values: { error: channel.error } })}{:else}{$_('dashboard.no_channel_data')}{/if}
       </p>
     {/if}
   </div>
   <div class="card">
-    <h3>Naik tercepat <span class="mut">— top views</span></h3>
+    <h3>{$_('dashboard.top_performing')} <span class="mut">{$_('dashboard.top_views_label')}</span></h3>
     <table>
-      <thead><tr><th>Video</th><th style="text-align:right">views</th><th style="text-align:right">retention</th></tr></thead>
+      <thead><tr><th>{$_('dashboard.video_header')}</th><th style="text-align:right">{$_('dashboard.views_header')}</th><th style="text-align:right">{$_('dashboard.retention_header')}</th></tr></thead>
       <tbody>
         {#each channel.top_videos as m}
           <tr>
@@ -119,5 +120,5 @@
 </div>
 
 {#if !usingReal}
-  <div class="note">⚠️ DB belum terjangkau — menampilkan angka fallback. Cek service postgres di sidebar.</div>
+  <div class="note">{$_('dashboard.db_unavailable')}</div>
 {/if}
