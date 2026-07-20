@@ -1,4 +1,5 @@
 <script>
+  import { _ } from 'svelte-i18n'
   import { api } from '../lib/api.js'
 
   let topic    = $state('')
@@ -15,7 +16,7 @@
     result = null
     const r = await api.seoAnalyze(topic.trim(), platform, niche.trim())
     loading = false
-    if (!r)        { error = 'Request failed — is the backend running?'; return }
+    if (!r)        { error = $_('seo.request_failed'); return }
     if (r.detail)  { error = r.detail; return }
     if (r.error)   { error = r.error;  return }
     result = r
@@ -43,8 +44,8 @@
 <div class="seo">
   <div class="top">
     <div>
-      <h1>SEO</h1>
-      <div class="sub">Keyword research, trending queries, and content suggestions for a topic.</div>
+      <h1>{$_('seo.title')}</h1>
+      <div class="sub">{$_('seo.subtitle')}</div>
     </div>
   </div>
 
@@ -57,38 +58,38 @@
       <input
         bind:value={topic}
         onkeydown={onTopicKey}
-        placeholder="Topic — e.g. japanese street food"
-        aria-label="Topic"
+        placeholder={$_('seo.topic_placeholder')}
+        aria-label={$_('seo.topic_placeholder')}
         disabled={loading}
       />
     </label>
 
     <label class="field sel-field">
-      <select bind:value={platform} disabled={loading} aria-label="Platform">
-        <option value="youtube">YouTube</option>
-        <option value="tiktok">TikTok</option>
-        <option value="instagram">Instagram</option>
-        <option value="xiaohongshu">Xiaohongshu</option>
+      <select bind:value={platform} disabled={loading} aria-label={$_('seo.platform_label')}>
+        <option value="youtube">{$_('seo.youtube')}</option>
+        <option value="tiktok">{$_('seo.tiktok')}</option>
+        <option value="instagram">{$_('seo.instagram')}</option>
+        <option value="xiaohongshu">{$_('seo.xiaohongshu')}</option>
       </select>
     </label>
 
     <label class="field">
       <input
         bind:value={niche}
-        placeholder="Niche (optional)"
-        aria-label="Niche"
+        placeholder={$_('seo.niche_placeholder')}
+        aria-label={$_('seo.niche_placeholder')}
         disabled={loading}
       />
     </label>
 
     <button class="run-btn" onclick={analyze} disabled={loading || !topic.trim()}>
-      {loading ? '…' : 'Analyze'}
+      {loading ? '…' : $_('seo.analyze_btn')}
     </button>
   </div>
 
   <!-- ── States ────────────────────────────────────────────────────────────── -->
   {#if loading}
-    <div class="state-msg mut">Analyzing… fetching keywords and trends.</div>
+    <div class="state-msg mut">{$_('seo.analyzing_state')}</div>
   {/if}
 
   {#if error && !loading}
@@ -96,7 +97,7 @@
   {/if}
 
   {#if !loading && !error && !result}
-    <div class="state-msg mut">Enter a topic and press Analyze to get keyword ideas and trends.</div>
+    <div class="state-msg mut">{$_('seo.enter_topic_state')}</div>
   {/if}
 
   <!-- ── Results ───────────────────────────────────────────────────────────── -->
@@ -106,7 +107,7 @@
       <!-- Suggested titles -->
       {#if result.suggestions?.titles?.length}
         <div class="card section">
-          <div class="section-head">Suggested Titles</div>
+          <div class="section-head">{$_('seo.suggested_titles')}</div>
           <ul class="title-list">
             {#each result.suggestions.titles as title, i}
               <li class="title-row">
@@ -114,8 +115,8 @@
                 <button
                   class="copy-btn"
                   onclick={() => copy(title, `title-${i}`)}
-                  aria-label="Copy title"
-                >{copied === `title-${i}` ? 'copied' : 'copy'}</button>
+                  aria-label={$_('seo.copy_title_label')}
+                >{copied === `title-${i}` ? $_('seo.copied_btn') : $_('seo.copy_btn')}</button>
               </li>
             {/each}
           </ul>
@@ -126,7 +127,7 @@
       <div class="two-col">
         {#if result.suggestions?.hashtags?.length}
           <div class="card section">
-            <div class="section-head">Hashtags</div>
+            <div class="section-head">{$_('seo.hashtags')}</div>
             <div class="chip-row">
               {#each result.suggestions.hashtags as tag}
                 <span
@@ -135,7 +136,7 @@
                   tabindex="0"
                   onclick={() => copy(tag, `tag-${tag}`)}
                   onkeydown={(e) => e.key === 'Enter' && copy(tag, `tag-${tag}`)}
-                  title="Click to copy"
+                  title={$_('seo.click_to_copy')}
                 >{copied === `tag-${tag}` ? 'copied!' : tag}</span>
               {/each}
             </div>
@@ -145,12 +146,12 @@
         {#if result.suggestions?.description}
           <div class="card section">
             <div class="section-head-row">
-              <span class="section-head">Description</span>
+              <span class="section-head">{$_('seo.description')}</span>
               <button
                 class="copy-btn"
                 onclick={() => copy(result.suggestions.description, 'desc')}
-                aria-label="Copy description"
-              >{copied === 'desc' ? 'copied' : 'copy'}</button>
+                aria-label={$_('seo.copy_description_label')}
+              >{copied === 'desc' ? $_('seo.copied_btn') : $_('seo.copy_btn')}</button>
             </div>
             <p class="desc-text">{result.suggestions.description}</p>
           </div>
@@ -160,7 +161,7 @@
       <!-- Keywords -->
       {#if result.keywords?.length}
         <div class="card section">
-          <div class="section-head">Keywords <span class="mut" style="font-weight:400;font-size:12px">({result.keywords.length})</span></div>
+          <div class="section-head">{$_('seo.keywords')} <span class="mut" style="font-weight:400;font-size:12px">({result.keywords.length})</span></div>
           <div class="kw-grid">
             {#each result.keywords as kw}
               <div class="kw-row">
@@ -179,7 +180,7 @@
         <div class="two-col">
           {#if result.trends.related_top?.length}
             <div class="card section">
-              <div class="section-head">Trending — Top</div>
+              <div class="section-head">{$_('seo.trending_top')}</div>
               <ul class="trend-list">
                 {#each result.trends.related_top as t}
                   <li class="trend-row">
@@ -193,7 +194,7 @@
 
           {#if result.trends.related_rising?.length}
             <div class="card section">
-              <div class="section-head">Trending — Rising</div>
+              <div class="section-head">{$_('seo.trending_rising')}</div>
               <ul class="trend-list">
                 {#each result.trends.related_rising as t}
                   <li class="trend-row">

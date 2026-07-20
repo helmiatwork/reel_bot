@@ -1,5 +1,6 @@
 <script>
   import { onMount, onDestroy } from 'svelte'
+  import { _ } from 'svelte-i18n'
   import { api } from '../lib/api.js'
 
   let list          = $state([])

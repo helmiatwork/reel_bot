@@ -1,4 +1,5 @@
 <script>
+  import { _ } from 'svelte-i18n'
   import { api } from '../lib/api.js'
 
   // ── tab state ─────────────────────────────────────────────────────────────

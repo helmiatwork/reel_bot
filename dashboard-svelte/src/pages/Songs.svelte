@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte'
+  import { _ } from 'svelte-i18n'
   import { api } from '../lib/api.js'
   import Pagination from '../lib/Pagination.svelte'
 
@@ -139,13 +140,13 @@
 <!-- ── Header ──────────────────────────────────────────────────────────────── -->
 <div class="top">
   <div>
-    <h1>Songs</h1>
-    <div class="sub">Audio files from analyzed videos + your imports</div>
+    <h1>{$_('songs.title')}</h1>
+    <div class="sub">{$_('songs.subtitle')}</div>
   </div>
   <div style="display:flex;gap:0.5rem;align-items:center">
-    <div class="pill">{total || rows.length} song</div>
+    <div class="pill">{$_('songs.song_count', { values: { count: total || rows.length } })}</div>
     <button class="btn-sm" onclick={() => { showImport = !showImport; importResult = null }}>
-      {showImport ? 'Tutup' : '+ Import musik'}
+      {showImport ? $_('songs.close_btn') : $_('songs.import_btn')}
     </button>
   </div>
 </div>
