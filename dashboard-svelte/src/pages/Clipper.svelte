@@ -91,20 +91,20 @@
 </script>
 
 <div class="top">
-  <div><h1>Clipper</h1><div class="sub">Cari momen viral dari transkrip — podcast/video panjang → short-form clips</div></div>
-  <div class="pill">{rows.length} hasil</div>
+  <div><h1>{$_('clipper.title')}</h1><div class="sub">{$_('clipper.subtitle')}</div></div>
+  <div class="pill">{$_('clipper.results_count', { values: { count: rows.length } })}</div>
 </div>
 
 <div class="filters">
   <div class="input-group">
     <input
-      placeholder="YouTube URL…"
+      placeholder={$_('clipper.url_placeholder')}
       bind:value={url}
       disabled={loading}
       onkeydown={(e) => e.key === 'Enter' && handleFindClips()}
     />
     <button onclick={handleFindClips} disabled={loading || !url.trim()}>
-      {loading ? 'menganalisa…' : 'Cari klip'}
+      {loading ? $_('clipper.analyzing_btn') : $_('clipper.analyze_btn')}
     </button>
   </div>
 </div>
@@ -113,8 +113,8 @@
   {#if loading}
     <div class="loading-state">
       <div class="spinner"></div>
-      <div class="loading-text">Menganalisa transkrip &amp; nyari momen viral…</div>
-      <div class="loading-sub">Bisa 10–60 detik. Sabar ya.</div>
+      <div class="loading-text">{@html $_('clipper.loading_text')}</div>
+      <div class="loading-sub">{$_('clipper.loading_sub')}</div>
     </div>
   {:else if error}
     <div class="error-msg">{error}</div>
@@ -127,11 +127,11 @@
     <table>
       <thead>
         <tr>
-          <th>Video</th>
-          <th>Klip</th>
-          <th>Model</th>
-          <th style="text-align:right">Cost</th>
-          <th>Tanggal</th>
+          <th>{$_('clipper.video_header')}</th>
+          <th>{$_('clipper.clips_header')}</th>
+          <th>{$_('clipper.model_header')}</th>
+          <th style="text-align:right">{$_('clipper.cost_header')}</th>
+          <th>{$_('clipper.date_header')}</th>
         </tr>
       </thead>
       <tbody>
@@ -162,13 +162,13 @@
                         </div>
                       </div>
                       <div class="clip-hook">
-                        <strong>Hook:</strong> {clip.hook || '-'}
+                        <strong>{$_('clipper.hook_label')}</strong> {clip.hook || '-'}
                       </div>
                       <div class="clip-why">
-                        <strong>Alasan viral:</strong> {clip.why || '-'}
+                        <strong>{$_('clipper.why_label')}</strong> {clip.why || '-'}
                       </div>
                       <div class="clip-caption">
-                        <strong>Caption:</strong> {clip.caption || '-'}
+                        <strong>{$_('clipper.caption_label')}</strong> {clip.caption || '-'}
                       </div>
                     </div>
                   {/each}

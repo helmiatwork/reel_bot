@@ -112,25 +112,25 @@
 <!-- ── Page header ────────────────────────────────────────────────────────── -->
 <div class="top">
   <div>
-    <h1>Production Prep</h1>
-    <div class="sub">Siapkan semua bahan sebelum masuk CapCut</div>
+    <h1>{$_('prep.title')}</h1>
+    <div class="sub">{$_('prep.subtitle')}</div>
   </div>
 </div>
 
 {#if loading}
-  <p class="mut">Memuat daftar konten…</p>
+  <p class="mut">{$_('prep.loading_list')}</p>
 {:else if !list.length}
   <div class="card" style="text-align:center;padding:40px 20px">
     <p class="mut" style="font-size:13.5px;margin:0">
-      Belum ada konten yang dianalisis. Analisis video dulu di Sources atau Clipper.
+      {$_('prep.no_content')}
     </p>
   </div>
 {:else}
 
 <!-- ── Picker ──────────────────────────────────────────────────────────────── -->
 <div class="picker-row">
-  <span class="mut" style="font-size:12.5px;white-space:nowrap">Pilih konten:</span>
-  <select class="sel" aria-label="Pilih konten" onchange={onPickerChange}>
+  <span class="mut" style="font-size:12.5px;white-space:nowrap">{$_('prep.pick_content')}</span>
+  <select class="sel" aria-label={$_('prep.select_content')} onchange={onPickerChange}>
     {#each list as item}
       <option value={item.source_id} selected={item.source_id === selectedId}>
         {item.title || `Source #${item.source_id}`}{item.platform ? ` · ${item.platform}` : ''}
@@ -140,7 +140,7 @@
 </div>
 
 {#if loadingBundle}
-  <p class="mut">Memuat bundle…</p>
+  <p class="mut">{$_('prep.loading_bundle')}</p>
 {:else if bundle}
 
 <!-- ── Two-column grid ──────────────────────────────────────────────────────── -->
@@ -152,9 +152,9 @@
     <!-- Preview card -->
     <div class="card" style="margin-bottom:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <h3 style="margin:0">Preview</h3>
+        <h3 style="margin:0">{$_('prep.preview')}</h3>
         <span class="pill" style="font-size:11.5px;padding:4px 10px">
-          9:16{bundle.preview?.duration_sec ? ` · ${fmtDur(bundle.preview.duration_sec)}` : ''}
+          {$_('prep.aspect_ratio', { values: { duration: bundle.preview?.duration_sec ? ` · ${fmtDur(bundle.preview.duration_sec)}` : '' } })}
         </span>
       </div>
 
@@ -166,14 +166,14 @@
           aria-label="Source preview"
         ><track kind="captions" /></video>
       {:else}
-        <div class="media-placeholder mut">Tidak ada preview</div>
+        <div class="media-placeholder mut">{$_('prep.no_preview')}</div>
       {/if}
 
       <!-- BGM player -->
       {#if bundle.bgm?.url}
         <div class="bgm-row">
           <div class="bgm-meta">
-            <span class="mut" style="font-size:11px">BGM</span>
+            <span class="mut" style="font-size:11px">{$_('prep.bgm')}</span>
             <strong style="font-size:12.5px">{bundle.bgm.title || 'BGM'}</strong>
             {#if bundle.bgm.music_key || bundle.bgm.bpm}
               <span class="mut" style="font-size:11px">
@@ -192,34 +192,34 @@
 
       <!-- BGM picker -->
       <div class="bgm-picker-row">
-        <label for="bgm-sel" class="mut" style="font-size:11.5px;white-space:nowrap">Ganti BGM:</label>
+        <label for="bgm-sel" class="mut" style="font-size:11.5px;white-space:nowrap">{$_('prep.change_bgm')}</label>
         <select
           id="bgm-sel"
           class="sel"
           style="flex:1;min-width:0"
-          aria-label="Pilih BGM"
+          aria-label={$_('prep.select_bgm')}
           disabled={settingBgm}
           onchange={onBgmChange}
         >
-          <option value="">— Tanpa BGM —</option>
+          <option value="">{$_('prep.no_bgm_option')}</option>
           {#each songs as s}
             <option value={s.id} selected={s.id === bundle.bgm?.song_id}>
               {s.title || `Song #${s.id}`}{s.bpm ? ` · ${Math.round(s.bpm)} BPM` : ''}
             </option>
           {/each}
         </select>
-        {#if settingBgm}<span class="mut" style="font-size:11.5px;white-space:nowrap">Menyimpan…</span>{/if}
+        {#if settingBgm}<span class="mut" style="font-size:11.5px;white-space:nowrap">{$_('prep.saving')}</span>{/if}
       </div>
     </div>
 
     <!-- Rough-cut reference card -->
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">
-        <h3 style="margin:0">Rough-cut reference</h3>
+        <h3 style="margin:0">{$_('prep.roughcut_title')}</h3>
         <span
           class="pill"
           style="font-size:10.5px;padding:3px 9px;background:rgba(247,184,75,.15);color:var(--amber);border-color:rgba(247,184,75,.3)"
-        >Gambaran besar · not frame-precise</span>
+        >{$_('prep.roughcut_note')}</span>
       </div>
 
       {#if bundle.roughcut?.status === 'ready' && bundle.roughcut?.url}
@@ -230,22 +230,22 @@
           aria-label="Rough-cut reference"
         ><track kind="captions" /></video>
         <p class="mut" style="margin:10px 0 0;font-size:11.5px">
-          Auto-stitched dari clip terpilih + BGM sebagai patokan urutan &amp; timing. Cut presisi tetap di CapCut.
+          {@html $_('prep.roughcut_desc')}
         </p>
 
       {:else if bundle.roughcut?.status === 'building' || roughcutBuilding}
         <div class="media-placeholder mut" style="max-height:160px">
           <svg class="ic" style="width:18px;height:18px"><use href="#i-clock"/></svg>
-          Membangun rough-cut… harap tunggu.
+          {$_('prep.roughcut_building')}
         </div>
 
       {:else}
-        <div class="media-placeholder mut" style="max-height:120px">Belum ada rough-cut</div>
+        <div class="media-placeholder mut" style="max-height:120px">{$_('prep.no_roughcut')}</div>
         <button class="btn" style="margin-top:10px;font-size:12.5px" onclick={startRoughcut}>
-          Generate rough-cut
+          {$_('prep.generate_roughcut')}
         </button>
         <p class="mut" style="margin:8px 0 0;font-size:11.5px">
-          Auto-stitch clip terpilih + BGM sebagai referensi urutan dan timing. Cut presisi tetap di CapCut.
+          {@html $_('prep.roughcut_note2')}
         </p>
       {/if}
     </div>
@@ -257,18 +257,18 @@
 
     <!-- Source & Clips -->
     <div class="card" style="margin-bottom:14px">
-      <h3>Source &amp; clips</h3>
+      <h3>{$_('prep.source_clips')}</h3>
 
       {#if bundle.source_hd}
         <div class="clip-row">
           <div class="clip-thumb"></div>
           <div style="flex:1;min-width:0">
-            <div class="clip-name">source_hd</div>
+            <div class="clip-name">{$_('prep.source_hd')}</div>
             <div class="mut tc-line">
-              {[bundle.source_hd.resolution, fmtSize(bundle.source_hd.size_bytes), 'full download'].filter(Boolean).join(' · ')}
+              {[bundle.source_hd.resolution, fmtSize(bundle.source_hd.size_bytes), $_('prep.full_download')].filter(Boolean).join(' · ')}
             </div>
           </div>
-          <a href={bundle.source_hd.url} download class="dl-a" title="Download source HD" aria-label="Download source HD">⬇</a>
+          <a href={bundle.source_hd.url} download class="dl-a" title={$_('prep.download_source')} aria-label={$_('prep.download_source')}>⬇</a>
         </div>
       {/if}
 
@@ -277,23 +277,23 @@
           <div class="clip-thumb"></div>
           <div style="flex:1;min-width:0">
             <div class="clip-name">
-              clip {clip.index + 1}{clip.label ? ` — ${clip.label}` : ''}
+              {$_('prep.clip_item', { values: { index: clip.index + 1, label: clip.label ? ` — ${clip.label}` : '' } })}
             </div>
             <div class="mut tc-line num">{fmtTC(clip.start)} → {fmtTC(clip.end)}</div>
           </div>
-          <a href={clip.url} download class="dl-a" title="Download clip {clip.index + 1}" aria-label="Download clip {clip.index + 1}">⬇</a>
+          <a href={clip.url} download class="dl-a" title={$_('prep.download_clip', { values: { index: clip.index + 1 } })} aria-label={$_('prep.download_clip', { values: { index: clip.index + 1 } })}>⬇</a>
         </div>
       {/each}
 
       {#if !bundle.source_hd && !bundle.clips?.length}
-        <p class="mut" style="font-size:12.5px;margin:0">Tidak ada file tersedia.</p>
+        <p class="mut" style="font-size:12.5px;margin:0">{$_('prep.no_files')}</p>
       {/if}
     </div>
 
     <!-- Transcript -->
     {#if bundle.transcript}
     <div class="card" style="margin-bottom:14px">
-      <h3>Transcript</h3>
+      <h3>{$_('prep.transcript')}</h3>
       <div class="transcript-box">{bundle.transcript}</div>
     </div>
     {/if}
@@ -302,25 +302,25 @@
     {#if bundle.strategy}
     <div class="card" style="margin-bottom:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <h3 style="margin:0">Strategy</h3>
+        <h3 style="margin:0">{$_('prep.strategy')}</h3>
         {#if bundle.strategy.retention_score != null}
           <span
             class="pill"
             style="font-size:11px;padding:3px 9px;background:rgba(10,179,156,.12);color:var(--green);border-color:transparent"
-          >Retention {bundle.strategy.retention_score}/10</span>
+          >{$_('prep.retention_score', { values: { score: bundle.strategy.retention_score } })}</span>
         {/if}
       </div>
 
       {#if bundle.strategy.hook}
-        <div class="strat-lbl">Hook</div>
+        <div class="strat-lbl">{$_('prep.hook')}</div>
         <div style="font-size:12.5px;margin-bottom:6px">{bundle.strategy.hook}</div>
       {/if}
       {#if bundle.strategy.structure}
-        <div class="strat-lbl">Structure</div>
+        <div class="strat-lbl">{$_('prep.structure')}</div>
         <div style="font-size:12.5px;margin-bottom:6px">{bundle.strategy.structure}</div>
       {/if}
       {#if bundle.strategy.retention}
-        <div class="strat-lbl">Retention</div>
+        <div class="strat-lbl">{$_('prep.retention')}</div>
         <div style="font-size:12.5px">{bundle.strategy.retention}</div>
       {/if}
     </div>
@@ -329,7 +329,7 @@
     <!-- SEO Pack -->
     {#if bundle.seo}
     <div class="card">
-      <h3>SEO pack</h3>
+      <h3>{$_('prep.seo_pack')}</h3>
 
       {#if bundle.seo.titles?.length}
         <ul class="titles-list">
@@ -339,8 +339,8 @@
               <button
                 class="copy-btn"
                 onclick={() => copyText(title)}
-                title="Copy title"
-                aria-label="Copy title to clipboard"
+                title={$_('prep.copy_title')}
+                aria-label={$_('prep.copy_title')}
               >⧉</button>
             </li>
           {/each}
@@ -360,7 +360,7 @@
       {/if}
 
       {#if !bundle.seo.titles?.length && !bundle.seo.hashtags?.length && !bundle.seo.description}
-        <p class="mut" style="font-size:12.5px;margin:0">Belum ada data SEO.</p>
+        <p class="mut" style="font-size:12.5px;margin:0">{$_('prep.no_seo_data')}</p>
       {/if}
     </div>
     {/if}
@@ -369,38 +369,38 @@
 </div>
 
 <!-- ── Sticky download bar ──────────────────────────────────────────────────── -->
-<div class="download-bar" role="region" aria-label="Download bundle">
+<div class="download-bar" role="region" aria-label={$_('prep.download_all_aria')}>
   <div>
-    <div style="font-weight:600;font-size:13.5px">Download semua (ZIP)</div>
+    <div style="font-weight:600;font-size:13.5px">{$_('prep.download_all')}</div>
     <div class="asset-row">
       {#if bundle.source_hd}
         <span class="asset-chip">
           <svg class="ic" style="color:var(--green);width:12px;height:12px"><use href="#i-check"/></svg>
-          Source HD{bundle.clips?.length ? ` + ${bundle.clips.length} clip` : ''}
+          {$_('prep.source_hd_chip', { values: { clips: bundle.clips?.length ? ` + ${bundle.clips.length} clip` : '' } })}
         </span>
       {/if}
       {#if bundle.bgm}
         <span class="asset-chip">
           <svg class="ic" style="color:var(--green);width:12px;height:12px"><use href="#i-check"/></svg>
-          BGM
+          {$_('prep.bgm_chip')}
         </span>
       {/if}
       {#if bundle.transcript || bundle.strategy}
         <span class="asset-chip">
           <svg class="ic" style="color:var(--green);width:12px;height:12px"><use href="#i-check"/></svg>
-          transcript + strategy
+          {$_('prep.transcript_strategy_chip')}
         </span>
       {/if}
       {#if bundle.seo}
         <span class="asset-chip">
           <svg class="ic" style="color:var(--green);width:12px;height:12px"><use href="#i-check"/></svg>
-          SEO pack
+          {$_('prep.seo_pack_chip')}
         </span>
       {/if}
       {#if bundle.roughcut?.status === 'ready'}
         <span class="asset-chip">
           <svg class="ic" style="color:var(--green);width:12px;height:12px"><use href="#i-check"/></svg>
-          rough-cut ref
+          {$_('prep.roughcut_chip')}
         </span>
       {/if}
     </div>
@@ -410,8 +410,8 @@
     href={api.prepZipUrl(selectedId)}
     download
     class="dl-btn"
-    aria-label="Download semua aset sebagai ZIP"
-  >⬇ Download ZIP</a>
+    aria-label={$_('prep.download_all_aria')}
+  >{$_('prep.download_zip')}</a>
 </div>
 
 {/if}

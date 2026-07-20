@@ -173,8 +173,8 @@
   <!-- ── header ─────────────────────────────────────────────────────────── -->
   <div class="top">
     <div>
-      <h1>Discover</h1>
-      <div class="sub">Find source videos via YouTube Data API v3 — search, trending, channel mining — then send any pick into the clip pipeline.</div>
+      <h1>{$_('discover.title')}</h1>
+      <div class="sub">{$_('discover.subtitle')}</div>
     </div>
 
     <!-- quota meter — only shown when data available and no persistent error -->
@@ -183,9 +183,9 @@
       {@const barClass = pct >= 0.95 ? 'bar-red' : pct >= 0.8 ? 'bar-amber' : 'bar-ok'}
       <div class="quota-meter" aria-label="API quota usage">
         <div class="quota-label">
-          <span class="quota-used">{quota.used.toLocaleString()} / {quota.limit.toLocaleString()} units</span>
+          <span class="quota-used">{$_('discover.quota_units', { values: { used: quota.used.toLocaleString(), limit: quota.limit.toLocaleString() } })}</span>
           {#if quota.reset_at}
-            <span class="quota-reset">resets {fmtResetIn(quota.reset_at)}</span>
+            <span class="quota-reset">{$_('discover.resets', { values: { reset_in: fmtResetIn(quota.reset_at) } })}</span>
           {/if}
         </div>
         <div class="quota-track" role="progressbar" aria-valuenow={quota.used} aria-valuemin={0} aria-valuemax={quota.limit}>
@@ -197,12 +197,12 @@
 
   <!-- ── tabs ───────────────────────────────────────────────────────────── -->
   <div class="tabs">
-    <button class="tab" class:on={tab === 'search'}  onclick={() => switchTab('search')}>Search</button>
+    <button class="tab" class:on={tab === 'search'}  onclick={() => switchTab('search')}>{$_('discover.search_tab')}</button>
     <button class="tab" class:on={tab === 'trending'} onclick={() => switchTab('trending')}>
-      Trending
-      {#if tab === 'trending' && source === 'v3'}<span class="src-badge v3">v3</span>{/if}
+      {$_('discover.trending_tab')}
+      {#if tab === 'trending' && source === 'v3'}<span class="src-badge v3">{$_('discover.v3_badge')}</span>{/if}
     </button>
-    <button class="tab" class:on={tab === 'channel'} onclick={() => switchTab('channel')}>Channel mining</button>
+    <button class="tab" class:on={tab === 'channel'} onclick={() => switchTab('channel')}>{$_('discover.channel_tab')}</button>
   </div>
 
   <!-- ── controls ───────────────────────────────────────────────────────── -->
@@ -213,23 +213,23 @@
         <input
           bind:value={searchQuery}
           onkeydown={onSearchKey}
-          placeholder="e.g. satisfying cheese pull asmr"
+          placeholder={$_('discover.search_placeholder')}
           aria-label="Search query"
         />
       </label>
       <select bind:value={searchDuration} aria-label="Duration filter">
-        <option value="">Any duration</option>
-        <option value="short">Under 4 min</option>
-        <option value="medium">4–20 min</option>
-        <option value="long">Over 20 min</option>
+        <option value="">{$_('discover.any_duration')}</option>
+        <option value="short">{$_('discover.short_duration')}</option>
+        <option value="medium">{$_('discover.medium_duration')}</option>
+        <option value="long">{$_('discover.long_duration')}</option>
       </select>
       <select bind:value={searchOrder} aria-label="Sort order">
-        <option value="">Relevance</option>
-        <option value="viewCount">View count</option>
-        <option value="date">Newest</option>
+        <option value="">{$_('discover.relevance')}</option>
+        <option value="viewCount">{$_('discover.view_count')}</option>
+        <option value="date">{$_('discover.newest')}</option>
       </select>
       <button class="run-btn" onclick={runSearch} disabled={loading || !searchQuery.trim()}>
-        {loading ? '…' : 'Search'}
+        {loading ? '…' : $_('discover.search_btn')}
       </button>
     </div>
 
@@ -241,7 +241,7 @@
         {/each}
       </select>
       <button class="run-btn" onclick={runTrending} disabled={loading}>
-        {loading ? '…' : 'Load trending'}
+        {loading ? '…' : $_('discover.load_trending_btn')}
       </button>
     </div>
 
@@ -252,12 +252,12 @@
         <input
           bind:value={channelInput}
           onkeydown={onChannelKey}
-          placeholder="Channel ID — e.g. UCxxxxxxxxxxxxxxxxxxxxxx"
+          placeholder={$_('discover.channel_placeholder')}
           aria-label="Channel ID"
         />
       </label>
       <button class="run-btn" onclick={runChannel} disabled={loading || !channelInput.trim()}>
-        {loading ? '…' : 'Load uploads'}
+        {loading ? '…' : $_('discover.load_uploads_btn')}
       </button>
     </div>
   {/if}
@@ -265,20 +265,20 @@
   <!-- ── meta row (count + source badge) ───────────────────────────────── -->
   {#if items.length || source}
     <div class="meta-row">
-      <span>{items.length} result{items.length !== 1 ? 's' : ''}</span>
+      <span>{$_('discover.results_count', { values: { count: items.length, plural: items.length !== 1 ? 's' : '' } })}</span>
       {#if source === 'v3'}
-        <span class="pill"><span class="dot v3"></span> served by API v3</span>
+        <span class="pill"><span class="dot v3"></span> {$_('discover.api_v3_badge')}</span>
       {:else if source === 'yt-dlp'}
-        <span class="pill"><span class="dot dlp"></span> yt-dlp fallback</span>
+        <span class="pill"><span class="dot dlp"></span> {$_('discover.dlp_badge')}</span>
       {:else if source === 'unavailable'}
-        <span class="pill"><span class="dot na"></span> unavailable</span>
+        <span class="pill"><span class="dot na"></span> {$_('discover.unavailable_badge')}</span>
       {/if}
     </div>
   {/if}
 
   <!-- ── loading ────────────────────────────────────────────────────────── -->
   {#if loading}
-    <div class="state-msg mut">Loading…</div>
+    <div class="state-msg mut">{$_('discover.loading')}</div>
   {/if}
 
   <!-- ── error / unavailable ────────────────────────────────────────────── -->
@@ -289,9 +289,9 @@
   <!-- ── empty state ────────────────────────────────────────────────────── -->
   {#if !loading && !error && items.length === 0 && !source}
     <div class="state-msg mut">
-      {#if tab === 'search'}Enter a search term and press Search.
-      {:else if tab === 'trending'}Select a region and press Load trending.
-      {:else}Enter a Channel ID and press Load uploads.{/if}
+      {#if tab === 'search'}{$_('discover.search_empty')}
+      {:else if tab === 'trending'}{$_('discover.trending_empty')}
+      {:else}{$_('discover.channel_empty')}{/if}
     </div>
   {/if}
 
@@ -310,7 +310,7 @@
             href={ytUrl(item.video_id)}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Watch {item.title} on YouTube"
+            aria-label={$_('discover.watch_on_youtube', { values: { title: item.title } })}
           >
             {#if item.thumbnail}
               <img src={item.thumbnail} alt="" loading="lazy" />
@@ -332,8 +332,8 @@
 
             {#if views || likes || item.published_at}
               <div class="vstats">
-                {#if views}<span><b>{views}</b> views</span>{/if}
-                {#if likes}<span><b>{likes}</b> likes</span>{/if}
+                {#if views}<span><b>{views}</b> {$_('discover.views', { values: { count: views } })}</span>{/if}
+                {#if likes}<span><b>{likes}</b> {$_('discover.likes', { values: { count: likes } })}</span>{/if}
                 {#if item.published_at && !views}
                   <span>{fmtDate(item.published_at)}</span>
                 {/if}
@@ -345,16 +345,16 @@
               class:sent
               onclick={() => sendToClip(item)}
               disabled={sendingId === item.video_id || sent}
-              aria-label={sent ? 'Already queued in clip pipeline' : 'Send to clip pipeline'}
+              aria-label={sent ? $_('discover.already_queued') : $_('discover.send_to_clip')}
             >
               {#if sendingId === item.video_id}
-                Sending…
+                {$_('discover.sending')}
               {:else if sent && runLabels[item.video_id]}
-                Queued (run {runLabels[item.video_id]})
+                {$_('discover.queued_with_id', { values: { id: runLabels[item.video_id] } })}
               {:else if sent}
-                ✓ Queued
+                {$_('discover.queued')}
               {:else}
-                ✂ Send to clip pipeline
+                {$_('discover.send_to_clip')}
               {/if}
             </button>
           </div>
@@ -365,9 +365,9 @@
 
   <!-- ── legend ─────────────────────────────────────────────────────────── -->
   <div class="legend">
-    <span><span class="dot v3"></span> Served by YouTube Data API v3</span>
-    <span><span class="dot dlp"></span> Fell back to yt-dlp (quota exhausted / key missing)</span>
-    <span class="mut">Each search costs ~100 units. Trending / channel: ~1–3 units.</span>
+    <span><span class="dot v3"></span> {$_('discover.served_by_v3')}</span>
+    <span><span class="dot dlp"></span> {$_('discover.yt_dlp_fallback')}</span>
+    <span class="mut">{$_('discover.search_cost')}</span>
   </div>
 </div>
 

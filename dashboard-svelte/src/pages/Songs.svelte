@@ -154,26 +154,26 @@
 <!-- ── Import panel ────────────────────────────────────────────────────────── -->
 {#if showImport}
 <div class="card" style="margin-bottom:1rem">
-  <div style="font-weight:600;margin-bottom:0.75rem">Import file audio atau video</div>
+  <div style="font-weight:600;margin-bottom:0.75rem">{$_('songs.import_header')}</div>
 
   <div class="form-row">
-    <label>File audio (mp3 / wav / m4a / aac / ogg, maks 30 MB) atau video (mp4 / mov / webm / mkv / m4v, maks 200 MB)</label>
+    <label>{$_('songs.file_label')}</label>
     <input type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,video/*,.mp4,.mov,.webm,.mkv,.m4v"
       onchange={e => importFile = e.target.files?.[0] ?? null} />
   </div>
 
   <div class="form-row">
-    <label>Judul (opsional — pakai nama file jika kosong)</label>
-    <input type="text" placeholder="misal: Kopi Pagi Instrumental" bind:value={importTitle} />
+    <label>{$_('songs.title_label')}</label>
+    <input type="text" placeholder={$_('songs.title_placeholder')} bind:value={importTitle} />
   </div>
 
   <div class="form-row">
-    <label>Tags — klik saran atau ketik + Enter</label>
+    <label>{$_('songs.tags_label')}</label>
     <div class="chip-area">
       {#each importTags as t}
         <span class="chip chip-active">{t}<button onclick={() => removeImportTag(t)}>×</button></span>
       {/each}
-      <input class="chip-input" placeholder="ketik tag…" bind:value={importTagInput}
+      <input class="chip-input" placeholder={$_('songs.tags_placeholder')} bind:value={importTagInput}
         onkeydown={onImportTagKey} />
     </div>
     <div class="chip-suggestions">
@@ -187,18 +187,18 @@
 
   <div class="form-row form-row--2col">
     <div>
-      <label>Mood (opsional)</label>
-      <input type="text" placeholder="chill, energetic…" bind:value={importMood} />
+      <label>{$_('songs.mood_label')}</label>
+      <input type="text" placeholder={$_('songs.mood_placeholder')} bind:value={importMood} />
     </div>
     <div>
-      <label>Genre (opsional)</label>
-      <input type="text" placeholder="jazz, lo-fi…" bind:value={importGenre} />
+      <label>{$_('songs.genre_label')}</label>
+      <input type="text" placeholder={$_('songs.genre_placeholder')} bind:value={importGenre} />
     </div>
   </div>
 
   <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.75rem">
     <button class="btn-primary" disabled={!importFile || importing} onclick={doImport}>
-      {importing ? 'Menganalisis…' : 'Upload & Analisis'}
+      {importing ? $_('songs.analyzing_btn') : $_('songs.upload_btn')}
     </button>
     {#if importResult}
       <span class:ok={importResult.ok} class:err={!importResult.ok} class="import-msg">
@@ -211,13 +211,13 @@
 
 <!-- ── Filter bar ───────────────────────────────────────────────────────────── -->
 <div class="filter-bar">
-  <input type="text" placeholder="Filter tag (mis: jazz)" bind:value={filterTag}
+  <input type="text" placeholder={$_('songs.filter_tag_placeholder')} bind:value={filterTag}
     onkeydown={e => e.key === 'Enter' && applyFilter()} />
-  <input type="text" placeholder="Filter mood" bind:value={filterMood}
+  <input type="text" placeholder={$_('songs.filter_mood_placeholder')} bind:value={filterMood}
     onkeydown={e => e.key === 'Enter' && applyFilter()} />
-  <button class="btn-sm" onclick={applyFilter}>Terapkan</button>
+  <button class="btn-sm" onclick={applyFilter}>{$_('songs.apply_btn')}</button>
   {#if filterTag || filterMood}
-    <button class="btn-sm btn-ghost" onclick={() => { filterTag=''; filterMood=''; applyFilter() }}>Reset</button>
+    <button class="btn-sm btn-ghost" onclick={() => { filterTag=''; filterMood=''; applyFilter() }}>{$_('songs.reset_btn')}</button>
   {/if}
 </div>
 
@@ -226,15 +226,15 @@
   <table>
     <thead>
       <tr>
-        <th>Judul</th>
-        <th class="num">BPM</th>
-        <th>Key</th>
-        <th>Tags</th>
-        <th>Mood / Genre</th>
-        <th>Source</th>
-        <th class="num">Durasi</th>
-        <th>Play / ⬇</th>
-        <th>Tanggal</th>
+        <th>{$_('songs.title_header')}</th>
+        <th class="num">{$_('songs.bpm_header')}</th>
+        <th>{$_('songs.key_header')}</th>
+        <th>{$_('songs.tags_header')}</th>
+        <th>{$_('songs.mood_genre_header')}</th>
+        <th>{$_('songs.source_header')}</th>
+        <th class="num">{$_('songs.duration_header')}</th>
+        <th>{$_('songs.play_header')}</th>
+        <th>{$_('songs.date_header')}</th>
       </tr>
     </thead>
     <tbody>
@@ -265,9 +265,9 @@
               </div>
               <div style="display:flex;gap:0.25rem;margin-top:0.25rem">
                 <button class="btn-xs btn-primary" disabled={editSaving} onclick={saveEditTags}>
-                  {editSaving ? '…' : 'Simpan'}
+                  {editSaving ? '…' : $_('songs.save_btn')}
                 </button>
-                <button class="btn-xs btn-ghost" onclick={cancelEdit}>Batal</button>
+                <button class="btn-xs btn-ghost" onclick={cancelEdit}>{$_('songs.cancel_btn')}</button>
               </div>
             {:else}
               <div class="tags-cell">
@@ -300,10 +300,10 @@
         </tr>
       {/each}
       {#if !loading && !rows.length}
-        <tr><td colspan="9" class="mut">Belum ada song.</td></tr>
+        <tr><td colspan="9" class="mut">{$_('songs.no_songs')}</td></tr>
       {/if}
       {#if loading}
-        <tr><td colspan="9" class="mut">Memuat…</td></tr>
+        <tr><td colspan="9" class="mut">{$_('songs.loading')}</td></tr>
       {/if}
     </tbody>
   </table>
