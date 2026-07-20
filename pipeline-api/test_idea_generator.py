@@ -221,6 +221,25 @@ class TestIdeasSelectEndpoint:
 
                 assert response.status_code == 400
 
+    def test_negative_index_returns_400(self, client):
+        """Should return 400 for negative index."""
+        with patch("socket.getaddrinfo") as mock_ga:
+            mock_ga.return_value = [(socket.AF_INET, socket.SOCK_STREAM, 6, '', ('93.184.216.34', 443))]
+
+            with patch("main._db_conn") as mock_db_conn:
+                candidates = [{"title": "Idea 1"}, {"title": "Idea 2"}]
+
+                mock_cursor = MagicMock()
+                mock_cursor.fetchone.return_value = (candidates,)
+
+                mock_conn = MagicMock()
+                mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+                mock_db_conn.return_value = mock_conn
+
+                response = client.post("/analyze/ideas/select", json={"youtube_url": "https://www.youtube.com/watch?v=test", "index": -1})
+
+                assert response.status_code == 400
+
     def test_no_candidates_returns_400(self, client):
         """Should return 400 when no candidates exist."""
         with patch("socket.getaddrinfo") as mock_ga:
