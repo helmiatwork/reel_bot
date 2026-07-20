@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte'
+  import { _ } from 'svelte-i18n'
   import { api } from '../lib/api.js'
   import Pagination from '../lib/Pagination.svelte'
 
@@ -50,7 +51,7 @@
 </script>
 
 <div class="top">
-  <div><h1>Creators</h1><div class="sub">Daftar creator yang dipantau</div></div>
+  <div><h1>{$_('creators.title')}</h1><div class="sub">{$_('creators.subtitle')}</div></div>
   <div class="pill">{total || rows.length} creator</div>
 </div>
 
@@ -58,13 +59,13 @@
   <table>
     <thead>
       <tr>
-        <th>Channel</th>
-        <th>Creator Name</th>
-        <th class="num" style="text-align:right">Total Followers</th>
-        <th>Platform</th>
-        <th>Gender</th>
-        <th>Created</th>
-        <th>Last Updated</th>
+        <th>{$_('creators.channel_header')}</th>
+        <th>{$_('creators.creator_name_header')}</th>
+        <th class="num" style="text-align:right">{$_('creators.total_followers_header')}</th>
+        <th>{$_('creators.platform_header')}</th>
+        <th>{$_('creators.gender_header')}</th>
+        <th>{$_('creators.created_header')}</th>
+        <th>{$_('creators.last_updated_header')}</th>
       </tr>
     </thead>
     <tbody>
@@ -90,10 +91,10 @@
         </tr>
       {/each}
       {#if !loading && !rows.length}
-        <tr><td colspan="7" class="mut">Belum ada creator.</td></tr>
+        <tr><td colspan="7" class="mut">{$_('creators.no_creators')}</td></tr>
       {/if}
       {#if loading}
-        <tr><td colspan="7" class="mut">Memuat…</td></tr>
+        <tr><td colspan="7" class="mut">{$_('creators.loading')}</td></tr>
       {/if}
     </tbody>
   </table>

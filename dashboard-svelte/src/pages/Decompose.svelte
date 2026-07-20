@@ -1,4 +1,5 @@
 <script>
+  import { _ } from 'svelte-i18n'
   import { api } from '../lib/api.js'
 
   let url = $state('')
@@ -9,15 +10,15 @@
   let timer = null
 
   const STAGE_LABELS = {
-    started: 'Mulai…',
-    downloading: 'Mengunduh video…',
-    detecting: 'Mendeteksi scene…',
-    grouping: 'Mengelompokkan shot…',
-    finding: 'Mencari kredit…',
-    splitting: 'Memotong segmen…',
-    saving: 'Menyimpan…',
-    done: 'Selesai',
-    error: 'Error'
+    started: $_('decompose.stage_started'),
+    downloading: $_('decompose.stage_downloading'),
+    detecting: $_('decompose.stage_detecting'),
+    grouping: $_('decompose.stage_grouping'),
+    finding: $_('decompose.stage_finding'),
+    splitting: $_('decompose.stage_splitting'),
+    saving: $_('decompose.stage_saving'),
+    done: $_('decompose.stage_done'),
+    error: $_('decompose.stage_error')
   }
 
   function stopPoll() {
@@ -71,20 +72,20 @@
 </script>
 
 <div class="top">
-  <div><h1>Pecah Kompilasi</h1><div class="sub">Pecah video kompilasi YouTube menjadi segmen-segmen dengan kredit asli</div></div>
+  <div><h1>{$_('decompose.title')}</h1><div class="sub">{$_('decompose.subtitle')}</div></div>
   {#if segments.length}<div class="pill">{segments.length} segmen</div>{/if}
 </div>
 
 <div class="filters">
   <div class="input-group">
     <input
-      placeholder="YouTube URL kompilasi…"
+      placeholder={$_('decompose.url_placeholder')}
       bind:value={url}
       disabled={loading}
       onkeydown={(e) => e.key === 'Enter' && handleSubmit()}
     />
     <button onclick={handleSubmit} disabled={loading || !url.trim()}>
-      {loading ? 'Memproses…' : 'Pecah'}
+      {loading ? $_('decompose.processing') : $_('decompose.decompose_btn')}
     </button>
   </div>
 </div>
@@ -93,8 +94,8 @@
   <div class="card">
     <div class="loading-state">
       <div class="spinner"></div>
-      <div class="loading-text">{STAGE_LABELS[stage] || stage || 'Memproses…'}</div>
-      <div class="loading-sub">Proses ini bisa memakan beberapa menit. Sabar ya.</div>
+      <div class="loading-text">{STAGE_LABELS[stage] || stage || $_('decompose.processing')}</div>
+      <div class="loading-sub">{$_('decompose.processing_wait')}</div>
     </div>
   </div>
 {:else if error}
@@ -107,16 +108,16 @@
       {#each segments as seg}
         <div class="seg-card">
           <div class="seg-header">
-            <span class="seg-title">Klip {seg.clip_index}</span>
+            <span class="seg-title">{$_('decompose.clip_label')} {seg.clip_index}</span>
             <span class="seg-time">{fmtSec(seg.start_sec)}–{fmtSec(seg.end_sec)} dtk</span>
             <span class="badge {statusBadgeClass(seg.origin_status)}">{seg.origin_status}</span>
           </div>
           <div class="seg-meta">
             <span class="seg-credit">{seg.credit_handle || '—'}</span>
             {#if seg.original_url}
-              <a href={seg.original_url} target="_blank" rel="noopener noreferrer">Lihat asli</a>
+              <a href={seg.original_url} target="_blank" rel="noopener noreferrer">{$_('decompose.view_original')}</a>
             {:else}
-              <span class="mut">belum ketemu</span>
+              <span class="mut">{$_('decompose.not_found')}</span>
             {/if}
           </div>
         </div>
@@ -126,7 +127,7 @@
 {:else}
   <div class="card">
     <div class="empty">
-      <div class="empty-text">Masukkan URL kompilasi di atas, lalu tekan Pecah.</div>
+      <div class="empty-text">{$_('decompose.empty_message')}</div>
     </div>
   </div>
 {/if}
