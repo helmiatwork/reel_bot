@@ -217,13 +217,14 @@
 
   // Mirror of playScene but targets the Analisa tab video element
   function playAna(startSec, endSec) {
-    if (!anaVideoRef) return
-    anaVideoRef.currentTime = startSec
-    anaVideoRef.play()
+    const el = anaVideoRef
+    if (!el) return
+    el.currentTime = startSec
+    el.play()
     // No usable end time (e.g. transcript line without one) — play on, let user stop.
     if (!(endSec > startSec)) return
-    const stop = () => { if (anaVideoRef.currentTime >= endSec) { anaVideoRef.pause(); anaVideoRef.removeEventListener('timeupdate', stop) } }
-    anaVideoRef.addEventListener('timeupdate', stop)
+    const stop = () => { if (el.currentTime >= endSec) { el.pause(); el.removeEventListener('timeupdate', stop) } }
+    el.addEventListener('timeupdate', stop)
   }
 
   // Seconds → SRT timestamp "HH:MM:SS,mmm"
@@ -304,6 +305,67 @@
   let ideCopiedCue = $state(false)
   let ideCopiedCaption = $state(false)
   let idePollInterval = null
+
+  // Effects breakdown state
+  let effectsList = $state([])
+  let effectsInstruction = $state('')
+  let effectsLoading = $state(false)
+  let effectsPolling = $state(false)
+  let effectsCopied = $state(false)
+  let effectsCopiedAll = $state(false)
+  let effectsCount = $state(0)
+  let effectsChecked = $state(false)
+  let effectsPollInterval = null
+
+  function stopEffectsPoll() {
+    if (effectsPollInterval) { clearInterval(effectsPollInterval); effectsPollInterval = null }
+  }
+
+  function startEffectsPoll(url) {
+    stopEffectsPoll()
+    effectsPollInterval = setInterval(async () => {
+      const st = await api.getEffectsStatus(url)
+      if (!st) return
+      effectsCount = st.count || 0
+      if (st.has_effects) {
+        effectsList = st.effects || []
+        effectsPolling = false
+        stopEffectsPoll()
+      }
+    }, 3000)
+  }
+
+  async function generateEffects() {
+    const url = d?.data?.youtube_url
+    if (!url) return
+    effectsLoading = true
+    effectsInstruction = ''
+    effectsList = []
+    stopEffectsPoll()
+    // Check if effects already exist before fetching instruction
+    const status = await api.getEffectsStatus(url)
+    if (d?.data?.youtube_url !== url) return   // source changed mid-flight — abandon stale write
+    if (status?.has_effects) {
+      effectsList = status.effects || []
+      effectsCount = status.count || effectsList.length
+      effectsLoading = false
+      return
+    }
+    const res = await api.getGeminiEffects(url)
+    if (d?.data?.youtube_url !== url) return   // source changed mid-flight — abandon stale write
+    effectsInstruction = res?.instruction || res?.error || get(_)('drawer.err_get_instruction')
+    effectsLoading = false
+    effectsPolling = true
+    effectsCount = 0
+    startEffectsPoll(url)
+  }
+
+  function copyEffectsAll() {
+    const lines = effectsList.map(e => `${e.ts_start}–${e.ts_end} ${e.effect} — CapCut: ${e.capcut_tool} — ${e.how_to}`)
+    navigator.clipboard.writeText(lines.join('\n'))
+    effectsCopiedAll = true
+    setTimeout(() => effectsCopiedAll = false, 2000)
+  }
 
   function stopIdePoll() {
     if (idePollInterval) { clearInterval(idePollInterval); idePollInterval = null }
@@ -466,6 +528,15 @@
       ideCopiedNaskah = false
       ideCopiedCue = false
       ideCopiedCaption = false
+      stopEffectsPoll()
+      effectsList = []
+      effectsInstruction = ''
+      effectsLoading = false
+      effectsPolling = false
+      effectsCopied = false
+      effectsCopiedAll = false
+      effectsCount = 0
+      effectsChecked = false
       procStage = 'saving_meta'
       decomposeRunning = false
       decomposeStage = ''
@@ -504,7 +575,7 @@
         }
       }
     })
-    return () => { unsub(); stopProcPoll(); stopPoll(); stopIdePoll() }
+    return () => { unsub(); stopProcPoll(); stopPoll(); stopIdePoll(); stopEffectsPoll() }
   })
 
   // Per-tab primary action: full re-analyze / redo frames+analysis / regenerate prompt only.
@@ -537,6 +608,24 @@
 
   // Clear the action status line when switching tabs
   $effect(() => { activeTab; reanalyzeDone = false; reanalyzeError = '' })
+
+  // Stop effects poll when leaving the Efek tab (leak guard)
+  $effect(() => { if (activeTab !== 'efek') stopEffectsPoll() })
+
+  // Auto-check effects status the first time user opens the Efek tab for this source
+  $effect(() => {
+    const url = d?.data?.youtube_url
+    if (activeTab === 'efek' && url && !effectsChecked && !effectsLoading) {
+      effectsChecked = true
+      ;(async () => {
+        const st = await api.getEffectsStatus(url)
+        if (st?.has_effects) {
+          effectsList = st.effects || []
+          effectsCount = st.count || 0
+        }
+      })()
+    }
+  })
 
   // Auto-open the Gemini prompt popup once, the moment clips are ready (all
   // processing steps done). Saves the user hunting for the "Tampilkan prompt
@@ -842,6 +931,12 @@
         >
           {$_('drawer.tab_prompt')}{sceneCount ? ` (${sceneCount})` : ''}
         </button>
+        <button
+          class="tab-btn {activeTab === 'efek' ? 'active' : ''}"
+          onclick={() => activeTab = 'efek'}
+        >
+          {$_('drawer.effects.tab')}{effectsList.length ? ` (${effectsList.length})` : ''}
+        </button>
       </div>
     {/if}
 
@@ -1124,6 +1219,57 @@
               <div class="mut" style="font-size:12px;padding:8px 0">{$_('drawer.no_frames_url')}</div>
             {/if}
           </div>
+        </div>
+      {/if}
+
+      <!-- EFEK TAB -->
+      {#if !isProcessing && activeTab === 'efek'}
+        {@const anaVideoId = extractVideoId(d.data?.youtube_url)}
+        <div class="tab-panel">
+          {#if anaVideoId}
+            <video bind:this={anaVideoRef} controls src={`/media/source/${anaVideoId}`} class="ana-video" style="margin-bottom:10px" />
+          {/if}
+
+          {#if effectsList.length}
+            <div class="efek-actions-row">
+              <button class="reana-btn" onclick={generateEffects} disabled={effectsLoading}>{$_('drawer.effects.regenerate_btn')}</button>
+              <button class="ana-copy-btn" onclick={copyEffectsAll}>{effectsCopiedAll ? $_('drawer.copied') : $_('drawer.effects.copy_all')}</button>
+            </div>
+            <div class="efek-list">
+              {#each effectsList as e}
+                <div class="efek-row">
+                  <div class="efek-row-top">
+                    <button class="ana-rp-btn" onclick={() => anaVideoId && playAna(timeToSeconds(e.ts_start), timeToSeconds(e.ts_end))} disabled={!anaVideoId} title={anaVideoId ? `Putar ${e.ts_start}–${e.ts_end}` : $_('drawer.play_video_error')}>▶</button>
+                    <span class="efek-ts">{e.ts_start}–{e.ts_end}</span>
+                    <span class="efek-name">{e.effect}</span>
+                    {#if e.capcut_tool}<span class="efek-capcut-chip">{e.capcut_tool}</span>{/if}
+                    {#if e.intensity}<span class="efek-intensity {e.intensity}">{$_('drawer.effects.intensity_' + e.intensity)}</span>{/if}
+                  </div>
+                  {#if e.how_to}<div class="efek-how">{e.how_to}</div>{/if}
+                </div>
+              {/each}
+            </div>
+          {:else if effectsInstruction}
+            <div class="gen-prompt-box">
+              <pre class="gen-prompt-json">{effectsInstruction}</pre>
+              <button class="copy-btn" onclick={() => { navigator.clipboard.writeText(effectsInstruction); effectsCopied = true; setTimeout(() => effectsCopied = false, 2000) }}>
+                {effectsCopied ? $_('drawer.copied') : $_('drawer.effects.copy_instruction')}
+              </button>
+            </div>
+            <p class="brief-hint">{$_('drawer.effects.hint')}</p>
+            {#if effectsPolling}
+              <div class="ide-status" style="margin-top:8px">
+                <span class="ide-dot"></span>
+                {$_('drawer.effects.waiting', { values: { count: effectsCount } })}
+              </div>
+            {/if}
+          {:else}
+            <div class="efek-empty">
+              <button class="pecah-btn" disabled={effectsLoading} onclick={generateEffects}>
+                {effectsLoading ? $_('drawer.getting_ideas') : $_('drawer.effects.generate_btn')}
+              </button>
+            </div>
+          {/if}
         </div>
       {/if}
 
@@ -1779,4 +1925,28 @@
   .ide-cue-ts { font: 12.5px ui-monospace, monospace; color: #3b4a86; font-weight: 700; }
   .ide-cue-body { font-size: 13.5px; color: #33405e; line-height: 1.5; }
   .ide-tag { display: inline-block; background: #eef1f8; color: #40507f; border-radius: 6px; padding: 1px 7px; font-size: 11px; margin: 0 3px; }
+
+  /* Efek (effects breakdown) tab */
+  .efek-actions-row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .efek-list { display: flex; flex-direction: column; gap: 8px; }
+  .efek-row {
+    background: var(--soft); border: 1px solid var(--line);
+    border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .efek-row-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .efek-ts { font: 600 12px ui-monospace, monospace; color: #3b4a86; white-space: nowrap; }
+  .efek-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--txt); min-width: 0; }
+  .efek-capcut-chip {
+    font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 6px;
+    background: rgba(107,70,193,.12); color: #6b46c1; white-space: nowrap;
+  }
+  .efek-intensity {
+    font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 8px;
+    text-transform: lowercase; white-space: nowrap;
+  }
+  .efek-intensity.subtle { background: rgba(148,163,184,.16); color: var(--mut); }
+  .efek-intensity.medium { background: rgba(37,99,235,.12); color: #2563eb; }
+  .efek-intensity.strong { background: rgba(217,119,6,.12); color: #d97706; }
+  .efek-how { font-size: 12px; color: var(--txt); line-height: 1.5; padding-left: 34px; }
+  .efek-empty { display: flex; justify-content: flex-start; padding: 12px 0; }
 </style>

@@ -239,6 +239,8 @@ export const api = {
     return getJSON('/analyze/gemini-brief?' + params.toString())
   },
   getGeminiIdeas: (youtube_url) => getJSON('/analyze/gemini-ideas?youtube_url=' + encodeURIComponent(youtube_url)),
+  getGeminiEffects: (youtube_url) => getJSON('/analyze/gemini-effects?youtube_url=' + encodeURIComponent(youtube_url)),
+  getEffectsStatus: (youtube_url) => getJSON('/analyze/effects-status?youtube_url=' + encodeURIComponent(youtube_url)),
   getIdeasStatus: (youtube_url) => getJSON('/analyze/ideas-status?youtube_url=' + encodeURIComponent(youtube_url)),
   selectIdea: (youtube_url, index) => postJSON('/analyze/ideas/select', { youtube_url, index }),
   getIdeaDetail: (youtube_url, index) => getJSON('/analyze/gemini-idea-detail?youtube_url=' + encodeURIComponent(youtube_url) + '&index=' + index),

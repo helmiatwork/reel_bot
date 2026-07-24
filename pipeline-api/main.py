@@ -8189,6 +8189,138 @@ Execute steps 1, 2, and 3 in order. STEP 3 MUST call save_idea_detail — this i
     }
 
 
+@app.get("/analyze/gemini-effects")
+def analyze_gemini_effects(youtube_url: str):
+    """
+    Instruction builder for Gemini editing effects detection.
+
+    Given a source video, returns an instruction telling Gemini to:
+    1. Call get_clips(youtube_url) to fetch and watch the clip mp4s
+    2. Reverse-engineer the editing effects (zoom, pan, rotate, speed ramp, freeze-frame, etc.)
+    3. Call save_effects(youtube_url, effects_json) to save results back to reelbot
+
+    Query params: youtube_url
+    Returns: {"instruction": str, "youtube_url": str}
+    """
+    try:
+        _validate_source_url(youtube_url)
+    except HTTPException:
+        raise HTTPException(status_code=400, detail="invalid youtube_url")
+
+    # Sanitize youtube_url before embedding in instruction string
+    safe_url = youtube_url.replace('"', '')
+
+    # Build instruction for Gemini
+    instruction = f"""You are an expert video editor with deep knowledge of CapCut and editing techniques. Your task is to reverse-engineer the editing effects used in a source video.
+
+RULES:
+- You have TWO MCP tools available: `get_clips` (fetch video clips) and `save_effects` (save detected effects back to reelbot).
+- The clips are real video files (.mp4) — WATCH them carefully via your environment.
+- Do NOT search, read code, call other tools, open a browser, or run commands.
+- CRITICAL: base all effects detection on what you ACTUALLY SEE in the footage. Never invent or fabricate effects. If get_clips fails or returns empty, return an empty array via save_effects rather than fabricating.
+- You MUST call save_effects at the end — do NOT just print the results.
+
+EFFECTS BREAKDOWN FLOW: Detect and Document Editing Effects
+Task:
+STEP 1: Call `get_clips(youtube_url="{safe_url}")` and WATCH every returned clip carefully, observing all editing techniques used.
+
+STEP 2: For EACH distinct effect occurrence, identify:
+- ts_start: approximate start timestamp (e.g., "0:03" for 3 seconds)
+- ts_end: approximate end timestamp (e.g., "0:05" for 5 seconds)
+- effect: the editing effect name in plain language (e.g., "zoom in", "slow motion", "whip transition", "screen shake", "text pop-in", "color grade shift", "split-screen", "green-screen", "freeze-frame", "pan right", "rotate clockwise")
+- capcut_tool: the CapCut feature/term used to achieve this effect (e.g., "Keyframe > Scale", "Speed > Curve (Slow-mo)", "Transitions > Whip", "Animation > Pop-in", "Filters > Adjust", "Effects > Shake", "Layout > Split-screen")
+- how_to: one short sentence explaining how to replicate this in CapCut
+- intensity: the intensity level of the effect (subtle | medium | strong)
+
+STEP 3: Call `save_effects(youtube_url="{safe_url}", effects_json=<the JSON array>)` to save all detected effects back to reelbot. Order effects by timestamp. Do NOT just print — MUST call save_effects.
+
+Return format (JSON ARRAY of effects):
+[
+  {{"ts_start": "0:03", "ts_end": "0:05", "effect": "zoom in", "capcut_tool": "Keyframe > Scale", "how_to": "Add keyframes at start and end to scale up the clip.", "intensity": "medium"}},
+  {{"ts_start": "0:05", "ts_end": "0:08", "effect": "slow motion", "capcut_tool": "Speed > Curve (Slow-mo)", "how_to": "Right-click on clip, select Speed, adjust curve to slow down the section.", "intensity": "strong"}},
+  ...
+]
+
+If get_clips errors or returns empty clips: don't fabricate wildly — return an empty array via save_effects.
+
+Execute steps 1, 2, and 3 in order. STEP 3 MUST call save_effects — this is critical."""
+
+    return {
+        "instruction": instruction,
+        "youtube_url": youtube_url
+    }
+
+
+@app.get("/analyze/effects-status")
+def analyze_effects_status(youtube_url: str):
+    """
+    Check the status of effects detection for a source.
+
+    Returns:
+      {
+        "has_effects": bool,           # true if effects exist
+        "count": int,                  # number of effects detected (0 if none)
+        "effects": [...] | null,       # the detected effects array (null if not ready)
+        "effects_at": str | null       # timestamp when effects were detected
+      }
+    """
+    try:
+        _validate_source_url(youtube_url)
+    except HTTPException:
+        raise HTTPException(status_code=400, detail="invalid youtube_url")
+
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=500, detail="database not configured")
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT effects, effects_at FROM source_effects WHERE youtube_url = %s",
+                (youtube_url,)
+            )
+            row = cur.fetchone()
+
+            if not row:
+                # No effects row yet
+                return {
+                    "has_effects": False,
+                    "count": 0,
+                    "effects": None,
+                    "effects_at": None
+                }
+
+            effects_jsonb, effects_at = row
+
+            # Parse effects
+            effects = None
+            count = 0
+            if effects_jsonb is not None:
+                try:
+                    if isinstance(effects_jsonb, str):
+                        effects = json.loads(effects_jsonb)
+                    else:
+                        effects = effects_jsonb
+                    if isinstance(effects, list):
+                        count = len(effects)
+                except (json.JSONDecodeError, ValueError):
+                    pass
+
+            # Format timestamp
+            effects_at_str = None
+            if effects_at:
+                effects_at_str = effects_at.isoformat() if hasattr(effects_at, 'isoformat') else str(effects_at)
+
+            return {
+                "has_effects": count > 0,
+                "count": count,
+                "effects": effects,
+                "effects_at": effects_at_str
+            }
+    finally:
+        conn.close()
+
+
 def _suno_audio_path(youtube_url: str) -> str:
     """
     Compute a deterministic path for Suno audio clips keyed by youtube_url.
