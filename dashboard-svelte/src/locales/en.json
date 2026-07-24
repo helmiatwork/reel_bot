@@ -1000,7 +1000,24 @@
     "err_get_detail_instruction": "Failed to fetch detail instruction",
     "err_get_instruction": "Failed to fetch instruction",
     "err_general": "Failed.",
-    "err_decompose_failed": "Failed to start decompose."
+    "err_decompose_failed": "Failed to start decompose.",
+    "effects": {
+      "tab": "Effects",
+      "generate_btn": "Generate effects breakdown",
+      "regenerate_btn": "🔄 Regenerate",
+      "hint": "Paste to Antigravity → Gemini detects effects → come back here",
+      "waiting": "Waiting for Gemini… {count} effect(s)",
+      "empty": "No effects detected yet.",
+      "col_time": "Time",
+      "col_effect": "Effect",
+      "col_capcut": "CapCut",
+      "col_how": "How to",
+      "intensity_subtle": "subtle",
+      "intensity_medium": "medium",
+      "intensity_strong": "strong",
+      "copy_all": "📋 Copy all",
+      "copy_instruction": "📋 Copy instruction"
+    }
   },
   "sourceUpload": {
     "modal_title": "Add Source",
