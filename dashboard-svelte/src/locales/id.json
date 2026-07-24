@@ -1000,7 +1000,19 @@
     "err_get_detail_instruction": "Gagal mengambil instruksi detail",
     "err_get_instruction": "Gagal mengambil instruksi",
     "err_general": "Gagal.",
-    "err_decompose_failed": "Gagal memulai decompose."
+    "err_decompose_failed": "Gagal memulai decompose.",
+    "effects": {
+      "tab": "Efek",
+      "generate_btn": "Bikin breakdown efek",
+      "regenerate_btn": "🔄 Bikin ulang",
+      "hint": "Tempel ke Antigravity → Gemini deteksi efek → balik ke sini",
+      "waiting": "Menunggu Gemini… {count} efek",
+      "intensity_subtle": "halus",
+      "intensity_medium": "sedang",
+      "intensity_strong": "kuat",
+      "copy_all": "📋 Salin semua",
+      "copy_instruction": "📋 Salin instruksi"
+    }
   },
   "sourceUpload": {
     "modal_title": "Tambah Source",

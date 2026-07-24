@@ -1006,6 +1006,83 @@ def query_keywords(
         return {"error": f"query_keywords API call failed: {e}"}
 
 
+@server.tool()
+def save_effects(youtube_url: str, effects_json: str) -> dict:
+    """
+    EFFECTS FLOW (final save). Call this after analyzing the clips to persist the detected editing effects; the ONLY correct way to save effects.
+
+    Save detected editing effects to the source_effects table.
+
+    Args:
+        youtube_url: the YouTube URL to associate with the effects
+        effects_json: JSON string or list of detected effects, each with at least {ts_start, ts_end, effect}. Must be non-empty.
+
+    Returns:
+        {"ok": true, "youtube_url": ..., "count": N} on success
+        {"error": "..."} on failure (invalid URL, bad JSON, empty list)
+    """
+    # Validate URL
+    if not _valid_url(youtube_url):
+        return {"error": "invalid youtube_url"}
+
+    # Parse effects_json (accept string or list)
+    if isinstance(effects_json, str):
+        try:
+            effects_list = json.loads(effects_json)
+        except (json.JSONDecodeError, ValueError):
+            return {"error": "effects_json is not valid JSON"}
+    elif isinstance(effects_json, list):
+        effects_list = effects_json
+    else:
+        return {"error": "effects_json must be a JSON string or list"}
+
+    # Require a non-empty list
+    if not isinstance(effects_list, list) or not effects_list:
+        return {"error": "effects_json must be a non-empty list"}
+
+    # Lenient validation: each item should be a dict-like object
+    for effect in effects_list:
+        if not isinstance(effect, dict):
+            return {"error": "each effect must be a dict/object"}
+
+    # DB write: UPSERT into source_effects
+    if not DATABASE_URL:
+        return {"error": "DATABASE_URL not configured"}
+
+    try:
+        conn = psycopg.connect(DATABASE_URL, connect_timeout=5)
+    except Exception as e:
+        return {"error": f"database connection failed: {e}"}
+
+    try:
+        with conn.cursor() as cur:
+            effects_jsonb = Jsonb(effects_list)
+
+            # Look up source_id by youtube_url (may be NULL if no source row yet)
+            cur.execute("SELECT id FROM sources WHERE youtube_url = %s", (youtube_url,))
+            source_row = cur.fetchone()
+            source_id = source_row[0] if source_row else None
+
+            # UPSERT: insert or update effects
+            cur.execute(
+                """INSERT INTO source_effects (source_id, youtube_url, effects, effects_at, updated_at)
+                   VALUES (%s, %s, %s, now(), now())
+                   ON CONFLICT (youtube_url) DO UPDATE SET
+                     effects = EXCLUDED.effects,
+                     effects_at = now(),
+                     updated_at = now()""",
+                (source_id, youtube_url, effects_jsonb)
+            )
+
+            conn.commit()
+        return {"ok": True, "youtube_url": youtube_url, "count": len(effects_list)}
+    except Exception as e:
+        conn.rollback()
+        return {"error": f"database error: {e}"}
+    finally:
+        conn.close()
+
+
 # ── Entry point ──────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
