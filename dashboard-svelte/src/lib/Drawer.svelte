@@ -217,13 +217,14 @@
 
   // Mirror of playScene but targets the Analisa tab video element
   function playAna(startSec, endSec) {
-    if (!anaVideoRef) return
-    anaVideoRef.currentTime = startSec
-    anaVideoRef.play()
+    const el = anaVideoRef
+    if (!el) return
+    el.currentTime = startSec
+    el.play()
     // No usable end time (e.g. transcript line without one) — play on, let user stop.
     if (!(endSec > startSec)) return
-    const stop = () => { if (anaVideoRef.currentTime >= endSec) { anaVideoRef.pause(); anaVideoRef.removeEventListener('timeupdate', stop) } }
-    anaVideoRef.addEventListener('timeupdate', stop)
+    const stop = () => { if (el.currentTime >= endSec) { el.pause(); el.removeEventListener('timeupdate', stop) } }
+    el.addEventListener('timeupdate', stop)
   }
 
   // Seconds → SRT timestamp "HH:MM:SS,mmm"
@@ -343,6 +344,7 @@
     stopEffectsPoll()
     // Check if effects already exist before fetching instruction
     const status = await api.getEffectsStatus(url)
+    if (d?.data?.youtube_url !== url) return   // source changed mid-flight — abandon stale write
     if (status?.has_effects) {
       effectsList = status.effects || []
       effectsCount = status.count || effectsList.length
@@ -350,6 +352,7 @@
       return
     }
     const res = await api.getGeminiEffects(url)
+    if (d?.data?.youtube_url !== url) return   // source changed mid-flight — abandon stale write
     effectsInstruction = res?.instruction || res?.error || get(_)('drawer.err_get_instruction')
     effectsLoading = false
     effectsPolling = true
@@ -616,7 +619,7 @@
       effectsChecked = true
       ;(async () => {
         const st = await api.getEffectsStatus(url)
-        if (st?.has_effects && !effectsList.length) {
+        if (st?.has_effects) {
           effectsList = st.effects || []
           effectsCount = st.count || 0
         }
