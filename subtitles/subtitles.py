@@ -143,7 +143,7 @@ def burn_subtitles(
             return None
 
         # Path escaping for FFmpeg filter syntax
-        escaped_srt = str(srt_file.resolve()).replace("\\", "/").replace(":", "\\:").replace("'", "\\'")
+        escaped_srt = str(Path(srt_path).absolute()).replace("\\", "/").replace(":", "\\:").replace("'", "\\'")
         style_str = (
             "Bold=1,FontSize=16,PrimaryColour=&H00FFFFFF,"
             "OutlineColour=&H00000000,Outline=2,BorderStyle=1,"
