@@ -20,18 +20,7 @@ from datetime import datetime
 
 from voiceover.voiceover import generate_full_voiceover, merge_with_video
 from subtitles.subtitles import generate_srt, burn_subtitles
-try:
-    from quality_check.quality_check import quality_check_video
-except ImportError:
-    try:
-        import importlib.util
-        _qc_path = Path(__file__).resolve().parent / "quality-check" / "quality_check.py"
-        _spec = importlib.util.spec_from_file_location("quality_check.quality_check", _qc_path)
-        _qc_mod = importlib.util.module_from_spec(_spec)
-        _spec.loader.exec_module(_qc_mod)
-        quality_check_video = _qc_mod.quality_check_video
-    except Exception:
-        quality_check_video = None
+from quality_check.quality_check import quality_check_video
 from publisher.publisher import publish_all
 from analytics.analytics import (
     save_analytics, fetch_youtube_analytics,
@@ -67,7 +56,7 @@ def run_complete_pipeline(
     bg_music_path: str = None,
     auto_publish: bool = False,  # False = human approval required
     credentials: dict = None,
-    burn_subtitles: bool = True
+    enable_subtitles: bool = True
 ) -> dict:
     """
     Complete the pipeline from ArcReel output to published video.
@@ -123,14 +112,14 @@ def run_complete_pipeline(
         result["steps"]["voiceover"] = {"status": "failed", "error": str(e), "fallback": "raw_video"}
 
     # ── Step 5.5: Burn subtitles ──────────────────────────────
-    if burn_subtitles:
+    if enable_subtitles:
         notify_telegram("💬 Step 5.5/8: Generating and burning subtitles...", user_id)
         try:
             srt_path = str(work_dir / "subtitles.srt")
             generated_srt = generate_srt(final_video, srt_path=srt_path)
             if generated_srt:
                 subtitled_video = str(work_dir / "final_with_subtitles.mp4")
-                burn_result = globals()["burn_subtitles"](final_video, generated_srt, subtitled_video)
+                burn_result = burn_subtitles(final_video, generated_srt, subtitled_video)
                 if burn_result and Path(burn_result).exists():
                     final_video = burn_result
                     result["steps"]["subtitles"] = {
