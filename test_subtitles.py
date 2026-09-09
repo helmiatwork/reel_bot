@@ -221,7 +221,7 @@ def test_edge_case_special_chars_in_path_escaped(tmp_path):
     vf_arg = called_cmd[called_cmd.index("-vf") + 1]
 
     # Verify single quotes escaped to \' and colons escaped to \:
-    expected_path_esc = str(srt_file.resolve()).replace("\\", "/").replace(":", "\\:").replace("'", "\\'")
+    expected_path_esc = str(Path(srt_file).absolute()).replace("\\", "/").replace(":", "\\:").replace("'", "\\'")
     assert f"subtitles='{expected_path_esc}'" in vf_arg
 
 
