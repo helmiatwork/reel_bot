@@ -34,6 +34,14 @@ import subtitles.subtitles as sub_mod
 from subtitles.subtitles import burn_subtitles, generate_srt
 
 
+@pytest.fixture(autouse=True, scope="module")
+def _cleanup_sys_modules_after_test_subtitles():
+    yield
+    for mod in list(sys.modules):
+        if mod in ("voiceover", "publisher") or mod.startswith(("voiceover.", "publisher.")):
+            sys.modules.pop(mod, None)
+
+
 # ============================================================================
 # 1. Happy Path Tests
 # ============================================================================
@@ -367,7 +375,7 @@ def test_pipeline_burn_subtitles_happy_path(tmp_path, monkeypatch):
             script=script,
             arcreel_project_id="proj_123",
             auto_publish=False,
-            burn_subtitles=True
+            enable_subtitles=True
         )
 
     mock_gen_srt.assert_called_once()
@@ -411,7 +419,7 @@ def test_pipeline_burn_subtitles_failure_falls_back_to_unsubtitled(tmp_path, mon
             script=script,
             arcreel_project_id="proj_123",
             auto_publish=False,
-            burn_subtitles=True
+            enable_subtitles=True
         )
 
     # burn_subtitles shouldn't be called if generate_srt returned None
@@ -428,7 +436,7 @@ def test_pipeline_burn_subtitles_failure_falls_back_to_unsubtitled(tmp_path, mon
 
 
 def test_pipeline_burn_subtitles_false_zero_calls(tmp_path, monkeypatch):
-    """Edge Case: burn_subtitles=False -> zero model loading, zero SRT gen, zero FFmpeg calls."""
+    """Edge Case: enable_subtitles=False -> zero model loading, zero SRT gen, zero FFmpeg calls."""
     from pipeline import run_complete_pipeline
 
     monkeypatch.setenv("OUTPUT_DIR", str(tmp_path))
@@ -459,7 +467,7 @@ def test_pipeline_burn_subtitles_false_zero_calls(tmp_path, monkeypatch):
             script=script,
             arcreel_project_id="proj_123",
             auto_publish=False,
-            burn_subtitles=False  # Disabled!
+            enable_subtitles=False  # Disabled!
         )
 
     # Asserts zero model loading, zero SRT gen, zero FFmpeg calls
