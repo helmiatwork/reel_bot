@@ -19,7 +19,19 @@ from pathlib import Path
 from datetime import datetime
 
 from voiceover.voiceover import generate_full_voiceover, merge_with_video
-from quality_check.quality_check import quality_check_video
+from subtitles.subtitles import generate_srt, burn_subtitles
+try:
+    from quality_check.quality_check import quality_check_video
+except ImportError:
+    try:
+        import importlib.util
+        _qc_path = Path(__file__).resolve().parent / "quality-check" / "quality_check.py"
+        _spec = importlib.util.spec_from_file_location("quality_check.quality_check", _qc_path)
+        _qc_mod = importlib.util.module_from_spec(_spec)
+        _spec.loader.exec_module(_qc_mod)
+        quality_check_video = _qc_mod.quality_check_video
+    except Exception:
+        quality_check_video = None
 from publisher.publisher import publish_all
 from analytics.analytics import (
     save_analytics, fetch_youtube_analytics,
@@ -54,7 +66,8 @@ def run_complete_pipeline(
     voice: str = "male_neutral",
     bg_music_path: str = None,
     auto_publish: bool = False,  # False = human approval required
-    credentials: dict = None
+    credentials: dict = None,
+    burn_subtitles: bool = True
 ) -> dict:
     """
     Complete the pipeline from ArcReel output to published video.
@@ -64,7 +77,8 @@ def run_complete_pipeline(
         credentials = {}
     platforms = platforms or ["youtube"]
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    work_dir = Path(f"/output/{run_id}")
+    output_base = os.getenv("OUTPUT_DIR", "/output")
+    work_dir = Path(output_base) / run_id
     work_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"\n{'='*60}")
@@ -107,6 +121,45 @@ def run_complete_pipeline(
         print(f"[Pipeline] Voiceover failed: {e} — using raw video")
         final_video = raw_video
         result["steps"]["voiceover"] = {"status": "failed", "error": str(e), "fallback": "raw_video"}
+
+    # ── Step 5.5: Burn subtitles ──────────────────────────────
+    if burn_subtitles:
+        notify_telegram("💬 Step 5.5/8: Generating and burning subtitles...", user_id)
+        try:
+            srt_path = str(work_dir / "subtitles.srt")
+            generated_srt = generate_srt(final_video, srt_path=srt_path)
+            if generated_srt:
+                subtitled_video = str(work_dir / "final_with_subtitles.mp4")
+                burn_result = globals()["burn_subtitles"](final_video, generated_srt, subtitled_video)
+                if burn_result and Path(burn_result).exists():
+                    final_video = burn_result
+                    result["steps"]["subtitles"] = {
+                        "status": "ok",
+                        "path": final_video,
+                        "srt_path": generated_srt
+                    }
+                    notify_telegram("✅ Subtitles burned into video", user_id)
+                else:
+                    print("[Pipeline] Subtitle burning failed — falling back to unsubtitled video")
+                    result["steps"]["subtitles"] = {
+                        "status": "failed",
+                        "error": "burn_subtitles failed",
+                        "fallback": final_video
+                    }
+            else:
+                print("[Pipeline] SRT generation failed — falling back to unsubtitled video")
+                result["steps"]["subtitles"] = {
+                    "status": "failed",
+                    "error": "generate_srt failed",
+                    "fallback": final_video
+                }
+        except Exception as e:
+            print(f"[Pipeline] Subtitle step error: {e} — falling back to unsubtitled video")
+            result["steps"]["subtitles"] = {
+                "status": "failed",
+                "error": str(e),
+                "fallback": final_video
+            }
 
     # ── Step 6: Quality check ─────────────────────────────────
     notify_telegram(f"🔍 Step 6/8: Running quality check...", user_id)
