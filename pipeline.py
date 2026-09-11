@@ -14,18 +14,33 @@
 #   9. Feedback loop — NEW
 # ═══════════════════════════════════════════════════════════════
 
-import os, json, time, httpx
+import os, json, time, re, httpx
 from pathlib import Path
 from datetime import datetime
 
-from voiceover.voiceover import generate_full_voiceover, merge_with_video
+try:
+    from voiceover.voiceover import generate_full_voiceover, merge_with_video
+except ImportError:
+    from voiceover import generate_full_voiceover, merge_with_video
+
 from subtitles.subtitles import generate_srt, burn_subtitles
 from quality_check.quality_check import quality_check_video
-from publisher.publisher import publish_all
-from analytics.analytics import (
-    save_analytics, fetch_youtube_analytics,
-    get_feedback_for_script
-)
+
+try:
+    from publisher.publisher import publish_all
+except ImportError:
+    from publisher import publish_all
+
+try:
+    from analytics.analytics import (
+        save_analytics, fetch_youtube_analytics,
+        get_feedback_for_script
+    )
+except ImportError:
+    from analytics import (
+        save_analytics, fetch_youtube_analytics,
+        get_feedback_for_script
+    )
 
 CLIPROXY_URL = os.getenv("CLIPROXY_URL", "http://cliproxy:8317/v1")
 CLIPROXY_KEY = os.getenv("CLIPROXY_KEY", "local-proxy-key")
@@ -42,8 +57,21 @@ def notify_telegram(message: str, user_id: str = None):
             json={"message": message, "user_id": user_id},
             timeout=5
         )
-    except:
+    except Exception as e:
         print(f"[Notify] {message}")
+
+
+def _save_pipeline_state(work_dir: Path, run_id: str, status: str, video_path: str, script: dict, platforms: list):
+    """Persist pipeline state for human review/approval gate."""
+    state_file = work_dir / "state.json"
+    state_data = {
+        "run_id": run_id,
+        "status": status,
+        "video_path": video_path,
+        "script": script,
+        "platforms": platforms
+    }
+    state_file.write_text(json.dumps(state_data, indent=2))
 
 
 def run_complete_pipeline(
@@ -62,6 +90,8 @@ def run_complete_pipeline(
     Complete the pipeline from ArcReel output to published video.
     Fills all 4 gaps: voiceover, quality check, publish, analytics.
     """
+    if not run_id or not re.match(r"^[a-zA-Z0-9_-]+$", run_id) or ".." in run_id or "/" in run_id or "\\" in run_id:
+        raise ValueError("Invalid run_id")
     if credentials is None:
         credentials = {}
     platforms = platforms or ["youtube"]
@@ -175,6 +205,7 @@ def run_complete_pipeline(
             if not auto_publish:
                 result["status"] = "awaiting_review"
                 result["video_path"] = final_video
+                _save_pipeline_state(work_dir, run_id, result["status"], final_video, script, platforms)
                 return result
 
         else:
@@ -190,6 +221,7 @@ def run_complete_pipeline(
             )
             result["status"] = "awaiting_approval"
             result["video_path"] = final_video
+            _save_pipeline_state(work_dir, run_id, result["status"], final_video, script, platforms)
             return result
 
     # ── Step 7: Human approval gate (unless auto_publish) ────
@@ -203,6 +235,7 @@ def run_complete_pipeline(
         )
         result["status"] = "awaiting_approval"
         result["video_path"] = final_video
+        _save_pipeline_state(work_dir, run_id, result["status"], final_video, script, platforms)
         return result
 
     # ── Step 8: Publish ───────────────────────────────────────
@@ -263,9 +296,12 @@ def approve_and_publish(run_id: str, user_id: str = None,
     Called when human approves a video that was pending review.
     Looks up the stored pipeline state and continues to publish step.
     """
+    if not run_id or not re.match(r"^[a-zA-Z0-9_-]+$", run_id) or ".." in run_id or "/" in run_id or "\\" in run_id:
+        raise ValueError("Invalid run_id")
     if credentials is None:
         credentials = {}
-    state_file = Path(f"/output/{run_id}/state.json")
+    output_base = Path(os.getenv("OUTPUT_DIR", "/output"))
+    state_file = output_base / run_id / "state.json"
     if not state_file.exists():
         notify_telegram(f"❌ Run {run_id} not found", user_id)
         return

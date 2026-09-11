@@ -7,7 +7,7 @@ Test suite for pipeline bug fixes:
   FIX 4: Instagram safety guard
 """
 
-import os, sys, json, tempfile
+import os, sys, json, tempfile, pytest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
@@ -220,7 +220,8 @@ def test_fix4_instagram_safety():
 
     # Simple behavioral check: mock the httpx calls
     with patch("publisher.httpx.post") as mock_post, \
-         patch("publisher.httpx.get") as mock_get:
+         patch("publisher.httpx.get") as mock_get, \
+         patch("publisher.time.sleep"):
 
         # Default mock setup
         mock_post.return_value.json.return_value = {"id": "test_container"}
@@ -293,6 +294,303 @@ def test_fix1_analytics_youtube_token():
 
 
 # ============================================================================
+# DoD 1: Pipeline rejects path traversal run_id
+# ============================================================================
+
+def test_pipeline_rejects_path_traversal_run_id():
+    """Verify run_complete_pipeline rejects invalid run_ids and path traversals."""
+    print("\n" + "="*70)
+    print("DoD 1: Path Traversal Protection in run_complete_pipeline")
+    print("="*70)
+
+    from pipeline import run_complete_pipeline
+
+    invalid_ids = [
+        "../evil",
+        "../../etc/passwd",
+        "foo/bar",
+        "foo\\bar",
+        "run;rm -rf",
+        "run 123",
+        "",
+        "run@id",
+        "run.id",
+    ]
+
+    for bad_id in invalid_ids:
+        with pytest.raises(ValueError, match="Invalid run_id"):
+            run_complete_pipeline(
+                run_id=bad_id,
+                script={"title": "Test"},
+                arcreel_project_id="proj1"
+            )
+        print(f"  ✓ Rejected invalid run_id: {bad_id!r}")
+
+    print("✓ DoD 1 PASSED\n")
+
+
+# ============================================================================
+# DoD 2: Pipeline saves state.json on awaiting_approval / awaiting_review
+# ============================================================================
+
+def test_pipeline_saves_state_json_on_awaiting_approval():
+    """Verify run_complete_pipeline writes state.json in work_dir when awaiting approval."""
+    print("\n" + "="*70)
+    print("DoD 2: State Persistence (state.json on awaiting_approval/review)")
+    print("="*70)
+
+    from pipeline import run_complete_pipeline
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        run_id = "test_run_persist_123"
+        script = {"title": "Test Video", "hook": "Awesome hook"}
+        platforms = ["youtube", "tiktok"]
+
+        dummy_video = Path(tmpdir) / run_id / "raw.mp4"
+        dummy_video.parent.mkdir(parents=True, exist_ok=True)
+        dummy_video.write_bytes(b"dummy mp4")
+
+        with patch.dict(os.environ, {"OUTPUT_DIR": tmpdir}), \
+             patch("pipeline._download_arcreel_video", return_value=str(dummy_video)), \
+             patch("pipeline.generate_full_voiceover", return_value=str(dummy_video)), \
+             patch("pipeline.merge_with_video"), \
+             patch("pipeline.quality_check_video", return_value={"overall_score": 85, "recommendation": "pass"}), \
+             patch("pipeline.notify_telegram"):
+
+            res = run_complete_pipeline(
+                run_id=run_id,
+                script=script,
+                arcreel_project_id="proj123",
+                platforms=platforms,
+                auto_publish=False,
+                enable_subtitles=False
+            )
+
+            assert res.get("status") == "awaiting_approval", f"Expected awaiting_approval, got {res.get('status')}"
+
+            state_path = Path(tmpdir) / run_id / "state.json"
+            assert state_path.exists(), f"state.json was not created at {state_path}"
+
+            state_data = json.loads(state_path.read_text())
+            assert state_data.get("run_id") == run_id
+            assert state_data.get("status") == "awaiting_approval"
+            assert state_data.get("video_path") == res.get("video_path")
+            assert state_data.get("script") == script
+            assert state_data.get("platforms") == platforms
+            print(f"  ✓ state.json correctly persisted: {state_data}")
+
+        # Test awaiting_review state persistence
+        run_id_rev = "test_run_persist_rev_456"
+        dummy_video_rev = Path(tmpdir) / run_id_rev / "raw.mp4"
+        dummy_video_rev.parent.mkdir(parents=True, exist_ok=True)
+        dummy_video_rev.write_bytes(b"dummy mp4")
+
+        with patch.dict(os.environ, {"OUTPUT_DIR": tmpdir}), \
+             patch("pipeline._download_arcreel_video", return_value=str(dummy_video_rev)), \
+             patch("pipeline.generate_full_voiceover", return_value=str(dummy_video_rev)), \
+             patch("pipeline.merge_with_video"), \
+             patch("pipeline.quality_check_video", return_value={"overall_score": 50, "recommendation": "review", "issues": ["lighting"]}), \
+             patch("pipeline.notify_telegram"):
+
+            res_rev = run_complete_pipeline(
+                run_id=run_id_rev,
+                script=script,
+                arcreel_project_id="proj456",
+                platforms=platforms,
+                auto_publish=False,
+                enable_subtitles=False
+            )
+
+            assert res_rev.get("status") == "awaiting_review"
+            state_path_rev = Path(tmpdir) / run_id_rev / "state.json"
+            assert state_path_rev.exists()
+            assert json.loads(state_path_rev.read_text()).get("status") == "awaiting_review"
+            print("  ✓ state.json correctly persisted on awaiting_review")
+
+        # Test quality check error branch state persistence
+        run_id_err = "test_run_persist_err_789"
+        dummy_video_err = Path(tmpdir) / run_id_err / "raw.mp4"
+        dummy_video_err.parent.mkdir(parents=True, exist_ok=True)
+        dummy_video_err.write_bytes(b"dummy mp4")
+
+        with patch.dict(os.environ, {"OUTPUT_DIR": tmpdir}), \
+             patch("pipeline._download_arcreel_video", return_value=str(dummy_video_err)), \
+             patch("pipeline.generate_full_voiceover", return_value=str(dummy_video_err)), \
+             patch("pipeline.merge_with_video"), \
+             patch("pipeline.quality_check_video", side_effect=RuntimeError("QC error")), \
+             patch("pipeline.notify_telegram"):
+
+            res_err = run_complete_pipeline(
+                run_id=run_id_err,
+                script=script,
+                arcreel_project_id="proj789",
+                platforms=platforms,
+                auto_publish=False,
+                enable_subtitles=False
+            )
+
+            assert res_err.get("status") == "awaiting_approval"
+            state_path_err = Path(tmpdir) / run_id_err / "state.json"
+            assert state_path_err.exists()
+            assert json.loads(state_path_err.read_text()).get("status") == "awaiting_approval"
+            print("  ✓ state.json correctly persisted on quality check error")
+
+    print("✓ DoD 2 PASSED\n")
+
+
+# ============================================================================
+# DoD 3: Output directory unification in approve_and_publish
+# ============================================================================
+
+def test_approve_and_publish_honors_output_dir():
+    """Verify approve_and_publish resolves output_base via OUTPUT_DIR env var."""
+    print("\n" + "="*70)
+    print("DoD 3: Output Directory Unification (approve_and_publish)")
+    print("="*70)
+
+    # Check source code
+    with open("pipeline.py") as f:
+        src = f.read()
+
+    assert 'Path(f"/output/{run_id}/state.json")' not in src, \
+        "pipeline.py: hardcoded /output/{run_id}/state.json should be removed"
+    assert 'os.getenv("OUTPUT_DIR", "/output")' in src, \
+        "pipeline.py: approve_and_publish should resolve OUTPUT_DIR"
+
+    from pipeline import approve_and_publish
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        run_id = "test_run_unified_456"
+        work_dir = Path(tmpdir) / run_id
+        work_dir.mkdir(parents=True, exist_ok=True)
+        video_file = work_dir / "final.mp4"
+        video_file.write_bytes(b"dummy")
+
+        state_content = {
+            "run_id": run_id,
+            "status": "awaiting_approval",
+            "video_path": str(video_file),
+            "script": {"title": "Approved Title"},
+            "platforms": ["youtube"]
+        }
+        (work_dir / "state.json").write_text(json.dumps(state_content))
+
+        with patch.dict(os.environ, {"OUTPUT_DIR": tmpdir}), \
+             patch("pipeline.publish_all", return_value={"youtube": {"status": "published", "url": "http://yt"}}) as mock_pub, \
+             patch("pipeline._upload_to_public_storage", return_value="http://storage/vid.mp4"), \
+             patch("pipeline.notify_telegram"):
+
+            res = approve_and_publish(run_id)
+            assert res is not None, "approve_and_publish returned None"
+            assert mock_pub.called, "publish_all was not called"
+            print("  ✓ approve_and_publish correctly found state.json under custom OUTPUT_DIR")
+
+            # Missing run_id returns None
+            assert approve_and_publish("nonexistent_run") is None
+
+            # Missing video file returns None
+            bad_dir = Path(tmpdir) / "bad_video_run"
+            bad_dir.mkdir(parents=True, exist_ok=True)
+            (bad_dir / "state.json").write_text(json.dumps({"video_path": str(tmpdir) + "/missing.mp4"}))
+            assert approve_and_publish("bad_video_run") is None
+
+        # Test invalid run_id / path traversal validation in approve_and_publish
+        invalid_ids = ["../evil", "../../etc/passwd", "foo/bar", "foo\\bar", "run;rm", "run 123", "", "run@id"]
+        for bad_id in invalid_ids:
+            with pytest.raises(ValueError, match="Invalid run_id"):
+                approve_and_publish(bad_id)
+        print("  ✓ approve_and_publish rejects invalid / path traversal run_ids")
+
+    print("✓ DoD 3 PASSED\n")
+
+
+# ============================================================================
+# DoD 4: Analytics concurrency & data safety
+# ============================================================================
+
+def test_analytics_save_does_not_wipe_db_on_corrupt_json():
+    """Verify save_analytics uses fcntl.flock, catches JSONDecodeError, and does not wipe DB."""
+    print("\n" + "="*70)
+    print("DoD 4: Analytics Concurrency & Data Safety")
+    print("="*70)
+
+    with open("analytics/analytics.py") as f:
+        src = f.read()
+
+    # Source code checks
+    assert "fcntl.flock" in src, "analytics.py: save_analytics must use fcntl.flock(f, fcntl.LOCK_EX)"
+    assert "except Exception as e:" in src, "analytics.py: fetch_youtube_analytics should use except Exception as e:"
+    assert "except:" not in src, "analytics.py: bare except: should be eliminated"
+
+    import analytics.analytics as analytics_mod
+    from analytics.analytics import save_analytics
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        test_db = Path(tmpdir) / "analytics.json"
+        corrupted_content = "{corrupted json data here..."
+        test_db.write_text(corrupted_content)
+
+        with patch.object(analytics_mod, "ANALYTICS_DB", test_db):
+            with pytest.raises(json.JSONDecodeError):
+                save_analytics("run_fail", {"views": 100})
+
+            assert test_db.read_text() == corrupted_content, "Corrupted DB was wiped or overwritten!"
+            print("  ✓ Corrupted DB was not wiped on JSONDecodeError")
+
+            test_db.write_text("{}")
+            save_analytics("run_ok", {"views": 42})
+            saved = json.loads(test_db.read_text())
+            assert "run_ok" in saved
+            assert saved["run_ok"]["views"] == 42
+            print("  ✓ Normal save works and updates DB")
+
+        # Test creating new DB file when it does not exist yet
+        fresh_db = Path(tmpdir) / "sub" / "fresh_analytics.json"
+        with patch.object(analytics_mod, "ANALYTICS_DB", fresh_db):
+            save_analytics("run_fresh", {"views": 10})
+            assert fresh_db.exists()
+            assert json.loads(fresh_db.read_text())["run_fresh"]["views"] == 10
+            print("  ✓ Fresh DB creation handled correctly")
+
+    print("✓ DoD 4 PASSED\n")
+
+
+# ============================================================================
+# DoD 5: Publisher token path repo-anchored
+# ============================================================================
+
+def test_publisher_youtube_token_anchored_to_repo_root():
+    """Verify publisher.py anchors youtube_token.json to _REPO_ROOT and honors YOUTUBE_TOKEN_PATH."""
+    print("\n" + "="*70)
+    print("DoD 5: Publisher YouTube Token Path")
+    print("="*70)
+
+    with open("publisher/publisher.py") as f:
+        src = f.read()
+
+    assert "_REPO_ROOT = Path(__file__).resolve().parent.parent" in src, \
+        "publisher.py: _REPO_ROOT not defined properly"
+    assert 'os.getenv("YOUTUBE_TOKEN_PATH", str(_REPO_ROOT / "youtube_token.json"))' in src, \
+        "publisher.py: token_file not resolving via YOUTUBE_TOKEN_PATH or _REPO_ROOT"
+    assert 'token_file = "youtube_token.json"' not in src, \
+        "publisher.py: relative token_file = 'youtube_token.json' should be replaced"
+
+    # Verify DoD 6 in pipeline.py: notify_telegram uses except Exception as e:
+    with open("pipeline.py") as f:
+        pipe_src = f.read()
+    assert "except Exception as e:" in pipe_src, \
+        "pipeline.py: notify_telegram must use except Exception as e:"
+
+    from pipeline import notify_telegram
+    with patch("pipeline.httpx.post", side_effect=Exception("Simulated notify failure")):
+        notify_telegram("Test notify error handling")
+
+    print("  ✓ _REPO_ROOT defined and token_file resolves with fallback")
+    print("  ✓ notify_telegram uses except Exception as e:")
+    print("✓ DoD 5 PASSED\n")
+
+
+# ============================================================================
 # Main test runner
 # ============================================================================
 
@@ -307,6 +605,11 @@ if __name__ == "__main__":
         test_fix3_voiceover_schema()
         test_fix4_instagram_safety()
         test_fix1_analytics_youtube_token()
+        test_pipeline_rejects_path_traversal_run_id()
+        test_pipeline_saves_state_json_on_awaiting_approval()
+        test_approve_and_publish_honors_output_dir()
+        test_analytics_save_does_not_wipe_db_on_corrupt_json()
+        test_publisher_youtube_token_anchored_to_repo_root()
 
         print("\n" + "▄"*70)
         print("ALL TESTS PASSED ✓")

@@ -4,7 +4,7 @@
 # Feeds insights back to script writer to improve future videos
 # ═══════════════════════════════════════════════════════════════
 
-import os, json, httpx
+import os, json, httpx, fcntl
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -64,7 +64,7 @@ def fetch_youtube_analytics(video_id: str, credentials_file: str = None) -> dict
 
         rows = analytics_r.get("rows", [[0, 0, 0, 0, 0]])
         row = rows[0] if rows else [0, 0, 0, 0, 0]
-    except:
+    except Exception as e:
         row = [0, 0, 0, 0, 0]
 
     total_views = int(stats.get("viewCount", 0))
@@ -127,19 +127,34 @@ def save_analytics(run_id: str, platform_data: dict):
     """Persist analytics to local JSON database."""
     ANALYTICS_DB.parent.mkdir(parents=True, exist_ok=True)
 
-    db = {}
-    if ANALYTICS_DB.exists():
+    if not ANALYTICS_DB.exists():
         try:
-            db = json.loads(ANALYTICS_DB.read_text())
-        except:
-            db = {}
+            with open(ANALYTICS_DB, "x") as f_init:
+                pass
+        except FileExistsError:
+            pass
 
-    if run_id not in db:
-        db[run_id] = {}
+    with open(ANALYTICS_DB, "r+") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        content = f.read()
+        db = {}
+        if content.strip():
+            try:
+                db = json.loads(content)
+            except json.JSONDecodeError as e:
+                # Never wipe database db = {} on error!
+                raise
 
-    db[run_id].update(platform_data)
-    db[run_id]["updated_at"] = datetime.now().isoformat()
-    ANALYTICS_DB.write_text(json.dumps(db, indent=2))
+        if run_id not in db:
+            db[run_id] = {}
+
+        db[run_id].update(platform_data)
+        db[run_id]["updated_at"] = datetime.now().isoformat()
+
+        f.seek(0)
+        f.truncate()
+        f.write(json.dumps(db, indent=2))
+        f.flush()
 
 
 def load_recent_analytics(limit: int = 20) -> list:
@@ -209,7 +224,7 @@ Return JSON:
 
     try:
         return json.loads(content)
-    except:
+    except Exception as e:
         return {"insights": [content], "error": "parse_failed"}
 
 
