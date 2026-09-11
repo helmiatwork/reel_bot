@@ -87,5 +87,10 @@ RSpec.describe AnalyticsSnapshot, type: :model do
       snapshot.reload
       expect(snapshot.raw_payload).to eq(payload)
     end
+
+    it 'aliases recorded_at to created_at' do
+      snapshot = create(:analytics_snapshot, pipeline_run: pipeline_run, channel_account: channel_account)
+      expect(snapshot.recorded_at).to eq(snapshot.created_at)
+    end
   end
 end
