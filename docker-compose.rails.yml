@@ -1,0 +1,104 @@
+# ═══════════════════════════════════════════════════════════════════
+# REELBOT RAILS 8.1 & RUBY 4.0 LEAN STACK — docker-compose.rails.yml
+# Ultra-lean 3-container production setup replacing legacy multi-container stack:
+#   1. rails    : Rails 8.1 Puma + Solid Queue + Asset server (port 3000)
+#   2. postgres : PostgreSQL 16 Alpine with multi-database support (primary, queue, cache, cable)
+#   3. cliproxy : AI proxy gateway for Gemini / LLM evaluations
+# ═══════════════════════════════════════════════════════════════════
+
+services:
+  rails:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: reelbot:latest
+    container_name: reelbot-rails
+    ports:
+      - "3000:3000"
+    environment:
+      - RAILS_ENV=production
+      - RAILS_MAX_THREADS=5
+      - SOLID_QUEUE_IN_PUMA=true
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/reelbot_production
+      - CACHE_DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/reelbot_production_cache
+      - QUEUE_DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/reelbot_production_queue
+      - CABLE_DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/reelbot_production_cable
+      - CLIPROXY_URL=http://cliproxy:8317/v1
+      - CLIPROXY_KEY=${CLIPROXY_KEY:-local-proxy-key}
+      - ARCREEL_URL=${ARCREEL_URL:-http://localhost:1241}
+      - ARCREEL_TOKEN=${ARCREEL_TOKEN:-}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY:-}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - YOUTUBE_ACCESS_TOKEN=${YOUTUBE_ACCESS_TOKEN:-}
+      - TIKTOK_ACCESS_TOKEN=${TIKTOK_ACCESS_TOKEN:-}
+      - INSTAGRAM_ACCESS_TOKEN=${INSTAGRAM_ACCESS_TOKEN:-}
+      - INSTAGRAM_USER_ID=${INSTAGRAM_USER_ID:-}
+      - SECRET_KEY_BASE=${SECRET_KEY_BASE:-a9c28892f3982e5b774fa1982b683d47c92b2d018789}
+    volumes:
+      - rails_storage:/rails/storage
+      - rails_tmp:/rails/tmp
+    depends_on:
+      postgres:
+        condition: service_healthy
+      cliproxy:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/up"]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    networks:
+      - reelbot-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: reelbot-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_MULTIPLE_DATABASES: reelbot_production,reelbot_production_cache,reelbot_production_queue,reelbot_production_cable
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - reelbot-network
+
+  cliproxy:
+    build:
+      context: ./cliproxy
+      dockerfile: Dockerfile
+    image: reelbot/cliproxy:latest
+    container_name: reelbot-cliproxy
+    expose:
+      - "8317"
+    ports:
+      - "8317:8317"
+    environment:
+      - PORT=8317
+    restart: unless-stopped
+    networks:
+      - reelbot-network
+
+volumes:
+  postgres_data:
+    name: reelbot-postgres-data
+  rails_storage:
+    name: reelbot-rails-storage
+  rails_tmp:
+    name: reelbot-rails-tmp
+
+networks:
+  reelbot-network:
+    name: reelbot-network
+    driver: bridge
