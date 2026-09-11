@@ -6,6 +6,9 @@
 import os, json, time, httpx
 from pathlib import Path
 
+# Resolve repo-relative paths for credentials
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+
 # ── YouTube ────────────────────────────────────────────────────
 def publish_youtube(
     video_path: str,
@@ -38,7 +41,7 @@ def publish_youtube(
         raise Exception("Install: pip install google-api-python-client google-auth-oauthlib")
 
     creds_file = credentials_file or os.getenv("YOUTUBE_CREDENTIALS", "client_secrets.json")
-    token_file = "youtube_token.json"
+    token_file = os.getenv("YOUTUBE_TOKEN_PATH", str(_REPO_ROOT / "youtube_token.json"))
 
     # Load or refresh credentials
     creds = None
