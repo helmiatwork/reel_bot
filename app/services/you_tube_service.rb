@@ -15,7 +15,8 @@ class YouTubeService
   QUOTA_COSTS = {
     "search" => 100,
     "videos" => 1,
-    "channels" => 1
+    "channels" => 1,
+    "playlistItems" => 1
   }.freeze
 
   attr_reader :api_key
@@ -133,6 +134,37 @@ class YouTubeService
       video_count: statistics["videoCount"].to_i,
       view_count: statistics["viewCount"].to_i,
       uploads_playlist_id: content_details.dig("relatedPlaylists", "uploads")
+    }
+  end
+
+  def latest_channel_video(channel_id_or_handle)
+    ensure_configured!
+    info = channel_info(channel_id_or_handle)
+    uploads_id = info[:uploads_playlist_id]
+    return nil if uploads_id.blank?
+
+    params = {
+      part: "snippet",
+      playlistId: uploads_id,
+      maxResults: 1,
+      key: api_key
+    }
+
+    response = get("playlistItems", params)
+    data = parse_response(response)
+    record_quota(QUOTA_COSTS.fetch("playlistItems", 1))
+
+    item = (data["items"] || []).first
+    return nil unless item
+
+    snippet = item["snippet"] || {}
+    video_id = snippet.dig("resourceId", "videoId")
+    return nil if video_id.blank?
+
+    {
+      video_id: video_id,
+      title: snippet["title"],
+      published_at: snippet["publishedAt"]
     }
   end
 

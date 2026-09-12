@@ -8,8 +8,15 @@ production:
   clear_solid_queue_finished_jobs:
     command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
     schedule: every hour at minute 12
+  snoop_watcher_job:
+    class: SnoopWatcherJob
+    schedule: every day at 8am
 
 development:
   fetch_analytics_job:
     class: FetchAnalyticsJob
     schedule: every hour
+  snoop_watcher_job:
+    class: SnoopWatcherJob
+    schedule: every day at 8am
+
