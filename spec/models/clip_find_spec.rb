@@ -72,6 +72,29 @@ RSpec.describe ClipFind, type: :model do
         expect(clip_find).not_to be_valid
         expect(clip_find.errors[:youtube_url]).to include("is an invalid URI")
       end
+
+      describe "SSRF protection" do
+        ssrf_urls = [
+          "http://localhost/video",
+          "https://localhost:3000/video",
+          "http://127.0.0.1/video",
+          "http://0.0.0.0/video",
+          "http://169.254.169.254/latest/meta-data",
+          "http://10.0.0.1/video",
+          "http://172.16.0.1/video",
+          "http://192.168.1.1/video",
+          "http://[::1]/video",
+          "http://foo.localhost/video"
+        ]
+
+        ssrf_urls.each do |bad_url|
+          it "rejects private or loopback URL: #{bad_url}" do
+            clip_find = described_class.new(youtube_url: bad_url)
+            expect(clip_find).not_to be_valid
+            expect(clip_find.errors[:youtube_url]).to include("cannot target private or restricted network addresses")
+          end
+        end
+      end
     end
 
     describe "clips default" do
