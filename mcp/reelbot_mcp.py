@@ -42,7 +42,7 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 CLAUDE_BRIDGE_URL = os.getenv("CLAUDE_BRIDGE_URL", "http://localhost:9999")
-PIPELINE_API_URL = os.getenv("PIPELINE_API_URL", "http://localhost:8000")
+PIPELINE_API_URL = os.getenv("PIPELINE_API_URL", "http://localhost:3000")
 REPO_ROOT = Path(__file__).parent.parent
 
 # MCP server
