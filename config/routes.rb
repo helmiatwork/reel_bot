@@ -58,4 +58,16 @@ Rails.application.routes.draw do
   # Keyword endpoints
   post "keywords/ideas", to: "keywords#ideas"
   get "keywords", to: "keywords#index"
+
+  # Dashboard endpoints
+  get "dash/overview", to: "dash#overview"
+  get "dash/services", to: "dash#services"
+  get "dash/agents", to: "dash#agents"
+  get "dash/table/:name", to: "dash#table", constraints: { name: %r{[^/]+} }
+  get "dash/formula-performance", to: "dash#formula_performance"
+  get "dash/cost", to: "dash#cost"
+  get "dash/token-usage", to: "dash#token_usage"
+  get "dash/analysis", to: "dash#analysis"
+  post "dash/restart/:service", to: "dash#restart_service", constraints: { service: %r{[^/]+} }
+  post "dash/restart-all", to: "dash#restart_all"
 end
