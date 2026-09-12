@@ -59,11 +59,14 @@ class SnoopController < ApplicationController
       return render json: { error: "channel_id and video_id are required" }, status: :unprocessable_entity
     end
 
+    target = SnoopTarget.where("LOWER(channel_id) = LOWER(?)", params[:channel_id].to_s.strip).first
+    channel_id = target&.channel_id || params[:channel_id]
+
     clips = params[:clips]
     clips = [] unless clips.is_a?(Array)
 
     result = SnoopResult.new(
-      channel_id: params[:channel_id],
+      channel_id: channel_id,
       video_id: params[:video_id],
       video_title: params[:video_title],
       clips: clips
@@ -71,7 +74,6 @@ class SnoopController < ApplicationController
 
     if result.save
       if clips.present? && !clips.empty?
-        target = SnoopTarget.where("LOWER(channel_id) = LOWER(?)", params[:channel_id].to_s.strip).first
         target&.update(last_seen_video_id: params[:video_id])
       end
 

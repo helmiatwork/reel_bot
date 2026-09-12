@@ -65,6 +65,13 @@ RSpec.describe "Snoop", type: :request do
       json = JSON.parse(response.body)
       expect(json["error"]).to be_present
     end
+
+    it "returns 422 if channel_id contains prohibited characters" do
+      post "/snoop/targets", params: { channel_id: "@bad;rm -rf" }, as: :json
+      expect(response).to have_http_status(:unprocessable_entity)
+      json = JSON.parse(response.body)
+      expect(json["error"]).to include("contains prohibited characters")
+    end
   end
 
   describe "DELETE /snoop/targets/:channel_id" do
@@ -187,6 +194,22 @@ RSpec.describe "Snoop", type: :request do
 
       expect(response).to have_http_status(:created).or have_http_status(:ok)
       expect(SnoopResult.find_by(video_id: "v_orphan")).to be_present
+    end
+
+    it "uses target channel_id casing when target matches case-insensitively" do
+      SnoopTarget.create!(channel_id: "@TechReviewer", handle: "@TechReviewer")
+
+      post "/snoop/results", params: {
+        channel_id: "@techreviewer",
+        video_id: "v_case_1",
+        video_title: "Case Check Video",
+        clips: []
+      }, as: :json
+
+      expect(response).to have_http_status(:created).or have_http_status(:ok)
+      result = SnoopResult.find_by(video_id: "v_case_1")
+      expect(result).to be_present
+      expect(result.channel_id).to eq("@TechReviewer")
     end
 
     it "returns 422 if channel_id or video_id is missing" do

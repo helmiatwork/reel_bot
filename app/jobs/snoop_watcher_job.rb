@@ -20,6 +20,7 @@ class SnoopWatcherJob < ApplicationJob
     video_id = latest[:video_id] || latest["video_id"]
     return if video_id.blank?
     return if video_id == target.last_seen_video_id
+    return if SnoopResult.exists?(channel_id: target.channel_id, video_id: video_id)
 
     youtube_url = "https://www.youtube.com/watch?v=#{video_id}"
     video_title = latest[:title] || latest["title"]
