@@ -35,13 +35,32 @@ class ChannelAccount < ApplicationRecord
 
   def as_json(options = nil)
     json = super(options)
-    unless options&.dig(:include_sensitive)
-      if json["credentials"].is_a?(Hash)
-        json["credentials"] = json["credentials"].reject do |key, _|
-          SENSITIVE_CREDENTIAL_KEYS.include?(key.to_s.downcase) || key.to_s.downcase.match?(/token|cookie|secret|password/)
-        end
-      end
+    include_sensitive = options.is_a?(Hash) && (options[:include_sensitive] || options["include_sensitive"])
+    unless include_sensitive
+      json["credentials"] = sanitize_credentials(json["credentials"]) if json["credentials"].present?
     end
     json
+  end
+
+  private
+
+  def sanitize_credentials(obj)
+    case obj
+    when Hash
+      obj.each_with_object({}) do |(key, value), acc|
+        next if sensitive_key?(key)
+
+        acc[key] = sanitize_credentials(value)
+      end
+    when Array
+      obj.map { |item| sanitize_credentials(item) }
+    else
+      obj
+    end
+  end
+
+  def sensitive_key?(key)
+    key_str = key.to_s.downcase
+    SENSITIVE_CREDENTIAL_KEYS.include?(key_str) || key_str.match?(/token|cookie|secret|password/)
   end
 end

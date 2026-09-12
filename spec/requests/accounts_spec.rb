@@ -218,6 +218,15 @@ RSpec.describe "Accounts", :regression, type: :request do
       expect(account1.reload.cookies).to eq("session_id=str_cookie")
     end
 
+    it "updates cookies with a nested JSON object payload without forbidden attributes error" do
+      post "/accounts/#{account1.id}/cookies",
+           params: { cookies: { session_id: "xyz", expires: "tomorrow" } }.to_json,
+           headers: { "Content-Type" => "application/json" }
+
+      expect(response).to have_http_status(:ok)
+      expect(account1.reload.cookies).to eq({ "session_id" => "xyz", "expires" => "tomorrow" })
+    end
+
     it "returns 404 when account is not found" do
       post "/accounts/999999/cookies",
            params: { cookies: "sess" }.to_json,

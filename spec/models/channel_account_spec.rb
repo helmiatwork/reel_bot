@@ -175,6 +175,33 @@ RSpec.describe ChannelAccount, type: :model, regression: true do
       expect(json['credentials']['refresh_token']).to eq('secret-refresh')
       expect(json['credentials']['cookies']).to eq({ 'auth_session' => 'sess_secret_val' })
     end
+
+    it 'excludes sensitive keys nested inside hashes and arrays' do
+      nested_account = create(:channel_account, credentials: {
+        'oauth' => {
+          'access_token' => 'nested-secret-access',
+          'client_secret' => 'nested-client-secret',
+          'expires_in' => 3600
+        },
+        'profiles' => [
+          { 'user' => 'creator_1', 'password' => 'secret_pass_1' },
+          { 'user' => 'creator_2', 'token' => 'secret_token_2' }
+        ],
+        'session_cookies' => 'top_level_cookie',
+        'public_info' => { 'username' => 'creator' }
+      })
+
+      json = nested_account.as_json
+      expect(json['credentials']['oauth']).to eq({ 'expires_in' => 3600 })
+      expect(json['credentials']['oauth']).not_to have_key('access_token')
+      expect(json['credentials']['oauth']).not_to have_key('client_secret')
+      expect(json['credentials']['profiles']).to eq([
+        { 'user' => 'creator_1' },
+        { 'user' => 'creator_2' }
+      ])
+      expect(json['credentials']).not_to have_key('session_cookies')
+      expect(json['credentials']['public_info']).to eq({ 'username' => 'creator' })
+    end
   end
 
   describe 'associations' do

@@ -296,6 +296,8 @@ RSpec.describe YouTubeService, :regression, type: :service do
       expect(service.parse_iso8601_duration('PT45S')).to eq(45)
       expect(service.parse_iso8601_duration('PT1H30S')).to eq(3630)
       expect(service.parse_iso8601_duration('PT0S')).to eq(0)
+      expect(service.parse_iso8601_duration('P1DT2H3M4S')).to eq(93784)
+      expect(service.parse_iso8601_duration('P2D')).to eq(172800)
     end
 
     it 'returns 0 for invalid or empty duration strings' do
