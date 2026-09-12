@@ -252,4 +252,50 @@ RSpec.describe YtDlpService do
       }.to raise_error(YtDlpService::ExecutionError, /output file not found/)
     end
   end
+
+  describe "#latest_channel_video" do
+    it "fetches the latest channel video by calling yt-dlp flat playlist" do
+      status = instance_double(Process::Status, success?: true)
+      json_line = { "id" => "vid_dlp_1", "title" => "Great Tech Review" }.to_json
+      allow(Open3).to receive(:capture3).and_return([ "#{json_line}\n", "", status ])
+
+      result = service.latest_channel_video("@techreview")
+      expect(result).to eq({
+        video_id: "vid_dlp_1",
+        title: "Great Tech Review"
+      })
+
+      expect(Open3).to have_received(:capture3) do |*args|
+        expect(args).to include("https://www.youtube.com/@techreview/videos")
+        expect(args).to include("--flat-playlist")
+        expect(args).to include("--playlist-end", "1")
+      end
+    end
+
+    it "handles UC channel IDs properly" do
+      status = instance_double(Process::Status, success?: true)
+      json_line = { "id" => "vid_dlp_2", "title" => "Channel Video" }.to_json
+      allow(Open3).to receive(:capture3).and_return([ "#{json_line}\n", "", status ])
+
+      result = service.latest_channel_video("UC123456789")
+      expect(result[:video_id]).to eq("vid_dlp_2")
+
+      expect(Open3).to have_received(:capture3) do |*args|
+        expect(args).to include("https://www.youtube.com/channel/UC123456789/videos")
+      end
+    end
+
+    it "returns nil when stdout is blank or has no video" do
+      status = instance_double(Process::Status, success?: true)
+      allow(Open3).to receive(:capture3).and_return([ "", "", status ])
+
+      expect(service.latest_channel_video("@emptychan")).to be_nil
+    end
+
+    it "returns nil and rescues errors when yt-dlp fails" do
+      allow(Open3).to receive(:capture3).and_raise(Errno::ENOENT.new("yt-dlp binary missing"))
+
+      expect(service.latest_channel_video("@errorchan")).to be_nil
+    end
+  end
 end

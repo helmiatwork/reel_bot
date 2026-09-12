@@ -90,6 +90,48 @@ class YtDlpService
     resolve_downloaded_file(stdout, dest_dir)
   end
 
+  def latest_channel_video(channel_id_or_url)
+    channel_str = channel_id_or_url.to_s.strip
+    url = if channel_str.start_with?("http://", "https://")
+      channel_str
+    elsif channel_str.start_with?("UC")
+      "https://www.youtube.com/channel/#{channel_str}/videos"
+    elsif channel_str.start_with?("@")
+      "https://www.youtube.com/#{channel_str}/videos"
+    else
+      "https://www.youtube.com/@#{channel_str}/videos"
+    end
+
+    validate_url!(url)
+
+    cmd = [
+      "yt-dlp",
+      "--dump-json",
+      "--flat-playlist",
+      "--playlist-end", "1",
+      "--no-warnings",
+      url
+    ]
+
+    stdout, = execute_command(*cmd, timeout: metadata_timeout)
+    return nil if stdout.blank?
+
+    line = stdout.lines.first&.strip
+    return nil if line.blank?
+
+    data = JSON.parse(line)
+    video_id = data["id"] || data["url"]
+    return nil if video_id.blank?
+
+    {
+      video_id: video_id,
+      title: data["title"]
+    }
+  rescue StandardError => e
+    Rails.logger.warn("[YtDlpService] latest_channel_video failed: #{e.message}")
+    nil
+  end
+
   private
 
   def resolve_downloaded_file(stdout, dest_dir)
