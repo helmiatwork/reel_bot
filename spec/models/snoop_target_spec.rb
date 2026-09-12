@@ -27,6 +27,43 @@ RSpec.describe SnoopTarget, type: :model do
       expect(duplicate).not_to be_valid
       expect(duplicate.errors[:channel_id]).to include("has already been taken")
     end
+
+    it "rejects channel_id containing prohibited command injection characters" do
+      prohibited = [ ";", "&", "|", "`", "$", "\n", "\r", "<", ">" ]
+      prohibited.each do |char|
+        target = described_class.new(channel_id: "UC123#{char}exploit")
+        expect(target).not_to be_valid
+        expect(target.errors[:channel_id]).to include("contains prohibited characters")
+      end
+    end
+
+    it "rejects channel_id with invalid characters such as spaces or slashes" do
+      invalid_inputs = [ "channel with space", "foo/bar", "invalid#hash", "@!invalid" ]
+      invalid_inputs.each do |input|
+        target = described_class.new(channel_id: input)
+        expect(target).not_to be_valid
+        expect(target.errors[:channel_id]).to include("is invalid")
+      end
+    end
+
+    it "accepts valid channel identifiers" do
+      valid_inputs = [
+        "@techcreator",
+        "@Channel.Name-123",
+        "UC1234567890123456789012",
+        "simple_channel_slug"
+      ]
+      valid_inputs.each do |input|
+        target = described_class.new(channel_id: input)
+        expect(target).to be_valid
+      end
+    end
+
+    it "rejects YouTube URLs containing command injection characters" do
+      target = described_class.new(channel_id: "https://www.youtube.com/@mkbhd; rm -rf /")
+      expect(target).not_to be_valid
+      expect(target.errors[:channel_id]).to include("contains prohibited characters")
+    end
   end
 
   describe "associations" do

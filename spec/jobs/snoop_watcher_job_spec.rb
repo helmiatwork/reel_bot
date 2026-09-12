@@ -118,6 +118,26 @@ RSpec.describe SnoopWatcherJob, type: :job do
       end
     end
 
+    context "when the video has already been recorded in SnoopResult (endless retry prevention)" do
+      before do
+        SnoopResult.create!(
+          channel_id: "@techcreator",
+          video_id: "vid_failed_previously",
+          video_title: "Failed clip video",
+          clips: []
+        )
+        allow(youtube_service).to receive(:latest_channel_video)
+          .with("@techcreator")
+          .and_return({ video_id: "vid_failed_previously", title: "Failed clip video" })
+      end
+
+      it "skips processing without calling clip finder or creating duplicate result" do
+        expect(ClipFinderService).not_to receive(:new)
+        expect { described_class.new.perform }.not_to change(SnoopResult, :count)
+        expect(target.reload.last_seen_video_id).to eq("old_vid_1")
+      end
+    end
+
     context "when no video is returned" do
       before do
         allow(youtube_service).to receive(:latest_channel_video)
