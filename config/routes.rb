@@ -39,4 +39,12 @@ Rails.application.routes.draw do
   get "youtube/video/:id", to: "you_tube#video"
   get "youtube/channel/:id", to: "you_tube#channel"
   get "youtube/quota", to: "you_tube#quota"
+
+  # Clip endpoints
+  post "clips/transcript", to: "clips#transcript"
+  post "clips/find-claude", to: "clips#find_claude"
+  post "clips/auto", to: "clips#auto"
+  post "clips/render", to: "clips#render_clip"
+  get "clips/renders/:id/download", to: "clips#download_render", constraints: { id: %r{[^/]+} }
+  get "dash/clip-finds", to: "clips#dash_clip_finds"
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_12_000707) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_12_073000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -42,6 +42,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_000707) do
     t.index ["brand_id"], name: "index_channel_accounts_on_brand_id"
     t.index ["platform", "account_identifier"], name: "index_channel_accounts_on_platform_and_account_identifier", unique: true
     t.index ["role"], name: "index_channel_accounts_on_role"
+  end
+
+  create_table "clip_finds", force: :cascade do |t|
+    t.jsonb "clips", default: [], null: false
+    t.decimal "cost_usd", precision: 10, scale: 5
+    t.datetime "created_at", null: false
+    t.string "model", limit: 48
+    t.datetime "updated_at", null: false
+    t.text "youtube_url", null: false
+    t.index ["created_at"], name: "index_clip_finds_on_created_at"
+    t.index ["youtube_url"], name: "index_clip_finds_on_youtube_url"
   end
 
   create_table "pipeline_runs", force: :cascade do |t|
