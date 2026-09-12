@@ -137,16 +137,18 @@ class YouTubeService
   end
 
   def parse_iso8601_duration(duration_str)
-    return 0 if duration_str.blank? || !duration_str.is_a?(String) || !duration_str.start_with?("PT")
+    return 0 if duration_str.blank? || !duration_str.is_a?(String) || !duration_str.start_with?("P")
 
-    pattern = /\APT(?:(?<hours>\d+)H)?(?:(?<minutes>\d+)M)?(?:(?<seconds>\d+)S)?\z/
+    pattern = /\AP(?:(?<days>\d+)D)?(?:T(?:(?<hours>\d+)H)?(?:(?<minutes>\d+)M)?(?:(?<seconds>\d+)S)?)?\z/
     match = duration_str.match(pattern)
     return 0 unless match
+    return 0 if match[:days].nil? && match[:hours].nil? && match[:minutes].nil? && match[:seconds].nil?
 
+    days = match[:days].to_i
     hours = match[:hours].to_i
     minutes = match[:minutes].to_i
     seconds = match[:seconds].to_i
-    (hours * 3600) + (minutes * 60) + seconds
+    (days * 86_400) + (hours * 3600) + (minutes * 60) + seconds
   rescue StandardError
     0
   end
@@ -214,12 +216,12 @@ class YouTubeService
 
   def extract_video_id(video_id_or_url)
     str = video_id_or_url.to_s.strip
-    if str.match?(%r{youtu\.be/([^?]+)})
-      str.match(%r{youtu\.be/([^?]+)})[1]
-    elsif str.match?(%r{youtube\.com/watch.*[?&]v=([^&]+)})
-      str.match(%r{youtube\.com/watch.*[?&]v=([^&]+)})[1]
-    elsif str.match?(%r{youtube\.com/shorts/([^?]+)})
-      str.match(%r{youtube\.com/shorts/([^?]+)})[1]
+    if (m = str.match(%r{youtu\.be/([^?]+)}))
+      m[1]
+    elsif (m = str.match(%r{youtube\.com/watch.*[?&]v=([^&]+)}))
+      m[1]
+    elsif (m = str.match(%r{youtube\.com/shorts/([^?]+)}))
+      m[1]
     else
       str
     end

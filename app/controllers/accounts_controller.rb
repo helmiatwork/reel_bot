@@ -44,7 +44,8 @@ class AccountsController < ApplicationController
   end
 
   def update_cookies
-    if @account.update_cookies(params[:cookies])
+    cookie_data = params[:cookies].respond_to?(:to_unsafe_h) ? params[:cookies].to_unsafe_h : params[:cookies]
+    if @account.update_cookies(cookie_data)
       render json: { status: "ok" }, status: :ok
     else
       render json: { errors: @account.errors.full_messages }, status: :unprocessable_content
