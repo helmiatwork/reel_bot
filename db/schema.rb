@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_12_073000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_12_130001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -70,6 +70,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_073000) do
     t.index ["run_id"], name: "index_pipeline_runs_on_run_id", unique: true
     t.index ["status"], name: "index_pipeline_runs_on_status"
     t.index ["video_project_id"], name: "index_pipeline_runs_on_video_project_id"
+  end
+
+  create_table "snoop_results", force: :cascade do |t|
+    t.string "channel_id", null: false
+    t.jsonb "clips", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "video_id", null: false
+    t.string "video_title"
+    t.index ["channel_id"], name: "index_snoop_results_on_channel_id"
+    t.index ["created_at"], name: "index_snoop_results_on_created_at"
+  end
+
+  create_table "snoop_targets", force: :cascade do |t|
+    t.string "channel_id", null: false
+    t.datetime "created_at", null: false
+    t.string "handle"
+    t.string "last_seen_video_id"
+    t.datetime "updated_at", null: false
+    t.index ["channel_id"], name: "index_snoop_targets_on_channel_id", unique: true
   end
 
   create_table "video_projects", force: :cascade do |t|
