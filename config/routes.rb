@@ -54,4 +54,8 @@ Rails.application.routes.draw do
   delete "snoop/targets/:channel_id", to: "snoop#delete_target", constraints: { channel_id: %r{[^/]+} }
   get "snoop/results", to: "snoop#results"
   post "snoop/results", to: "snoop#add_result"
+
+  # Keyword endpoints
+  post "keywords/ideas", to: "keywords#ideas"
+  get "keywords", to: "keywords#index"
 end

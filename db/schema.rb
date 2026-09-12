@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_12_130001) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_12_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -53,6 +53,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_130001) do
     t.text "youtube_url", null: false
     t.index ["created_at"], name: "index_clip_finds_on_created_at"
     t.index ["youtube_url"], name: "index_clip_finds_on_youtube_url"
+  end
+
+  create_table "keywords", force: :cascade do |t|
+    t.bigint "avg_monthly_searches"
+    t.string "competition"
+    t.integer "competition_index"
+    t.bigint "cpc_high_micros"
+    t.bigint "cpc_low_micros"
+    t.datetime "created_at", null: false
+    t.datetime "fetched_at"
+    t.string "keyword", null: false
+    t.string "niche"
+    t.jsonb "raw", default: {}
+    t.string "region", default: "ID:id", null: false
+    t.float "score"
+    t.bigint "search_volume_max"
+    t.bigint "search_volume_min"
+    t.string "seed"
+    t.string "source", default: "google_ads", null: false
+    t.datetime "updated_at", null: false
+    t.index ["fetched_at"], name: "index_keywords_on_fetched_at"
+    t.index ["keyword", "region", "source"], name: "index_keywords_on_keyword_and_region_and_source", unique: true
+    t.index ["keyword"], name: "index_keywords_on_keyword"
+    t.index ["niche"], name: "index_keywords_on_niche"
+    t.index ["region"], name: "index_keywords_on_region"
+    t.index ["score"], name: "index_keywords_on_score"
+    t.index ["source"], name: "index_keywords_on_source"
   end
 
   create_table "pipeline_runs", force: :cascade do |t|
