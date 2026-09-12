@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 class PublishingsController < ApplicationController
+  include PipelineRunFindable
+  include ScriptPermittable
+
   protect_from_forgery with: :null_session
   skip_before_action :verify_authenticity_token, raise: false
 
@@ -14,8 +17,8 @@ class PublishingsController < ApplicationController
       render json: { status: "ok", results: { enqueued: true, pipeline_run_id: pipeline_run.id } }
     elsif params[:video_path].present?
       platforms = Array(params[:platforms]).presence || [ "youtube" ]
-      script = extract_hash(:script)
-      credentials = extract_hash(:credentials)
+      script = permit_script
+      credentials = permit_credentials
       results = Publishers::MultiPublisher.new.publish_all(
         video_path: params[:video_path],
         script: script,
@@ -30,19 +33,15 @@ class PublishingsController < ApplicationController
 
   private
 
-  def find_pipeline_run(id_or_run_id)
-    if id_or_run_id.to_s =~ /\A\d+\z/
-      PipelineRun.find_by(id: id_or_run_id) || PipelineRun.find_by!(run_id: id_or_run_id)
-    else
-      PipelineRun.find_by!(run_id: id_or_run_id)
-    end
-  end
+  def permit_credentials
+    return {} if params[:credentials].blank?
 
-  def extract_hash(param_key)
-    param = params[param_key]
-    return {} if param.blank?
-
-    param.respond_to?(:permit!) ? param.permit!.to_h : param.to_h
+    params.require(:credentials).permit(
+      :youtube_token,
+      :tiktok_token,
+      :ig_token,
+      :ig_user_id
+    ).to_h
   end
 
   def record_not_found

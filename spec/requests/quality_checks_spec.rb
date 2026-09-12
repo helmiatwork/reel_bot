@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe 'QualityChecks', type: :request do
+RSpec.describe 'QualityChecks', :regression, type: :request do
   let(:qc_service) { instance_double(QualityCheckService) }
 
   before do

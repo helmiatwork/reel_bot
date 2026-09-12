@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 class PipelinesController < ApplicationController
+  include PipelineRunFindable
+  include ScriptPermittable
+
   protect_from_forgery with: :null_session
   skip_before_action :verify_authenticity_token, raise: false
 
@@ -9,10 +12,8 @@ class PipelinesController < ApplicationController
 
   def create
     arcreel_project_id = params[:arcreel_project_id].presence || raise(ActionController::ParameterMissing, :arcreel_project_id)
-    script_params = extract_script_params
-    if script_params.blank?
-      raise ActionController::ParameterMissing, :script
-    end
+    script_params = permit_script
+    raise ActionController::ParameterMissing, :script if script_params.blank?
 
     title = script_params["title"] || script_params[:title] || "ArcReel Project #{arcreel_project_id}"
     hook = script_params["hook"] || script_params[:hook]
@@ -27,7 +28,6 @@ class PipelinesController < ApplicationController
 
     platforms = Array(params[:platforms]).presence || [ "youtube" ]
     auto_publish = ActiveModel::Type::Boolean.new.cast(params[:auto_publish]) || false
-    run_id = "run-#{SecureRandom.hex(6)}"
 
     metadata = {
       "arcreel_project_id" => arcreel_project_id,
@@ -38,7 +38,7 @@ class PipelinesController < ApplicationController
     }.compact
 
     pipeline_run = video_project.pipeline_runs.create!(
-      run_id: run_id,
+      run_id: params[:run_id],
       status: :pending,
       metadata: metadata
     )
@@ -53,7 +53,9 @@ class PipelinesController < ApplicationController
   end
 
   def index
-    render json: PipelineRun.order(created_at: :desc)
+    limit = params.fetch(:limit, 50).to_i.clamp(1, 100)
+    offset = [ params.fetch(:offset, 0).to_i, 0 ].max
+    render json: PipelineRun.order(created_at: :desc).limit(limit).offset(offset)
   end
 
   def show
@@ -62,20 +64,6 @@ class PipelinesController < ApplicationController
   end
 
   private
-
-  def find_pipeline_run(id_or_run_id)
-    if id_or_run_id.to_s =~ /\A\d+\z/
-      PipelineRun.find_by(id: id_or_run_id) || PipelineRun.find_by!(run_id: id_or_run_id)
-    else
-      PipelineRun.find_by!(run_id: id_or_run_id)
-    end
-  end
-
-  def extract_script_params
-    return {} if params[:script].blank?
-
-    params[:script].respond_to?(:permit!) ? params[:script].permit!.to_h : params[:script].to_h
-  end
 
   def record_not_found
     render json: { error: "Pipeline run not found" }, status: :not_found

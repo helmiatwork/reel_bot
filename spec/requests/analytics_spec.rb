@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe 'Analytics', type: :request do
+RSpec.describe 'Analytics', :regression, type: :request do
   let(:project) { create(:video_project) }
   let(:channel1) { create(:channel_account, platform: 'youtube') }
   let(:channel2) { create(:channel_account, platform: 'tiktok', account_identifier: 'tiktok_acc_1') }
@@ -36,6 +36,23 @@ RSpec.describe 'Analytics', type: :request do
       expect(json['records'].size).to eq(2)
       expect(json['records'].first['id']).to eq(snapshot2.id)
       expect(json['records'].last['id']).to eq(snapshot1.id)
+    end
+
+    it 'supports limit and offset pagination' do
+      get '/analytics/data', params: { limit: 1, offset: 0 }
+
+      expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body)
+      expect(json['total']).to eq(2)
+      expect(json['records'].size).to eq(1)
+      expect(json['records'].first['id']).to eq(snapshot2.id)
+
+      get '/analytics/data', params: { limit: 1, offset: 1 }
+
+      expect(response).to have_http_status(:ok)
+      json_offset = JSON.parse(response.body)
+      expect(json_offset['records'].size).to eq(1)
+      expect(json_offset['records'].first['id']).to eq(snapshot1.id)
     end
   end
 

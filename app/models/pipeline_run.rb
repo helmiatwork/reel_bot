@@ -9,7 +9,15 @@ class PipelineRun < ApplicationRecord
     failed: "failed"
   }, default: :pending
 
+  before_validation :ensure_run_id, on: :create
+
   validates :run_id, presence: true, uniqueness: true
   validates :status, presence: true
   validates :quality_score, numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 100 }, allow_nil: true
+
+  private
+
+  def ensure_run_id
+    self.run_id = "run-#{SecureRandom.hex(6)}" if run_id.blank?
+  end
 end

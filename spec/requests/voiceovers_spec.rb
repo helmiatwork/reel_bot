@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe 'Voiceovers', type: :request do
+RSpec.describe 'Voiceovers', :regression, type: :request do
   let(:voiceover_service) { instance_double(VoiceoverService) }
 
   before do

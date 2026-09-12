@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe 'Pipelines', type: :request do
+RSpec.describe 'Pipelines', :regression, type: :request do
   let(:project) { create(:video_project, title: 'Viral AI Reel') }
   let!(:run1) { create(:pipeline_run, video_project: project, run_id: 'run-123', status: :completed, quality_score: 88) }
   let!(:run2) { create(:pipeline_run, video_project: project, run_id: 'run-456', status: :pending) }
@@ -71,6 +71,24 @@ RSpec.describe 'Pipelines', type: :request do
       )
     end
 
+    it 'filters unpermitted script parameters via strong parameters' do
+      payload = {
+        script: {
+          title: 'Permitted Title',
+          unauthorized_admin_flag: 'injected_val'
+        },
+        arcreel_project_id: 'arc-proj-sec'
+      }
+
+      post '/pipeline/run', params: payload.to_json, headers: { 'Content-Type' => 'application/json' }
+
+      expect(response).to have_http_status(:accepted)
+      json = JSON.parse(response.body)
+      created_run = PipelineRun.find_by(run_id: json['run_id'])
+      expect(created_run.video_project.script).to include('title' => 'Permitted Title')
+      expect(created_run.video_project.script).not_to have_key('unauthorized_admin_flag')
+    end
+
     it 'returns 422 when arcreel_project_id is missing' do
       post '/pipeline/run', params: { script: { title: 'Test' } }.to_json, headers: { 'Content-Type' => 'application/json' }
       expect(response).to have_http_status(:unprocessable_content)
@@ -96,6 +114,21 @@ RSpec.describe 'Pipelines', type: :request do
       expect(json.size).to eq(2)
       run_ids = json.map { |r| r['run_id'] }
       expect(run_ids).to include('run-123', 'run-456')
+    end
+
+    it 'supports pagination with limit and offset' do
+      get '/pipeline/runs', params: { limit: 1, offset: 0 }
+
+      expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body)
+      expect(json.size).to eq(1)
+
+      get '/pipeline/runs', params: { limit: 1, offset: 1 }
+
+      expect(response).to have_http_status(:ok)
+      json_page2 = JSON.parse(response.body)
+      expect(json_page2.size).to eq(1)
+      expect(json_page2.first['id']).not_to eq(json.first['id'])
     end
   end
 
