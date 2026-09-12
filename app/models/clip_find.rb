@@ -22,16 +22,18 @@ class ClipFind < ApplicationRecord
   def validate_url_safety_and_host
     return if youtube_url.blank?
 
-    if youtube_url.match?(PROHIBITED_CHARS_REGEX)
+    UrlSafetyValidator.validate!(youtube_url)
+  rescue ArgumentError => e
+    if e.message.include?("prohibited")
       errors.add(:youtube_url, "contains prohibited command characters")
-      return
-    end
-
-    uri = URI.parse(youtube_url)
-    unless uri.is_a?(URI::HTTP) && uri.host.present?
+    elsif e.message.include?("HTTP or HTTPS")
       errors.add(:youtube_url, "must have a valid HTTP or HTTPS host")
+    elsif e.message.include?("private or restricted")
+      errors.add(:youtube_url, "cannot target private or restricted network addresses")
+    elsif e.message.include?("invalid")
+      errors.add(:youtube_url, "is an invalid URI")
+    else
+      errors.add(:youtube_url, e.message)
     end
-  rescue URI::InvalidURIError
-    errors.add(:youtube_url, "is an invalid URI")
   end
 end

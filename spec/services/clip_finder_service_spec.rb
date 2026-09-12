@@ -64,6 +64,28 @@ RSpec.describe ClipFinderService do
         described_class.new(youtube_url: valid_url).call
       }.to raise_error(ArgumentError, /URL is invalid/)
     end
+
+    describe "SSRF protection" do
+      ssrf_urls = [
+        "http://localhost/video",
+        "http://127.0.0.1/video",
+        "http://0.0.0.0/video",
+        "http://169.254.169.254/latest",
+        "http://10.0.0.1/video",
+        "http://172.16.0.1/video",
+        "http://192.168.1.1/video",
+        "http://[::1]/video",
+        "http://foo.localhost/video"
+      ]
+
+      ssrf_urls.each do |bad_url|
+        it "raises ArgumentError for private/loopback URL: #{bad_url}" do
+          expect {
+            described_class.new(youtube_url: bad_url).call
+          }.to raise_error(ArgumentError, /private or restricted/)
+        end
+      end
+    end
   end
 
   describe "caching behavior" do

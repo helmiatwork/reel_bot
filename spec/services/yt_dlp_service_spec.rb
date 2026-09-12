@@ -42,6 +42,31 @@ RSpec.describe YtDlpService do
       allow(URI).to receive(:parse).and_raise(URI::InvalidURIError.new("bad"))
       expect { service.fetch_metadata(valid_url) }.to raise_error(ArgumentError, /URL is invalid/)
     end
+
+    describe "SSRF and restricted host prevention" do
+      ssrf_urls = [
+        "http://localhost/video.mp4",
+        "https://localhost:8080/video.mp4",
+        "http://127.0.0.1/video.mp4",
+        "http://127.0.0.2:3000/video.mp4",
+        "http://0.0.0.0/video.mp4",
+        "http://169.254.169.254/latest/meta-data",
+        "http://10.0.0.1/video.mp4",
+        "http://172.16.0.1/video.mp4",
+        "http://192.168.1.1/video.mp4",
+        "http://[::1]/video.mp4",
+        "http://[::]/video.mp4",
+        "http://foo.localhost/video.mp4"
+      ]
+
+      ssrf_urls.each do |bad_url|
+        it "raises ArgumentError for SSRF attempt: #{bad_url}" do
+          expect { service.fetch_metadata(bad_url) }.to raise_error(ArgumentError, /private or restricted/)
+          expect { service.fetch_transcript(bad_url) }.to raise_error(ArgumentError, /private or restricted/)
+          expect { service.download(bad_url, output_dir: "/tmp") }.to raise_error(ArgumentError, /private or restricted/)
+        end
+      end
+    end
   end
 
   describe "execution safety with Open3.capture3" do
@@ -154,6 +179,77 @@ RSpec.describe YtDlpService do
       result = service.download(valid_url, output_dir: output_dir)
       expect(result).to eq(target_file)
       expect(File.exist?(result)).to be(true)
+    end
+
+    it "passes --print after_move:filepath to yt-dlp arguments" do
+      status = instance_double(Process::Status, success?: true)
+      target_file = File.join(output_dir, "dQw4w9WgXcQ.mp4")
+
+      allow(Open3).to receive(:capture3) do |*args|
+        expect(args).to include("--print", "after_move:filepath")
+        File.write(target_file, "fake-video-content")
+        [ target_file, "", status ]
+      end
+
+      service.download(valid_url, output_dir: output_dir)
+    end
+
+    it "isolates downloads into a unique uuid subdirectory under data/videos when output_dir is default" do
+      status = instance_double(Process::Status, success?: true)
+
+      allow(Open3).to receive(:capture3) do |*args|
+        o_idx = args.index("-o")
+        template = args[o_idx + 1]
+        dest_dir = File.dirname(template)
+        target_file = File.join(dest_dir, "dQw4w9WgXcQ.mp4")
+        File.write(target_file, "fake-video-content")
+        [ "#{target_file}\n", "", status ]
+      end
+
+      result = service.download(valid_url)
+      expect(File.exist?(result)).to be(true)
+      expect(result).to match(%r{data/videos/[a-f0-9-]+/dQw4w9WgXcQ\.mp4})
+      FileUtils.rm_rf(File.dirname(result))
+    end
+
+    it "resolves the downloaded file using yt-dlp stdout rather than picking newest from shared dir" do
+      shared_dir = output_dir
+      older_file = File.join(shared_dir, "older.mp4")
+      target_file = File.join(shared_dir, "correct_target.mp4")
+      competing_newer_file = File.join(shared_dir, "competing_newer.mp4")
+
+      File.write(older_file, "older")
+      File.write(target_file, "target")
+      sleep 0.05
+      File.write(competing_newer_file, "newer")
+
+      status = instance_double(Process::Status, success?: true)
+      allow(Open3).to receive(:capture3).and_return([ "\n#{target_file}\n", "", status ])
+
+      result = service.download(valid_url, output_dir: shared_dir)
+      expect(result).to eq(target_file)
+    end
+
+    it "falls back to verified file in destination directory when stdout path is missing" do
+      status = instance_double(Process::Status, success?: true)
+      target_file = File.join(output_dir, "fallback.mp4")
+
+      allow(Open3).to receive(:capture3) do |*args|
+        File.write(target_file, "fallback-content")
+        [ "", "", status ]
+      end
+
+      result = service.download(valid_url, output_dir: output_dir)
+      expect(result).to eq(target_file)
+    end
+
+    it "raises ExecutionError when yt-dlp completes but no output file exists" do
+      status = instance_double(Process::Status, success?: true)
+      allow(Open3).to receive(:capture3).and_return([ "nonexistent_file.mp4\n", "", status ])
+
+      expect {
+        service.download(valid_url, output_dir: output_dir)
+      }.to raise_error(YtDlpService::ExecutionError, /output file not found/)
     end
   end
 end

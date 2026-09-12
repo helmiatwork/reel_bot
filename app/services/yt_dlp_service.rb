@@ -6,6 +6,7 @@ require "json"
 require "uri"
 require "fileutils"
 require "tmpdir"
+require "securerandom"
 
 class YtDlpService
   class Error < StandardError; end
@@ -66,12 +67,17 @@ class YtDlpService
   def download(youtube_url, output_dir: nil, timeout: nil)
     validate_url!(youtube_url)
 
-    dest_dir = output_dir.presence || Rails.root.join("data", "videos")
+    dest_dir = if output_dir.present?
+      output_dir.to_s
+    else
+      Rails.root.join("data", "videos", SecureRandom.uuid).to_s
+    end
     FileUtils.mkdir_p(dest_dir)
     output_template = File.join(dest_dir, "%(id)s.%(ext)s")
 
     cmd = [
       "yt-dlp",
+      "--print", "after_move:filepath",
       "-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
       "--merge-output-format", "mp4",
       "-o", output_template,
@@ -79,29 +85,35 @@ class YtDlpService
       youtube_url
     ]
 
-    execute_command(*cmd, timeout: timeout || download_timeout)
+    stdout, = execute_command(*cmd, timeout: timeout || download_timeout)
 
-    # Locate downloaded file in dest_dir
-    files = Dir[File.join(dest_dir, "*")].reject { |f| File.directory?(f) }
-    newest = files.max_by { |f| File.mtime(f) }
-    newest || File.join(dest_dir, "output.mp4")
+    resolve_downloaded_file(stdout, dest_dir)
   end
 
   private
 
+  def resolve_downloaded_file(stdout, dest_dir)
+    printed_lines = stdout.to_s.lines.map(&:strip).reject(&:empty?)
+
+    candidate_paths = printed_lines.flat_map do |line|
+      [ line, File.expand_path(line, dest_dir) ]
+    end
+
+    matched = candidate_paths.reverse.find { |p| File.file?(p) }
+    return matched if matched.present?
+
+    files = Dir[File.join(dest_dir, "*")].reject { |f| File.directory?(f) }
+    fallback = files.max_by { |f| File.mtime(f) }
+
+    if fallback.present? && File.file?(fallback)
+      return fallback
+    end
+
+    raise ExecutionError, "yt-dlp completed but output file not found in #{dest_dir}"
+  end
+
   def validate_url!(url)
-    raise ArgumentError, "URL cannot be blank" if url.blank?
-
-    if url.match?(PROHIBITED_CHARS_REGEX)
-      raise ArgumentError, "URL contains invalid or prohibited characters"
-    end
-
-    uri = URI.parse(url)
-    unless uri.is_a?(URI::HTTP) && uri.host.present?
-      raise ArgumentError, "URL must use HTTP or HTTPS scheme and have a host"
-    end
-  rescue URI::InvalidURIError
-    raise ArgumentError, "URL is invalid"
+    UrlSafetyValidator.validate!(url)
   end
 
   def execute_command(*cmd, timeout: 60)

@@ -120,18 +120,7 @@ class ClipFinderService
   private
 
   def validate_url!
-    raise ArgumentError, "URL cannot be blank" if youtube_url.blank?
-
-    if youtube_url.match?(PROHIBITED_CHARS_REGEX)
-      raise ArgumentError, "URL contains invalid or prohibited characters"
-    end
-
-    uri = URI.parse(youtube_url)
-    unless uri.is_a?(URI::HTTP) && uri.host.present?
-      raise ArgumentError, "URL must use HTTP or HTTPS scheme and have a host"
-    end
-  rescue URI::InvalidURIError
-    raise ArgumentError, "URL is invalid"
+    UrlSafetyValidator.validate!(youtube_url)
   end
 
   def build_transcript_text(segments)
