@@ -6,6 +6,7 @@ class PipelineRun < ApplicationRecord
     pending: "pending",
     running: "running",
     completed: "completed",
+    done: "done",
     failed: "failed"
   }, default: :pending
 

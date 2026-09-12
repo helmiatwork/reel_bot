@@ -168,6 +168,40 @@ class YouTubeService
     }
   end
 
+  def channel_analytics(channel_id = nil)
+    ensure_configured!
+    cid = channel_id.presence || ENV["YOUTUBE_CHANNEL_ID"].presence ||
+          ChannelAccount.find_by(platform: "youtube", is_active: true)&.account_identifier
+    if cid.blank?
+      return {
+        "error" => "channel not configured",
+        "total_views" => 0,
+        "avg_view_pct" => 0,
+        "avg_duration" => 0,
+        "series" => [],
+        "top_videos" => []
+      }
+    end
+
+    info = channel_info(cid)
+    {
+      "total_views" => info[:view_count].to_i,
+      "avg_view_pct" => 0.0,
+      "avg_duration" => 0,
+      "series" => [],
+      "top_videos" => []
+    }
+  rescue StandardError => e
+    {
+      "error" => e.message,
+      "total_views" => 0,
+      "avg_view_pct" => 0,
+      "avg_duration" => 0,
+      "series" => [],
+      "top_videos" => []
+    }
+  end
+
   def parse_iso8601_duration(duration_str)
     return 0 if duration_str.blank? || !duration_str.is_a?(String) || !duration_str.start_with?("P")
 
