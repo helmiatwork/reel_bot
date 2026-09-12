@@ -330,4 +330,59 @@ RSpec.describe YouTubeService, :regression, type: :service do
       expect(after_used).to eq(before_used + 100)
     end
   end
+
+  describe '#latest_channel_video' do
+    it 'raises NotConfigured when api key is blank' do
+      unconfigured = described_class.new(api_key: nil)
+      expect { unconfigured.latest_channel_video('UC123') }.to raise_error(YouTubeService::NotConfigured)
+    end
+
+    it 'returns nil if uploads_playlist_id is blank' do
+      allow(service).to receive(:channel_info).with('UC123').and_return({ uploads_playlist_id: nil })
+      expect(service.latest_channel_video('UC123')).to be_nil
+    end
+
+    it 'fetches the latest video from the uploads playlist' do
+      allow(service).to receive(:channel_info).with('UC123').and_return({ uploads_playlist_id: 'UU123' })
+
+      stub_request(:get, 'https://www.googleapis.com/youtube/v3/playlistItems')
+        .with(query: hash_including({ 'playlistId' => 'UU123', 'part' => 'snippet', 'maxResults' => '1', 'key' => api_key }))
+        .to_return(
+          status: 200,
+          headers: { 'Content-Type' => 'application/json' },
+          body: {
+            items: [
+              {
+                snippet: {
+                  title: 'Latest Video Title',
+                  publishedAt: '2026-09-12T10:00:00Z',
+                  resourceId: { videoId: 'vid_latest_99' }
+                }
+              }
+            ]
+          }.to_json
+        )
+
+      result = service.latest_channel_video('UC123')
+      expect(result).to eq({
+        video_id: 'vid_latest_99',
+        title: 'Latest Video Title',
+        published_at: '2026-09-12T10:00:00Z'
+      })
+    end
+
+    it 'returns nil when playlist has no items' do
+      allow(service).to receive(:channel_info).with('UC123').and_return({ uploads_playlist_id: 'UU123' })
+
+      stub_request(:get, 'https://www.googleapis.com/youtube/v3/playlistItems')
+        .with(query: hash_including({ 'playlistId' => 'UU123' }))
+        .to_return(
+          status: 200,
+          headers: { 'Content-Type' => 'application/json' },
+          body: { items: [] }.to_json
+        )
+
+      expect(service.latest_channel_video('UC123')).to be_nil
+    end
+  end
 end

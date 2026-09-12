@@ -47,4 +47,11 @@ Rails.application.routes.draw do
   post "clips/render", to: "clips#render_clip"
   get "clips/renders/:id/download", to: "clips#download_render", constraints: { id: %r{[^/]+} }
   get "dash/clip-finds", to: "clips#dash_clip_finds"
+
+  # Snoop endpoints
+  get "snoop/targets", to: "snoop#targets"
+  post "snoop/targets", to: "snoop#add_target"
+  delete "snoop/targets/:channel_id", to: "snoop#delete_target", constraints: { channel_id: %r{[^/]+} }
+  get "snoop/results", to: "snoop#results"
+  post "snoop/results", to: "snoop#add_result"
 end
