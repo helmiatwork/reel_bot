@@ -10,10 +10,17 @@ RSpec.describe PipelineRun, type: :model do
       expect(subject).to be_valid
     end
 
-    it 'requires a run_id' do
+    it 'auto-generates run_id if blank on create' do
       subject.run_id = nil
-      expect(subject).not_to be_valid
-      expect(subject.errors[:run_id]).to include("can't be blank")
+      expect(subject).to be_valid
+      expect(subject.run_id).to match(/\Arun-[0-9a-f]{12}\z/)
+    end
+
+    it 'requires a run_id on update if blank' do
+      run = create(:pipeline_run, video_project: video_project)
+      run.run_id = nil
+      expect(run).not_to be_valid
+      expect(run.errors[:run_id]).to include("can't be blank")
     end
 
     it 'enforces run_id uniqueness' do

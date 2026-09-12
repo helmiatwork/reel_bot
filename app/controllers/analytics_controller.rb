@@ -5,7 +5,9 @@ class AnalyticsController < ApplicationController
   skip_before_action :verify_authenticity_token, raise: false
 
   def data
-    records = AnalyticsSnapshot.order(recorded_at: :desc).limit(100).as_json
+    limit = params.fetch(:limit, 100).to_i.clamp(1, 500)
+    offset = [ params.fetch(:offset, 0).to_i, 0 ].max
+    records = AnalyticsSnapshot.order(recorded_at: :desc).limit(limit).offset(offset).as_json
     total = AnalyticsSnapshot.count
 
     render json: { records: records, total: total }

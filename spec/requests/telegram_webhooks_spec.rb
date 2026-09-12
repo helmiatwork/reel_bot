@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe 'TelegramWebhooks', type: :request do
+RSpec.describe 'TelegramWebhooks', :regression, type: :request do
   let(:project) { create(:video_project) }
   let(:pipeline_run) { create(:pipeline_run, video_project: project, run_id: 'run-hook-001', status: :pending, quality_score: 88) }
   let(:telegram_service) { instance_double(TelegramBotService) }

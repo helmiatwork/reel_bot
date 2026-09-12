@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class VoiceoversController < ApplicationController
+  include ScriptPermittable
+
   protect_from_forgery with: :null_session
   skip_before_action :verify_authenticity_token, raise: false
 
@@ -42,11 +44,11 @@ class VoiceoversController < ApplicationController
 
     if script_param.is_a?(String)
       script_param
-    elsif script_param.is_a?(ActionController::Parameters) || script_param.is_a?(Hash)
-      script_hash = script_param.is_a?(ActionController::Parameters) ? script_param.permit!.to_h : script_param
-      script_hash["voiceover"] || script_hash[:voiceover] ||
-        script_hash["script"] || script_hash[:script] ||
-        script_hash["hook"] || script_hash[:hook]
+    else
+      permitted = permit_script
+      permitted["voiceover"] || permitted[:voiceover] ||
+        permitted["script"] || permitted[:script] ||
+        permitted["hook"] || permitted[:hook]
     end
   end
 

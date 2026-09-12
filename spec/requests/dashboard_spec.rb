@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe 'Dashboard', type: :request do
+RSpec.describe 'Dashboard', :regression, type: :request do
   let(:project) { create(:video_project, title: 'Viral AI Reels') }
   let!(:run1) do
     create(:pipeline_run,

@@ -50,6 +50,7 @@ group :development, :test do
   gem "rspec-rails"
   gem "factory_bot_rails"
   gem "simplecov", require: false
+  gem "allure-rspec"
 
   # Audits gems for known security defects (use config/bundler-audit.yml to ignore issues)
   gem "bundler-audit", require: false

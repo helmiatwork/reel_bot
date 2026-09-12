@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe 'Publishings', type: :request do
+RSpec.describe 'Publishings', :regression, type: :request do
   let(:project) { create(:video_project, title: 'Viral Video') }
   let(:run) { create(:pipeline_run, video_project: project, run_id: 'run-pub-1', final_video_path: '/tmp/final.mp4') }
 
@@ -85,6 +85,33 @@ RSpec.describe 'Publishings', type: :request do
         json = JSON.parse(response.body)
         expect(json['status']).to eq('ok')
         expect(json['results']).to eq(expected_results)
+      end
+
+      it 'permits valid credentials parameters and strips unpermitted attributes' do
+        expect(multi_publisher).to receive(:publish_all).with(
+          video_path: '/tmp/test.mp4',
+          script: hash_including('title' => 'Test Video'),
+          platforms: [ 'youtube' ],
+          credentials: {
+            'youtube_token' => 'yt-tok-123',
+            'tiktok_token' => 'tt-tok-456'
+          }
+        ).and_return({ 'youtube' => { 'status' => 'published' } })
+
+        post '/publish',
+             params: {
+               video_path: '/tmp/test.mp4',
+               platforms: [ 'youtube' ],
+               script: { title: 'Test Video' },
+               credentials: {
+                 youtube_token: 'yt-tok-123',
+                 tiktok_token: 'tt-tok-456',
+                 unauthorized_access_key: 'hacked'
+               }
+             }.to_json,
+             headers: { 'Content-Type' => 'application/json' }
+
+        expect(response).to have_http_status(:ok)
       end
     end
 
