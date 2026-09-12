@@ -18,38 +18,9 @@ class DashController < ApplicationController
                "FROM clips ORDER BY id DESC"
   }.freeze
 
-  RESTARTABLE_SERVICES = %w[postgres openclaw cliproxy n8n arcreel].freeze
-  UNSUPPORTED_NATIVE = %w[postgres n8n].freeze
-  FORBIDDEN_SERVICES = %w[pipeline-api rails].freeze
-
-  SERVICE_RESTART_MAP = {
-    "openclaw" => [ "openclaw gateway", "openclaw gateway --port 18789" ],
-    "cliproxy" => [ "cli-proxy-api", "exec ./data/bin/cli-proxy-api -config ./cliproxy/config.yaml" ],
-    "arcreel" => [ "uvicorn server.app:app.*1241", "cd data/arcreel && source .venv/bin/activate && exec uvicorn server.app:app --host 0.0.0.0 --port 1241" ]
-  }.freeze
-
-  AGENTS_ROSTER = [
-    { name: "analyze", role: "Frame + audio breakdown (vision)", model: "gemini-2.5-flash-lite" },
-    { name: "analyze-senior", role: "Deep viral strategy", model: "claude/opus" },
-    { name: "clipfinder", role: "Pick clip-worthy moments", model: "sonnet" },
-    { name: "scriptwriter", role: "Formula-driven Short script", model: "gemini-2.5-flash" },
-    { name: "editor", role: "EDL assembly decisions", model: "sonnet" },
-    { name: "qcgate", role: "Pre-publish QC gate", model: "sonnet" },
-    { name: "producer", role: "Run-sheet / next steps", model: "sonnet" },
-    { name: "main", role: "Telegram orchestrator", model: "gemini-flash" }
-  ].freeze
-
-  TOKEN_PRICES = {
-    "gemini-2.5-flash-lite" => [ 0.10, 0.40 ],
-    "gemini-2.5-flash" => [ 0.30, 2.50 ],
-    "deepseek-v4-flash" => [ 0.14, 0.28 ],
-    "deepseek-v4-pro" => [ 0.40, 0.89 ],
-    "claude-haiku-4-5" => [ 1.00, 5.00 ],
-    "claude-sonnet-4-6" => [ 3.00, 15.00 ],
-    "claude-opus-4-6" => [ 5.00, 25.00 ],
-    "claude-opus-4-7" => [ 5.00, 25.00 ]
-  }.freeze
-  DEFAULT_TOKEN_PRICE = [ 0.50, 1.50 ].freeze
+  AGENTS_ROSTER = Dash::Constants::AGENTS_ROSTER
+  TOKEN_PRICES = Dash::Constants::TOKEN_PRICES
+  DEFAULT_TOKEN_PRICE = Dash::Constants::DEFAULT_TOKEN_PRICE
 
   def overview
     render json: {
@@ -124,15 +95,7 @@ class DashController < ApplicationController
   end
 
   def cost
-    mgmt = ENV["CLIPROXY_MGMT_KEY"].to_s.strip
-    est = (ENV["EST_COST_PER_REQUEST"].presence || 0.0015).to_f
-    fallback = build_cost_fallback(est)
-
-    if mgmt.blank?
-      return render json: fallback.merge("error" => "CLIPROXY_MGMT_KEY not set")
-    end
-
-    render json: fetch_cliproxy_cost(mgmt, est, fallback)
+    render json: Dash::CliproxyClient.fetch_cost
   end
 
   def token_usage
@@ -165,68 +128,39 @@ class DashController < ApplicationController
 
   def restart_service
     service = params[:service].to_s.strip
-    if FORBIDDEN_SERVICES.include?(service)
+    if Dash::ProcessManager.forbidden?(service)
       return render json: { error: "cannot restart #{service} from itself" }, status: :bad_request
     end
 
-    unless RESTARTABLE_SERVICES.include?(service)
+    unless Dash::ProcessManager.restartable?(service)
       return render json: { error: "unknown service" }, status: :bad_request
     end
 
-    result = restart_one(service)
+    result = Dash::ProcessManager.restart_one(service)
     render json: { service: service, **result }
   end
 
   def restart_all
-    results = []
-    restarted = 0
-
-    RESTARTABLE_SERVICES.each do |service|
-      result = restart_one(service)
-      results << { service: service, **result }
-      restarted += 1 if result[:status] == "restarted"
-    end
-
-    render json: { results: results, restarted: restarted }
+    render json: Dash::ProcessManager.restart_all
   end
 
   private
 
   def verify_admin_key!
     env_key = ENV["PIPELINE_API_KEY"].to_s.strip
-    return if env_key.blank?
-
     header_key = request.headers["X-API-Key"].to_s.strip
-    return if ActiveSupport::SecurityUtils.secure_compare(header_key, env_key)
+
+    if env_key.present? && header_key.present? && ActiveSupport::SecurityUtils.secure_compare(header_key, env_key)
+      return
+    end
 
     render json: { error: "invalid API key" }, status: :unauthorized
   end
 
-  def restart_one(service)
-    return { status: "unsupported_native" } if UNSUPPORTED_NATIVE.include?(service)
-    return { status: "restarted" } if Rails.env.test?
-
-    entry = SERVICE_RESTART_MAP[service]
-    return { status: "unsupported_native" } unless entry
-
-    pkill_pattern, restart_cmd = entry
-    system("pkill -f '#{pkill_pattern}'")
-    sleep 0.5
-    Process.spawn("/bin/bash", "-c", restart_cmd, out: File::NULL, err: File::NULL)
-    { status: "restarted" }
-  rescue StandardError => e
-    Rails.logger.error("[restart/#{service}] #{e.class}: #{e.message}")
-    { status: "error" }
-  end
-
   def table_exists?(table_name)
     return false if table_name.blank?
-    return true if ActiveRecord::Base.connection.table_exists?(table_name)
 
-    reg = ActiveRecord::Base.connection.select_value(
-      ActiveRecord::Base.sanitize_sql_array([ "SELECT to_regclass(?)::text", table_name.to_s ])
-    )
-    reg.present?
+    ActiveRecord::Base.connection.table_exists?(table_name)
   rescue StandardError
     false
   end
@@ -342,84 +276,6 @@ class DashController < ApplicationController
     ActiveRecord::Base.connection.select_all("SELECT * FROM #{table_name} LIMIT #{limit} OFFSET #{offset}")
   end
 
-  def build_cost_fallback(est)
-    {
-      "providers" => [],
-      "series" => [],
-      "totals" => {
-        "requests" => 0,
-        "success" => 0,
-        "failed" => 0,
-        "est_cost" => 0.0,
-        "est_per_request" => est
-      }
-    }
-  end
-
-  def fetch_cliproxy_cost(mgmt, est, fallback)
-    base = ENV.fetch("CLIPROXY_URL", "http://cliproxy:8317/v1").sub(%r{/v1\z}, "")
-    conn = Faraday.new(url: base) do |f|
-      f.options.open_timeout = 2
-      f.options.timeout = 5
-      f.adapter Faraday.default_adapter
-    end
-    response = conn.get("/v0/management/api-key-usage") do |req|
-      req.headers["Authorization"] = "Bearer #{mgmt}"
-    end
-    parse_cliproxy_usage(JSON.parse(response.body), est)
-  rescue StandardError => e
-    fallback.merge("error" => e.message)
-  end
-
-  def parse_cliproxy_usage(data, est)
-    providers = []
-    bucket = {}
-    tot_s = 0
-    tot_f = 0
-
-    if data.is_a?(Hash)
-      data.each do |prov, keys|
-        ps = 0
-        pf = 0
-        if keys.is_a?(Hash)
-          keys.each_value do |stat|
-            next unless stat.is_a?(Hash)
-
-            ps += stat["success"].to_i
-            pf += stat["failed"].to_i
-            (stat["recent_requests"] || []).each do |rq|
-              t = rq["time"].to_s
-              bucket[t] = (bucket[t] || 0) + rq["success"].to_i + rq["failed"].to_i
-            end
-          end
-        end
-        tot_s += ps
-        tot_f += pf
-        providers << {
-          "name" => prov,
-          "success" => ps,
-          "failed" => pf,
-          "requests" => ps + pf,
-          "est_cost" => ((ps + pf) * est).round(4)
-        }
-      end
-    end
-
-    series = bucket.keys.sort.map { |t| { "time" => t, "requests" => bucket[t] } }
-    total_requests = tot_s + tot_f
-
-    {
-      "providers" => providers,
-      "series" => series,
-      "totals" => {
-        "requests" => total_requests,
-        "success" => tot_s,
-        "failed" => tot_f,
-        "est_cost" => (total_requests * est).round(4),
-        "est_per_request" => est
-      }
-    }
-  end
 
   def build_token_usage_stats(fallback)
     rows_data = ActiveRecord::Base.connection.select_rows(

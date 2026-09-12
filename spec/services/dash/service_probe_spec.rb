@@ -39,15 +39,16 @@ RSpec.describe Dash::ServiceProbe do
 
   describe "individual service probing" do
     describe "postgres probe" do
-      it "returns up: true when ActiveRecord connection is active" do
-        allow(ActiveRecord::Base.connection).to receive(:active?).and_return(true)
+      it "returns up: true when connection pool connection is active" do
+        conn = instance_double(ActiveRecord::ConnectionAdapters::AbstractAdapter, active?: true)
+        allow(ActiveRecord::Base.connection_pool).to receive(:with_connection).and_yield(conn)
         service = probe.probe_service({ name: "postgres", port: 5432, url: nil })
 
         expect(service).to eq({ name: "postgres", port: 5432, up: true })
       end
 
-      it "returns up: false when ActiveRecord connection raises an error" do
-        allow(ActiveRecord::Base.connection).to receive(:active?).and_raise(ActiveRecord::ConnectionNotEstablished)
+      it "returns up: false when connection pool raises an error" do
+        allow(ActiveRecord::Base.connection_pool).to receive(:with_connection).and_raise(ActiveRecord::ConnectionNotEstablished)
         service = probe.probe_service({ name: "postgres", port: 5432, url: nil })
 
         expect(service).to eq({ name: "postgres", port: 5432, up: false })
