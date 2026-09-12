@@ -59,6 +59,7 @@ test.describe('Reelbot Dashboard Smoke Suite', () => {
     });
     await expect(themeBtn).toBeVisible();
 
+    await expect(body).toHaveClass(/light|dark/);
     const initialClass = await body.getAttribute('class');
     await themeBtn.click();
 
