@@ -50,7 +50,7 @@ module Dash
     private
 
     def probe_postgres
-      ActiveRecord::Base.connection.active?
+      ActiveRecord::Base.connection_pool.with_connection(&:active?)
     rescue StandardError
       false
     end

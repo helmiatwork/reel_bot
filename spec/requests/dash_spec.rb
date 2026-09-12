@@ -122,17 +122,17 @@ RSpec.describe "Dashboards", type: :request do
 
     context "when optional sources and performance_snapshots tables exist" do
       before do
-        ActiveRecord::Base.connection.create_table :sources, temporary: true, force: true do |t|
+        ActiveRecord::Base.connection.create_table :sources, force: true do |t|
           t.string :title
           t.integer :views_at_analysis
         end
-        ActiveRecord::Base.connection.create_table :performance_snapshots, temporary: true, force: true do |t|
+        ActiveRecord::Base.connection.create_table :performance_snapshots, force: true do |t|
           t.string :subject_type
           t.bigint :subject_id
           t.integer :views
           t.datetime :captured_at
         end
-        ActiveRecord::Base.connection.create_table :formulas, temporary: true, force: true do |t|
+        ActiveRecord::Base.connection.create_table :formulas, force: true do |t|
           t.string :name
         end
 
@@ -240,7 +240,7 @@ RSpec.describe "Dashboards", type: :request do
 
     context "when table exists in DB" do
       before do
-        ActiveRecord::Base.connection.create_table :sources, temporary: true, force: true do |t|
+        ActiveRecord::Base.connection.create_table :sources, force: true do |t|
           t.string :title
           t.string :niche
           t.string :platform
@@ -272,7 +272,7 @@ RSpec.describe "Dashboards", type: :request do
       end
 
       it "falls back to SELECT * when custom select query fails" do
-        ActiveRecord::Base.connection.create_table :posts, temporary: true, force: true do |t|
+        ActiveRecord::Base.connection.create_table :posts, force: true do |t|
           t.string :custom_content
         end
         ActiveRecord::Base.connection.execute("INSERT INTO posts (custom_content) VALUES ('hello')")
@@ -300,7 +300,7 @@ RSpec.describe "Dashboards", type: :request do
 
     context "when formulas table exists" do
       before do
-        ActiveRecord::Base.connection.create_table :formulas, temporary: true, force: true do |t|
+        ActiveRecord::Base.connection.create_table :formulas, force: true do |t|
           t.string :slug
           t.string :name
           t.string :best_for
@@ -323,7 +323,7 @@ RSpec.describe "Dashboards", type: :request do
       end
 
       it "joins sources table when sources table also exists" do
-        ActiveRecord::Base.connection.create_table :sources, temporary: true, force: true do |t|
+        ActiveRecord::Base.connection.create_table :sources, force: true do |t|
           t.bigint :formula_id
           t.integer :views_at_analysis
         end
@@ -457,7 +457,7 @@ RSpec.describe "Dashboards", type: :request do
 
     context "when api_usage table exists" do
       before do
-        ActiveRecord::Base.connection.create_table :api_usage, temporary: true, force: true do |t|
+        ActiveRecord::Base.connection.create_table :api_usage, force: true do |t|
           t.string :model
           t.integer :prompt_tokens
           t.integer :completion_tokens
@@ -527,7 +527,7 @@ RSpec.describe "Dashboards", type: :request do
 
     context "when video_analysis table exists" do
       before do
-        ActiveRecord::Base.connection.create_table :video_analysis, temporary: true, force: true do |t|
+        ActiveRecord::Base.connection.create_table :video_analysis, force: true do |t|
           t.text :youtube_url
           t.string :intent
           t.string :hook
@@ -582,15 +582,18 @@ RSpec.describe "Dashboards", type: :request do
   end
 
   describe "POST /dash/restart/:service and POST /dash/restart-all" do
-    context "API key authorization" do
-      around do |example|
-        old_key = ENV["PIPELINE_API_KEY"]
-        ENV["PIPELINE_API_KEY"] = "secret-pipeline-token"
-        example.run
-      ensure
-        ENV["PIPELINE_API_KEY"] = old_key
-      end
+    let(:auth_token) { "secret-pipeline-token" }
+    let(:auth_headers) { { "X-API-Key" => auth_token } }
 
+    around do |example|
+      old_key = ENV["PIPELINE_API_KEY"]
+      ENV["PIPELINE_API_KEY"] = auth_token
+      example.run
+    ensure
+      ENV["PIPELINE_API_KEY"] = old_key
+    end
+
+    describe "API key authorization (fail-closed)" do
       it "rejects requests with missing X-API-Key header when PIPELINE_API_KEY is set" do
         post "/dash/restart/openclaw"
 
@@ -608,37 +611,44 @@ RSpec.describe "Dashboards", type: :request do
       end
 
       it "allows requests with valid X-API-Key header" do
-        post "/dash/restart/openclaw", headers: { "X-API-Key" => "secret-pipeline-token" }
+        post "/dash/restart/openclaw", headers: auth_headers
 
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
         expect(json["service"]).to eq("openclaw")
         expect(json["status"]).to eq("restarted")
       end
-    end
 
-    context "when PIPELINE_API_KEY is not set" do
-      around do |example|
-        old_key = ENV["PIPELINE_API_KEY"]
-        ENV.delete("PIPELINE_API_KEY")
-        example.run
-      ensure
-        ENV["PIPELINE_API_KEY"] = old_key
-      end
+      context "when PIPELINE_API_KEY is not set or blank" do
+        around do |example|
+          old_key = ENV["PIPELINE_API_KEY"]
+          ENV.delete("PIPELINE_API_KEY")
+          example.run
+        ensure
+          ENV["PIPELINE_API_KEY"] = old_key
+        end
 
-      it "allows requests without X-API-Key header" do
-        post "/dash/restart/cliproxy"
+        it "rejects requests without X-API-Key header (fail-closed)" do
+          post "/dash/restart/cliproxy"
 
-        expect(response).to have_http_status(:ok)
-        json = JSON.parse(response.body)
-        expect(json["service"]).to eq("cliproxy")
-        expect(json["status"]).to eq("restarted")
+          expect(response).to have_http_status(:unauthorized)
+          json = JSON.parse(response.body)
+          expect(json["error"]).to eq("invalid API key")
+        end
+
+        it "rejects requests even if X-API-Key header is present (fail-closed)" do
+          post "/dash/restart/cliproxy", headers: { "X-API-Key" => "any-value" }
+
+          expect(response).to have_http_status(:unauthorized)
+          json = JSON.parse(response.body)
+          expect(json["error"]).to eq("invalid API key")
+        end
       end
     end
 
     describe "service validation" do
       it "rejects restarting pipeline-api (status 400)" do
-        post "/dash/restart/pipeline-api"
+        post "/dash/restart/pipeline-api", headers: auth_headers
 
         expect(response).to have_http_status(:bad_request)
         json = JSON.parse(response.body)
@@ -646,7 +656,7 @@ RSpec.describe "Dashboards", type: :request do
       end
 
       it "rejects restarting rails (status 400)" do
-        post "/dash/restart/rails"
+        post "/dash/restart/rails", headers: auth_headers
 
         expect(response).to have_http_status(:bad_request)
         json = JSON.parse(response.body)
@@ -654,7 +664,7 @@ RSpec.describe "Dashboards", type: :request do
       end
 
       it "rejects unknown service (status 400)" do
-        post "/dash/restart/unknown_service"
+        post "/dash/restart/unknown_service", headers: auth_headers
 
         expect(response).to have_http_status(:bad_request)
         json = JSON.parse(response.body)
@@ -662,7 +672,7 @@ RSpec.describe "Dashboards", type: :request do
       end
 
       it "returns unsupported_native for postgres" do
-        post "/dash/restart/postgres"
+        post "/dash/restart/postgres", headers: auth_headers
 
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
@@ -671,7 +681,7 @@ RSpec.describe "Dashboards", type: :request do
       end
 
       it "returns unsupported_native for n8n" do
-        post "/dash/restart/n8n"
+        post "/dash/restart/n8n", headers: auth_headers
 
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
@@ -680,7 +690,7 @@ RSpec.describe "Dashboards", type: :request do
       end
 
       it "returns restarted for restartable service arcreel in test" do
-        post "/dash/restart/arcreel"
+        post "/dash/restart/arcreel", headers: auth_headers
 
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
@@ -694,11 +704,11 @@ RSpec.describe "Dashboards", type: :request do
         allow(Rails.env).to receive(:test?).and_return(false)
       end
 
-      it "executes process kill and spawn for restartable service" do
-        allow_any_instance_of(DashController).to receive(:system).with("pkill -f 'openclaw gateway'").and_return(true)
+      it "executes process kill and spawn for restartable service with hardened array syntax" do
+        allow_any_instance_of(Dash::ProcessManager).to receive(:system).with("pkill", "-f", "openclaw gateway").and_return(true)
         expect(Process).to receive(:spawn).with("/bin/bash", "-c", "openclaw gateway --port 18789", out: File::NULL, err: File::NULL)
 
-        post "/dash/restart/openclaw"
+        post "/dash/restart/openclaw", headers: auth_headers
 
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
@@ -707,10 +717,10 @@ RSpec.describe "Dashboards", type: :request do
       end
 
       it "returns error status when process spawn fails" do
-        allow_any_instance_of(DashController).to receive(:system).and_return(true)
+        allow_any_instance_of(Dash::ProcessManager).to receive(:system).with("pkill", "-f", "openclaw gateway").and_return(true)
         allow(Process).to receive(:spawn).and_raise(Errno::ENOENT.new("spawn error"))
 
-        post "/dash/restart/openclaw"
+        post "/dash/restart/openclaw", headers: auth_headers
 
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
@@ -721,7 +731,7 @@ RSpec.describe "Dashboards", type: :request do
 
     describe "POST /dash/restart-all" do
       it "restarts all restartable services and reports results" do
-        post "/dash/restart-all"
+        post "/dash/restart-all", headers: auth_headers
 
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
