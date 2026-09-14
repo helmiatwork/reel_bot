@@ -135,5 +135,60 @@ RSpec.describe UrlSafetyValidator do
         }.to raise_error(ArgumentError, "URL cannot target private or restricted network addresses")
       end
     end
+
+    describe "trusted_only option" do
+      it "accepts valid HTTPS YouTube URLs when trusted_only is true" do
+        expect {
+          described_class.validate!("https://www.youtube.com/watch?v=dQw4w9WgXcQ", trusted_only: true)
+        }.not_to raise_error
+
+        expect {
+          described_class.validate!("https://youtu.be/dQw4w9WgXcQ", trusted_only: true)
+        }.not_to raise_error
+      end
+
+      it "rejects non-trusted domains when trusted_only is true" do
+        %w[
+          https://example.com/video.mp4
+          https://attacker.com/exploit
+          https://vimeo.com/12345
+          https://notyoutube.com/watch
+        ].each do |url|
+          expect {
+            described_class.validate!(url, trusted_only: true)
+          }.to raise_error(ArgumentError, "URL must belong to trusted domain (youtube.com, youtu.be)")
+        end
+      end
+
+      it "rejects non-HTTPS scheme when trusted_only is true" do
+        expect {
+          described_class.validate!("http://www.youtube.com/watch?v=dQw4w9WgXcQ", trusted_only: true)
+        }.to raise_error(ArgumentError, "URL must use HTTPS scheme")
+      end
+
+      it "allows arbitrary public URLs when trusted_only is false" do
+        expect {
+          described_class.validate!("https://example.com/video.mp4", trusted_only: false)
+        }.not_to raise_error
+      end
+    end
+  end
+
+  describe ".validate_youtube_url!" do
+    it "validates HTTPS YouTube URLs and rejects non-trusted domains" do
+      expect {
+        described_class.validate_youtube_url!("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+      }.not_to raise_error
+
+      expect {
+        described_class.validate_youtube_url!("https://attacker.com")
+      }.to raise_error(ArgumentError, "URL must belong to trusted domain (youtube.com, youtu.be)")
+    end
+
+    it "rejects HTTP YouTube URLs" do
+      expect {
+        described_class.validate_youtube_url!("http://www.youtube.com/watch?v=dQw4w9WgXcQ")
+      }.to raise_error(ArgumentError, "URL must use HTTPS scheme")
+    end
   end
 end

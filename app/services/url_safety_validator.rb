@@ -20,7 +20,7 @@ class UrlSafetyValidator
   TRUSTED_DOMAINS = %w[youtube.com youtu.be].freeze
 
   class << self
-    def validate!(url)
+    def validate!(url, trusted_only: false)
       raise ArgumentError, "URL cannot be blank" if url.blank?
 
       url_str = url.to_s.strip
@@ -33,6 +33,17 @@ class UrlSafetyValidator
         raise ArgumentError, "URL must use HTTP or HTTPS scheme and have a host"
       end
 
+      if trusted_only
+        unless uri.scheme == "https"
+          raise ArgumentError, "URL must use HTTPS scheme"
+        end
+
+        clean_host = uri.host.to_s.strip.downcase.delete_prefix("[").delete_suffix("]")
+        unless trusted_domain?(clean_host)
+          raise ArgumentError, "URL must belong to trusted domain (youtube.com, youtu.be)"
+        end
+      end
+
       if private_host?(uri.host)
         raise ArgumentError, "URL cannot target private or restricted network addresses"
       end
@@ -40,6 +51,10 @@ class UrlSafetyValidator
       uri
     rescue URI::InvalidURIError
       raise ArgumentError, "URL is invalid"
+    end
+
+    def validate_youtube_url!(url)
+      validate!(url, trusted_only: true)
     end
 
     def private_host?(host)
