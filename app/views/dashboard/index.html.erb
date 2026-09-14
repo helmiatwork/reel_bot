@@ -1,0 +1,133 @@
+<div class="dashboard-container" style="max-width: 1200px; margin: 0 auto; padding: 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <!-- Header -->
+  <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; border-bottom: 1px solid #e5e7eb; padding-bottom: 16px;">
+    <div>
+      <h1 style="font-size: 28px; font-weight: 700; color: #111827; margin: 0;">🎬 ReelBot Dashboard</h1>
+      <p style="color: #6b7280; margin: 4px 0 0;">Rails 8.1 &amp; Ruby 4.0 Autonomous Short Video Engine</p>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <span style="display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600; background-color: #ecfdf5; color: #047857;">
+        ● System Operational
+      </span>
+    </div>
+  </header>
+
+  <!-- Flash Notice -->
+  <div id="flash-notices">
+    <% if notice.present? %>
+      <div style="padding: 12px 16px; margin-bottom: 24px; background-color: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; border-radius: 8px;">
+        <%= notice %>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Stat Cards -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 32px;">
+    <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <div style="font-size: 13px; font-weight: 500; color: #6b7280; text-transform: uppercase;">Total Published</div>
+      <div style="font-size: 32px; font-weight: 700; color: #111827; margin-top: 8px;"><%= @total_published %></div>
+      <div style="font-size: 12px; color: #10b981; margin-top: 4px;">Completed runs</div>
+    </div>
+
+    <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <div style="font-size: 13px; font-weight: 500; color: #6b7280; text-transform: uppercase;">Pending Approvals</div>
+      <div style="font-size: 32px; font-weight: 700; color: <%= @pending_approvals > 0 ? '#f59e0b' : '#111827' %>; margin-top: 8px;"><%= @pending_approvals %></div>
+      <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">Awaiting review</div>
+    </div>
+
+    <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <div style="font-size: 13px; font-weight: 500; color: #6b7280; text-transform: uppercase;">Average QC Score</div>
+      <div style="font-size: 32px; font-weight: 700; color: #111827; margin-top: 8px;"><%= @avg_qc_score %>/100</div>
+      <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">AI quality evaluator</div>
+    </div>
+
+    <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <div style="font-size: 13px; font-weight: 500; color: #6b7280; text-transform: uppercase;">Total Views</div>
+      <div style="font-size: 32px; font-weight: 700; color: #111827; margin-top: 8px;"><%= number_with_delimiter(@total_views) %></div>
+      <div style="font-size: 12px; color: #3b82f6; margin-top: 4px;">Across all platforms</div>
+    </div>
+  </div>
+
+  <!-- AI Performance Insights Card -->
+  <% if @insights.present? %>
+    <section style="background: linear-gradient(135deg, #f8fafc 0%, #eef2f6 100%); border: 1px solid #cbd5e1; border-radius: 12px; padding: 24px; margin-bottom: 32px;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+        <span style="font-size: 20px;">💡</span>
+        <h2 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">AI Performance Insights &amp; Suggestions</h2>
+      </div>
+      <p style="color: #334155; font-size: 15px; margin-bottom: 16px; line-height: 1.5;">
+        <%= @insights[:summary] %>
+      </p>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+        <% if @insights[:top_patterns].present? %>
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+            <h3 style="font-size: 14px; font-weight: 600; color: #0f172a; margin-top: 0; margin-bottom: 8px;">✨ Top Winning Patterns</h3>
+            <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #475569;">
+              <% @insights[:top_patterns].each do |pat| %>
+                <li style="margin-bottom: 4px;"><%= pat %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
+        <% if @insights[:improvements].present? %>
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+            <h3 style="font-size: 14px; font-weight: 600; color: #0f172a; margin-top: 0; margin-bottom: 8px;">🔧 Actionable Improvements</h3>
+            <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #475569;">
+              <% @insights[:improvements].each do |imp| %>
+                <li style="margin-bottom: 4px;"><%= imp %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
+        <% if @insights[:suggested_hooks].present? %>
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+            <h3 style="font-size: 14px; font-weight: 600; color: #0f172a; margin-top: 0; margin-bottom: 8px;">🎯 Suggested High-Retention Hooks</h3>
+            <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #475569;">
+              <% @insights[:suggested_hooks].each do |hook| %>
+                <li style="margin-bottom: 4px;">&ldquo;<%= hook %>&rdquo;</li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
+  <!-- Recent Pipeline Runs Table -->
+  <section style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <div style="padding: 16px 20px; border-bottom: 1px solid #e5e7eb;">
+      <h2 style="font-size: 18px; font-weight: 700; color: #111827; margin: 0;">Recent Pipeline Runs</h2>
+    </div>
+
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+        <thead>
+          <tr style="background-color: #f9fafb; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 12px; text-transform: uppercase;">
+            <th style="padding: 12px 20px;">Run ID</th>
+            <th style="padding: 12px 20px;">Project Title</th>
+            <th style="padding: 12px 20px;">Status</th>
+            <th style="padding: 12px 20px;">QC Score</th>
+            <th style="padding: 12px 20px;">Approval</th>
+            <th style="padding: 12px 20px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="pipeline_runs_list">
+          <% if @recent_runs.any? %>
+            <% @recent_runs.each do |run| %>
+              <%= render partial: "dashboard/pipeline_run", locals: { run: run } %>
+            <% end %>
+          <% else %>
+            <tr>
+              <td colspan="6" style="padding: 32px 20px; text-align: center; color: #9ca3af;">
+                No pipeline runs recorded yet.
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

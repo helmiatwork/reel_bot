@@ -1,0 +1,41 @@
+<tr id="pipeline_run_<%= run.id %>" style="border-bottom: 1px solid #f3f4f6;">
+  <td style="padding: 16px 20px; font-family: monospace; font-weight: 600; color: #111827;">
+    <%= run.run_id %>
+  </td>
+  <td style="padding: 16px 20px; color: #374151;">
+    <%= run.video_project&.title || "Untitled" %>
+  </td>
+  <td style="padding: 16px 20px;">
+    <% status_bg, status_fg = case run.status
+       when "completed" then ["#ecfdf5", "#047857"]
+       when "running"   then ["#eff6ff", "#1d4ed8"]
+       when "failed"    then ["#fef2f2", "#b91c1c"]
+       else ["#f3f4f6", "#4b5563"]
+       end %>
+    <span style="display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 12px; font-weight: 600; background-color: <%= status_bg %>; color: <%= status_fg %>;">
+      <%= run.status.upcase %>
+    </span>
+  </td>
+  <td style="padding: 16px 20px; font-weight: 600; color: #111827;">
+    <%= run.quality_score.present? ? "#{run.quality_score}/100" : "—" %>
+  </td>
+  <td style="padding: 16px 20px;">
+    <% approval_status = run.metadata["approval_status"] %>
+    <% if approval_status == "awaiting_approval" %>
+      <span style="display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 12px; font-weight: 600; background-color: #fef3c7; color: #b45309;">
+        Awaiting Approval
+      </span>
+    <% elsif approval_status == "approved" %>
+      <span style="display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 12px; font-weight: 600; background-color: #ecfdf5; color: #047857;">
+        Approved
+      </span>
+    <% else %>
+      <span style="color: #9ca3af; font-size: 13px;">—</span>
+    <% end %>
+  </td>
+  <td style="padding: 16px 20px;">
+    <% if run.metadata["approval_status"] == "awaiting_approval" %>
+      <%= button_to "Approve", approve_pipeline_run_path(run), method: :post, style: "background-color: #10b981; color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;" %>
+    <% end %>
+  </td>
+</tr>
