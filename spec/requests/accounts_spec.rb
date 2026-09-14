@@ -40,7 +40,7 @@ RSpec.describe "Accounts", :regression, type: :request do
   end
 
   describe "GET /accounts" do
-    it "lists accounts with default limit 50 and excludes sensitive credentials" do
+    it "lists accounts with default limit 50 and masks sensitive credentials" do
       get "/accounts"
       expect(response).to have_http_status(:ok)
       json = JSON.parse(response.body)
@@ -50,9 +50,9 @@ RSpec.describe "Accounts", :regression, type: :request do
         expect(item).to have_key("id")
         expect(item).to have_key("platform")
         if item["credentials"].present?
-          expect(item["credentials"]).not_to have_key("token")
-          expect(item["credentials"]).not_to have_key("access_token")
-          expect(item["credentials"]).not_to have_key("cookies")
+          expect(item["credentials"]["token"]).to eq("[FILTERED]") if item["credentials"].key?("token")
+          expect(item["credentials"]["access_token"]).to eq("[FILTERED]") if item["credentials"].key?("access_token")
+          expect(item["credentials"]["cookies"]).to eq("[FILTERED]") if item["credentials"].key?("cookies")
         end
       end
     end

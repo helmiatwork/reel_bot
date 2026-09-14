@@ -8,7 +8,7 @@ class SnoopResult < ApplicationRecord
              inverse_of: :snoop_results
 
   validates :channel_id, presence: true
-  validates :video_id, presence: true
+  validates :video_id, presence: true, uniqueness: { scope: :channel_id }
 
   scope :recent, -> { order(created_at: :desc) }
 end

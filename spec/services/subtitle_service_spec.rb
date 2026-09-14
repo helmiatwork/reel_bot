@@ -17,6 +17,15 @@ RSpec.describe SubtitleService do
     FileUtils.rm_f(output_path)
   end
 
+  describe "DEFAULT_STYLE" do
+    it "defines and freezes DEFAULT_STYLE" do
+      expect(described_class::DEFAULT_STYLE).to eq(
+        "Bold=1,FontSize=16,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2,BorderStyle=1,Alignment=2,MarginV=20"
+      )
+      expect(described_class::DEFAULT_STYLE).to be_frozen
+    end
+  end
+
   describe '#generate_srt' do
     it 'creates a valid SRT file given script or dialogue segments' do
       segments = [
@@ -58,6 +67,39 @@ RSpec.describe SubtitleService do
 
       result = service.burn_subtitles(video_path, srt_path, output_path)
       expect(result).to eq(output_path)
+    end
+
+    it "allows a valid custom style parameter" do
+      custom_style = "FontSize=20,PrimaryColour=&H0000FFFF"
+      status = instance_double(Process::Status, success?: true)
+      expect(Open3).to receive(:capture3) do |*args|
+        filter_arg = args[args.index("-vf") + 1]
+        expect(filter_arg).to include("force_style='#{custom_style}'")
+        FileUtils.touch(output_path)
+        [ "", "", status ]
+      end
+
+      result = service.burn_subtitles(video_path, srt_path, output_path, style: custom_style)
+      expect(result).to eq(output_path)
+    end
+
+    it "raises ArgumentError when style contains quotes, colons, semicolons, or invalid chars" do
+      malicious_styles = [
+        "Bold=1;rm -rf /",
+        "FontSize=16,fontname='Arial'",
+        'FontSize=16,fontname="Arial"',
+        "FontSize=16:MarginV=20",
+        "FontSize=16\nAlignment=2",
+        "FontSize=16`whoami`",
+        "FontSize=16|cat /etc/passwd",
+        "Bold=1 FontSize=16"
+      ]
+
+      malicious_styles.each do |bad_style|
+        expect {
+          service.burn_subtitles(video_path, srt_path, output_path, style: bad_style)
+        }.to raise_error(ArgumentError, "Invalid subtitle style parameters")
+      end
     end
 
     it 'escapes colons and single quotes in the srt path' do

@@ -3,7 +3,9 @@
 class ChannelAccount < ApplicationRecord
   ACCOUNT_ROLES = %w[main clip creator brand competitor].freeze
   ACCOUNT_PLATFORMS = %w[youtube tiktok instagram].freeze
-  SENSITIVE_CREDENTIAL_KEYS = %w[token access_token refresh_token cookies client_secret secret password].freeze
+  SENSITIVE_CREDENTIAL_KEYS = %w[
+    token access_token refresh_token cookies client_secret secret password api_key
+  ].freeze
 
   alias_attribute :handle, :account_identifier
   alias_attribute :label, :account_name
@@ -48,9 +50,11 @@ class ChannelAccount < ApplicationRecord
     case obj
     when Hash
       obj.each_with_object({}) do |(key, value), acc|
-        next if sensitive_key?(key)
-
-        acc[key] = sanitize_credentials(value)
+        if sensitive_key?(key)
+          acc[key] = "[FILTERED]"
+        else
+          acc[key] = sanitize_credentials(value)
+        end
       end
     when Array
       obj.map { |item| sanitize_credentials(item) }
@@ -61,6 +65,6 @@ class ChannelAccount < ApplicationRecord
 
   def sensitive_key?(key)
     key_str = key.to_s.downcase
-    SENSITIVE_CREDENTIAL_KEYS.include?(key_str) || key_str.match?(/token|cookie|secret|password/)
+    SENSITIVE_CREDENTIAL_KEYS.include?(key_str) || key_str.match?(/token|cookie|secret|password|api_key/)
   end
 end

@@ -10,7 +10,7 @@ class CompletePipelineJob < ApplicationJob
     project = pipeline_run.video_project
     raise ArgumentError, "Missing video project" if project.nil?
 
-    script = project.script || {}
+    script = (project.script || {}).with_indifferent_access
     work_dir = Rails.root.join("tmp", "pipeline", pipeline_run.run_id)
     FileUtils.mkdir_p(work_dir)
 
@@ -23,7 +23,7 @@ class CompletePipelineJob < ApplicationJob
     completed_steps << "download"
 
     # Step 2: Voiceover generation & FFmpeg audio merge
-    voiceover_text = script["voiceover"] || script[:voiceover] || script["script"] || script[:script] || project.hook || project.title
+    voiceover_text = script[:voiceover] || script[:script] || project.hook || project.title
     audio_path = work_dir.join("voiceover.mp3").to_s
     voiceover_svc = VoiceoverService.new
     voiceover_svc.text_to_speech(voiceover_text, audio_path)
@@ -34,7 +34,7 @@ class CompletePipelineJob < ApplicationJob
 
     # Step 3: Subtitles generation & burn-in
     srt_path = pipeline_run.subtitles_path.presence || work_dir.join("subtitles.srt").to_s
-    segments = script["segments"] || script[:segments]
+    segments = script[:segments]
     subtitle_svc = SubtitleService.new
     subtitle_svc.generate_srt(merged_video_path, srt_path, segments: segments)
 

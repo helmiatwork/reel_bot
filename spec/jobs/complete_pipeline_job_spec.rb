@@ -130,6 +130,18 @@ RSpec.describe CompletePipelineJob, type: :job do
 
         described_class.new.perform(existing_run.id, auto_publish: true)
       end
+
+      it 'handles script with symbol keys via with_indifferent_access' do
+        project.update!(script: {
+          voiceover: 'Symbol voiceover text',
+          segments: [ { start_time: 0.0, end_time: 2.0, text: 'Symbol text' } ]
+        })
+
+        expect(voiceover_service).to receive(:text_to_speech).with('Symbol voiceover text', anything)
+        expect(subtitle_service).to receive(:generate_srt).with(anything, anything, segments: [ { 'start_time' => 0.0, 'end_time' => 2.0, 'text' => 'Symbol text' } ])
+
+        described_class.new.perform(pipeline_run.id, auto_publish: true)
+      end
     end
 
     context 'when a step fails' do

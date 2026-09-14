@@ -4,6 +4,9 @@ require "open3"
 class SubtitleService
   class Error < StandardError; end
 
+  DEFAULT_STYLE = "Bold=1,FontSize=16,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2,BorderStyle=1,Alignment=2,MarginV=20".freeze
+  STYLE_REGEX = /\A[a-zA-Z0-9=,&_#]+\z/
+
   def generate_srt(media_path, srt_path, segments: nil)
     raise ArgumentError, "Media path not found: #{media_path}" unless File.exist?(media_path)
 
@@ -21,9 +24,11 @@ class SubtitleService
     srt_path
   end
 
-  def burn_subtitles(video_path, srt_path, output_path)
+  def burn_subtitles(video_path, srt_path, output_path, style: DEFAULT_STYLE)
     raise ArgumentError, "Video not found: #{video_path}" unless File.exist?(video_path)
     raise ArgumentError, "SRT file not found: #{srt_path}" unless File.exist?(srt_path)
+
+    sanitized_style = sanitize_style(style)
 
     FileUtils.mkdir_p(File.dirname(output_path))
 
@@ -36,8 +41,7 @@ class SubtitleService
                       .gsub(":", '\:')
                       .gsub("'", "\\\\'")
 
-    style = "Bold=1,FontSize=16,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2,BorderStyle=1,Alignment=2,MarginV=20"
-    vf_arg = "subtitles='#{escaped_srt}':force_style='#{style}'"
+    vf_arg = "subtitles='#{escaped_srt}':force_style='#{sanitized_style}'"
 
     cmd = [
       "ffmpeg", "-y",
@@ -85,5 +89,13 @@ class SubtitleService
       lines << ""
     end
     lines.join("\n")
+  end
+
+  def sanitize_style(style)
+    unless style.is_a?(String) && style.match?(STYLE_REGEX)
+      raise ArgumentError, "Invalid subtitle style parameters"
+    end
+
+    style
   end
 end
