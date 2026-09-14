@@ -27,7 +27,7 @@ class YtDlpService
   def fetch_metadata(youtube_url)
     validate_url!(youtube_url)
 
-    cmd = [ "yt-dlp", "--dump-json", "--no-playlist", youtube_url ]
+    cmd = [ "yt-dlp", "--dump-json", "--no-playlist", "--socket-timeout", "30", youtube_url ]
     stdout, = execute_command(*cmd, timeout: metadata_timeout)
     JSON.parse(stdout)
   end
@@ -82,6 +82,7 @@ class YtDlpService
       "--merge-output-format", "mp4",
       "-o", output_template,
       "--no-playlist",
+      "--socket-timeout", "30",
       youtube_url
     ]
 
@@ -110,6 +111,7 @@ class YtDlpService
       "--flat-playlist",
       "--playlist-end", "1",
       "--no-warnings",
+      "--socket-timeout", "30",
       url
     ]
 
@@ -155,7 +157,7 @@ class YtDlpService
   end
 
   def validate_url!(url)
-    UrlSafetyValidator.validate!(url)
+    UrlSafetyValidator.validate_youtube_url!(url)
   end
 
   def execute_command(*cmd, timeout: 60)

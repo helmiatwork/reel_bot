@@ -61,10 +61,32 @@ RSpec.describe YtDlpService do
 
       ssrf_urls.each do |bad_url|
         it "raises ArgumentError for SSRF attempt: #{bad_url}" do
-          expect { service.fetch_metadata(bad_url) }.to raise_error(ArgumentError, /private or restricted/)
-          expect { service.fetch_transcript(bad_url) }.to raise_error(ArgumentError, /private or restricted/)
-          expect { service.download(bad_url, output_dir: "/tmp") }.to raise_error(ArgumentError, /private or restricted/)
+          expect { service.fetch_metadata(bad_url) }.to raise_error(ArgumentError, /private or restricted|must belong to trusted domain|must use HTTPS scheme/)
+          expect { service.fetch_transcript(bad_url) }.to raise_error(ArgumentError, /private or restricted|must belong to trusted domain|must use HTTPS scheme/)
+          expect { service.download(bad_url, output_dir: "/tmp") }.to raise_error(ArgumentError, /private or restricted|must belong to trusted domain|must use HTTPS scheme/)
         end
+      end
+    end
+
+    describe "trusted domain enforcement (SSRF DNS rebinding mitigation)" do
+      it "rejects arbitrary public domains" do
+        %w[
+          https://example.com/video.mp4
+          https://attacker.com
+          https://vimeo.com/12345
+          https://notyoutube.com/watch?v=123
+        ].each do |bad_domain|
+          expect { service.fetch_metadata(bad_domain) }.to raise_error(ArgumentError, /must belong to trusted domain/)
+          expect { service.fetch_transcript(bad_domain) }.to raise_error(ArgumentError, /must belong to trusted domain/)
+          expect { service.download(bad_domain, output_dir: "/tmp") }.to raise_error(ArgumentError, /must belong to trusted domain/)
+        end
+      end
+
+      it "rejects HTTP scheme for YouTube URLs" do
+        http_url = "http://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        expect { service.fetch_metadata(http_url) }.to raise_error(ArgumentError, /must use HTTPS scheme/)
+        expect { service.fetch_transcript(http_url) }.to raise_error(ArgumentError, /must use HTTPS scheme/)
+        expect { service.download(http_url, output_dir: "/tmp") }.to raise_error(ArgumentError, /must use HTTPS scheme/)
       end
     end
   end
@@ -114,6 +136,16 @@ RSpec.describe YtDlpService do
 
       result = service.fetch_metadata(valid_url)
       expect(result).to eq({ "id" => "dQw4w9WgXcQ", "title" => "Never Gonna Give You Up", "duration" => 212 })
+    end
+
+    it "passes --socket-timeout 30 to yt-dlp" do
+      status = instance_double(Process::Status, success?: true)
+      expect(Open3).to receive(:capture3) do |*args|
+        expect(args).to include("--socket-timeout", "30")
+        [ '{"id": "dQw4w9WgXcQ"}', "", status ]
+      end
+
+      service.fetch_metadata(valid_url)
     end
   end
 
@@ -181,12 +213,13 @@ RSpec.describe YtDlpService do
       expect(File.exist?(result)).to be(true)
     end
 
-    it "passes --print after_move:filepath to yt-dlp arguments" do
+    it "passes --print after_move:filepath and --socket-timeout 30 to yt-dlp arguments" do
       status = instance_double(Process::Status, success?: true)
       target_file = File.join(output_dir, "dQw4w9WgXcQ.mp4")
 
       allow(Open3).to receive(:capture3) do |*args|
         expect(args).to include("--print", "after_move:filepath")
+        expect(args).to include("--socket-timeout", "30")
         File.write(target_file, "fake-video-content")
         [ target_file, "", status ]
       end
@@ -269,6 +302,7 @@ RSpec.describe YtDlpService do
         expect(args).to include("https://www.youtube.com/@techreview/videos")
         expect(args).to include("--flat-playlist")
         expect(args).to include("--playlist-end", "1")
+        expect(args).to include("--socket-timeout", "30")
       end
     end
 
