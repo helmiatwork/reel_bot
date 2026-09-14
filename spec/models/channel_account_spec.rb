@@ -159,12 +159,12 @@ RSpec.describe ChannelAccount, type: :model, regression: true do
       })
     end
 
-    it 'excludes sensitive tokens and cookies from credentials by default' do
+    it 'masks sensitive tokens and cookies from credentials as [FILTERED] by default' do
       json = account.as_json
-      expect(json['credentials']).not_to have_key('token')
-      expect(json['credentials']).not_to have_key('access_token')
-      expect(json['credentials']).not_to have_key('refresh_token')
-      expect(json['credentials']).not_to have_key('cookies')
+      expect(json['credentials']['token']).to eq('[FILTERED]')
+      expect(json['credentials']['access_token']).to eq('[FILTERED]')
+      expect(json['credentials']['refresh_token']).to eq('[FILTERED]')
+      expect(json['credentials']['cookies']).to eq('[FILTERED]')
       expect(json['credentials']['expires_at']).to eq(1780000000)
     end
 
@@ -176,8 +176,9 @@ RSpec.describe ChannelAccount, type: :model, regression: true do
       expect(json['credentials']['cookies']).to eq({ 'auth_session' => 'sess_secret_val' })
     end
 
-    it 'excludes sensitive keys nested inside hashes and arrays' do
+    it 'masks sensitive keys nested inside hashes and arrays as [FILTERED]' do
       nested_account = create(:channel_account, credentials: {
+        'api_key' => 'secret_api_key_value',
         'oauth' => {
           'access_token' => 'nested-secret-access',
           'client_secret' => 'nested-client-secret',
@@ -192,14 +193,17 @@ RSpec.describe ChannelAccount, type: :model, regression: true do
       })
 
       json = nested_account.as_json
-      expect(json['credentials']['oauth']).to eq({ 'expires_in' => 3600 })
-      expect(json['credentials']['oauth']).not_to have_key('access_token')
-      expect(json['credentials']['oauth']).not_to have_key('client_secret')
+      expect(json['credentials']['api_key']).to eq('[FILTERED]')
+      expect(json['credentials']['oauth']).to eq({
+        'access_token' => '[FILTERED]',
+        'client_secret' => '[FILTERED]',
+        'expires_in' => 3600
+      })
       expect(json['credentials']['profiles']).to eq([
-        { 'user' => 'creator_1' },
-        { 'user' => 'creator_2' }
+        { 'user' => 'creator_1', 'password' => '[FILTERED]' },
+        { 'user' => 'creator_2', 'token' => '[FILTERED]' }
       ])
-      expect(json['credentials']).not_to have_key('session_cookies')
+      expect(json['credentials']['session_cookies']).to eq('[FILTERED]')
       expect(json['credentials']['public_info']).to eq({ 'username' => 'creator' })
     end
   end

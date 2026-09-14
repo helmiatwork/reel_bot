@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_12_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_14_043000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -106,6 +106,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_12_140000) do
     t.datetime "updated_at", null: false
     t.string "video_id", null: false
     t.string "video_title"
+    t.index ["channel_id", "video_id"], name: "index_snoop_results_on_channel_id_and_video_id", unique: true
     t.index ["channel_id"], name: "index_snoop_results_on_channel_id"
     t.index ["created_at"], name: "index_snoop_results_on_created_at"
   end

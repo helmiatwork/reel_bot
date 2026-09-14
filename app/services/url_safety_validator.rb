@@ -73,7 +73,11 @@ class UrlSafetyValidator
       addr
     rescue IPAddr::InvalidAddressError
       if str.match?(/\A(0x[0-9a-fA-F]+|\d+)\z/)
-        int_val = Integer(str) rescue nil
+        int_val = begin
+          Integer(str)
+        rescue ArgumentError, TypeError
+          nil
+        end
         return IPAddr.new(int_val, Socket::AF_INET) if int_val && int_val >= 0 && int_val <= 0xffffffff
       end
       nil

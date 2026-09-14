@@ -20,6 +20,16 @@ RSpec.describe SnoopResult, type: :model do
       expect(result).not_to be_valid
       expect(result.errors[:video_id]).to include("can't be blank")
     end
+
+    it "enforces uniqueness of video_id scoped to channel_id" do
+      described_class.create!(channel_id: "UC123", video_id: "vid_xyz")
+      duplicate = described_class.new(channel_id: "UC123", video_id: "vid_xyz")
+      expect(duplicate).not_to be_valid
+      expect(duplicate.errors[:video_id]).to include("has already been taken")
+
+      different_channel = described_class.new(channel_id: "UC456", video_id: "vid_xyz")
+      expect(different_channel).to be_valid
+    end
   end
 
   describe "associations" do
