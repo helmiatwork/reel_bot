@@ -51,3 +51,20 @@ data/cookies/
 
 # serena tooling index (local only)
 .serena/
+
+# Ignore key files for decrypting credentials and more.
+/config/*.key
+
+# Test coverage
+/coverage/
+.coverage
+
+# Rails log, tmp and storage
+/log/*
+!/log/.keep
+/tmp/*
+!/tmp/.keep
+!/tmp/pids/.keep
+!/tmp/storage/.keep
+/storage/*
+!/storage/.keep

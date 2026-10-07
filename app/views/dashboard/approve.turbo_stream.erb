@@ -1,0 +1,9 @@
+<%= turbo_stream.replace "pipeline_run_#{@pipeline_run.id}" do %>
+  <%= render partial: "dashboard/pipeline_run", locals: { run: @pipeline_run } %>
+<% end %>
+
+<%= turbo_stream.update "flash-notices" do %>
+  <div style="padding: 12px 16px; margin-bottom: 24px; background-color: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; border-radius: 8px;">
+    Pipeline run <%= @pipeline_run.run_id %> approved for publishing!
+  </div>
+<% end %>
