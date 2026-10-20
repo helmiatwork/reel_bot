@@ -1083,6 +1083,108 @@ def save_effects(youtube_url: str, effects_json: str) -> dict:
         conn.close()
 
 
+@server.tool()
+def scrape_music_content(
+    artist: str,
+    title: str,
+    youtube_url: str,
+    category: str = "music",
+) -> dict:
+    """
+    MUSIC CONTENT FLOW. Scrape a song into the structured category/artist hierarchy.
+    Extracts/downloads audio (.mp3), reference video (.mp4), and plain & synced lyrics (.lrc).
+
+    Args:
+        artist: Name of the musician or band (e.g. "Rhoma Irama")
+        title: Title of the song (e.g. "Begadang")
+        youtube_url: Source YouTube URL for audio/video extraction
+        category: Content category name (default: "music")
+
+    Returns:
+        {"id": ..., "title": ..., "artist": ..., "audio_path": ..., "video_path": ..., "lyrics_raw": ..., "lyrics_lrc": ...}
+        or {"error": "..."} on failure
+    """
+    if not PIPELINE_API_URL:
+        return {"error": "PIPELINE_API_URL not configured"}
+    if not artist or not artist.strip():
+        return {"error": "artist name is required"}
+    if not title or not title.strip():
+        return {"error": "title is required"}
+    if not youtube_url or not _valid_url(youtube_url):
+        return {"error": "valid youtube_url is required"}
+
+    try:
+        response = httpx.post(
+            f"{PIPELINE_API_URL}/content/scrape",
+            json={
+                "category": category or "music",
+                "artist": artist.strip(),
+                "title": title.strip(),
+                "youtube_url": youtube_url.strip(),
+            },
+            timeout=httpx.Timeout(connect=10.0, read=300.0, write=10.0, pool=5.0),
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": f"scrape_music_content failed: {e}"}
+
+
+@server.tool()
+def list_content_hierarchy(category: str = None) -> dict:
+    """
+    Query content categories, artists, and songs hierarchy.
+
+    Args:
+        category: Optional category filter (e.g. "music")
+
+    Returns:
+        {"categories": [...], "artists": [...]}
+        or {"error": "..."}
+    """
+    if not PIPELINE_API_URL:
+        return {"error": "PIPELINE_API_URL not configured"}
+
+    try:
+        cat_resp = httpx.get(f"{PIPELINE_API_URL}/content/categories", timeout=15)
+        cat_resp.raise_for_status()
+        categories = cat_resp.json().get("categories", [])
+
+        params = {"category": category} if category else {}
+        art_resp = httpx.get(f"{PIPELINE_API_URL}/content/artists", params=params, timeout=15)
+        art_resp.raise_for_status()
+        artists = art_resp.json().get("artists", [])
+
+        return {"categories": categories, "artists": artists}
+    except Exception as e:
+        return {"error": f"list_content_hierarchy failed: {e}"}
+
+
+@server.tool()
+def get_song_details(song_id: int) -> dict:
+    """
+    Retrieve full song details including audio path, video path, and lyrics (raw + synced).
+
+    Args:
+        song_id: Database ID of the song
+
+    Returns:
+        {"id": ..., "title": ..., "artist_name": ..., "audio_path": ..., "video_path": ..., "lyrics_raw": ..., "lyrics_lrc": ...}
+        or {"error": "..."}
+    """
+    if not PIPELINE_API_URL:
+        return {"error": "PIPELINE_API_URL not configured"}
+    if not isinstance(song_id, int) or song_id <= 0:
+        return {"error": "valid positive song_id is required"}
+
+    try:
+        response = httpx.get(f"{PIPELINE_API_URL}/content/songs/{song_id}", timeout=15)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        return {"error": f"get_song_details failed: {e}"}
+
+
 # ── Entry point ──────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
