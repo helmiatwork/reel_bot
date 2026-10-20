@@ -371,6 +371,83 @@ def test_get_audio_for_suno_empty_file():
             audio_file.unlink()
 
 
+def test_scrape_music_content_validation():
+    """Test validation errors on scrape_music_content."""
+    from reelbot_mcp import scrape_music_content
+    res1 = scrape_music_content(artist="", title="Song", youtube_url="https://youtube.com/watch?v=1")
+    assert "error" in res1 and "artist" in res1["error"]
+
+    res2 = scrape_music_content(artist="Artist", title="", youtube_url="https://youtube.com/watch?v=1")
+    assert "error" in res2 and "title" in res2["error"]
+
+    res3 = scrape_music_content(artist="Artist", title="Song", youtube_url="not-url")
+    assert "error" in res3 and "url" in res3["error"]
+    print("✓ test_scrape_music_content_validation")
+
+
+@patch("httpx.post")
+def test_scrape_music_content_success(mock_post):
+    """Test successful scrape_music_content tool execution."""
+    from reelbot_mcp import scrape_music_content
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = {
+        "id": 1, "title": "Begadang", "artist": "Rhoma Irama",
+        "audio_path": "data/songs/audio/1.mp3", "video_path": "data/songs/video/1.mp4",
+        "lyrics_raw": "Begadang", "lyrics_lrc": "[00:00.00] Begadang"
+    }
+    mock_resp.raise_for_status.return_value = None
+    mock_post.return_value = mock_resp
+
+    res = scrape_music_content(
+        artist="Rhoma Irama",
+        title="Begadang",
+        youtube_url="https://www.youtube.com/watch?v=test123"
+    )
+    assert res["id"] == 1
+    assert res["artist"] == "Rhoma Irama"
+    print("✓ test_scrape_music_content_success")
+
+
+@patch("httpx.get")
+def test_list_content_hierarchy_success(mock_get):
+    """Test list_content_hierarchy tool execution."""
+    from reelbot_mcp import list_content_hierarchy
+    mock_resp1 = MagicMock()
+    mock_resp1.json.return_value = {"categories": [{"id": 1, "name": "music"}]}
+    mock_resp1.raise_for_status.return_value = None
+
+    mock_resp2 = MagicMock()
+    mock_resp2.json.return_value = {"artists": [{"id": 10, "name": "Rhoma Irama"}]}
+    mock_resp2.raise_for_status.return_value = None
+
+    mock_get.side_effect = [mock_resp1, mock_resp2]
+
+    res = list_content_hierarchy(category="music")
+    assert len(res["categories"]) == 1
+    assert len(res["artists"]) == 1
+    print("✓ test_list_content_hierarchy_success")
+
+
+@patch("httpx.get")
+def test_get_song_details(mock_get):
+    """Test get_song_details tool validation and execution."""
+    from reelbot_mcp import get_song_details
+    bad = get_song_details(song_id=0)
+    assert "error" in bad
+
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = {
+        "id": 42, "title": "Begadang", "audio_path": "data/songs/audio/42.mp3"
+    }
+    mock_resp.raise_for_status.return_value = None
+    mock_get.return_value = mock_resp
+
+    res = get_song_details(song_id=42)
+    assert res["id"] == 42
+    assert res["title"] == "Begadang"
+    print("✓ test_get_song_details")
+
+
 def main():
     """Run all tests."""
     tests = [
@@ -404,6 +481,10 @@ def main():
         test_get_audio_for_suno_file_not_ready,
         test_get_audio_for_suno_success,
         test_get_audio_for_suno_empty_file,
+        test_scrape_music_content_validation,
+        test_scrape_music_content_success,
+        test_list_content_hierarchy_success,
+        test_get_song_details,
     ]
 
     failed = 0

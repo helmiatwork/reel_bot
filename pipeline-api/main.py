@@ -5311,12 +5311,13 @@ def _api_usage_init_db():
 
 
 def _songs_init_db():
-    """Initialize songs table at startup (non-fatal on failure)."""
+    """Initialize songs, categories, and artists tables at startup (non-fatal on failure)."""
     conn = _db_conn()
     if not conn:
         return
     try:
         with conn.cursor() as cur:
+            # 1. Songs table (created first for backwards-compatibility with legacy unit tests)
             cur.execute("""CREATE TABLE IF NOT EXISTS songs (
                 id           BIGSERIAL PRIMARY KEY,
                 youtube_url  TEXT UNIQUE,
@@ -5334,14 +5335,50 @@ def _songs_init_db():
             )""")
             cur.execute("""CREATE INDEX IF NOT EXISTS songs_created_at_idx
                 ON songs (created_at DESC)""")
+
+            # 2. Categories table
+            cur.execute("""CREATE TABLE IF NOT EXISTS categories (
+                id          BIGSERIAL PRIMARY KEY,
+                name        TEXT UNIQUE NOT NULL,
+                slug        TEXT UNIQUE NOT NULL,
+                description TEXT,
+                created_at  TIMESTAMPTZ DEFAULT now()
+            )""")
+            cur.execute("""CREATE INDEX IF NOT EXISTS categories_slug_idx ON categories (slug)""")
+
+            # Default seed for music category
+            cur.execute("""INSERT INTO categories (name, slug, description)
+                VALUES ('music', 'music', 'Music content, songs, and covers')
+                ON CONFLICT (name) DO NOTHING""")
+
+            # 3. Artists table
+            cur.execute("""CREATE TABLE IF NOT EXISTS artists (
+                id          BIGSERIAL PRIMARY KEY,
+                category_id BIGINT REFERENCES categories(id) ON DELETE SET NULL,
+                name        TEXT NOT NULL,
+                slug        TEXT NOT NULL,
+                bio         TEXT,
+                channel_url TEXT,
+                tags        TEXT,
+                created_at  TIMESTAMPTZ DEFAULT now(),
+                UNIQUE(category_id, name)
+            )""")
+            cur.execute("""CREATE INDEX IF NOT EXISTS artists_category_id_idx ON artists (category_id)""")
+            cur.execute("""CREATE INDEX IF NOT EXISTS artists_slug_idx ON artists (slug)""")
+
             # Additive migrations for existing installs (safe to re-run)
             for col_def in [
                 "bpm REAL", "music_key TEXT", "energy REAL",
                 "mood TEXT", "genre TEXT", "tags TEXT", "source TEXT",
+                "category_id BIGINT REFERENCES categories(id) ON DELETE SET NULL",
+                "artist_id BIGINT REFERENCES artists(id) ON DELETE SET NULL",
+                "video_path TEXT", "lyrics_raw TEXT", "lyrics_lrc TEXT",
             ]:
                 cur.execute(
                     f"ALTER TABLE songs ADD COLUMN IF NOT EXISTS {col_def}"
                 )
+            cur.execute("""CREATE INDEX IF NOT EXISTS songs_category_id_idx ON songs (category_id)""")
+            cur.execute("""CREATE INDEX IF NOT EXISTS songs_artist_id_idx ON songs (artist_id)""")
         conn.commit()
     except Exception as e:
         print(f"[songs] init db error: {e}")
@@ -9237,6 +9274,503 @@ async def import_song(
         "tags": json.loads(row[10]) if row[10] else [],
         "source": row[11], "created_at": row[12],
     })
+
+
+# ── Content Hierarchy & Music Scraper ─────────────────────────────────────────
+
+def _slugify(text: str) -> str:
+    """Convert arbitrary text into a URL/DB safe slug."""
+    if not text or not text.strip():
+        return "unknown"
+    import re
+    s = text.strip().lower()
+    s = re.sub(r"[^\w\s-]", "", s)
+    s = re.sub(r"[\s_-]+", "-", s).strip("-")
+    return s or "unknown"
+
+
+def _get_or_create_category(name: str, description: Optional[str] = None) -> int:
+    """Retrieve category ID by name/slug, creating it if not present."""
+    clean_name = name.strip().lower() if name else "music"
+    slug = _slugify(clean_name)
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, name, slug FROM categories WHERE slug = %s OR name = %s", (slug, clean_name))
+            row = cur.fetchone()
+            if row:
+                return row[0]
+            cur.execute(
+                """INSERT INTO categories (name, slug, description)
+                   VALUES (%s, %s, %s)
+                   ON CONFLICT (name) DO UPDATE SET description = COALESCE(EXCLUDED.description, categories.description)
+                   RETURNING id, name, slug""",
+                (clean_name, slug, description)
+            )
+            row = cur.fetchone()
+            conn.commit()
+            return row[0]
+    finally:
+        conn.close()
+
+
+def _get_or_create_artist(category_id: int, name: str, bio: Optional[str] = None, channel_url: Optional[str] = None) -> int:
+    """Retrieve artist ID by category and name, creating if not present."""
+    clean_name = name.strip() if name else "Unknown Artist"
+    slug = _slugify(clean_name)
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, name FROM artists WHERE category_id = %s AND (LOWER(name) = LOWER(%s) OR slug = %s)",
+                (category_id, clean_name, slug)
+            )
+            row = cur.fetchone()
+            if row:
+                return row[0]
+            cur.execute(
+                """INSERT INTO artists (category_id, name, slug, bio, channel_url)
+                   VALUES (%s, %s, %s, %s, %s)
+                   ON CONFLICT (category_id, name) DO UPDATE SET bio = COALESCE(EXCLUDED.bio, artists.bio)
+                   RETURNING id, name""",
+                (category_id, clean_name, slug, bio, channel_url)
+            )
+            row = cur.fetchone()
+            conn.commit()
+            return row[0]
+    finally:
+        conn.close()
+
+
+def _scrape_lyrics(artist: str, title: str, youtube_url: Optional[str] = None) -> tuple[Optional[str], Optional[str]]:
+    """
+    Scrape lyrics (raw plain text and synced LRC format).
+    1. Query LRCLIB API.
+    2. Fallback to youtube captions if youtube_url provided.
+    Never raises; returns (None, None) on failure.
+    """
+    raw_lyrics = None
+    lrc_lyrics = None
+
+    # 1. Query LRCLIB API
+    try:
+        import urllib.request, urllib.parse
+        params = urllib.parse.urlencode({
+            "artist_name": artist.strip(),
+            "track_name": title.strip()
+        })
+        req = urllib.request.Request(
+            f"https://lrclib.net/api/get?{params}",
+            headers={"User-Agent": "Reelbot/1.0 (https://github.com/ichigo-inc/reelbot)"}
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            raw_lyrics = data.get("plainLyrics")
+            lrc_lyrics = data.get("syncedLyrics")
+            if raw_lyrics or lrc_lyrics:
+                return raw_lyrics, lrc_lyrics
+    except Exception as e:
+        print(f"[content_scraper] LRCLIB lookup failed: {e}")
+
+    # 2. Fallback: try extracting subtitles from YouTube if URL provided
+    if youtube_url:
+        try:
+            import re
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                cmd = [
+                    "yt-dlp",
+                    "--skip-download",
+                    "--write-subs",
+                    "--write-auto-subs",
+                    "--sub-lang", "id,en.*",
+                    "--sub-format", "vtt/lrc/best",
+                    "-o", f"{tmp_dir}/%(id)s.%(ext)s",
+                    youtube_url
+                ]
+                proc = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+                sub_files = list(Path(tmp_dir).glob("*.vtt")) + list(Path(tmp_dir).glob("*.lrc"))
+                if sub_files:
+                    content = sub_files[0].read_text(encoding="utf-8", errors="ignore")
+                    lines = []
+                    for line in content.splitlines():
+                        if "-->" in line or line.startswith("WEBVTT") or line.strip().isdigit() or not line.strip():
+                            continue
+                        clean_line = re.sub(r"<[^>]+>", "", line).strip()
+                        if clean_line and (not lines or lines[-1] != clean_line):
+                            lines.append(clean_line)
+                    raw_lyrics = "\n".join(lines) if lines else None
+                    lrc_lyrics = content if sub_files[0].suffix == ".lrc" else None
+        except Exception as e:
+            print(f"[content_scraper] Subtitle extraction fallback failed: {e}")
+
+    return raw_lyrics, lrc_lyrics
+
+
+def _scrape_music_content(category: str, artist: str, title: str, youtube_url: str) -> dict:
+    """
+    End-to-end scraper for music content:
+    - Resolves/creates category and artist
+    - Downloads/extracts audio (.mp3) and reference video (.mp4)
+    - Scrapes lyrics (raw + synced LRC)
+    - Stores into songs table with relational links
+    - Idempotent: returns existing song record if already scraped
+    """
+    clean_cat = (category or "music").strip().lower()
+    clean_artist = (artist or "Unknown Artist").strip()
+    clean_title = (title or "Untitled").strip()
+    clean_url = youtube_url.strip()
+
+    category_id = _get_or_create_category(clean_cat)
+    artist_id = _get_or_create_artist(category_id, clean_artist)
+
+    # Check if already exists in songs
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database unavailable")
+
+    existing_row = None
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT id, youtube_url, title, audio_path, video_path,
+                       lyrics_raw, lyrics_lrc, duration_sec, category_id, artist_id
+                FROM songs
+                WHERE youtube_url = %s
+            """, (clean_url,))
+            existing_row = cur.fetchone()
+    finally:
+        conn.close()
+
+    if existing_row:
+        return {
+            "id": existing_row[0],
+            "youtube_url": existing_row[1],
+            "title": existing_row[2],
+            "audio_path": existing_row[3],
+            "video_path": existing_row[4],
+            "lyrics_raw": existing_row[5],
+            "lyrics_lrc": existing_row[6],
+            "duration_sec": existing_row[7],
+            "category_id": existing_row[8],
+            "artist_id": existing_row[9],
+            "category": clean_cat,
+            "artist": clean_artist,
+        }
+
+    # Ensure target asset directories exist under data/
+    audio_dir = _REPO_ROOT / "data" / "songs" / "audio"
+    video_dir = _REPO_ROOT / "data" / "songs" / "video"
+    audio_dir.mkdir(parents=True, exist_ok=True)
+    video_dir.mkdir(parents=True, exist_ok=True)
+
+    file_key = str(uuid.uuid4())[:8]
+    video_id = _extract_video_id_from_youtube_url(clean_url) or file_key
+    audio_dest = audio_dir / f"{video_id}.mp3"
+    video_dest = video_dir / f"{video_id}.mp4"
+
+    duration_sec = 0
+    try:
+        # Download audio
+        cmd_audio = [
+            "yt-dlp",
+            "-x",
+            "--audio-format", "mp3",
+            "--audio-quality", "0",
+            "-o", str(audio_dir / f"{video_id}.%(ext)s"),
+            clean_url
+        ]
+        subprocess.run(cmd_audio, capture_output=True, text=True, timeout=300)
+
+        # Download video reference (capped at 720p)
+        cmd_video = [
+            "yt-dlp",
+            "-f", "bestvideo[height<=720]+bestaudio/best[height<=720]/best",
+            "--merge-output-format", "mp4",
+            "-o", str(video_dest),
+            clean_url
+        ]
+        subprocess.run(cmd_video, capture_output=True, text=True, timeout=300)
+
+        # Retrieve metadata
+        cmd_meta = ["yt-dlp", "--dump-json", clean_url]
+        proc = subprocess.run(cmd_meta, capture_output=True, text=True, timeout=60)
+        if proc.returncode == 0 and proc.stdout.strip():
+            meta = json.loads(proc.stdout)
+            duration_sec = int(meta.get("duration", 0) or 0)
+            if not clean_title or clean_title == "Untitled":
+                clean_title = meta.get("title", clean_title)
+    except Exception as e:
+        print(f"[content_scraper] Media download error: {e}")
+
+    # Scrape lyrics
+    raw_lyrics, lrc_lyrics = _scrape_lyrics(clean_artist, clean_title, clean_url)
+
+    # Store into DB
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO songs (
+                    category_id, artist_id, title, youtube_url,
+                    audio_path, video_path, lyrics_raw, lyrics_lrc,
+                    duration_sec, source
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id, youtube_url, title, audio_path, video_path,
+                          lyrics_raw, lyrics_lrc, duration_sec, category_id, artist_id
+            """, (
+                category_id, artist_id, clean_title, clean_url,
+                str(audio_dest), str(video_dest), raw_lyrics, lrc_lyrics,
+                duration_sec, "scraper"
+            ))
+            row = cur.fetchone()
+            conn.commit()
+    finally:
+        conn.close()
+
+    return {
+        "id": row[0],
+        "youtube_url": row[1],
+        "title": row[2],
+        "audio_path": row[3],
+        "video_path": row[4],
+        "lyrics_raw": row[5],
+        "lyrics_lrc": row[6],
+        "duration_sec": row[7],
+        "category_id": row[8],
+        "artist_id": row[9],
+        "category": clean_cat,
+        "artist": clean_artist,
+    }
+
+
+def _extract_audio(youtube_url: str) -> dict:
+    """Extract audio from YouTube URL into data/songs/audio/."""
+    video_id = _extract_video_id_from_youtube_url(youtube_url)
+    if not video_id:
+        return {}
+    audio_dir = _REPO_ROOT / "data" / "songs" / "audio"
+    audio_dir.mkdir(parents=True, exist_ok=True)
+    dest = audio_dir / f"{video_id}.mp3"
+    try:
+        proc = subprocess.run([
+            "yt-dlp", "-x", "--audio-format", "mp3", "--audio-quality", "0",
+            "-o", str(audio_dir / f"{video_id}.%(ext)s"), youtube_url
+        ], capture_output=True, text=True, timeout=300)
+        if proc.returncode != 0:
+            return {}
+        return {"audio_path": str(dest), "title": video_id, "duration_sec": 0}
+    except Exception:
+        return {}
+
+
+def _save_song(youtube_url: str, title: Optional[str] = None) -> Optional[dict]:
+    """Helper to save a song from YouTube URL (legacy compatibility)."""
+    conn = _db_conn()
+    if not conn:
+        return None
+    try:
+        video_id = _extract_video_id_from_youtube_url(youtube_url)
+        with conn.cursor() as cur:
+            cur.execute("SELECT id FROM songs WHERE youtube_url = %s", (youtube_url,))
+            if cur.fetchone():
+                return None
+
+        meta = _fetch_channel_meta(youtube_url) if "_fetch_channel_meta" in globals() else {}
+        extracted = _extract_audio(youtube_url)
+        if not extracted:
+            return None
+
+        clean_title = title or extracted.get("title") or (meta.get("title") if isinstance(meta, dict) else None) or video_id
+        with conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO songs (youtube_url, title, audio_path, duration_sec, source)
+                   VALUES (%s, %s, %s, %s, %s) RETURNING id""",
+                (youtube_url, clean_title, extracted.get("audio_path"), extracted.get("duration_sec"), "legacy")
+            )
+            row = cur.fetchone()
+            conn.commit()
+            return {"id": row[0] if row else None}
+    except Exception as e:
+        print(f"[songs] _save_song failed (non-fatal): {e}")
+        return None
+    finally:
+        conn.close()
+
+
+class ContentScrapeRequest(BaseModel):
+    category: str = "music"
+    artist: str
+    title: str
+    youtube_url: str
+
+
+@app.post("/content/scrape")
+def api_scrape_content(req: ContentScrapeRequest):
+    """Scrape music audio, video, and lyrics into content hierarchy."""
+    if (
+        not req.artist or not req.artist.strip()
+        or not req.title or not req.title.strip()
+        or not req.youtube_url or not req.youtube_url.strip()
+        or not (req.youtube_url.startswith("http://") or req.youtube_url.startswith("https://"))
+    ):
+        raise HTTPException(status_code=422, detail="Valid artist, title, and youtube_url are required")
+
+    return _json(_scrape_music_content(
+        category=req.category,
+        artist=req.artist,
+        title=req.title,
+        youtube_url=req.youtube_url
+    ))
+
+
+@app.get("/content/categories")
+def api_list_categories():
+    """List all categories with artist counts."""
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT c.id, c.name, c.slug, c.description, c.created_at,
+                       COUNT(a.id) as artist_count
+                FROM categories c
+                LEFT JOIN artists a ON a.category_id = c.id
+                GROUP BY c.id
+                ORDER BY c.name ASC
+            """)
+            rows = cur.fetchall()
+            categories = [{
+                "id": r[0], "name": r[1], "slug": r[2],
+                "description": r[3], "created_at": r[4], "artist_count": r[5]
+            } for r in rows]
+            return _json({"categories": categories})
+    finally:
+        conn.close()
+
+
+@app.get("/content/artists")
+def api_list_artists(category: Optional[str] = None):
+    """List artists with optional category filter."""
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database unavailable")
+    try:
+        with conn.cursor() as cur:
+            if category:
+                cur.execute("""
+                    SELECT a.id, a.category_id, a.name, a.slug, a.bio, a.channel_url,
+                           c.name as category_name, COUNT(s.id) as song_count
+                    FROM artists a
+                    JOIN categories c ON c.id = a.category_id
+                    LEFT JOIN songs s ON s.artist_id = a.id
+                    WHERE c.slug = %s OR c.name = %s
+                    GROUP BY a.id, c.name
+                    ORDER BY a.name ASC
+                """, (category.lower(), category))
+            else:
+                cur.execute("""
+                    SELECT a.id, a.category_id, a.name, a.slug, a.bio, a.channel_url,
+                           c.name as category_name, COUNT(s.id) as song_count
+                    FROM artists a
+                    LEFT JOIN categories c ON c.id = a.category_id
+                    LEFT JOIN songs s ON s.artist_id = a.id
+                    GROUP BY a.id, c.name
+                    ORDER BY a.name ASC
+                """)
+            rows = cur.fetchall()
+            artists = [{
+                "id": r[0], "category_id": r[1], "name": r[2], "slug": r[3],
+                "bio": r[4], "channel_url": r[5], "category_name": r[6], "song_count": r[7]
+            } for r in rows]
+            return _json({"artists": artists})
+    finally:
+        conn.close()
+
+
+@app.get("/content/songs")
+def api_list_content_songs(
+    category: Optional[str] = None,
+    artist_id: Optional[int] = None,
+    limit: int = 50,
+    offset: int = 0
+):
+    """List songs with asset information and hierarchy metadata."""
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database unavailable")
+    try:
+        with conn.cursor() as cur:
+            query = """
+                SELECT s.id, s.title, s.youtube_url, s.audio_path, s.video_path,
+                       s.duration_sec, s.bpm, s.music_key, s.lyrics_raw, s.lyrics_lrc,
+                       s.category_id, c.name as category_name,
+                       s.artist_id, a.name as artist_name, s.created_at
+                FROM songs s
+                LEFT JOIN categories c ON c.id = s.category_id
+                LEFT JOIN artists a ON a.id = s.artist_id
+                WHERE 1=1
+            """
+            params = []
+            if category:
+                query += " AND (c.slug = %s OR c.name = %s)"
+                params.extend([category.lower(), category])
+            if artist_id:
+                query += " AND s.artist_id = %s"
+                params.append(artist_id)
+            query += " ORDER BY s.created_at DESC LIMIT %s OFFSET %s"
+            params.extend([max(1, min(limit, 200)), max(0, offset)])
+
+            cur.execute(query, tuple(params))
+            rows = cur.fetchall()
+            songs = [{
+                "id": r[0], "title": r[1], "youtube_url": r[2], "audio_path": r[3],
+                "video_path": r[4], "duration_sec": r[5], "bpm": r[6], "music_key": r[7],
+                "has_lyrics": bool(r[8]), "has_synced_lyrics": bool(r[9]),
+                "category_id": r[10], "category_name": r[11],
+                "artist_id": r[12], "artist_name": r[13], "created_at": r[14]
+            } for r in rows]
+            return _json({"songs": songs})
+    finally:
+        conn.close()
+
+
+@app.get("/content/songs/{song_id}")
+def api_get_content_song(song_id: int):
+    """Get single song with full audio, video, and lyrics assets."""
+    conn = _db_conn()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database unavailable")
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT s.id, s.title, s.youtube_url, s.audio_path, s.video_path,
+                       s.duration_sec, s.bpm, s.music_key, s.lyrics_raw, s.lyrics_lrc,
+                       s.category_id, c.name as category_name,
+                       s.artist_id, a.name as artist_name, s.created_at
+                FROM songs s
+                LEFT JOIN categories c ON c.id = s.category_id
+                LEFT JOIN artists a ON a.id = s.artist_id
+                WHERE s.id = %s
+            """, (song_id,))
+            r = cur.fetchone()
+            if not r:
+                raise HTTPException(status_code=404, detail="Song not found")
+            return _json({
+                "id": r[0], "title": r[1], "youtube_url": r[2], "audio_path": r[3],
+                "video_path": r[4], "duration_sec": r[5], "bpm": r[6], "music_key": r[7],
+                "lyrics_raw": r[8], "lyrics_lrc": r[9],
+                "category_id": r[10], "category_name": r[11],
+                "artist_id": r[12], "artist_name": r[13], "created_at": r[14]
+            })
+    finally:
+        conn.close()
 
 
 @app.post("/sources/upload")
