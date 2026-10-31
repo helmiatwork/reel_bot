@@ -3,6 +3,9 @@ import datetime as _dt
 import json
 import os
 import re
+import shutil
+import sys
+from pathlib import Path
 
 import httpx
 
@@ -17,6 +20,12 @@ ATM_LIGHT_EFFORT = os.getenv("ATM_LIGHT_EFFORT", "")
 # Draft + post evaluation (A/B-tested: haiku at high effort matches sonnet there).
 ATM_EVAL_MODEL = os.getenv("ATM_EVAL_MODEL", "claude-haiku-5-5")
 ATM_EVAL_EFFORT = os.getenv("ATM_EVAL_EFFORT", "high")
+
+def ytdlp_bin() -> str:
+    """yt-dlp beside the running interpreter (venv) first; a stale ~/.local/bin copy gets HTTP 429."""
+    beside = Path(sys.executable).with_name("yt-dlp")
+    return str(beside) if beside.exists() else (shutil.which("yt-dlp") or "yt-dlp")
+
 
 _FENCE_RE = re.compile(r"```(?:json)?\s*(.*?)```", re.S | re.I)
 

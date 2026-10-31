@@ -9,7 +9,7 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 
-from .common import ATM_LIGHT_MODEL, run_claude
+from .common import ATM_LIGHT_MODEL, run_claude, ytdlp_bin
 
 router = APIRouter()
 
@@ -38,7 +38,7 @@ def fetch_public_stats(url: str) -> Optional[dict]:
     if not isinstance(url, str) or not url.startswith(("https://", "http://")):
         return None
     try:
-        proc = subprocess.run(["yt-dlp", "--no-cookies", "--skip-download", "--no-playlist", "-J", "--", url],
+        proc = subprocess.run([ytdlp_bin(), "--no-cookies", "--skip-download", "--no-playlist", "-J", "--", url],
                               capture_output=True, text=True, timeout=60)
         if proc.returncode != 0:
             return None

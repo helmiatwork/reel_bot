@@ -94,6 +94,22 @@ def list_items(status: Optional[str] = None):
         conn.close()
 
 
+def insert_item(cur, title, niche, ref, format="short", voice_mode="self") -> dict:
+    """Insert an idea-stage item (links `sources` when the reference is already analyzed); returns the row."""
+    source_id = None
+    if ref:
+        cur.execute("SELECT id FROM sources WHERE youtube_url = %s", (ref,))
+        r = cur.fetchone()
+        source_id = r[0] if r else None
+    cur.execute(
+        """INSERT INTO content_items
+               (title, niche, reference_url, reference_source_id, format, voice_mode, stage)
+           VALUES (%s, %s, %s, %s, %s, %s, 'idea') RETURNING *""",
+        (title, niche, ref, source_id, format, voice_mode),
+    )
+    return item_row(cur.description, cur.fetchone())
+
+
 @router.post("/items")
 def create_item(body: ItemCreate):
     import main
@@ -103,18 +119,7 @@ def create_item(body: ItemCreate):
     conn = _conn()
     try:
         with conn.cursor() as cur:
-            source_id = None
-            if ref:
-                cur.execute("SELECT id FROM sources WHERE youtube_url = %s", (ref,))
-                r = cur.fetchone()
-                source_id = r[0] if r else None
-            cur.execute(
-                """INSERT INTO content_items
-                       (title, niche, reference_url, reference_source_id, format, voice_mode, stage)
-                   VALUES (%s, %s, %s, %s, %s, %s, 'idea') RETURNING *""",
-                (body.title, body.niche, ref, source_id, body.format, body.voice_mode),
-            )
-            item = item_row(cur.description, cur.fetchone())
+            item = insert_item(cur, body.title, body.niche, ref, body.format, body.voice_mode)
         conn.commit()
         return _out(item)
     finally:
