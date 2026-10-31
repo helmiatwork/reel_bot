@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from . import blueprint, cron, evaluate, items, learn, mine, monitor, package, schedule, voice
+from . import blueprint, cron, evaluate, items, learn, mine, models, monitor, package, schedule, voice
 
 router = APIRouter(prefix="/atm")
 router.include_router(items.router)
@@ -13,3 +13,4 @@ router.include_router(monitor.router)
 router.include_router(learn.router)
 router.include_router(mine.router)
 router.include_router(package.router)
+router.include_router(models.router)
