@@ -7,31 +7,16 @@
   import Drawer from './lib/Drawer.svelte'
   import Toasts from './lib/Toasts.svelte'
   import HowItWorks from './components/HowItWorks.svelte'
-  import OpenClaw from './pages/OpenClaw.svelte'
-  import Dashboard from './pages/Dashboard.svelte'
   import Sources from './pages/Sources.svelte'
   import Analysis from './pages/Analysis.svelte'
-  import Performance from './pages/Performance.svelte'
-  import Pipeline from './pages/Pipeline.svelte'
-  import Posts from './pages/Posts.svelte'
-  import Agents from './pages/Agents.svelte'
-  import Formulas from './pages/Formulas.svelte'
-  import Clips from './pages/Clips.svelte'
   import Clipper from './pages/Clipper.svelte'
-  import Snoop from './pages/Snoop.svelte'
-  import Cost from './pages/Cost.svelte'
   import Discover from './pages/Discover.svelte'
   import Creators from './pages/Creators.svelte'
   import Songs from './pages/Songs.svelte'
   import Decompose from './pages/Decompose.svelte'
-  import Generate from './pages/Generate.svelte'
   import Cookies from './pages/Cookies.svelte'
-  import Brands from './pages/Brands.svelte'
-  import PublishAccounts from './pages/PublishAccounts.svelte'
-  import Jadwal from './pages/Jadwal.svelte'
   import Seo from './pages/Seo.svelte'
   import Prep from './pages/Prep.svelte'
-  import Studio from './pages/Studio.svelte'
   import Plan from './pages/Plan.svelte'
   import Production from './pages/Production.svelte'
   import Today from './pages/Today.svelte'
@@ -41,9 +26,7 @@
   // Standard line icons (Lucide), monochrome, inherit text color.
   const I = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`
 
-  // ATM flow: Hari Ini → Rencana → Amati → Produksi → Pantau → Pustaka → Belajar. Hidden pages stay routable via page.set():
-  // agents, brands, clips, cost, dashboard, formulas, generate, jadwal, openclaw, performance, pipeline,
-  // posts, publish-accounts, snoop, studio
+  // ATM flow: Hari Ini → Rencana → Amati → Produksi → Pantau → Pustaka → Belajar.
   const NAV_GROUPS = [
     { title_key: 'nav.today', items: [
       { p: 'today', ico: I('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>'), key: 'nav.today' }
@@ -387,7 +370,6 @@
 
     <div class="content">
       {#if current === 'openclaw'}<OpenClaw />
-      {:else if current === 'dashboard'}<Dashboard />
       {:else if current === 'today'}<Today />
       {:else if current === 'plan'}<Plan />
       {:else if current === 'production'}<Production />
@@ -395,28 +377,15 @@
       {:else if current === 'learn'}<Learn />
       {:else if current === 'sources'}<Sources />
       {:else if current === 'analysis'}<Analysis />
-      {:else if current === 'clips'}<Clips />
       {:else if current === 'clipper'}<Clipper />
-      {:else if current === 'snoop'}<Snoop />
-      {:else if current === 'performance'}<Performance />
-      {:else if current === 'pipeline'}<Pipeline />
-      {:else if current === 'posts'}<Posts />
-      {:else if current === 'agents'}<Agents />
-      {:else if current === 'formulas'}<Formulas />
-      {:else if current === 'cost'}<Cost />
       {:else if current === 'discover'}<Discover />
       {:else if current === 'creators'}<Creators />
       {:else if current === 'songs'}<Songs />
       {:else if current === 'audio-clips'}<Songs kind="clip" />
       {:else if current === 'decompose'}<Decompose />
-      {:else if current === 'generate'}<Generate />
       {:else if current === 'cookies'}<Cookies />
-      {:else if current === 'brands'}<Brands />
-      {:else if current === 'publish-accounts'}<PublishAccounts />
-      {:else if current === 'jadwal'}<Jadwal />
       {:else if current === 'seo'}<Seo />
       {:else if current === 'prep'}<Prep />
-      {:else if current === 'studio'}<Studio />
       {/if}
     </div>
   </main>

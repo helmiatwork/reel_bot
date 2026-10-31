@@ -2,9 +2,8 @@ import { writable } from 'svelte/store'
 
 // Valid page ids — must stay in sync with App.svelte's {#if} chain and NAV n.p values.
 const VALID_PAGES = new Set([
-  'openclaw', 'dashboard', 'sources', 'analysis', 'clips', 'clipper', 'snoop',
-  'performance', 'pipeline', 'posts', 'agents', 'formulas', 'cost', 'discover', 'creators', 'songs', 'audio-clips',
-  'decompose', 'generate', 'cookies', 'publish-accounts', 'jadwal', 'seo', 'prep', 'studio',
+  'sources', 'analysis', 'clipper', 'discover', 'creators', 'songs', 'audio-clips',
+  'decompose', 'cookies', 'seo', 'prep',
   'today', 'plan', 'production', 'monitor', 'learn'
 ])
 
@@ -51,7 +50,7 @@ atmItemId.subscribe((v) => {
 })
 
 // drawer content: null = closed, else { type, data }
-// type ∈ 'source' | 'agent' | 'formula' | 'piece'
+// type ∈ 'source'
 export const drawer = writable(null)
 
 export function openDrawer(type, data) {
