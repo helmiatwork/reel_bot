@@ -51,6 +51,35 @@
     await load()
   }
 
+  let mineUrl = $state('')
+  let mined = $state(null)
+  let mineBusy = $state(false)
+  let mineMsg = $state('')
+  let picked = $state({})
+  let pickedUrls = $derived(Object.keys(picked).filter((u) => picked[u]))
+
+  async function mine() {
+    mineBusy = true
+    mineMsg = ''
+    mined = null
+    picked = {}
+    const r = await api.atmMine(mineUrl.trim())
+    mineBusy = false
+    if (r.ok) mined = r.data
+    else mineMsg = detail(r) || $_('atm.mine_error')
+  }
+
+  async function importPicked() {
+    mineBusy = true
+    const titles = Object.fromEntries(mined.videos.map((v) => [v.url, v.title]))
+    const r = await api.atmMineImport(pickedUrls, form.niche, titles)
+    mineBusy = false
+    if (!r.ok) { mineMsg = detail(r) || $_('atm.mine_error'); return }
+    pushToast('success', $_('atm.mine_imported'), String(r.data.items.length))
+    picked = {}
+    await load()
+  }
+
   function openItem(item) {
     atmItemId.set(item.id)
     page.set('production')
@@ -125,6 +154,35 @@
     </div>
   </div>
 
+  <div class="panel mine">
+    <h3>{$_('atm.mine_title')}</h3>
+    <div class="mut">{$_('atm.mine_hint')}</div>
+    <div class="form-row">
+      <input class="inp" placeholder={$_('atm.mine_placeholder')} bind:value={mineUrl} onkeydown={(e) => e.key === 'Enter' && mineUrl.trim() && mine()} />
+      <button class="btn-primary" disabled={mineBusy || !mineUrl.trim()} onclick={mine}>{mineBusy && !mined ? $_('atm.mine_loading') : $_('atm.mine_btn')}</button>
+    </div>
+    {#if mineMsg}<div class="err">{mineMsg}</div>{/if}
+    {#if mined}
+      <div class="mut">{mined.channel.name || ''}{mined.channel.followers != null ? ` · ${mined.channel.followers} ${$_('atm.mine_followers')}` : ''}</div>
+      <table class="mine-tbl">
+        <thead><tr><th></th><th>{$_('atm.mine_col_title')}</th><th>{$_('atm.mine_col_views')}</th></tr></thead>
+        <tbody>
+          {#each mined.videos as v (v.video_id)}
+            <tr>
+              <td><input type="checkbox" bind:checked={picked[v.url]} disabled={!picked[v.url] && pickedUrls.length >= 10} /></td>
+              <td><a href={v.url} target="_blank" rel="noopener noreferrer">{v.title || v.video_id}</a></td>
+              <td>{v.views.toLocaleString()}</td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+      <div class="form-row">
+        <button class="btn-primary" disabled={mineBusy || !pickedUrls.length} onclick={importPicked}>{$_('atm.mine_import')} ({pickedUrls.length})</button>
+        <span class="mut">{$_('atm.mine_max')}</span>
+      </div>
+    {/if}
+  </div>
+
   {#if loadError}<div class="err">{loadError}</div>{/if}
   <div class="board">
     {#each STATUSES as s}
@@ -169,6 +227,9 @@
   .err { color: var(--red, #f87171); font-size: 12.5px; }
   .mut { color: var(--mut); font-size: 12.5px; }
   .small { font-size: 11px; margin-top: 4px; }
+  .mine { margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; }
+  .mine-tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .mine-tbl th, .mine-tbl td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); }
   .board { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
   .column { flex: 0 0 200px; display: flex; flex-direction: column; }
   .col-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 4px 8px; }

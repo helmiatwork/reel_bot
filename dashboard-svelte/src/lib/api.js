@@ -237,6 +237,8 @@ export const api = {
   studioDelete: (id) => delJSON('/studio/' + id),
 
   // ATM creator studio
+  atmMine: (channel_url, limit = 20) => atmReq('POST', '/atm/mine', { channel_url, limit }),
+  atmMineImport: (urls, niche = '', titles = {}) => atmReq('POST', '/atm/mine/import', { urls, niche, titles }),
   atmItems: (status = '') => atmReq('GET', '/atm/items' + (status ? '?status=' + status : '')),
   atmItemCreate: (body) => atmReq('POST', '/atm/items', body),
   atmItem: (id) => atmReq('GET', '/atm/items/' + id),
