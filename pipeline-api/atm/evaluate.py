@@ -254,9 +254,11 @@ def evaluate_item(item_id: int, background: BackgroundTasks):
                 raise HTTPException(status_code=404, detail="item not found")
             if not row[0]:
                 raise HTTPException(status_code=400, detail="upload draft video dulu")
-            cur.execute(f"SELECT 1 FROM content_evaluations WHERE content_item_id = %s AND kind = 'draft' "
-                        f"AND status = 'building' AND created_at > now() - interval '{_STALE_BUILDING}' LIMIT 1",
-                        (item_id,))
+            cur.execute(f"UPDATE content_evaluations SET status = 'error', error = 'Evaluasi macet. Coba lagi.' "
+                        f"WHERE content_item_id = %s AND kind = 'draft' AND status = 'building' "
+                        f"AND created_at <= now() - interval '{_STALE_BUILDING}'", (item_id,))
+            cur.execute("SELECT 1 FROM content_evaluations WHERE content_item_id = %s AND kind = 'draft' "
+                        "AND status = 'building' LIMIT 1", (item_id,))
             if cur.fetchone():
                 raise HTTPException(status_code=409, detail="evaluasi masih berjalan")
             cur.execute("SELECT COALESCE(MAX(round), 0) FROM content_evaluations "

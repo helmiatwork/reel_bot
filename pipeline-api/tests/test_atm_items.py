@@ -151,3 +151,54 @@ def test_settings_put_rejects_bad_time_and_ranges():
     for bad in ({"post_time": "25:00"}, {"per_week": 0}, {"per_week": 22}, {"alert_ratio": 0.05},
                 {"alert_ratio": 1.5}, {"weekdays": []}, {"weekdays": [0, 1, 2, 3, 4, 5, 6, 0]}):
         assert client.put("/atm/settings", json={**GOOD, **bad}).status_code == 422, bad
+
+
+def test_patch_scheduled_at_rearms_reminders():
+    conn, p = _db(("UPDATE content_items", (COLS, [ROW])))
+    with p:
+        r = client.patch("/atm/items/1", json={"scheduled_at": "2026-02-01T12:00:00Z"})
+    assert r.status_code == 200
+    sql, params = conn.sqls("UPDATE content_items")[0]
+    assert "reminded_d1_at = NULL" in sql and "reminded_d0_at = NULL" in sql
+    assert params[0].isoformat().startswith("2026-02-01T12:00:00")
+
+
+def test_patch_scheduled_at_null_clears():
+    conn, p = _db(("UPDATE content_items", (COLS, [ROW])))
+    with p:
+        r = client.patch("/atm/items/1", json={"scheduled_at": None})
+    assert r.status_code == 200
+    sql, params = conn.sqls("UPDATE content_items")[0]
+    assert "scheduled_at = %s" in sql and "reminded_d1_at = NULL" in sql and params[0] is None
+
+
+def test_patch_without_scheduled_at_leaves_reminders():
+    conn, p = _db(("UPDATE content_items", (COLS, [ROW])))
+    with p:
+        client.patch("/atm/items/1", json={"title": "x"})
+    assert "reminded_d1_at" not in conn.sqls("UPDATE content_items")[0][0]
+
+
+def test_patch_published_url_must_be_youtube():
+    conn, p = _db(("UPDATE content_items", (COLS, [ROW])))
+    with p, patch("main._validate_source_url", side_effect=lambda u: u):
+        r = client.patch("/atm/items/1", json={"published_url": "https://www.tiktok.com/@a/video/1"})
+    assert r.status_code == 400 and not conn.sqls("UPDATE content_items")
+
+
+def test_patch_blueprint_bad_shapes_400():
+    bad = [{"audio": "x"}, {"narration": {"beats": "x"}}, {"narration": {"beats": ["x"]}},
+           {"narration": "x"}, {"shots": {"a": 1}}, {"shots": [1]}]
+    conn, p = _db(("UPDATE content_items", (COLS, [ROW])))
+    with p:
+        for bp in bad:
+            assert client.patch("/atm/items/1", json={"blueprint": bp}).status_code == 400, bp
+        assert client.patch("/atm/items/1", json={"blueprint": "x"}).status_code == 422  # not a dict
+    assert not conn.sqls("UPDATE content_items")
+
+
+def test_patch_blueprint_good_shape_ok():
+    bp = {"audio": {}, "narration": {"beats": [{"t": "00:00"}]}, "shots": [{"n": 1}]}
+    conn, p = _db(("UPDATE content_items", (COLS, [ROW])))
+    with p:
+        assert client.patch("/atm/items/1", json={"blueprint": bp}).status_code == 200

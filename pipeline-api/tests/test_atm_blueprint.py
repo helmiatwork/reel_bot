@@ -64,16 +64,16 @@ def test_prompt_has_originality_rule_and_voice_mode_tips():
 
 
 def test_blueprint_409_without_analysis():
-    conn = FakeConn([("SELECT reference_url, blueprint", (["a", "b"], [("https://youtu.be/x", None)]))])
+    conn = FakeConn([("SELECT reference_url, blueprint", (["a", "b", "c"], [("https://youtu.be/x", None, False)]))])
     with patch("main._db_conn", return_value=conn), patch("atm.blueprint._run_blueprint") as job:
         r = client.post("/atm/items/1/blueprint", json={})
     assert r.status_code == 409 and r.json()["detail"] == "Referensi belum dianalisa"
     job.assert_not_called()
-    assert not conn.sqls("blueprint_status = 'building'")
+    assert not conn.sqls("SET blueprint_status = 'building'")
 
 
 def test_blueprint_without_reference_allowed_and_runs_in_background():
-    conn = FakeConn([("SELECT reference_url, blueprint", (["a", "b"], [(None, None)]))])
+    conn = FakeConn([("SELECT reference_url, blueprint", (["a", "b", "c"], [(None, None, False)]))])
     with patch("main._db_conn", return_value=conn), patch("atm.blueprint._run_blueprint") as job:
         r = client.post("/atm/items/1/blueprint")
     assert r.json() == {"status": "building"}
@@ -81,12 +81,30 @@ def test_blueprint_without_reference_allowed_and_runs_in_background():
     assert conn.sqls("blueprint_status = 'building'") and conn.commits == 1
 
 
+def test_blueprint_409_while_building_fresh():
+    conn = FakeConn([("SELECT reference_url, blueprint", (["a", "b", "c"], [(None, None, True)]))])
+    with patch("main._db_conn", return_value=conn), patch("atm.blueprint._run_blueprint") as job:
+        r = client.post("/atm/items/1/blueprint")
+    assert r.status_code == 409
+    job.assert_not_called()
+    assert not conn.sqls("SET blueprint_status = 'building'")
+
+
+def test_blueprint_select_locks_row_and_treats_stale_build_as_restartable():
+    conn = FakeConn([("SELECT reference_url, blueprint", (["a", "b", "c"], [(None, None, False)]))])
+    with patch("main._db_conn", return_value=conn), patch("atm.blueprint._run_blueprint"):
+        assert client.post("/atm/items/1/blueprint").status_code == 200
+    sel = conn.sqls("SELECT reference_url, blueprint")[0][0]
+    assert "FOR UPDATE" in sel and "interval '15 minutes'" in sel
+    assert "blueprint_started_at = now()" in conn.sqls("SET blueprint_status = 'building'")[0][0]
+
+
 def test_blueprint_404_bad_section_and_section_without_blueprint():
     conn = FakeConn()
     with patch("main._db_conn", return_value=conn):
         assert client.post("/atm/items/1/blueprint", json={}).status_code == 404
         assert client.post("/atm/items/1/blueprint", json={"section": "nope"}).status_code == 400
-    conn = FakeConn([("SELECT reference_url, blueprint", (["a", "b"], [(None, None)]))])
+    conn = FakeConn([("SELECT reference_url, blueprint", (["a", "b", "c"], [(None, None, False)]))])
     with patch("main._db_conn", return_value=conn):
         assert client.post("/atm/items/1/blueprint", json={"section": "hook"}).status_code == 400
 

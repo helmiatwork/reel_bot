@@ -18,7 +18,6 @@ export default defineConfig({
       '/dash': 'http://localhost:8000',
       '/pipeline': 'http://localhost:8000',
       '/clips': 'http://localhost:8000',
-      '/snoop': 'http://localhost:8000',
       '/youtube': 'http://localhost:8000',
       '/analyze': 'http://localhost:8000',
       '/analytics': 'http://localhost:8000',

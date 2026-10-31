@@ -147,25 +147,46 @@ def get_item(item_id: int):
         conn.close()
 
 
+def _blueprint_shape_ok(bp: dict) -> bool:
+    """Cheap isinstance guard so the UI/packager never trip on a malformed hand-edit (not full validation)."""
+    def dicts(v):
+        return isinstance(v, list) and all(isinstance(x, dict) for x in v)
+    audio = bp.get("audio")
+    if audio is not None and not isinstance(audio, dict):
+        return False
+    narration = bp.get("narration")
+    if narration is not None and not (isinstance(narration, dict) and (narration.get("beats") is None or dicts(narration["beats"]))):
+        return False
+    return bp.get("shots") is None or dicts(bp["shots"])
+
+
 @router.patch("/items/{item_id}")
 def patch_item(item_id: int, body: ItemPatch):
     import main
     if body.status is not None and body.status not in STATUSES:
         raise HTTPException(status_code=422, detail=f"status must be one of {list(STATUSES)}")
+    if body.blueprint is not None and not _blueprint_shape_ok(body.blueprint):
+        raise HTTPException(status_code=400, detail="blueprint tidak valid: audio, narration.beats, shots salah bentuk")
     sets, vals = [], []
     # published_url wins over an explicit status: it always means "posted"
     status = "posted" if body.published_url is not None else body.status
-    for col, v in (("title", body.title), ("stage", status), ("scheduled_at", body.scheduled_at),
+    for col, v in (("title", body.title), ("stage", status),
                    ("voice_mode", body.voice_mode), ("format", body.format), ("niche", body.niche)):
         if v is not None:
             sets.append(f"{col} = %s")
             vals.append(v)
+    if "scheduled_at" in body.model_fields_set:  # explicit null clears; a new time re-arms reminders
+        sets += ["scheduled_at = %s", "reminded_d1_at = NULL", "reminded_d0_at = NULL"]
+        vals.append(body.scheduled_at)
     if body.blueprint is not None:
         sets += ["blueprint = %s::jsonb", "blueprint_version = blueprint_version + 1"]
         vals.append(json.dumps(body.blueprint))
     if body.published_url is not None:
         sets += ["published_url = %s", "published_at = COALESCE(published_at, now())"]
-        vals.append(main._validate_source_url(body.published_url.strip()))
+        url = main._validate_source_url(body.published_url.strip())
+        if main._detect_platform(url) != "youtube":
+            raise HTTPException(status_code=400, detail="Hanya URL YouTube")
+        vals.append(url)
     if not sets:
         raise HTTPException(status_code=400, detail="no fields to update")
     conn = _conn()

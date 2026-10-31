@@ -3104,6 +3104,7 @@ def _fetch_transcript(youtube_url: str) -> list:
     import subprocess
     try:
         env = os.environ.copy()
+        env.pop("YTDLP_COOKIES_FILE", None)  # an inherited login cookie must never reach the anonymous fetch
         scrape_f = _scrape_cookie_file("youtube")  # scrape-role only; avoids HTTP 429 on anonymous transcript fetches
         if scrape_f:
             env["YTDLP_COOKIES_FILE"] = str(scrape_f)

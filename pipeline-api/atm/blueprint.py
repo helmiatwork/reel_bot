@@ -274,11 +274,16 @@ def create_blueprint(item_id: int, background: BackgroundTasks, body: Optional[B
         raise HTTPException(status_code=503, detail="db unavailable")
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT reference_url, blueprint FROM content_items WHERE id = %s", (item_id,))
+            # FOR UPDATE: two concurrent POSTs must not both pass the "already building" check
+            cur.execute("SELECT reference_url, blueprint, "
+                        "(blueprint_status = 'building' AND blueprint_started_at > now() - interval '15 minutes') "
+                        "FROM content_items WHERE id = %s FOR UPDATE", (item_id,))
             row = cur.fetchone()
             if not row:
                 raise HTTPException(status_code=404, detail="item not found")
-            url, existing = row
+            url, existing, building = row
+            if building:  # a build running > 15 min (or with no start time) counts as crashed and may restart
+                raise HTTPException(status_code=409, detail="blueprint masih dibuat")
             if section and not existing:
                 raise HTTPException(status_code=400, detail="buat blueprint lengkap dulu sebelum membuat ulang satu bagian")
             if url:
@@ -286,7 +291,7 @@ def create_blueprint(item_id: int, background: BackgroundTasks, body: Optional[B
                 if not cur.fetchone():
                     raise HTTPException(status_code=409, detail="Referensi belum dianalisa")
             cur.execute("UPDATE content_items SET blueprint_status = 'building', blueprint_error = NULL, "
-                        "updated_at = now() WHERE id = %s", (item_id,))
+                        "blueprint_started_at = now(), updated_at = now() WHERE id = %s", (item_id,))
         conn.commit()
     finally:
         conn.close()

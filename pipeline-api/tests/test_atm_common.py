@@ -69,6 +69,15 @@ def test_init_maps_legacy_stages_and_is_additive():
     assert conn.commits == 1 and conn.closed
 
 
+def test_init_creates_content_items_before_any_alter():
+    conn = FakeConn()
+    with patch("main._db_conn", return_value=conn):
+        init_atm_db()
+    first = conn.log[0][0]
+    assert first.startswith("CREATE TABLE IF NOT EXISTS content_items") and "DEFAULT 'idea'" in first
+    assert conn.log[1][0].startswith("ALTER TABLE content_items")
+
+
 def test_init_without_db_is_noop():
     with patch("main._db_conn", return_value=None):
         init_atm_db()

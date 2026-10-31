@@ -117,6 +117,18 @@ def test_evaluate_round_increments():
     job.assert_called_once_with(41, 7, 3)
 
 
+def test_evaluate_marks_stale_building_error_before_409_check():
+    conn = FakeConn([("SELECT draft_video_path", (["d"], [("p",)])),
+                     ("SELECT COALESCE(MAX(round)", (["m"], [(1,)])),
+                     ("INSERT INTO content_evaluations", (["id"], [(9,)]))])
+    with patch("main._db_conn", return_value=conn), patch("atm.evaluate._run_evaluation"):
+        assert client.post("/atm/items/7/evaluate").status_code == 200
+    stale = conn.sqls("SET status = 'error'")[0][0]
+    assert "interval '15 minutes'" in stale and "created_at <=" in stale
+    assert conn.log.index(next(x for x in conn.log if "SET status = 'error'" in x[0])) < \
+        conn.log.index(next(x for x in conn.log if "SELECT 1 FROM content_evaluations" in x[0]))
+
+
 def test_evaluate_conflicts_409():
     running = FakeConn([("SELECT draft_video_path", (["d"], [("p",)])), ("status = 'building'", (["x"], [(1,)]))])
     with patch("main._db_conn", return_value=running):
@@ -261,3 +273,19 @@ def test_notes_saved_and_validated():
 def test_notes_missing_evaluation_404():
     with patch("main._db_conn", return_value=FakeConn()):
         assert client.patch("/atm/evaluations/5/notes", json={"notes": []}).status_code == 404
+
+
+def test_evaluate_frames_missing_bridge_400_sets_error_not_ready(tmp_path):
+    """Bridge answers 400 frames_missing -> run_claude returns None -> row ends 'error', never 'ready'."""
+    conn, frames = _job_env(tmp_path, "")
+    resp = MagicMock()
+    resp.json.return_value = {"ok": False, "error_type": "frames_missing", "error": "none of the requested frames exist"}
+    with patch("main._db_conn", return_value=conn), patch("main._REPO_ROOT", tmp_path), \
+            patch("main.ANALYZE_FRAME_DIR", str(tmp_path / "af")), \
+            patch("main._extract_frames_timed", return_value=frames), \
+            patch("atm.evaluate.transcribe", return_value=[]), patch("atm.evaluate.audio_levels", return_value={}), \
+            patch("httpx.post", return_value=resp), patch("atm.evaluate.distill_learnings") as distill:
+        evaluate._run_evaluation(41, 7, 3)
+    updates = conn.sqls("UPDATE content_evaluations")
+    assert len(updates) == 1 and "status = 'error'" in updates[0][0] and "status = 'ready'" not in updates[0][0]
+    distill.assert_not_called()

@@ -213,6 +213,10 @@ def _run_claude(prompt: str, frame_paths: list, model: str, timeout_s: int,
             log.error("claude timed out after %ds", timeout_s)
             return {"ok": False, "error": f"claude timed out after {timeout_s}s",
                     "error_type": "timeout"}
+        except OSError as exc:  # e.g. FileNotFoundError when CLAUDE_BIN is missing
+            log.error("could not start claude: %s", exc)
+            return {"ok": False, "error": f"could not start claude: {exc}",
+                    "error_type": "claude_error"}
 
     stdout = proc.stdout or ""
     stderr = proc.stderr or ""
@@ -325,6 +329,11 @@ class BridgeHandler(http.server.BaseHTTPRequestHandler):
             return
 
         frame_paths = _resolve_frames(frames, subdir=subdir)
+        if frames and not frame_paths:
+            # Never silently fall back to a text-only run: the caller expects vision.
+            self._send_json(400, {"ok": False, "error_type": "frames_missing",
+                                  "error": "none of the requested frames exist"})
+            return
         result = _run_claude(prompt, frame_paths, model, timeout_s, effort)
 
         status_code = 200 if result.get("ok") else 502

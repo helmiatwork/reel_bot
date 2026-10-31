@@ -247,6 +247,12 @@ class TestClaudeRunSuccess(unittest.TestCase):
         self.assertFalse(result["ok"])
         self.assertEqual(result.get("error_type"), "timeout")
 
+    def test_missing_claude_binary_returns_json_error(self):
+        with patch("subprocess.run", side_effect=FileNotFoundError("claude")):
+            result = claude_bridge._run_claude("hi", [], "claude-sonnet-5-5", 5)
+        self.assertFalse(result["ok"])
+        self.assertEqual(result.get("error_type"), "claude_error")
+
     def test_frames_appended_to_prompt(self):
         """Frame paths must be appended to the final prompt sent to claude."""
         with patch("subprocess.run", return_value=_completed(_GOOD_CLAUDE_JSON)) as mock_run:
@@ -355,6 +361,31 @@ class TestHealthEndpoint(unittest.TestCase):
             handler.do_POST()
         status, payload = captured[0]
         self.assertEqual(status, 429)
+
+    def _post_run(self, req, resolved):
+        body = json.dumps(req).encode()
+        handler = self._make_request("POST", "/run")
+        handler.headers = {"Content-Length": str(len(body))}
+        handler.rfile = io.BytesIO(body)
+        captured = []
+        handler._send_json = lambda status, payload: captured.append((status, payload))
+        with patch.object(claude_bridge, "_resolve_frames", return_value=resolved), \
+             patch.object(claude_bridge, "_run_claude",
+                          return_value={"ok": True, "result": "{}", "model": "x"}) as run:
+            handler.do_POST()
+        return captured[0], run
+
+    def test_post_run_frames_requested_none_resolved_returns_400(self):
+        (status, payload), run = self._post_run({"prompt": "p", "frames": ["a.jpg"]}, [])
+        self.assertEqual(status, 400)
+        self.assertEqual(payload["error_type"], "frames_missing")
+        self.assertFalse(payload["ok"])
+        run.assert_not_called()
+
+    def test_post_run_frames_resolved_runs_claude(self):
+        (status, _), run = self._post_run({"prompt": "p", "frames": ["a.jpg"]}, ["/x/a.jpg"])
+        self.assertEqual(status, 200)
+        run.assert_called_once()
 
     def test_post_run_success_returns_200(self):
         body = json.dumps({"prompt": "analyze", "frames": []}).encode()

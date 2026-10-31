@@ -12,9 +12,9 @@ OUT = MagicMock(returncode=0, stdout=json.dumps({"segments": [{"start": 0, "end"
 
 
 def _run(scrape):
-    with patch.dict(os.environ, {}, clear=False), patch("main._scrape_cookie_file", return_value=scrape) as sc, \
-            patch("subprocess.run", return_value=OUT) as run:
-        os.environ.pop("YTDLP_COOKIES_FILE", None)
+    # the var is inherited from the host env: _fetch_transcript itself must drop it
+    with patch.dict(os.environ, {"YTDLP_COOKIES_FILE": "/tmp/login_cookies.txt"}), \
+            patch("main._scrape_cookie_file", return_value=scrape) as sc, patch("subprocess.run", return_value=OUT) as run:
         segs = main._fetch_transcript("https://www.youtube.com/watch?v=abc")
     sc.assert_called_once_with("youtube")
     return segs, run.call_args.kwargs["env"]

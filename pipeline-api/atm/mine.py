@@ -40,7 +40,7 @@ def channel_shorts_url(raw: str) -> str:
 
 def _mine(shorts_url: str, limit: int) -> dict:
     scan = min(max(limit * 3, 60), 150)  # wider than `limit` so older hits still make "top by views"
-    cmd = [ytdlp_bin(), "--no-cookies", "--flat-playlist", "-J", "--playlist-end", str(scan), "--", shorts_url]
+    cmd = [ytdlp_bin(), "--ignore-config", "--no-cookies", "--flat-playlist", "-J", "--playlist-end", str(scan), "--", shorts_url]
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
         data = json.loads(proc.stdout) if proc.returncode == 0 else None

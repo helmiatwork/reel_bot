@@ -177,7 +177,7 @@ def test_fetch_public_stats_uses_no_cookies():
     with patch("atm.monitor.subprocess.run", return_value=proc) as run:
         assert monitor.fetch_public_stats("https://youtu.be/abc") == {"views": 12, "likes": 3, "comments": 1}
     argv = run.call_args.args[0]
-    assert "--no-cookies" in argv and not any(a.startswith("--cookies") for a in argv)
+    assert "--ignore-config" in argv and "--no-cookies" in argv and not any(a.startswith("--cookies") for a in argv)
     assert run.call_args.kwargs["timeout"] == 60 and argv[-2:] == ["--", "https://youtu.be/abc"]
 
 

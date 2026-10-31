@@ -22,7 +22,7 @@ if [ -z "$ANALYZE_FRAME_DIR" ]; then
 fi
 export ANALYZE_FRAME_DIR
 export CLAUDE_BRIDGE_PORT="${CLAUDE_BRIDGE_PORT:-9999}"
-# CLAUDE_BIN defaults inside claude_bridge.py to the nodenv path; override here if needed.
+# CLAUDE_BIN defaults inside claude_bridge.py to `claude` found on PATH; override here if needed.
 
 # Pure-stdlib bridge — system python3 is sufficient and stable under launchd.
 PYTHON_BIN="${PYTHON_BIN:-/usr/bin/python3}"

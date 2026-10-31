@@ -47,7 +47,6 @@ These are the settings that differ from Docker and MUST be right natively:
 
 - **Telegram bot**: openclaw long-polls Telegram (`getUpdates`, no webhook/ngrok). Message → openclaw agent (deepseek-v4-pro via cliproxy→sumopod) → reply. Bot = @HReelBot.
 - **Clipper** (`/clips/find-claude`): fetch transcript (yt_pipeline, native) → `claude -p` Sonnet via bridge → ranked clips (each has `rank`; one `recommended:true`). Needs a captioned video + `claude` logged in.
-- **Snoop** (`/snoop/*` + n8n `n8n/workflows/snoop.json`): daily 08:00 → for each watched channel, detect new upload → auto-run Clipper → store results (top clip recommended). Add targets in the Snoop dashboard page; import the n8n workflow once to arm the schedule.
 
 ## 5. AI operator prompt (paste into an agent)
 
@@ -67,6 +66,5 @@ Rules:
   (Node 22), and the claude bridge, using the exact commands in §1. Then confirm 6/6 live.
 - Secrets live in .env / ~/.openclaw / cliproxy/config.yaml (gitignored) — never commit them.
 
-When asked to add a watched channel: POST /snoop/targets {"channel":"@handle-or-url"}.
 When asked to clip a video: POST /clips/find-claude {"youtube_url":"..."}.
 ```

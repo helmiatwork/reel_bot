@@ -33,7 +33,7 @@ def test_mine_sorts_by_views_limits_and_never_sends_cookies():
     assert body["videos"][0]["url"] == "https://www.youtube.com/shorts/bbbbbbbbbbb"
     assert body["channel"] == {"name": "Kucing TV", "url": "https://www.youtube.com/channel/UC1", "followers": 900}
     argv = run.call_args.args[0]
-    assert "--no-cookies" in argv and not any(a.startswith("--cookies") for a in argv)
+    assert "--ignore-config" in argv and "--no-cookies" in argv and not any(a.startswith("--cookies") for a in argv)
     assert argv[argv.index("--playlist-end") + 1] == "60" and argv[-2:] == ["--", "https://www.youtube.com/@kucingtv/shorts"]
 
 
