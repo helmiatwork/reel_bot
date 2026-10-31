@@ -34,7 +34,15 @@ def test_mine_sorts_by_views_limits_and_never_sends_cookies():
     assert body["channel"] == {"name": "Kucing TV", "url": "https://www.youtube.com/channel/UC1", "followers": 900}
     argv = run.call_args.args[0]
     assert "--no-cookies" in argv and not any(a.startswith("--cookies") for a in argv)
-    assert argv[argv.index("--playlist-end") + 1] == "4" and argv[-2:] == ["--", "https://www.youtube.com/@kucingtv/shorts"]
+    assert argv[argv.index("--playlist-end") + 1] == "60" and argv[-2:] == ["--", "https://www.youtube.com/@kucingtv/shorts"]
+
+
+def test_mine_scan_window_grows_with_limit_and_is_capped():
+    for limit, expected in ((10, "60"), (30, "90"), (50, "150")):
+        with patch("atm.mine.subprocess.run", return_value=_proc()) as run:
+            client.post("/atm/mine", json={"channel_url": "https://www.youtube.com/@kucingtv", "limit": limit})
+        argv = run.call_args.args[0]
+        assert argv[argv.index("--playlist-end") + 1] == expected
 
 
 def test_mine_rejects_non_channel_urls_and_bad_limit():

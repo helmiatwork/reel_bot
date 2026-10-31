@@ -43,7 +43,7 @@
   async function load(id = itemId) {
     if (!id) { item = null; return }
     const r = await api.atmItem(id)
-    if (r.status === 404) { notFound = true; item = null; return }
+    if (r.status === 404) { notFound = true; item = null; atmItemId.set(null); return } // stale selection: forget it
     if (!r.ok) return
     notFound = false
     item = r.data
@@ -338,6 +338,15 @@
               <p class="mut">{c.why_ctr}</p>
             </div>
           {/each}
+          {#if bp.thumbnail?.cover_frame}
+            {@const cf = bp.thumbnail.cover_frame}
+            <div class="concept">
+              <b>{$_('atm.cover_frame')}</b>
+              <p>{$_('atm.cover_shot')}: <b>{cf.shot}</b></p>
+              <p>{$_('atm.cover_moment')}: {cf.moment}</p>
+              <p>{$_('atm.overlay')}: <b>{cf.overlay_text}</b> <button class="link" onclick={() => copy(cf.overlay_text)}>{$_('atm.copy')}</button></p>
+            </div>
+          {/if}
           <ul>{#each bp.thumbnail?.rules || [] as r}<li>{r}</li>{/each}</ul>
         {:else}<div class="mut">{$_('atm.no_blueprint')}</div>{/if}
       </div>
