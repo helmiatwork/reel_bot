@@ -51,9 +51,9 @@ FRAME_DIR = Path(
 DEFAULT_MODEL = "claude-sonnet-5-5"
 # Owner rule (2026-10-31): only the 5.5 generation, whatever a caller or .env asks for.
 ALLOWED_MODELS = {"claude-haiku-5-5", "claude-sonnet-5-5", "claude-opus-5-5"}
-# Owner rule (2026-10-31): Haiku runs at high effort, Sonnet at medium (token saving),
+# Owner rule (2026-10-31): Haiku runs at high effort, Sonnet at low (token saving),
 # unless the caller asks for a specific effort.
-DEFAULT_EFFORT = {"claude-haiku-5-5": "high", "claude-sonnet-5-5": "medium"}
+DEFAULT_EFFORT = {"claude-haiku-5-5": "high", "claude-sonnet-5-5": "low"}
 DEFAULT_TIMEOUT = 180
 
 logging.basicConfig(

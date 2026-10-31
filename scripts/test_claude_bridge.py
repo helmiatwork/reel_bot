@@ -545,7 +545,7 @@ class TestSubdirHTTPHandler(unittest.TestCase):
         self.assertEqual(captured[0][0], 400)
 
     def test_default_effort_per_model(self):
-        for model, want in (("claude-haiku-5-5", "high"), ("claude-sonnet-5-5", "medium"), ("claude-opus-5-5", None)):
+        for model, want in (("claude-haiku-5-5", "high"), ("claude-sonnet-5-5", "low"), ("claude-opus-5-5", None)):
             handler, captured = self._make_post_handler({"prompt": "analyze", "frames": [], "model": model})
             with patch.object(claude_bridge, "_run_claude",
                               return_value={"ok": True, "result": "{}", "cost_usd": 0.0, "model": "x"}) as run:
