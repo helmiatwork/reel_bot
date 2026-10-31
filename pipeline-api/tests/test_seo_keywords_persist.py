@@ -1,14 +1,14 @@
 """SEO analyze persists its keywords into the keywords table, which ATM blueprints read by niche."""
 import sys
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from main import app  # noqa: E402
+from main import app, _seo_trends  # noqa: E402
 from _atm_fakes import FakeConn  # noqa: E402
 
 client = TestClient(app, raise_server_exceptions=False)
@@ -40,6 +40,7 @@ def _inserted(conn):
 def test_analyze_persists_autocomplete_and_trends_rows_with_scores():
     conn = FakeConn()
     r, m = _analyze(conn, {"topic": "Kucing", "platform": "youtube", "niche": "kucing"})
+    assert m["trends"].call_args == call("Kucing", "youtube")
     assert r.status_code == 200
     assert _inserted(conn) == {
         ("kucing lucu", "yt_autocomplete"): ("Kucing", "global", "kucing", 60),
@@ -84,3 +85,17 @@ def test_failed_rollback_is_also_non_fatal():
 def test_no_database_skips_persist_and_returns_200():
     r, _ = _analyze(None, {"topic": "kucing", "niche": "kucing"})
     assert r.status_code == 200 and r.json()["keywords"]
+
+
+@patch("pytrends.request.TrendReq")
+def test_trends_uses_youtube_gprop_on_youtube(cls):
+    cls.return_value.related_queries.return_value = {}
+    _seo_trends("kucing", "youtube")
+    cls.return_value.build_payload.assert_called_once_with(["kucing"], timeframe="today 3-m", gprop="youtube")
+
+
+@patch("pytrends.request.TrendReq")
+def test_trends_keeps_web_payload_on_other_platforms(cls):
+    cls.return_value.related_queries.return_value = {}
+    _seo_trends("kucing", "tiktok")
+    cls.return_value.build_payload.assert_called_once_with(["kucing"], timeframe="today 3-m")

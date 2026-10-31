@@ -9287,9 +9287,9 @@ def _seo_autocomplete(seed: str, platform: str = "youtube") -> list:
     return deduped
 
 
-def _seo_trends(seed: str) -> dict:
+def _seo_trends(seed: str, platform: str = "") -> dict:
     """
-    Fetch Google Trends data for *seed* via pytrends.
+    Fetch Google Trends data for *seed* via pytrends (YouTube search when platform is youtube).
 
     Returns {related_top:[], related_rising:[], interest:[]} on success;
     the same empty-list dict on any failure (pytrends rate-limits heavily).
@@ -9299,7 +9299,8 @@ def _seo_trends(seed: str) -> dict:
     try:
         from pytrends.request import TrendReq  # type: ignore
         pt = TrendReq(hl="en-US", tz=360, timeout=(5, 15), retries=0)
-        pt.build_payload([seed], timeframe="today 3-m")
+        gprop = {"gprop": "youtube"} if platform == "youtube" else {}
+        pt.build_payload([seed], timeframe="today 3-m", **gprop)
 
         # related queries
         related = pt.related_queries()
@@ -9479,7 +9480,7 @@ def seo_analyze(req: SeoAnalyzeRequest):
     keywords = [{"term": t, "source": "autocomplete"} for t in raw_suggestions]
 
     # 2. Trends (best-effort)
-    trends = _seo_trends(seed)
+    trends = _seo_trends(seed, platform)
 
     # Fold rising trend queries into keywords list (tagged separately) — dedup
     existing_terms = {k["term"].lower() for k in keywords}
