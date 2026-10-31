@@ -1,5 +1,9 @@
 {
   "nav": {
+    "research": "Riset",
+    "analyze": "Analisa",
+    "assets": "Aset",
+    "settings": "Pengaturan",
     "overview": "Overview",
     "dashboard": "Dashboard",
     "performance": "Performance",
@@ -11,6 +15,7 @@
     "snoop": "Snoop",
     "creators": "Creators",
     "songs": "Songs",
+    "audio_clips": "Potongan Audio",
     "analysis": "Analysis",
     "formulas": "Formulas",
     "decompose": "Pecah Kompilasi",
@@ -539,6 +544,14 @@
     "request_failed": "Request gagal — cek backend running?"
   },
   "songs": {
+    "clip_title": "Potongan Audio",
+    "clip_subtitle": "Potongan audio pendek untuk konten",
+    "move_to_song": "Pindah ke Songs (lagu panjang)",
+    "move_to_clip": "Pindah ke Potongan Audio",
+    "viral_header": "Viral",
+    "viral_yes": "Viral",
+    "viral_no": "Tidak",
+    "viral_toggle": "Tandai viral / tidak",
     "title": "Songs",
     "subtitle": "Audio dari analyzed videos + imports kamu",
     "song_count": "{count} song",

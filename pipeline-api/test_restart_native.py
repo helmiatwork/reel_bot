@@ -63,15 +63,6 @@ def test_b1_path_with_space_does_not_corrupt_command():
     assert cap["kwargs"]["cwd"] == str(root)
 
 
-def test_b1_arcreel_static():
-    """arcreel command is also static — no repo root in command string."""
-    root = Path("/srv/reelbot")
-    _, cap = _call_restart_one("arcreel", root)
-    cmd_str = cap["argv"][2]
-    assert str(root) not in cmd_str
-    assert cap["kwargs"]["cwd"] == str(root)
-
-
 def test_b1_returns_restarted():
     root = Path("/tmp/reelbot")
     result, _ = _call_restart_one("cliproxy", root)
@@ -85,7 +76,6 @@ if __name__ == "__main__":
         test_b1_static_command_no_root_in_argv,
         test_b1_cwd_carries_root,
         test_b1_path_with_space_does_not_corrupt_command,
-        test_b1_arcreel_static,
         test_b1_returns_restarted,
     ]
     failed = 0

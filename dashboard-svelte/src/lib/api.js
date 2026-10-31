@@ -64,13 +64,14 @@ export const api = {
   research: (youtube_url, topic = '') => postJSON('/pipeline/research', { youtube_url, topic }),
 
   // Songs — audio extracted from analyzed videos + user imports
-  getSongs: (limit = 25, offset = 0, tag = '', mood = '') => {
+  getSongs: (limit = 25, offset = 0, tag = '', mood = '', kind = '') => {
     const p = new URLSearchParams({ limit, offset })
     if (tag) p.set('tag', tag)
     if (mood) p.set('mood', mood)
+    if (kind) p.set('kind', kind)
     return getJSON(`/songs?${p}`)
   },
-  songImport: async (file, { title = '', tags = [], mood = '', genre = '' } = {}) => {
+  songImport: async (file, { title = '', tags = [], mood = '', genre = '', kind = 'song' } = {}) => {
     try {
       const fd = new FormData()
       fd.append('file', file)
@@ -78,6 +79,7 @@ export const api = {
       fd.append('tags', JSON.stringify(tags))
       fd.append('mood', mood)
       fd.append('genre', genre)
+      fd.append('kind', kind)
       const r = await fetch('/songs/import', { method: 'POST', body: fd })
       return await r.json()
     } catch (e) {

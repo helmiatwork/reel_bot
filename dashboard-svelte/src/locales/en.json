@@ -1,5 +1,9 @@
 {
   "nav": {
+    "research": "Research",
+    "analyze": "Analyze",
+    "assets": "Assets",
+    "settings": "Settings",
     "overview": "Overview",
     "dashboard": "Dashboard",
     "performance": "Performance",
@@ -11,6 +15,7 @@
     "snoop": "Snoop",
     "creators": "Creators",
     "songs": "Songs",
+    "audio_clips": "Audio Clips",
     "analysis": "Analysis",
     "formulas": "Formulas",
     "decompose": "Decompose",
@@ -539,6 +544,14 @@
     "request_failed": "Request failed — is the backend running?"
   },
   "songs": {
+    "clip_title": "Audio Clips",
+    "clip_subtitle": "Short audio cuts for content",
+    "move_to_song": "Move to Songs (long tracks)",
+    "move_to_clip": "Move to Audio Clips",
+    "viral_header": "Viral",
+    "viral_yes": "Viral",
+    "viral_no": "No",
+    "viral_toggle": "Mark viral / not viral",
     "title": "Songs",
     "subtitle": "Audio from analyzed videos + your imports",
     "song_count": "{count} song",

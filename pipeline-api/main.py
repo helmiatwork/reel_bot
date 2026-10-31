@@ -20,7 +20,7 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks, Header, Depends, Up
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Literal
 
 # ── Repo-relative paths (native + docker compatible) ──────────────────────────
 _REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -254,11 +254,9 @@ async def dash_services():
     # All services now use localhost for native execution (no Docker hostnames).
     checks = [
         ("postgres", 5432, None),
-        ("openclaw", 18789, "http://localhost:18789"),
-        ("n8n", 5678, "http://localhost:5678/healthz"),
         ("cliproxy", 8317, "http://localhost:8317/v1/models"),
+        ("claude-bridge", 9999, "http://localhost:9999/health"),
         ("pipeline-api", 8000, "http://localhost:8000/health"),
-        ("arcreel", 1241, "http://localhost:1241"),
     ]
     # Concurrent probes instead of sequential
     out = await asyncio.gather(*[_probe_service(name, port, url) for name, port, url in checks])
@@ -267,18 +265,17 @@ async def dash_services():
 
 # ── Service restart endpoints (native process restart) ─────────────────────────
 # Allowlist of restartable services (deliberately excludes pipeline-api itself).
-_RESTARTABLE_SERVICES = {"postgres", "openclaw", "cliproxy", "n8n", "arcreel"}
+# openclaw / n8n / arcreel dropped: they only served the hidden agents, publish and render features.
+_RESTARTABLE_SERVICES = {"postgres", "cliproxy", "claude-bridge"}
 
 # Map service name → (pkill pattern, restart command)
 # Used to find and restart the native process.
-# ponytail: postgres & n8n require complex stateful setup (DB dirs, env vars);
+# ponytail: postgres & claude-bridge (launchd) have their own setup;
 # returning unsupported_native rather than breaking them on restart attempt.
 _SERVICE_RESTART_MAP = {
     "postgres": None,  # unsupported_native: complex FS/env setup
-    "openclaw": ("openclaw gateway", "openclaw gateway --port 18789"),
     "cliproxy": ("cli-proxy-api", "exec ./data/bin/cli-proxy-api -config ./cliproxy/config.yaml"),
-    "arcreel": ("uvicorn server.app:app.*1241", "cd data/arcreel && source .venv/bin/activate && exec uvicorn server.app:app --host 0.0.0.0 --port 1241"),
-    "n8n": None,  # unsupported_native: requires Docker or complex Node env
+    "claude-bridge": None,  # unsupported_native: managed by launchd (com.reelbot.claude-bridge)
 }
 
 
@@ -5338,6 +5335,9 @@ def _songs_init_db():
             for col_def in [
                 "bpm REAL", "music_key TEXT", "energy REAL",
                 "mood TEXT", "genre TEXT", "tags TEXT", "source TEXT",
+                "is_viral BOOLEAN NOT NULL DEFAULT false",
+                # 'song' = long track, 'clip' = short audio cut (own menu in the dashboard)
+                "kind TEXT NOT NULL DEFAULT 'song'",
             ]:
                 cur.execute(
                     f"ALTER TABLE songs ADD COLUMN IF NOT EXISTS {col_def}"
@@ -8923,9 +8923,10 @@ def list_songs(
     mood: Optional[str] = None,
     min_bpm: Optional[float] = None,
     max_bpm: Optional[float] = None,
+    kind: Optional[str] = None,
 ):
     """
-    List songs with pagination and optional filters (tag, mood, min_bpm, max_bpm).
+    List songs with pagination and optional filters (tag, mood, min_bpm, max_bpm, kind).
     Returns list ordered by created_at DESC (most recent first).
     On DB error, returns empty list gracefully.
     """
@@ -8951,6 +8952,9 @@ def list_songs(
             if max_bpm is not None:
                 filters.append("bpm <= %s")
                 params.append(max_bpm)
+            if kind:
+                filters.append("kind = %s")
+                params.append(kind)
 
             where = ("WHERE " + " AND ".join(filters)) if filters else ""
 
@@ -8960,7 +8964,7 @@ def list_songs(
             cur.execute(
                 f"""
                 SELECT id, youtube_url, title, audio_path, duration_sec,
-                       bpm, music_key, energy, mood, genre, tags, source, created_at
+                       bpm, music_key, energy, mood, genre, tags, source, created_at, is_viral, kind
                 FROM songs {where}
                 ORDER BY created_at DESC
                 LIMIT %s OFFSET %s
@@ -8983,6 +8987,8 @@ def list_songs(
                     "tags": json.loads(row[10]) if row[10] else [],
                     "source": row[11],
                     "created_at": row[12],
+                    "is_viral": row[13],
+                    "kind": row[14],
                 }
                 for row in rows
             ]
@@ -9042,12 +9048,14 @@ class SongUpdateRequest(BaseModel):
     mood: Optional[str] = None
     genre: Optional[str] = None
     tags: Optional[List[str]] = None
+    is_viral: Optional[bool] = None
+    kind: Optional[Literal["song", "clip"]] = None
 
 
 @app.patch("/songs/{song_id}")
 def update_song(song_id: int, req: SongUpdateRequest):
     """
-    Partial update of song metadata: title, mood, genre, tags.
+    Partial update of song metadata: title, mood, genre, tags, is_viral, kind.
     All fields optional — only provided fields are updated.
     Returns the updated row.
     """
@@ -9060,6 +9068,10 @@ def update_song(song_id: int, req: SongUpdateRequest):
         fields.append("genre = %s"); params.append(req.genre)
     if req.tags is not None:
         fields.append("tags = %s"); params.append(json.dumps(req.tags, ensure_ascii=False))
+    if req.is_viral is not None:
+        fields.append("is_viral = %s"); params.append(req.is_viral)
+    if req.kind is not None:
+        fields.append("kind = %s"); params.append(req.kind)
 
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
@@ -9074,7 +9086,7 @@ def update_song(song_id: int, req: SongUpdateRequest):
             cur.execute(
                 f"UPDATE songs SET {', '.join(fields)} WHERE id = %s "
                 f"RETURNING id, youtube_url, title, audio_path, duration_sec, "
-                f"bpm, music_key, energy, mood, genre, tags, source, created_at",
+                f"bpm, music_key, energy, mood, genre, tags, source, created_at, is_viral, kind",
                 params,
             )
             row = cur.fetchone()
@@ -9087,7 +9099,8 @@ def update_song(song_id: int, req: SongUpdateRequest):
             "bpm": row[5], "music_key": row[6], "energy": row[7],
             "mood": row[8], "genre": row[9],
             "tags": json.loads(row[10]) if row[10] else [],
-            "source": row[11], "created_at": row[12],
+            "source": row[11], "created_at": row[12], "is_viral": row[13],
+            "kind": row[14],
         })
     except HTTPException:
         raise
@@ -9097,6 +9110,8 @@ def update_song(song_id: int, req: SongUpdateRequest):
     finally:
         conn.close()
 
+
+_SONG_KINDS = ("song", "clip")
 
 _SONG_IMPORT_AUDIO_EXTS = {".mp3", ".wav", ".m4a", ".aac", ".ogg"}
 _SONG_IMPORT_VIDEO_EXTS = {".mp4", ".mov", ".webm", ".mkv", ".m4v"}
@@ -9115,6 +9130,7 @@ async def import_song(
     tags: str = Form(default="[]"),
     mood: str = Form(default=""),
     genre: str = Form(default=""),
+    kind: str = Form(default="song"),
 ):
     """
     Import a user-supplied audio or video file into the songs library.
@@ -9124,6 +9140,8 @@ async def import_song(
     Runs librosa auto-analysis for BPM/key/energy; tags/mood/genre are user-supplied.
     Stored as data/songs/imported/<uuid>.mp3 (audio only).
     """
+    if kind not in _SONG_KINDS:
+        raise HTTPException(status_code=400, detail=f"kind must be one of {', '.join(_SONG_KINDS)}")
     original_name = file.filename or ""
     ext = Path(original_name).suffix.lower()
     if ext not in _SONG_IMPORT_ALLOWED_EXTS:
@@ -9208,16 +9226,17 @@ async def import_song(
             cur.execute(
                 """INSERT INTO songs
                    (title, audio_path, duration_sec, bpm, music_key, energy,
-                    mood, genre, tags, source)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    mood, genre, tags, source, kind)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                    RETURNING id, youtube_url, title, audio_path, duration_sec,
-                             bpm, music_key, energy, mood, genre, tags, source, created_at""",
+                             bpm, music_key, energy, mood, genre, tags, source, created_at,
+                             is_viral, kind""",
                 (
                     clean_title, str(dest_path), duration_int,
                     features.get("bpm"), features.get("music_key"), features.get("energy"),
                     clean_mood, clean_genre,
                     json.dumps(merged_tags, ensure_ascii=False),
-                    "import",
+                    "import", kind,
                 ),
             )
             row = cur.fetchone()
@@ -9236,6 +9255,7 @@ async def import_song(
         "mood": row[8], "genre": row[9],
         "tags": json.loads(row[10]) if row[10] else [],
         "source": row[11], "created_at": row[12],
+        "is_viral": row[13], "kind": row[14],
     })
 
 
