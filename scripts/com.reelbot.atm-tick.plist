@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  launchd agent: calls POST /atm/cron/tick every 15 minutes (Telegram reminders, monitoring).
+  Same macOS TCC caveat as com.reelbot.claude-bridge.plist (curl itself is fine; no repo files are read).
+
+  If PIPELINE_API_KEY is set on pipeline-api, the tick is gated: add these two lines to ProgramArguments
+  right before the URL (curl flag and header value as separate <string> entries):
+      <string>-H</string>
+      <string>X-API-Key: YOUR_KEY</string>
+
+  Install (per-user):
+    cp scripts/com.reelbot.atm-tick.plist ~/Library/LaunchAgents/
+    launchctl load -w ~/Library/LaunchAgents/com.reelbot.atm-tick.plist
+  Logs: tail -f /tmp/atm_tick.out /tmp/atm_tick.err
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.reelbot.atm-tick</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/curl</string>
+        <string>-s</string>
+        <string>-X</string>
+        <string>POST</string>
+        <string>http://localhost:8000/atm/cron/tick</string>
+    </array>
+
+    <key>StartInterval</key>
+    <integer>900</integer>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/atm_tick.out</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/atm_tick.err</string>
+</dict>
+</plist>
