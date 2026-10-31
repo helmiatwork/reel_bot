@@ -175,9 +175,12 @@ def patch_item(item_id: int, body: ItemPatch):
         if v is not None:
             sets.append(f"{col} = %s")
             vals.append(v)
-    if "scheduled_at" in body.model_fields_set:  # explicit null clears; a new time re-arms reminders
-        sets += ["scheduled_at = %s", "reminded_d1_at = NULL", "reminded_d0_at = NULL"]
-        vals.append(body.scheduled_at)
+    if "scheduled_at" in body.model_fields_set:  # explicit null clears; a changed time re-arms reminders
+        # Postgres evaluates every SET expression against the old row, so the CASE sees the old scheduled_at
+        sets += ["scheduled_at = %s",
+                 "reminded_d1_at = CASE WHEN scheduled_at IS DISTINCT FROM %s THEN NULL ELSE reminded_d1_at END",
+                 "reminded_d0_at = CASE WHEN scheduled_at IS DISTINCT FROM %s THEN NULL ELSE reminded_d0_at END"]
+        vals.extend([body.scheduled_at] * 3)
     if body.blueprint is not None:
         sets += ["blueprint = %s::jsonb", "blueprint_version = blueprint_version + 1"]
         vals.append(json.dumps(body.blueprint))

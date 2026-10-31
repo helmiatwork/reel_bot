@@ -159,8 +159,10 @@ def test_patch_scheduled_at_rearms_reminders():
         r = client.patch("/atm/items/1", json={"scheduled_at": "2026-02-01T12:00:00Z"})
     assert r.status_code == 200
     sql, params = conn.sqls("UPDATE content_items")[0]
-    assert "reminded_d1_at = NULL" in sql and "reminded_d0_at = NULL" in sql
+    assert "reminded_d1_at = CASE WHEN scheduled_at IS DISTINCT FROM %s THEN NULL ELSE reminded_d1_at END" in sql
+    assert "reminded_d0_at = CASE WHEN scheduled_at IS DISTINCT FROM %s THEN NULL ELSE reminded_d0_at END" in sql
     assert params[0].isoformat().startswith("2026-02-01T12:00:00")
+    assert params[0] == params[1] == params[2]  # scheduled_at, then the two CASE comparisons
 
 
 def test_patch_scheduled_at_null_clears():
@@ -169,7 +171,7 @@ def test_patch_scheduled_at_null_clears():
         r = client.patch("/atm/items/1", json={"scheduled_at": None})
     assert r.status_code == 200
     sql, params = conn.sqls("UPDATE content_items")[0]
-    assert "scheduled_at = %s" in sql and "reminded_d1_at = NULL" in sql and params[0] is None
+    assert "scheduled_at = %s" in sql and "reminded_d1_at = CASE" in sql and params[0] is None
 
 
 def test_patch_without_scheduled_at_leaves_reminders():
