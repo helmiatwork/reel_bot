@@ -57,7 +57,7 @@ The ONE call (human): <the creative decision + your recommendation>
 - Honest: if the reference is weak (low retention_score) or unrepeatable, say the direction should diverge, and how.
 
 ## Model (config-level, set via CLIPROXY)
-Strategy needs the strongest reasoning: `claude-opus-4-8` (text-only — you work from the analysis, no frame vision needed). Fall back per CLIPROXY config.
+Strategy needs the strongest reasoning: `claude-opus-5-5` (text-only — you work from the analysis, no frame vision needed). Fall back per CLIPROXY config.
 
 ## Language
 Match user language. Indonesian → respond in Indonesian. Do NOT grammar-correct the user — just do the task.

@@ -20,7 +20,7 @@ def _make_bridge_response(result_payload: dict, ok: bool = True,
             "result": json.dumps(result_payload),
             "raw_usage": {"input_tokens": 100, "output_tokens": 50},
             "cost_usd": cost_usd,
-            "model": "claude-sonnet-4-6",
+            "model": "claude-sonnet-5-5",
         }
     else:
         payload = {"ok": False, "error": "bridge_test_error"}
@@ -101,7 +101,7 @@ class TestAnalyzeClaudeSuccess:
         assert data["tags"] == _SAMPLE_RESULT["tags"]
 
     def test_default_model_used_when_not_specified(self, client):
-        """When no model is given the endpoint defaults to claude-sonnet-4-6."""
+        """When no model is given the endpoint defaults to claude-sonnet-5-5."""
         import main as m
         tc, _ = client
         bridge_mock = _make_bridge_response(_SAMPLE_RESULT)
@@ -111,7 +111,7 @@ class TestAnalyzeClaudeSuccess:
             })
         call_kwargs = mock_post.call_args
         sent_json = call_kwargs[1]["json"] if "json" in call_kwargs[1] else call_kwargs[0][1]
-        assert sent_json.get("model") == "claude-sonnet-4-6"
+        assert sent_json.get("model") == "claude-sonnet-5-5"
 
     def test_custom_model_forwarded(self, client):
         tc, _ = client
@@ -119,10 +119,10 @@ class TestAnalyzeClaudeSuccess:
         with patch("httpx.post", return_value=bridge_mock) as mock_post:
             tc.post("/analyze/claude", json={
                 "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                "model": "claude-opus-4-5",
+                "model": "claude-opus-5-5",
             })
         sent_json = mock_post.call_args[1]["json"]
-        assert sent_json.get("model") == "claude-opus-4-5"
+        assert sent_json.get("model") == "claude-opus-5-5"
 
 
 # ── Intent safety (prompt injection guard) ───────────────────────────────────
@@ -214,7 +214,7 @@ class TestFencedJsonParsing:
             "result": fenced,
             "raw_usage": {},
             "cost_usd": 0.01,
-            "model": "claude-sonnet-4-6",
+            "model": "claude-sonnet-5-5",
         }
         with patch("httpx.post", return_value=mock_resp):
             r = tc.post("/analyze/claude", json={
@@ -233,7 +233,7 @@ class TestFencedJsonParsing:
             "result": fenced,
             "raw_usage": {},
             "cost_usd": 0.01,
-            "model": "claude-sonnet-4-6",
+            "model": "claude-sonnet-5-5",
         }
         with patch("httpx.post", return_value=mock_resp):
             r = tc.post("/analyze/claude", json={
@@ -252,7 +252,7 @@ class TestFencedJsonParsing:
             "result": prose,
             "raw_usage": {},
             "cost_usd": 0.01,
-            "model": "claude-sonnet-4-6",
+            "model": "claude-sonnet-5-5",
         }
         with patch("httpx.post", return_value=mock_resp):
             r = tc.post("/analyze/claude", json={
@@ -291,7 +291,7 @@ class TestDbInsert:
         assert params[2] == _SAMPLE_RESULT["hook"]                          # hook
         assert params[3] == _SAMPLE_RESULT["structure"]                     # structure
         assert params[4] == _SAMPLE_RESULT["retention"]                     # retention
-        assert params[7] == "claude-sonnet-4-6"                            # model
+        assert params[7] == "claude-sonnet-5-5"                            # model
         # commit was called at least once (may be called multiple times for INSERT + _save_source)
         assert mock_conn.commit.called
 
@@ -377,7 +377,7 @@ class TestErrorHandling:
             "result": "this is not json at all, just plain text without any braces",
             "raw_usage": {},
             "cost_usd": 0.0,
-            "model": "claude-sonnet-4-6",
+            "model": "claude-sonnet-5-5",
         }
         with patch("httpx.post", return_value=mock_resp):
             r = tc.post("/analyze/claude", json={

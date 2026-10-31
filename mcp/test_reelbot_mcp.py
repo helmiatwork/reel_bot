@@ -143,7 +143,7 @@ def test_source_row_to_dict_nulls():
 def test_analysis_row_to_dict():
     """Test video_analysis row mapping."""
     tags_json = '["viral", "hook"]'
-    row = ("https://youtube.com/watch?v=xyz", "Curiosity gap hook", "3-part structure", ["hook", "payoff"], 8, tags_json, "claude-sonnet-4-6", 0.05)
+    row = ("https://youtube.com/watch?v=xyz", "Curiosity gap hook", "3-part structure", ["hook", "payoff"], 8, tags_json, "claude-sonnet-5-5", 0.05)
     cols = ["youtube_url", "hook", "structure", "retention", "retention_score", "tags", "model", "cost_usd"]
     result = _analysis_row_to_dict(row, cols)
 

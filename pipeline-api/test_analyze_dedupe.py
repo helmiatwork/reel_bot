@@ -24,7 +24,7 @@ def test_analyze_dedupe_cached_row():
         "story arc",  # 3: structure
         "high retention",  # 4: retention
         json.dumps(["tag1", "tag2"]),  # 5: tags (JSON string)
-        "claude-sonnet-4-6",  # 6: model
+        "claude-sonnet-5-5",  # 6: model
         0.25,  # 7: cost_usd
         datetime.now(),  # 8: created_at
     )
@@ -54,7 +54,7 @@ def test_analyze_dedupe_cached_row():
             assert data.get("structure") == "story arc"
             assert data.get("retention") == "high retention"
             assert data.get("tags") == ["tag1", "tag2"]
-            assert data.get("model") == "claude-sonnet-4-6"
+            assert data.get("model") == "claude-sonnet-5-5"
             assert data.get("cost_usd") == 0.25
 
     print("✓ test_analyze_dedupe_cached_row PASSED")
@@ -72,7 +72,7 @@ def test_analyze_dedupe_force_refresh():
         "old structure",  # 3: structure
         "old retention",  # 4: retention
         json.dumps([]),  # 5: tags
-        "claude-sonnet-4-6",  # 6: model
+        "claude-sonnet-5-5",  # 6: model
         0.10,  # 7: cost_usd
         datetime.now(),  # 8: created_at
     )

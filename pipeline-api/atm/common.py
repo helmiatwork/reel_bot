@@ -11,17 +11,23 @@ LEGACY_STAGE_MAP = {"script": "blueprint", "prep": "shoot"}
 
 ATM_MODEL = os.getenv("ATM_MODEL", "claude-sonnet-5-5")
 ATM_LIGHT_MODEL = os.getenv("ATM_LIGHT_MODEL", "claude-haiku-5-5")
+# Passed to `claude -p --effort`; empty = the model's own default.
+ATM_EFFORT = os.getenv("ATM_EFFORT", "")
+ATM_LIGHT_EFFORT = os.getenv("ATM_LIGHT_EFFORT", "")
 
 _FENCE_RE = re.compile(r"```(?:json)?\s*(.*?)```", re.S | re.I)
 
 
 def run_claude(prompt: str, *, agent: str, model: str = ATM_MODEL, frames: list | None = None,
-               subdir: str | None = None, timeout_s: int = 300) -> str | None:
+               subdir: str | None = None, timeout_s: int = 300, effort: str | None = None) -> str | None:
     """Ask claude-bridge; returns the result text, or None on transport error / ok:false."""
     import main
     payload = {"prompt": prompt, "frames": frames or [], "model": model, "timeout_s": timeout_s}
     if subdir:
         payload["subdir"] = subdir
+    effort = effort if effort is not None else (ATM_LIGHT_EFFORT if model == ATM_LIGHT_MODEL else ATM_EFFORT)
+    if effort:
+        payload["effort"] = effort
     try:
         resp = httpx.post(
             f"{main.CLAUDE_BRIDGE_URL}/run", json=payload,

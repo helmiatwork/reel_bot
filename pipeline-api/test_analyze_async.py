@@ -29,7 +29,7 @@ def test_analyze_claude_async_returns_run_id():
                 "structure": "Test structure",
                 "retention": "Good retention",
                 "tags": ["test"],
-                "model": "claude-sonnet-4-6",
+                "model": "claude-sonnet-5-5",
                 "cost_usd": 0.01,
             }
 
@@ -59,7 +59,7 @@ def test_analyze_claude_async_initial_status():
                 "structure": "Test structure",
                 "retention": "Good",
                 "tags": [],
-                "model": "claude-sonnet-4-6",
+                "model": "claude-sonnet-5-5",
                 "cost_usd": 0.01,
             }
 
@@ -157,7 +157,7 @@ def test_analyze_claude_sync_still_works():
                 "structure": "Test structure",
                 "retention": "Good",
                 "tags": [],
-                "model": "claude-sonnet-4-6",
+                "model": "claude-sonnet-5-5",
                 "cost_usd": 0.01,
                 "cached": False,
             }
@@ -289,7 +289,7 @@ def test_analyze_async_done_status_with_result():
         "structure": "Good structure",
         "retention": "High retention",
         "tags": ["viral", "engaging"],
-        "model": "claude-sonnet-4-6",
+        "model": "claude-sonnet-5-5",
         "cost_usd": 0.02,
     }
 

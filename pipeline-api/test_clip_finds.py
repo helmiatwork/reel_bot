@@ -21,7 +21,7 @@ def _make_bridge_response(clips_list: list, ok: bool = True,
             "result": json.dumps({"clips": clips_list}),
             "raw_usage": {"input_tokens": 500, "output_tokens": 200},
             "cost_usd": cost_usd,
-            "model": "claude-sonnet-4-6",
+            "model": "claude-sonnet-5-5",
         }
     else:
         payload = {"ok": False, "error": "bridge_test_error"}
@@ -199,7 +199,7 @@ class TestFindClipsJSONParsing:
             "ok": True,
             "result": "```json\n" + json.dumps({"clips": _SAMPLE_CLIPS}) + "\n```",
             "cost_usd": 0.05,
-            "model": "claude-sonnet-4-6",
+            "model": "claude-sonnet-5-5",
         }
         with patch("httpx.post", return_value=bridge_mock):
             r = client.post("/clips/find-claude", json={
@@ -215,7 +215,7 @@ class TestFindClipsJSONParsing:
             "ok": True,
             "result": json.dumps({}),  # No clips key
             "cost_usd": 0.05,
-            "model": "claude-sonnet-4-6",
+            "model": "claude-sonnet-5-5",
         }
         with patch("httpx.post", return_value=bridge_mock):
             r = client.post("/clips/find-claude", json={
@@ -231,7 +231,7 @@ class TestFindClipsJSONParsing:
             "ok": True,
             "result": "not valid json at all",
             "cost_usd": 0.05,
-            "model": "claude-sonnet-4-6",
+            "model": "claude-sonnet-5-5",
         }
         with patch("httpx.post", return_value=bridge_mock):
             r = client.post("/clips/find-claude", json={
@@ -297,7 +297,7 @@ class TestDashClipFinds:
         tc, mock_conn, mock_cursor = client_with_db
         # Mock the cursor to return some rows
         mock_cursor.fetchall.return_value = [
-            (1, "https://youtube.com/watch?v=abc", json.dumps(_SAMPLE_CLIPS), "claude-sonnet-4-6", 0.0512, "2025-06-21T10:00:00+00:00"),
+            (1, "https://youtube.com/watch?v=abc", json.dumps(_SAMPLE_CLIPS), "claude-sonnet-5-5", 0.0512, "2025-06-21T10:00:00+00:00"),
         ]
         # Create proper description mocks with name attribute
         col_names = ["id", "youtube_url", "clips", "model", "cost_usd", "created_at"]
@@ -316,14 +316,14 @@ class TestDashClipFinds:
         assert row["id"] == 1
         assert row["youtube_url"] == "https://youtube.com/watch?v=abc"
         assert isinstance(row["clips"], list)
-        assert row["model"] == "claude-sonnet-4-6"
+        assert row["model"] == "claude-sonnet-5-5"
         assert row["cost_usd"] == 0.0512
 
     def test_clips_parsed_from_jsonb(self, client_with_db):
         """clips JSONB column should be parsed to list"""
         tc, mock_conn, mock_cursor = client_with_db
         mock_cursor.fetchall.return_value = [
-            (1, "https://youtube.com/watch?v=abc", json.dumps(_SAMPLE_CLIPS), "claude-sonnet-4-6", 0.05, "2025-06-21T10:00:00+00:00"),
+            (1, "https://youtube.com/watch?v=abc", json.dumps(_SAMPLE_CLIPS), "claude-sonnet-5-5", 0.05, "2025-06-21T10:00:00+00:00"),
         ]
         col_names = ["id", "youtube_url", "clips", "model", "cost_usd", "created_at"]
         col_mocks = []

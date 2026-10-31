@@ -96,7 +96,7 @@ class TestSubprocessArgv(unittest.TestCase):
     def test_argv_list_not_shell(self):
         """subprocess.run must be called with a list argv, not a shell string."""
         with patch("subprocess.run", return_value=_completed(_GOOD_CLAUDE_JSON)) as mock_run:
-            claude_bridge._run_claude("test prompt", [], "claude-sonnet-4-6", 10)
+            claude_bridge._run_claude("test prompt", [], "claude-sonnet-5-5", 10)
         args, kwargs = mock_run.call_args
         argv = args[0]
         self.assertIsInstance(argv, list, "argv must be a list")
@@ -107,13 +107,13 @@ class TestSubprocessArgv(unittest.TestCase):
 
     def test_model_in_argv(self):
         with patch("subprocess.run", return_value=_completed(_GOOD_CLAUDE_JSON)) as mock_run:
-            claude_bridge._run_claude("test", [], "claude-opus-4-5", 10)
+            claude_bridge._run_claude("test", [], "claude-opus-5-5", 10)
         argv = mock_run.call_args[0][0]
-        self.assertIn("claude-opus-4-5", argv)
+        self.assertIn("claude-opus-5-5", argv)
 
     def test_output_format_json_in_argv(self):
         with patch("subprocess.run", return_value=_completed(_GOOD_CLAUDE_JSON)) as mock_run:
-            claude_bridge._run_claude("test", [], "claude-sonnet-4-6", 10)
+            claude_bridge._run_claude("test", [], "claude-sonnet-5-5", 10)
         argv = mock_run.call_args[0][0]
         self.assertIn("--output-format", argv)
         idx = argv.index("--output-format")
@@ -121,7 +121,7 @@ class TestSubprocessArgv(unittest.TestCase):
 
     def test_prompt_in_argv(self):
         with patch("subprocess.run", return_value=_completed(_GOOD_CLAUDE_JSON)) as mock_run:
-            claude_bridge._run_claude("my test prompt", [], "claude-sonnet-4-6", 10)
+            claude_bridge._run_claude("my test prompt", [], "claude-sonnet-5-5", 10)
         argv = mock_run.call_args[0][0]
         self.assertIn("-p", argv)
         idx = argv.index("-p")
@@ -129,7 +129,7 @@ class TestSubprocessArgv(unittest.TestCase):
 
     def test_text_only_job_gets_no_tools(self):
         with patch("subprocess.run", return_value=_completed(_GOOD_CLAUDE_JSON)) as mock_run:
-            claude_bridge._run_claude("test", [], "claude-sonnet-4-6", 10)
+            claude_bridge._run_claude("test", [], "claude-sonnet-5-5", 10)
         argv = mock_run.call_args[0][0]
         idx = argv.index("--tools")
         self.assertEqual(argv[idx + 1], "")
@@ -138,7 +138,7 @@ class TestSubprocessArgv(unittest.TestCase):
 
     def test_frame_job_read_scoped_to_frame_dir(self):
         with patch("subprocess.run", return_value=_completed(_GOOD_CLAUDE_JSON)) as mock_run:
-            claude_bridge._run_claude("test", ["/x/frame_000.jpg"], "claude-sonnet-4-6", 10)
+            claude_bridge._run_claude("test", ["/x/frame_000.jpg"], "claude-sonnet-5-5", 10)
         argv = mock_run.call_args[0][0]
         self.assertEqual(argv[argv.index("--tools") + 1], "Read")
         self.assertEqual(argv[argv.index("--allowedTools") + 1],
@@ -146,6 +146,15 @@ class TestSubprocessArgv(unittest.TestCase):
         self.assertEqual(argv[argv.index("--permission-mode") + 1], "dontAsk")
         self.assertIn("--strict-mcp-config", argv)
         self.assertEqual(argv[argv.index("--setting-sources") + 1], "")
+
+    def test_effort_flag_only_when_given(self):
+        with patch("subprocess.run", return_value=_completed(_GOOD_CLAUDE_JSON)) as mock_run:
+            claude_bridge._run_claude("t", [], "claude-haiku-5-5", 10, "high")
+        argv = mock_run.call_args[0][0]
+        self.assertEqual(argv[argv.index("--effort") + 1], "high")
+        with patch("subprocess.run", return_value=_completed(_GOOD_CLAUDE_JSON)) as mock_run:
+            claude_bridge._run_claude("t", [], "claude-haiku-5-5", 10)
+        self.assertNotIn("--effort", mock_run.call_args[0][0])
 
 
 # ── Rate-limit detection ───────────────────────────────────────────────────────
@@ -159,7 +168,7 @@ class TestRateLimitDetection(unittest.TestCase):
             "usage": {},
         })
         with patch("subprocess.run", return_value=_completed(stdout=payload)):
-            result = claude_bridge._run_claude("test", [], "claude-sonnet-4-6", 30)
+            result = claude_bridge._run_claude("test", [], "claude-sonnet-5-5", 30)
         self.assertFalse(result["ok"])
         self.assertEqual(result.get("error_type"), "rate_limit")
 
@@ -167,7 +176,7 @@ class TestRateLimitDetection(unittest.TestCase):
         with patch("subprocess.run", return_value=_completed(
             stdout="", stderr="Error: rate limit exceeded, try again", returncode=1
         )):
-            result = claude_bridge._run_claude("test", [], "claude-sonnet-4-6", 30)
+            result = claude_bridge._run_claude("test", [], "claude-sonnet-5-5", 30)
         self.assertFalse(result["ok"])
         self.assertEqual(result.get("error_type"), "rate_limit")
 
@@ -175,7 +184,7 @@ class TestRateLimitDetection(unittest.TestCase):
         with patch("subprocess.run", return_value=_completed(
             stdout="", stderr="Claude is overloaded right now", returncode=1
         )):
-            result = claude_bridge._run_claude("test", [], "claude-sonnet-4-6", 30)
+            result = claude_bridge._run_claude("test", [], "claude-sonnet-5-5", 30)
         self.assertFalse(result["ok"])
         self.assertEqual(result.get("error_type"), "rate_limit")
 
@@ -183,7 +192,7 @@ class TestRateLimitDetection(unittest.TestCase):
         with patch("subprocess.run", return_value=_completed(
             stdout="", stderr="too many requests", returncode=1
         )):
-            result = claude_bridge._run_claude("test", [], "claude-sonnet-4-6", 30)
+            result = claude_bridge._run_claude("test", [], "claude-sonnet-5-5", 30)
         self.assertFalse(result["ok"])
         self.assertEqual(result.get("error_type"), "rate_limit")
 
@@ -191,7 +200,7 @@ class TestRateLimitDetection(unittest.TestCase):
         with patch("subprocess.run", return_value=_completed(
             stdout="", stderr="Error: some other problem", returncode=1
         )):
-            result = claude_bridge._run_claude("test", [], "claude-sonnet-4-6", 30)
+            result = claude_bridge._run_claude("test", [], "claude-sonnet-5-5", 30)
         self.assertFalse(result["ok"])
         self.assertNotEqual(result.get("error_type"), "rate_limit")
 
@@ -201,23 +210,23 @@ class TestRateLimitDetection(unittest.TestCase):
 class TestClaudeRunSuccess(unittest.TestCase):
     def test_ok_true_on_success(self):
         with patch("subprocess.run", return_value=_completed(_GOOD_CLAUDE_JSON)):
-            result = claude_bridge._run_claude("hi", [], "claude-sonnet-4-6", 30)
+            result = claude_bridge._run_claude("hi", [], "claude-sonnet-5-5", 30)
         self.assertTrue(result["ok"])
 
     def test_result_extracted(self):
         with patch("subprocess.run", return_value=_completed(_GOOD_CLAUDE_JSON)):
-            result = claude_bridge._run_claude("hi", [], "claude-sonnet-4-6", 30)
+            result = claude_bridge._run_claude("hi", [], "claude-sonnet-5-5", 30)
         self.assertIn("hook", result["result"])
 
     def test_cost_usd_extracted(self):
         with patch("subprocess.run", return_value=_completed(_GOOD_CLAUDE_JSON)):
-            result = claude_bridge._run_claude("hi", [], "claude-sonnet-4-6", 30)
+            result = claude_bridge._run_claude("hi", [], "claude-sonnet-5-5", 30)
         self.assertAlmostEqual(result["cost_usd"], 0.012)
 
     def test_model_in_response(self):
         with patch("subprocess.run", return_value=_completed(_GOOD_CLAUDE_JSON)):
-            result = claude_bridge._run_claude("hi", [], "claude-sonnet-4-6", 30)
-        self.assertEqual(result["model"], "claude-sonnet-4-6")
+            result = claude_bridge._run_claude("hi", [], "claude-sonnet-5-5", 30)
+        self.assertEqual(result["model"], "claude-sonnet-5-5")
 
     def test_is_error_true_returns_failure(self):
         payload = json.dumps({
@@ -227,14 +236,14 @@ class TestClaudeRunSuccess(unittest.TestCase):
             "usage": {},
         })
         with patch("subprocess.run", return_value=_completed(payload)):
-            result = claude_bridge._run_claude("hi", [], "claude-sonnet-4-6", 30)
+            result = claude_bridge._run_claude("hi", [], "claude-sonnet-5-5", 30)
         self.assertFalse(result["ok"])
         self.assertEqual(result.get("error_type"), "claude_error")
 
     def test_timeout_returns_failure(self):
         import subprocess
         with patch("subprocess.run", side_effect=subprocess.TimeoutExpired("cmd", 5)):
-            result = claude_bridge._run_claude("hi", [], "claude-sonnet-4-6", 5)
+            result = claude_bridge._run_claude("hi", [], "claude-sonnet-5-5", 5)
         self.assertFalse(result["ok"])
         self.assertEqual(result.get("error_type"), "timeout")
 
@@ -242,7 +251,7 @@ class TestClaudeRunSuccess(unittest.TestCase):
         """Frame paths must be appended to the final prompt sent to claude."""
         with patch("subprocess.run", return_value=_completed(_GOOD_CLAUDE_JSON)) as mock_run:
             claude_bridge._run_claude("base prompt", ["/tmp/f1.jpg", "/tmp/f2.jpg"],
-                                      "claude-sonnet-4-6", 30)
+                                      "claude-sonnet-5-5", 30)
         argv = mock_run.call_args[0][0]
         idx = argv.index("-p")
         final_prompt = argv[idx + 1]
@@ -253,7 +262,7 @@ class TestClaudeRunSuccess(unittest.TestCase):
     def test_no_frames_no_appended_section(self):
         """When no frames provided, the prompt should NOT have the frame section."""
         with patch("subprocess.run", return_value=_completed(_GOOD_CLAUDE_JSON)) as mock_run:
-            claude_bridge._run_claude("clean prompt", [], "claude-sonnet-4-6", 30)
+            claude_bridge._run_claude("clean prompt", [], "claude-sonnet-5-5", 30)
         argv = mock_run.call_args[0][0]
         idx = argv.index("-p")
         final_prompt = argv[idx + 1]
@@ -518,6 +527,31 @@ class TestSubdirHTTPHandler(unittest.TestCase):
         mock_resolve.assert_called_once_with([], subdir="run-abc123")
         status, _ = captured[0]
         self.assertEqual(status, 200)
+
+    def test_old_model_rejected_400(self):
+        handler, captured = self._make_post_handler(
+            {"prompt": "analyze", "frames": [], "model": "claude-sonnet-4-6"}
+        )
+        handler.do_POST()
+        status, payload = captured[0]
+        self.assertEqual(status, 400)
+        self.assertIn("model", payload["error"])
+
+    def test_bad_effort_rejected_400(self):
+        handler, captured = self._make_post_handler(
+            {"prompt": "analyze", "frames": [], "effort": "turbo"}
+        )
+        handler.do_POST()
+        self.assertEqual(captured[0][0], 400)
+
+    def test_effort_passed_to_run_claude(self):
+        handler, captured = self._make_post_handler(
+            {"prompt": "analyze", "frames": [], "model": "claude-haiku-5-5", "effort": "high"}
+        )
+        with patch.object(claude_bridge, "_run_claude",
+                          return_value={"ok": True, "result": "{}", "cost_usd": 0.0, "model": "x"}) as run:
+            handler.do_POST()
+        self.assertEqual(run.call_args[0][4], "high")
 
     def test_dotdot_subdir_returns_400(self):
         handler, captured = self._make_post_handler(

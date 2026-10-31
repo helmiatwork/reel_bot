@@ -48,7 +48,9 @@ FRAME_DIR = Path(
         "/Users/ichigo/Documents/repo/helmi/reelbot/analyze-frames",
     )
 ).resolve()
-DEFAULT_MODEL = "claude-sonnet-4-6"
+DEFAULT_MODEL = "claude-sonnet-5-5"
+# Owner rule (2026-10-31): only the 5.5 generation, whatever a caller or .env asks for.
+ALLOWED_MODELS = {"claude-haiku-5-5", "claude-sonnet-5-5", "claude-opus-5-5"}
 DEFAULT_TIMEOUT = 180
 
 logging.basicConfig(
@@ -134,7 +136,11 @@ def _resolve_frames(frame_names: list, subdir: str = None) -> list:
 
 # ── Claude runner ─────────────────────────────────────────────────────────────
 
-def _run_claude(prompt: str, frame_paths: list, model: str, timeout_s: int) -> dict:
+_EFFORTS = {"low", "medium", "high", "xhigh", "max"}
+
+
+def _run_claude(prompt: str, frame_paths: list, model: str, timeout_s: int,
+                effort: str | None = None) -> dict:
     """
     Run `claude -p <final_prompt> --model <model> --output-format json`
     as a subprocess (argv list, never shell=True).
@@ -175,6 +181,7 @@ def _run_claude(prompt: str, frame_paths: list, model: str, timeout_s: int) -> d
         CLAUDE_BIN,
         "-p", final_prompt,
         "--model", model,
+        *(["--effort", effort] if effort else []),
         *tool_args,
         # Isolate from the host user's Claude Code config so analysis output is
         # never polluted by interactive hooks (grammar-check, caveman, persona).
@@ -293,7 +300,14 @@ class BridgeHandler(http.server.BaseHTTPRequestHandler):
 
         frames = req.get("frames") or []
         model = req.get("model") or DEFAULT_MODEL
+        if model not in ALLOWED_MODELS:
+            self._send_json(400, {"ok": False, "error": "model must be one of " + ", ".join(sorted(ALLOWED_MODELS))})
+            return
         timeout_s = int(req.get("timeout_s") or DEFAULT_TIMEOUT)
+        effort = req.get("effort") or None
+        if effort is not None and effort not in _EFFORTS:
+            self._send_json(400, {"ok": False, "error": "effort must be one of " + ", ".join(sorted(_EFFORTS))})
+            return
 
         # Optional subdir: validated strictly inside _resolve_frames.
         # An invalid subdir (traversal attempt, dotfile, etc.) causes
@@ -308,7 +322,7 @@ class BridgeHandler(http.server.BaseHTTPRequestHandler):
             return
 
         frame_paths = _resolve_frames(frames, subdir=subdir)
-        result = _run_claude(prompt, frame_paths, model, timeout_s)
+        result = _run_claude(prompt, frame_paths, model, timeout_s, effort)
 
         status_code = 200 if result.get("ok") else 502
         if result.get("error_type") == "rate_limit":

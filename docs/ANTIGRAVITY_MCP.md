@@ -137,7 +137,7 @@ Get the latest analysis for a video (hook, structure, retention score, tags).
     "retention": [45, 60, 80, 75],
     "retention_score": 8,
     "tags": ["viral", "reaction", "mystery"],
-    "model": "claude-sonnet-4-6",
+    "model": "claude-sonnet-5-5",
     "cost_usd": 0.08
   }
 }
@@ -209,7 +209,7 @@ Reads `openclaw/agents/shotprompt/SOUL.md`, builds a prompt, and calls Claude vi
 ```json
 {
   "prompts": "STYLE LOCK: cinematic, 9:16 vertical, cool blue tones, 35mm film stock\n\nShot 1 — 0–3s · source: GENERATE\n  🖼️ IMAGE: ...\n  🎞️ ANIMATE: ...\n  💬 caption: ...",
-  "model": "claude-sonnet-4-6"
+  "model": "claude-sonnet-5-5"
 }
 ```
 
@@ -260,7 +260,7 @@ Reads `openclaw/agents/director/SOUL.md`, builds a prompt with analysis + option
 ```json
 {
   "brief": "🎬 BRIEF: Life Hack Explosion\nFormula: pattern-interrupt → payoff...\nAngle: ...\n...",
-  "model": "claude-sonnet-4-6"
+  "model": "claude-sonnet-5-5"
 }
 ```
 
@@ -304,7 +304,7 @@ Run a fresh Claude-vision analysis of a YouTube video and save it to the corpus 
   "retention": [45, 60, 80, 75],
   "retention_score": 8,
   "tags": ["viral", "reaction", "mystery"],
-  "model": "claude-sonnet-4-6",
+  "model": "claude-sonnet-5-5",
   "cost_usd": 0.08,
   "cached": false
 }

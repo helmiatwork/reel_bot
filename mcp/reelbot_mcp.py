@@ -168,7 +168,7 @@ def _call_claude_bridge(prompt: str) -> tuple[bool, str]:
     try:
         resp = httpx.post(
             f"{CLAUDE_BRIDGE_URL}/run",
-            json={"prompt": prompt, "frames": [], "model": "claude-sonnet-4-6"},
+            json={"prompt": prompt, "frames": [], "model": "claude-sonnet-5-5"},
             timeout=httpx.Timeout(connect=10.0, read=200.0, write=10.0, pool=5.0),
         )
     except Exception as e:
@@ -320,7 +320,7 @@ def generate_shot_prompts(script_text: str, style_note: str = "") -> dict:
         style_note: optional style/mood guidance
 
     Returns:
-        {"prompts": str, "model": "claude-sonnet-4-6"} or {"error": "...", "prompts": ""}
+        {"prompts": str, "model": "claude-sonnet-5-5"} or {"error": "...", "prompts": ""}
     """
     try:
         soul = _read_soul("shotprompt")
@@ -344,7 +344,7 @@ def generate_shot_prompts(script_text: str, style_note: str = "") -> dict:
     if not ok:
         return {"error": result, "prompts": ""}
 
-    return {"prompts": result, "model": "claude-sonnet-4-6"}
+    return {"prompts": result, "model": "claude-sonnet-5-5"}
 
 
 @server.tool()
@@ -361,7 +361,7 @@ def make_brief(analysis_json: str, target: str = "") -> dict:
         target: optional target audience/niche/platform
 
     Returns:
-        {"brief": str, "model": "claude-sonnet-4-6"} or {"error": "...", "brief": ""}
+        {"brief": str, "model": "claude-sonnet-5-5"} or {"error": "...", "brief": ""}
     """
     try:
         soul = _read_soul("director")
@@ -384,7 +384,7 @@ def make_brief(analysis_json: str, target: str = "") -> dict:
     if not ok:
         return {"error": result, "brief": ""}
 
-    return {"brief": result, "model": "claude-sonnet-4-6"}
+    return {"brief": result, "model": "claude-sonnet-5-5"}
 
 
 @server.tool()

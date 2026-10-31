@@ -338,7 +338,7 @@ class TestGenerateBatch:
         bridge_response.json.return_value = {
             "ok": True,
             "result": "## Script\nHere is the script…",
-            "model": "claude-sonnet-4-6",
+            "model": "claude-sonnet-5-5",
             "raw_usage": {},
             "cost_usd": 0.001,
         }

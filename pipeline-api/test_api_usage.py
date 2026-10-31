@@ -118,7 +118,7 @@ def test_log_api_usage_empty_raw_usage():
 def test_dash_token_usage_by_agent(client):
     """dash_token_usage should return by_agent breakdown."""
     mock_rows_by_model = [
-        ("claude-sonnet-4-6", 1000, 500, 1500, 10),
+        ("claude-sonnet-5-5", 1000, 500, 1500, 10),
         ("claude-haiku-4", 100, 50, 150, 5),
     ]
     mock_rows_by_date = [

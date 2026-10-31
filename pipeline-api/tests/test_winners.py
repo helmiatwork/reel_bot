@@ -386,7 +386,7 @@ class TestWinnersClone:
         bridge_resp.json.return_value = {
             "ok": True,
             "result": "## Script\nVariation script text",
-            "model": "claude-sonnet-4-6",
+            "model": "claude-sonnet-5-5",
             "raw_usage": {},
             "cost_usd": 0.001,
         }
@@ -439,7 +439,7 @@ class TestWinnersClone:
                     "retention": "r", "content_summary": "c", "niche": "food"}
         bridge_resp = MagicMock()
         bridge_resp.json.return_value = {
-            "ok": True, "result": "script", "model": "claude-sonnet-4-6",
+            "ok": True, "result": "script", "model": "claude-sonnet-5-5",
             "raw_usage": {}, "cost_usd": 0.001,
         }
         captured_inserts = []
@@ -472,7 +472,7 @@ class TestWinnersClone:
         exemplar = {"type": "corpus_winner", "hook": "h", "niche": "food"}
         bridge_resp = MagicMock()
         bridge_resp.json.return_value = {
-            "ok": True, "result": "script body", "model": "claude-sonnet-4-6",
+            "ok": True, "result": "script body", "model": "claude-sonnet-5-5",
             "raw_usage": {}, "cost_usd": 0.001,
         }
         conn, cur = _make_conn(fetchone=(123,))

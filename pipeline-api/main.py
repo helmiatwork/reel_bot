@@ -684,6 +684,10 @@ TOKEN_PRICES = {  # USD per 1M tokens (input, output) — approximate Sumopod ra
     "claude-sonnet-4-6": (3.00, 15.00),
     "claude-opus-4-6": (5.00, 25.00),
     "claude-opus-4-7": (5.00, 25.00),
+    # 5.5 generation (the only models reelbot calls); older keys above price historical rows.
+    "claude-haiku-5-5": (0.10, 0.50),
+    "claude-sonnet-5-5": (2.00, 10.00),
+    "claude-opus-5-5": (4.00, 20.00),
 }
 DEFAULT_TOKEN_PRICE = (0.50, 1.50)
 
@@ -1447,7 +1451,7 @@ class FramesRequest(BaseModel):
 class ClipFindRequest(BaseModel):
     youtube_url: str           # YouTube video URL
     max_clips: Optional[int] = None  # Number of clips to find (1-20, optional for auto-detection)
-    model: Optional[str] = None   # Claude model, default "claude-sonnet-4-6"
+    model: Optional[str] = None   # Claude model, default "claude-sonnet-5-5"
     force: bool = False  # Skip cache and recompute (default: use cached if available)
 
 
@@ -2029,7 +2033,7 @@ def _group_shots_claude(video_id: str, shots: list, frame_dir: str, video_path: 
         bridge_timeout = _httpx.Timeout(connect=10.0, read=200.0, write=10.0, pool=5.0)
         bridge_resp = _httpx.post(
             f"{CLAUDE_BRIDGE_URL}/run",
-            json={"prompt": prompt, "frames": frame_names, "model": "claude-sonnet-4-6", "subdir": temp_run_id},
+            json={"prompt": prompt, "frames": frame_names, "model": "claude-sonnet-5-5", "subdir": temp_run_id},
             timeout=bridge_timeout,
         )
     except Exception as exc:
@@ -2049,7 +2053,7 @@ def _group_shots_claude(video_id: str, shots: list, frame_dir: str, video_path: 
     # Log API usage
     _log_api_usage(
         agent="decompose_grouping",
-        model=bridge_data.get("model", "claude-sonnet-4-6"),
+        model=bridge_data.get("model", "claude-sonnet-5-5"),
         raw_usage=bridge_data.get("raw_usage", {}),
         cost_usd=bridge_data.get("cost_usd")
     )
@@ -2321,7 +2325,7 @@ def generate_script(req: GenerateScriptRequest):
         bridge_timeout = _httpx.Timeout(connect=10.0, read=180.0, write=10.0, pool=5.0)
         resp = _httpx.post(
             f"{CLAUDE_BRIDGE_URL}/run",
-            json={"prompt": prompt, "frames": [], "model": "claude-sonnet-4-6"},
+            json={"prompt": prompt, "frames": [], "model": "claude-sonnet-5-5"},
             timeout=bridge_timeout,
         )
         data = resp.json()
@@ -2333,7 +2337,7 @@ def generate_script(req: GenerateScriptRequest):
 
     _log_api_usage(
         agent="generate_script",
-        model=data.get("model", "claude-sonnet-4-6"),
+        model=data.get("model", "claude-sonnet-5-5"),
         raw_usage=data.get("raw_usage", {}),
         cost_usd=data.get("cost_usd"),
     )
@@ -5851,7 +5855,7 @@ def _log_api_usage(agent: str, model: str, raw_usage: dict, cost_usd) -> None:
 
     Args:
         agent: which flow (analyze, clipper, gender, etc.)
-        model: model name (e.g., claude-sonnet-4-6)
+        model: model name (e.g., claude-sonnet-5-5)
         raw_usage: dict with optional keys: input_tokens, cache_creation_input_tokens, cache_read_input_tokens, output_tokens
         cost_usd: total cost from bridge (may be None)
     """
@@ -5936,7 +5940,7 @@ def _infer_gender(creator_name: str, channel: str) -> str:
         bridge_timeout = _httpx.Timeout(connect=10.0, read=30.0, write=10.0, pool=5.0)
         resp = _httpx.post(
             f"{CLAUDE_BRIDGE_URL}/run",
-            json={"prompt": prompt, "frames": [], "model": "claude-haiku-4-5"},
+            json={"prompt": prompt, "frames": [], "model": "claude-haiku-5-5"},
             timeout=bridge_timeout,
         )
         data = resp.json()
@@ -5945,7 +5949,7 @@ def _infer_gender(creator_name: str, channel: str) -> str:
         # Log API usage on successful response
         _log_api_usage(
             agent="gender",
-            model=data.get("model", "claude-haiku-4-5"),
+            model=data.get("model", "claude-haiku-5-5"),
             raw_usage=data.get("raw_usage", {}),
             cost_usd=data.get("cost_usd")
         )
@@ -5975,7 +5979,7 @@ def _infer_niche(title: str, tags: str, channel: str) -> str:
         bridge_timeout = _httpx.Timeout(connect=10.0, read=30.0, write=10.0, pool=5.0)
         resp = _httpx.post(
             f"{CLAUDE_BRIDGE_URL}/run",
-            json={"prompt": prompt, "frames": [], "model": "claude-haiku-4-5"},
+            json={"prompt": prompt, "frames": [], "model": "claude-haiku-5-5"},
             timeout=bridge_timeout,
         )
         data = resp.json()
@@ -5984,7 +5988,7 @@ def _infer_niche(title: str, tags: str, channel: str) -> str:
         # Log API usage on successful response
         _log_api_usage(
             agent="niche",
-            model=data.get("model", "claude-haiku-4-5"),
+            model=data.get("model", "claude-haiku-5-5"),
             raw_usage=data.get("raw_usage", {}),
             cost_usd=data.get("cost_usd")
         )
@@ -6486,7 +6490,7 @@ def _persist_frame_analysis(video_id: str, parsed: dict) -> None:
 FRAMES_PER_BATCH = max(1, int(os.environ.get("ANALYZE_FRAMES_PER_BATCH", "5")))
 
 # Per-frame analysis uses Haiku (cheap, batched). Synthesis (storyboard JSON) routes to Sonnet for better quality.
-ANALYZE_SYNTHESIS_MODEL = os.environ.get("ANALYZE_SYNTHESIS_MODEL", "claude-sonnet-4-6")
+ANALYZE_SYNTHESIS_MODEL = os.environ.get("ANALYZE_SYNTHESIS_MODEL", "claude-sonnet-5-5")
 
 # Audio tagging runs through cliproxy→SumoPod→gemini (paid credit). Off by default
 # to preserve SumoPod credit; set ANALYZE_AUDIO_TAGS=1 to re-enable music_mood tags.
@@ -6950,7 +6954,7 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
     if output_format not in ("none", "prompt_video", "prompt_json"):
         raise HTTPException(status_code=400, detail=f"Invalid output_format '{output_format}'. Must be one of: none, prompt_video, prompt_json")
 
-    model = req.model or "claude-haiku-4-5"
+    model = req.model or "claude-haiku-5-5"
     intent = (req.intent or "").strip()
 
     # Sanitize intent — only use as data, never as instructions
@@ -9360,7 +9364,7 @@ async def upload_source(
         except Exception as exc:
             print(f"[sources/upload] audio analysis failed (non-fatal): {exc}")
 
-        model = "claude-haiku-4-5"
+        model = "claude-haiku-5-5"
         try:
             parsed = _analyze_frames_sequential(
                 frames=frame_dicts,
@@ -9674,7 +9678,7 @@ async def upload_source_async(
                 print(f"[sources/upload/async] audio analysis failed (non-fatal): {exc}")
 
             # Sequential frame analysis
-            model = "claude-haiku-4-5"
+            model = "claude-haiku-5-5"
 
             def _log_progress(msg: str):
                 """Helper to log progress during sequential analysis."""
@@ -9892,7 +9896,7 @@ def find_clips_claude(req: ClipFindRequest):
 
     _validate_source_url(req.youtube_url)
 
-    model = req.model or "claude-sonnet-4-6"
+    model = req.model or "claude-sonnet-5-5"
 
     # Dedupe guard: if not force, check for cached find on this URL
     if not req.force:
@@ -10083,7 +10087,7 @@ def auto_clips(req: ClipAutoRequest):
 
     _validate_source_url(req.youtube_url)
 
-    model = req.model or "claude-sonnet-4-6"
+    model = req.model or "claude-sonnet-5-5"
     max_clips = max(1, min(int(req.max_clips or 8), 20))
 
     # Dedupe guard: if not force, check for cached find on this URL
@@ -13267,7 +13271,7 @@ def winners_clone(req: WinnersCloneRequest, bg: BackgroundTasks):
                 try:
                     resp = _httpx.post(
                         f"{CLAUDE_BRIDGE_URL}/run",
-                        json={"prompt": prompt, "frames": [], "model": "claude-sonnet-4-6"},
+                        json={"prompt": prompt, "frames": [], "model": "claude-sonnet-5-5"},
                         timeout=bridge_timeout,
                     )
                     data = resp.json()
@@ -13307,7 +13311,7 @@ def winners_clone(req: WinnersCloneRequest, bg: BackgroundTasks):
 
                 _log_api_usage(
                     agent="winners_clone",
-                    model=data.get("model", "claude-sonnet-4-6"),
+                    model=data.get("model", "claude-sonnet-5-5"),
                     raw_usage=data.get("raw_usage", {}),
                     cost_usd=data.get("cost_usd"),
                 )
@@ -13449,7 +13453,7 @@ def generate_batch(req: BatchGenerateRequest, bg: BackgroundTasks):
                 try:
                     resp = _httpx.post(
                         f"{CLAUDE_BRIDGE_URL}/run",
-                        json={"prompt": prompt, "frames": [], "model": "claude-sonnet-4-6"},
+                        json={"prompt": prompt, "frames": [], "model": "claude-sonnet-5-5"},
                         timeout=bridge_timeout,
                     )
                     data = resp.json()
@@ -13495,7 +13499,7 @@ def generate_batch(req: BatchGenerateRequest, bg: BackgroundTasks):
 
                 _log_api_usage(
                     agent="generate_batch",
-                    model=data.get("model", "claude-sonnet-4-6"),
+                    model=data.get("model", "claude-sonnet-5-5"),
                     raw_usage=data.get("raw_usage", {}),
                     cost_usd=data.get("cost_usd"),
                 )
