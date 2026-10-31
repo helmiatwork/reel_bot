@@ -51,6 +51,9 @@ FRAME_DIR = Path(
 DEFAULT_MODEL = "claude-sonnet-5-5"
 # Owner rule (2026-10-31): only the 5.5 generation, whatever a caller or .env asks for.
 ALLOWED_MODELS = {"claude-haiku-5-5", "claude-sonnet-5-5", "claude-opus-5-5"}
+# Owner rule (2026-10-31): Haiku runs at high effort, Sonnet at medium (token saving),
+# unless the caller asks for a specific effort.
+DEFAULT_EFFORT = {"claude-haiku-5-5": "high", "claude-sonnet-5-5": "medium"}
 DEFAULT_TIMEOUT = 180
 
 logging.basicConfig(
@@ -304,7 +307,7 @@ class BridgeHandler(http.server.BaseHTTPRequestHandler):
             self._send_json(400, {"ok": False, "error": "model must be one of " + ", ".join(sorted(ALLOWED_MODELS))})
             return
         timeout_s = int(req.get("timeout_s") or DEFAULT_TIMEOUT)
-        effort = req.get("effort") or None
+        effort = req.get("effort") or DEFAULT_EFFORT.get(model)
         if effort is not None and effort not in _EFFORTS:
             self._send_json(400, {"ok": False, "error": "effort must be one of " + ", ".join(sorted(_EFFORTS))})
             return
