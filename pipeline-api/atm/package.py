@@ -1,12 +1,16 @@
 """Production package: one ZIP per item with the blueprint (readable + JSON), thumbnail prompts, upload text and audio."""
+import hashlib
 import io
 import json
+import math
 import re
 import zipfile
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
+
+from .blueprint import _TIME, _seconds
 
 router = APIRouter()
 
@@ -206,14 +210,71 @@ def _flat(d) -> dict:
     return {str(k): _text(x) for k, x in d.items() if _text(x)} if isinstance(d, dict) else {}
 
 
-def _rekam_data(title, bp: dict) -> dict:
+_SPAN = re.compile(rf"\s*({_TIME.pattern})\s*-\s*({_TIME.pattern})\s*")
+_DECIMAL = re.compile(r"[0-9]+(?:\.[0-9]+)?")
+
+
+def _duration(v) -> float:
+    """Shot length in s: plain decimal number or digit string. Anything else (text, NaN, inf, huge) is 0."""
+    if isinstance(v, str) and _DECIMAL.fullmatch(v.strip()):
+        v = float(v.strip())
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        try:
+            x = float(v)
+        except OverflowError:
+            return 0.0
+        return x if math.isfinite(x) and x >= 0 else 0.0
+    return 0.0
+
+
+def _span(beat: dict):
+    """(start_s, end_s) for a 'mm:ss-mm:ss' beat with start < end, else None."""
+    t = beat.get("t")
+    m = _SPAN.fullmatch(t) if isinstance(t, str) else None
+    if not m:
+        return None
+    start, end = _seconds(m.group(1)), _seconds(m.group(2))
+    return (start, end) if start < end else None
+
+
+def _map_beats(shots: list, beats: list) -> tuple[list[list[int]], list[int]]:
+    """Beat indices per shot, plus orphan beat indices (in no shot). Timed beats go to every shot whose
+    cumulative window overlaps them; untimed beats go by index when the counts match, else to no shot."""
+    spans = [_span(b) for b in beats]
+    per_shot: list[list[int]] = [[] for _ in shots]
+    if beats and all(s is not None for s in spans):
+        start = 0.0
+        for i, shot in enumerate(shots):
+            end = start + _duration(shot.get("duration_s"))
+            for j, (bs, be) in enumerate(spans):
+                if min(end, be) - max(start, bs) > 0:
+                    per_shot[i].append(j)
+            start = end
+    elif len(beats) == len(shots):
+        per_shot = [[i] for i in range(len(shots))]
+    assigned = {j for row in per_shot for j in row}
+    return per_shot, [j for j in range(len(beats)) if j not in assigned]
+
+
+def _bp_hash(bp: dict) -> str:
+    """Short content hash, so an edited or regenerated blueprint starts with fresh checkboxes."""
+    return hashlib.sha256(json.dumps(bp, sort_keys=True, ensure_ascii=False).encode()).hexdigest()[:12]
+
+
+def _rekam_data(title, bp: dict, item_id) -> dict:
     hook, narration, thumb, tips = bp.get("hook"), bp.get("narration"), bp.get("thumbnail"), bp.get("recording_tips")
+    shots = _dicts(bp.get("shots"))
+    beats = _dicts(narration.get("beats")) if isinstance(narration, dict) else []
+    shot_beats, orphans = _map_beats(shots, beats)
     return {
         "title": _text(title),
+        "key_prefix": f"rekam|{item_id}|{_bp_hash(bp)}|",
         "hook": _text(hook.get("line") if isinstance(hook, dict) else hook),
         "tips": [t for t in map(_text, tips) if t] if isinstance(tips, list) else [],
-        "shots": [_flat(s) for s in _dicts(bp.get("shots"))],
-        "beats": [_flat(b) for b in _dicts(narration.get("beats"))] if isinstance(narration, dict) else [],
+        "shots": [_flat(s) for s in shots],
+        "beats": [_flat(b) for b in beats],
+        "shot_beats": shot_beats,
+        "orphans": orphans,
         "cover": _flat(thumb.get("cover_frame")) if isinstance(thumb, dict) else {},
     }
 
@@ -230,6 +291,7 @@ _REKAM_PAGE = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'">
 <title>Mode Rekam</title>
 <style>
 *{box-sizing:border-box}
@@ -258,29 +320,12 @@ h2{font-size:24px;margin:24px 0 8px;color:#ffd60a}
   "use strict";
   var data = JSON.parse(document.getElementById("data").textContent);
   var shots = data.shots, beats = data.beats;
-  // Beats map to shots by time ("00:03-00:08" vs cumulative shot durations); if any beat has no
-  // parsable time, fall back to beat i = shot i when the counts match, else beats go on the start screen.
-  function secs(t) { var p = String(t).split(":"); return p.length === 2 ? (+p[0]) * 60 + (+p[1]) : NaN; }
-  var spans = beats.map(function (b) {
-    var p = String(b.t || "").split("-");
-    return p.length === 2 ? [secs(p[0]), secs(p[1])] : [NaN, NaN];
-  });
-  var timed = beats.length > 0 && spans.every(function (s) { return s[0] < s[1]; });
-  var shotBeats = [], at = 0;
-  shots.forEach(function (s, i) {
-    var end = at + (+s.duration_s || 0), from = at;
-    shotBeats.push(timed
-      ? beats.filter(function (_, j) { return spans[j][0] < end && spans[j][1] > from; })
-      : (beats.length === shots.length ? [beats[i]] : []));
-    at = end;
-  });
-  var matched = timed || beats.length === shots.length;
   var LABELS = {camera: "Kamera", record: "Aksi", action: "Aksi", framing: "Framing", transition: "Transisi",
                 on_screen_text: "Teks di layar", location: "Lokasi", props: "Properti", audio: "Audio", note: "Catatan",
                 shot: "Shot", moment: "Momen"};
-  function labelOf(k) { return LABELS[k] || k.replace(/_/g, " "); }
+  function labelOf(k) { return Object.prototype.hasOwnProperty.call(LABELS, k) ? LABELS[k] : k.replace(/_/g, " "); }
   var total = shots.length, last = total + 1; // 0 = start, 1..total = shots, last = summary
-  var key = "rekam|" + data.title + "|";
+  var key = data.key_prefix;
   var done = shots.map(function (_, i) {
     try { return localStorage.getItem(key + i) === "1"; } catch (e) { return false; }
   });
@@ -315,16 +360,16 @@ h2{font-size:24px;margin:24px 0 8px;color:#ffd60a}
       data.tips.forEach(function (t) { ul.appendChild(el("li", "", t)); });
       screen.appendChild(ul);
     }
-    if (!matched && beats.length) {
-      screen.appendChild(el("h2", "", "Narasi per beat"));
-      beats.forEach(function (b) { screen.appendChild(beatNode(b)); });
+    if (data.orphans.length) {
+      screen.appendChild(el("h2", "", "Narasi lain"));
+      data.orphans.forEach(function (j) { screen.appendChild(beatNode(beats[j])); });
     }
   }
   function shotScreen(i) {
     var s = shots[i];
     screen.appendChild(el("div", "meta", "Shot " + (i + 1) + " / " + total));
     if (s.duration_s) screen.appendChild(el("div", "meta", s.duration_s + " dtk"));
-    shotBeats[i].forEach(function (b) { screen.appendChild(beatNode(b)); });
+    data.shot_beats[i].forEach(function (j) { screen.appendChild(beatNode(beats[j])); });
     Object.keys(s).forEach(function (k) {
       if (k !== "n" && k !== "duration_s") screen.appendChild(el("div", "kv", labelOf(k) + ": " + s[k]));
     });
@@ -382,9 +427,9 @@ h2{font-size:24px;margin:24px 0 8px;color:#ffd60a}
 """
 
 
-def rekam_html(title: str, bp: dict) -> str:
+def rekam_html(title: str, bp: dict, item_id) -> str:
     """Offline phone page: one screen per shot. Blueprint text is untrusted, so it only reaches the page as JSON data."""
-    return _REKAM_PAGE.replace("__DATA__", _json_for_html(_rekam_data(title, bp)))
+    return _REKAM_PAGE.replace("__DATA__", _json_for_html(_rekam_data(title, bp, item_id)))
 
 
 def _inside_data(path_str, data_dir: Path):
@@ -427,7 +472,7 @@ def item_package(item_id: int):
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("blueprint.md", blueprint_markdown(title, bp))
-        z.writestr("rekam.html", rekam_html(title, bp))
+        z.writestr("rekam.html", rekam_html(title, bp, item_id))
         z.writestr("blueprint.json", json.dumps(bp, ensure_ascii=False, indent=2))
         z.writestr("thumbnail_prompts.txt", thumbnail_prompts(bp))
         z.writestr("upload.txt", upload_text(bp))

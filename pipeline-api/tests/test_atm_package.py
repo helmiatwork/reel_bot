@@ -101,7 +101,7 @@ def test_package_rekam_html_is_offline_single_file(tmp_path):
 
 def test_rekam_html_embeds_shot_beat_and_cover_subset():
     from atm.package import rekam_html
-    data = json.loads(_data_block(rekam_html("Kucing", json.loads(FIXTURE.read_text()))))
+    data = json.loads(_data_block(rekam_html("Kucing", json.loads(FIXTURE.read_text()), 3)))
     assert data["hook"] == "Kucingku nolak makan?" and data["tips"] == ["rekam per beat"]
     assert data["beats"][1] == {"t": "00:03-00:08", "vo": "Ternyata ini sebabnya."}
     assert data["shots"][0]["record"] == "close-up kucing" and data["shots"][0]["duration_s"] == "8"
@@ -113,7 +113,7 @@ def test_rekam_html_keeps_untrusted_text_inside_json_data():
     bp = json.loads(FIXTURE.read_text())
     bp["hook"]["line"] = EVIL
     bp["shots"][0]["record"] = EVIL
-    html = rekam_html("Kucing", bp)
+    html = rekam_html("Kucing", bp, 3)
     block = _data_block(html)
     assert "</script" not in block and "<img" not in block
     assert html.count("</script>") == 2
@@ -123,7 +123,7 @@ def test_rekam_html_keeps_untrusted_text_inside_json_data():
 
 def test_rekam_js_renders_with_textcontent_only():
     from atm.package import rekam_html
-    html = rekam_html("Kucing", json.loads(FIXTURE.read_text()))
+    html = rekam_html("Kucing", json.loads(FIXTURE.read_text()), 3)
     assert "textContent" in html
     for banned in ("innerHTML", "outerHTML", "insertAdjacentHTML", "document.write"):
         assert banned not in html
@@ -140,6 +140,113 @@ def test_rekam_html_skips_odd_shapes():
     from atm.package import rekam_html
     bp = {"shots": ["x", {"n": 1, "record": "a", "duration_s": 8}], "narration": {"beats": "x"},
           "recording_tips": "nope", "hook": ["odd"], "thumbnail": {"cover_frame": "x"}}
-    data = json.loads(_data_block(rekam_html(None, bp)))
+    data = json.loads(_data_block(rekam_html(None, bp, 3)))
     assert data["title"] == "" and data["hook"] == "" and data["tips"] == [] and data["beats"] == []
     assert data["shots"] == [{"n": "1", "record": "a", "duration_s": "8"}] and data["cover"] == {}
+
+
+def test_map_beats_beat_ending_at_shot_start_stays_out():
+    from atm.package import _map_beats
+    per_shot, orphans = _map_beats([{"duration_s": 3}, {"duration_s": 5}],
+                                   [{"t": "00:00-00:03"}, {"t": "00:03-00:08"}])
+    assert per_shot == [[0], [1]] and orphans == []
+
+
+def test_map_beats_overlap_across_two_shots():
+    from atm.package import _map_beats
+    per_shot, orphans = _map_beats([{"duration_s": 4}, {"duration_s": 4}], [{"t": "00:02-00:06"}])
+    assert per_shot == [[0], [0]] and orphans == []
+
+
+def test_map_beats_missing_durations_make_every_beat_orphan():
+    from atm.package import _map_beats
+    per_shot, orphans = _map_beats([{"record": "a"}, {"duration_s": "x"}], [{"t": "00:00-00:03"}])
+    assert per_shot == [[], []] and orphans == [0]
+
+
+def test_map_beats_non_finite_duration_counts_as_zero():
+    from atm.package import _map_beats
+    per_shot, orphans = _map_beats([{"duration_s": float("nan")}, {"duration_s": 3}], [{"t": "00:00-00:03"}])
+    assert per_shot == [[], [0]] and orphans == []
+
+
+def test_map_beats_numeric_string_duration_counts():
+    from atm.package import _map_beats
+    per_shot, orphans = _map_beats([{"duration_s": "3"}, {"duration_s": "5"}],
+                                   [{"t": "00:00-00:03"}, {"t": "00:03-00:08"}])
+    assert per_shot == [[0], [1]] and orphans == []
+
+
+def test_map_beats_zero_length_shot_gets_no_beat():
+    from atm.package import _map_beats
+    per_shot, orphans = _map_beats([{"duration_s": 0}, {"duration_s": 5}], [{"t": "00:00-00:05"}])
+    assert per_shot == [[], [0]] and orphans == []
+
+
+def test_map_beats_narration_tail_beyond_shots_is_orphan():
+    from atm.package import _map_beats
+    per_shot, orphans = _map_beats([{"duration_s": 3}], [{"t": "00:00-00:03"}, {"t": "00:03-00:09"}])
+    assert per_shot == [[0]] and orphans == [1]
+
+
+def test_map_beats_empty_shots_make_all_beats_orphans():
+    from atm.package import _map_beats
+    assert _map_beats([], [{"t": "00:00-00:03"}]) == ([], [0])
+    assert _map_beats([], [{"vo": "a"}]) == ([], [0])
+
+
+def test_map_beats_untimed_equal_counts_match_by_index():
+    from atm.package import _map_beats
+    per_shot, orphans = _map_beats([{"duration_s": 3}, {"duration_s": 3}], [{"vo": "a"}, {"vo": "b"}])
+    assert per_shot == [[0], [1]] and orphans == []
+
+
+def test_map_beats_one_untimed_beat_falls_back_to_index_match():
+    from atm.package import _map_beats
+    per_shot, orphans = _map_beats([{"duration_s": 3}, {"duration_s": 3}], [{"t": "00:00-00:03"}, {"vo": "b"}])
+    assert per_shot == [[0], [1]] and orphans == []
+
+
+def test_map_beats_untimed_unequal_counts_make_all_beats_orphans():
+    from atm.package import _map_beats
+    per_shot, orphans = _map_beats([{"duration_s": 3}], [{"vo": "a"}, {"vo": "b"}])
+    assert per_shot == [[]] and orphans == [0, 1]
+
+
+def test_map_beats_backwards_span_is_untimed():
+    from atm.package import _map_beats
+    per_shot, orphans = _map_beats([{"duration_s": 3}, {"duration_s": 3}], [{"t": "00:03-00:01"}, {"t": "00:04-00:05"}])
+    assert per_shot == [[0], [1]] and orphans == []
+
+
+def test_rekam_page_data_maps_beats_and_orphans():
+    from atm.package import rekam_html
+    bp = json.loads(FIXTURE.read_text())
+    bp["narration"]["beats"].append({"t": "00:09-00:12", "vo": "ekor"})
+    data = json.loads(_data_block(rekam_html("Kucing", bp, 3)))
+    assert data["shot_beats"] == [[0, 1]] and data["orphans"] == [2]
+
+
+def test_rekam_page_storage_key_includes_item_id_and_blueprint_hash():
+    from atm.package import rekam_html
+    bp = json.loads(FIXTURE.read_text())
+    prefix = json.loads(_data_block(rekam_html("Kucing", bp, 3)))["key_prefix"]
+    assert prefix.startswith("rekam|3|") and prefix.endswith("|")
+    assert json.loads(_data_block(rekam_html("Kucing", bp, 4)))["key_prefix"] != prefix
+    bp["hook"]["line"] = "versi baru"
+    assert json.loads(_data_block(rekam_html("Kucing", bp, 3)))["key_prefix"] != prefix
+
+
+def test_rekam_page_has_csp_meta_and_own_property_label_lookup():
+    from atm.package import rekam_html
+    html = rekam_html("Kucing", json.loads(FIXTURE.read_text()), 3)
+    assert ('<meta http-equiv="Content-Security-Policy" '
+            'content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'">') in html
+    assert "hasOwnProperty.call(LABELS" in html
+
+
+def test_map_beats_huge_or_negative_duration_counts_as_zero():
+    from atm.package import _map_beats
+    per_shot, orphans = _map_beats([{"duration_s": 10 ** 400}, {"duration_s": -5}, {"duration_s": 3}],
+                                   [{"t": "00:00-00:03"}])
+    assert per_shot == [[], [], [0]] and orphans == []
