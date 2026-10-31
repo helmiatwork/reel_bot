@@ -9178,6 +9178,10 @@ def _telegram_notify(text: str) -> bool:
         return False
 
 
+# Conflict target of every keywords UPSERT; must match keywords_upsert_niche_key exactly.
+_KEYWORDS_UPSERT_KEY = "(keyword, region, source, (coalesce(lower(trim(niche)), '')))"
+
+
 def _keywords_init_db():
     """Create keywords table for Google Ads keyword research. Non-fatal on error."""
     conn = _db_conn()
@@ -9212,11 +9216,10 @@ def _keywords_init_db():
             cur.execute("CREATE INDEX IF NOT EXISTS keywords_region_idx ON keywords (region)")
             cur.execute("CREATE INDEX IF NOT EXISTS keywords_keyword_idx ON keywords (keyword)")
             cur.execute("CREATE INDEX IF NOT EXISTS keywords_fetched_at_idx ON keywords (fetched_at DESC)")
-            # Unique constraint for UPSERT on (keyword, region, source)
-            cur.execute("""
-                CREATE UNIQUE INDEX IF NOT EXISTS keywords_upsert_key
-                ON keywords (keyword, region, source)
-            """)
+            # UPSERT key includes the normalized niche, so one keyword can belong to several niches
+            # (the old (keyword, region, source) key moved it to whichever niche fetched it last).
+            cur.execute("DROP INDEX IF EXISTS keywords_upsert_key")
+            cur.execute(f"CREATE UNIQUE INDEX IF NOT EXISTS keywords_upsert_niche_key ON keywords {_KEYWORDS_UPSERT_KEY}")
         conn.commit()
     except Exception as e:
         print(f"[keywords] init db error: {e}")
@@ -9428,11 +9431,11 @@ def _seo_persist_keywords(seed: str, niche: str, platform: str, raw_suggestions:
                     rows[(q, source)] = (score, {"term": q, "source": source})
         with conn.cursor() as cur:
             for (term, source), (score, raw) in rows.items():
-                cur.execute("""
+                cur.execute(f"""
                     INSERT INTO keywords
                     (keyword, seed, source, region, niche, score, raw, fetched_at)
                     VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb, now())
-                    ON CONFLICT (keyword, region, source) DO UPDATE SET
+                    ON CONFLICT {_KEYWORDS_UPSERT_KEY} DO UPDATE SET
                         seed = EXCLUDED.seed,
                         niche = EXCLUDED.niche,
                         score = EXCLUDED.score,
@@ -10331,14 +10334,14 @@ def keywords_ideas(req: KeywordIdeasRequest):
                     niche_fit=1.0  # Hook for future niche weighting
                 )
 
-                # UPSERT: on conflict (keyword, region, source), update all fields
-                cur.execute("""
+                # UPSERT: on conflict (keyword, region, source, niche), update all fields
+                cur.execute(f"""
                     INSERT INTO keywords
                     (seed, keyword, source, search_volume_min, search_volume_max,
                      avg_monthly_searches, competition, competition_index,
                      cpc_low_micros, cpc_high_micros, region, niche, score, raw)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
-                    ON CONFLICT (keyword, region, source) DO UPDATE SET
+                    ON CONFLICT {_KEYWORDS_UPSERT_KEY} DO UPDATE SET
                         seed = EXCLUDED.seed,
                         avg_monthly_searches = EXCLUDED.avg_monthly_searches,
                         competition = EXCLUDED.competition,
@@ -10420,7 +10423,7 @@ def keywords_list(
             params = []
 
             if niche:
-                where_parts.append("niche = %s")
+                where_parts.append("lower(trim(niche)) = lower(trim(%s))")
                 params.append(niche)
             if source:
                 where_parts.append("source = %s")

@@ -48,7 +48,7 @@ def test_analyze_persists_autocomplete_and_trends_rows_with_scores():
         ("kucing hitam", "trends_top"): ("Kucing", "global", "kucing", 48.0),
         ("kucing viral", "trends_rising"): ("Kucing", "global", "kucing", 50.0),
     }
-    assert conn.sqls("ON CONFLICT (keyword, region, source) DO UPDATE SET seed = EXCLUDED.seed, niche = EXCLUDED.niche, "
+    assert conn.sqls("ON CONFLICT (keyword, region, source, (coalesce(lower(trim(niche)), ''))) DO UPDATE SET seed = EXCLUDED.seed, niche = EXCLUDED.niche, "
                      "score = EXCLUDED.score, raw = EXCLUDED.raw, fetched_at = now()")
     assert conn.commits == 1 and conn.closed
 
