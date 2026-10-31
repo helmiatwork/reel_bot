@@ -69,6 +69,8 @@
     else mineMsg = detail(r) || $_('atm.mine_error')
   }
 
+  const outlierTier = (o) => (o >= 2 ? 'viral' : o >= 1 ? 'par' : 'low')
+
   async function importPicked() {
     mineBusy = true
     const titles = Object.fromEntries(mined.videos.map((v) => [v.url, v.title]))
@@ -163,7 +165,7 @@
     </div>
     {#if mineMsg}<div class="err">{mineMsg}</div>{/if}
     {#if mined}
-      <div class="mut">{mined.channel.name || ''}{mined.channel.followers != null ? ` · ${mined.channel.followers} ${$_('atm.mine_followers')}` : ''}</div>
+      <div class="mut">{mined.channel.name || ''}{mined.channel.followers != null ? ` · ${mined.channel.followers} ${$_('atm.mine_followers')}` : ''}{mined.channel.median_views != null ? ` · ${$_('atm.mine_median', { values: { median: mined.channel.median_views.toLocaleString() } })}` : ''}</div>
       <table class="mine-tbl">
         <thead><tr><th></th><th>{$_('atm.mine_col_title')}</th><th>{$_('atm.mine_col_views')}</th></tr></thead>
         <tbody>
@@ -171,7 +173,7 @@
             <tr>
               <td><input type="checkbox" bind:checked={picked[v.url]} disabled={!picked[v.url] && pickedUrls.length >= 10} /></td>
               <td><a href={v.url} target="_blank" rel="noopener noreferrer">{v.title || v.video_id}</a></td>
-              <td>{v.views.toLocaleString()}</td>
+              <td>{v.views.toLocaleString()}{#if v.outlier != null}<span class="outlier {outlierTier(v.outlier)}" title={$_('atm.mine_outlier_hint')}>{v.outlier.toFixed(1)}×{v.outlier >= 2 ? ` ${$_('atm.mine_outlier_viral')}` : ''}</span>{/if}</td>
             </tr>
           {/each}
         </tbody>
@@ -230,6 +232,9 @@
   .mine { margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; }
   .mine-tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
   .mine-tbl th, .mine-tbl td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); }
+  .outlier { display: inline-block; margin-left: 6px; font-size: 11px; font-weight: 600; border-radius: 4px; padding: 1px 6px; white-space: nowrap; background: var(--soft); }
+  .outlier.viral { background: rgba(10,179,156,.15); color: var(--green); }
+  .outlier.low { color: var(--mut); }
   .board { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
   .column { flex: 0 0 200px; display: flex; flex-direction: column; }
   .col-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 4px 8px; }
