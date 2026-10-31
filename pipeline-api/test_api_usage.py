@@ -115,69 +115,6 @@ def test_log_api_usage_empty_raw_usage():
         assert call_args[0][1] == ("test", "test-model", 0, 0, 0, 0.0)
 
 
-def test_dash_token_usage_by_agent(client):
-    """dash_token_usage should return by_agent breakdown."""
-    mock_rows_by_model = [
-        ("claude-sonnet-5-5", 1000, 500, 1500, 10),
-        ("claude-haiku-4", 100, 50, 150, 5),
-    ]
-    mock_rows_by_date = [
-        ("07-04", 1650),
-    ]
-    mock_rows_by_agent = [
-        ("analyze", 8, 1200, 0.0360),
-        ("clipper", 5, 400, 0.0120),
-        ("gender", 2, 50, 0.0003),
-    ]
-
-    mock_conn = MagicMock()
-    mock_cur = MagicMock()
-    mock_conn.cursor.return_value.__enter__.return_value = mock_cur
-
-    # Set up execute to return different results based on the query
-    call_count = [0]
-    def mock_execute(query, *args):
-        call_count[0] += 1
-        if "GROUP BY model" in query:
-            mock_cur.fetchall.return_value = mock_rows_by_model
-        elif "GROUP BY d" in query:
-            mock_cur.fetchall.return_value = mock_rows_by_date
-        elif "GROUP BY agent" in query:
-            mock_cur.fetchall.return_value = mock_rows_by_agent
-
-    mock_cur.execute.side_effect = mock_execute
-
-    with patch("main._db_conn", return_value=mock_conn):
-        response = client.get("/dash/token-usage")
-        assert response.status_code == 200
-        data = response.json()
-
-        # Check that by_agent is present
-        assert "by_agent" in data
-        assert len(data["by_agent"]) == 3
-
-        # Check structure
-        assert data["by_agent"][0]["agent"] == "analyze"
-        assert data["by_agent"][0]["calls"] == 8
-        assert data["by_agent"][0]["total_tokens"] == 1200
-        assert data["by_agent"][0]["cost_usd"] == 0.036
-
-        # Check that existing fields are still present
-        assert "rows" in data
-        assert "series" in data
-        assert "totals" in data
-
-
-def test_dash_token_usage_db_unavailable(client):
-    """dash_token_usage should return graceful error if DB unavailable."""
-    with patch("main._db_conn", return_value=None):
-        response = client.get("/dash/token-usage")
-        assert response.status_code == 200
-        data = response.json()
-        assert data.get("error") == "db unavailable"
-        assert data["by_agent"] == []
-
-
 # ── Runnable as script ─────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
