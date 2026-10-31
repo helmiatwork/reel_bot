@@ -64,7 +64,8 @@ def _shots_total(shots: list) -> Optional[float]:
     return sum(nums) if nums else None
 
 
-def validate_blueprint(bp: dict, song_ids: set, channel: Optional[str] = None, fmt: Optional[str] = None) -> list[str]:
+def validate_blueprint(bp: dict, song_ids: set, channel: Optional[str] = None, fmt: Optional[str] = None,
+                       niche: Optional[str] = None) -> list[str]:
     """Return a list of problems (empty = ok). Unknown bgm_song_id is nulled in place, not an error."""
     if not isinstance(bp, dict):
         return ["blueprint is not an object"]
@@ -77,6 +78,12 @@ def validate_blueprint(bp: dict, song_ids: set, channel: Optional[str] = None, f
         for t in titles:
             if name in str(t).lower():
                 errors.append(f"judul memuat nama channel referensi '{channel}': {t}")
+    niche_name = (niche or "").strip().lower()
+    if niche_name and isinstance(titles, list):
+        lead = re.compile(re.escape(niche_name) + r"\s*[:|-]")
+        for t in titles:
+            if lead.match(str(t).strip().lower()):
+                errors.append(f"judul diawali nama niche '{niche}': {t}")
     thumb = bp.get("thumbnail")
     if "thumbnail" in bp:
         concepts = thumb.get("concepts") if isinstance(thumb, dict) else None
@@ -127,6 +134,8 @@ def build_blueprint_prompt(item: dict, ctx: dict, section: Optional[str] = None)
         "direkam/ditulis sendiri. Tiru struktur dan pola, modifikasi sudut cerita.\n",
         "Judul, deskripsi, dan tag TIDAK BOLEH memuat nama atau handle channel referensi"
         + (f" ('{ctx['reference_channel']}')" if ctx.get("reference_channel") else "") + ".\n",
+        f"Judul (titles) TIDAK BOLEH diawali nama niche ('{item.get('niche') or 'umum'}') atau prefix \"Kategori:\"; "
+        "langsung mulai judul dari hook atau manfaatnya.\n",
         block("Analisa referensi", ctx.get("analysis")),
         block("Ide dari referensi", ctx.get("ideas")),
         block("Efek referensi", ctx.get("effects")),
@@ -234,7 +243,7 @@ def _run_blueprint(item_id: int, section: Optional[str]) -> None:
                 bp = {**item["blueprint"], section: parsed[section]}
             else:
                 bp = parsed
-            errors = validate_blueprint(bp, song_ids, ctx.get("reference_channel"), item.get("format"))
+            errors = validate_blueprint(bp, song_ids, ctx.get("reference_channel"), item.get("format"), item.get("niche"))
             if not errors:
                 break
             prompt = base_prompt + "\n\nJawaban sebelumnya ditolak karena:\n- " + "\n- ".join(errors) + \

@@ -251,3 +251,31 @@ def test_prompt_has_duration_and_format_rules():
 def test_prompt_says_exactly_three_concepts_cover_separate():
     p = bpm.build_blueprint_prompt({"title": "T", "format": "short"}, {})
     assert "TEPAT 3 konsep" in p and "TIDAK dihitung sebagai konsep" in p
+
+
+def test_validate_rejects_title_starting_with_niche():
+    bp = copy.deepcopy(OK)
+    for title in ("Komedi Relatable: kucing lucu", "komedi relatable | kucing lucu", "KOMEDI RELATABLE - kucing lucu"):
+        bp["titles"][0] = title
+        assert any("diawali nama niche" in e for e in bpm.validate_blueprint(bp, {7}, None, None, "Komedi Relatable")), title
+    bp["titles"][0] = "Kucing komedi relatable: lucu"
+    assert bpm.validate_blueprint(bp, {7}, None, None, "Komedi Relatable") == []
+    bp["titles"][0] = "Komedi Relatable: kucing lucu"
+    assert bpm.validate_blueprint(bp, {7}, None, None, None) == []  # no niche: check skipped
+
+
+def test_prompt_forbids_niche_or_kategori_prefix_in_titles():
+    p = bpm.build_blueprint_prompt({"title": "T", "niche": "Komedi Relatable"}, {})
+    assert "judul" in p.lower() and "Kategori:" in p and "Komedi Relatable" in p
+
+
+def test_blueprint_job_passes_niche_to_title_check():
+    bad = copy.deepcopy(OK)
+    bad["titles"][0] = "Komedi Relatable: kucing lucu"
+    item = (1, "T", "Komedi Relatable", "idea", None, "short", "self", None)
+    conn = FakeConn([("SELECT * FROM content_items", (ITEM_COLS, [item])), ("FROM songs", SONGS)])
+    with patch("main._db_conn", return_value=conn), \
+            patch("atm.blueprint.run_claude", side_effect=[json.dumps(bad), json.dumps(OK)]) as rc:
+        bpm._run_blueprint(1, None)
+    assert rc.call_count == 2 and "diawali nama niche" in rc.call_args_list[1].args[0]
+    assert conn.sqls("SET blueprint = ") and not conn.sqls("blueprint_status = 'error'")
