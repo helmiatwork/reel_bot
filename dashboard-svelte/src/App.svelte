@@ -279,7 +279,7 @@
     <div class="brand">reel<span class="ba">bot</span></div>
     <nav class="nav">
       {#each NAV_GROUPS as g}
-        <div class="nav-group">{$_(g.title_key)}</div>
+        {#if g.items.length > 1}<div class="nav-group">{$_(g.title_key)}</div>{/if}
         {#each g.items as n}
           <a class:active={current === n.p} onclick={() => page.set(n.p)}>
             <span class="ico">{@html n.ico}</span>

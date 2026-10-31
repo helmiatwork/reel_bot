@@ -190,7 +190,7 @@
   </div>
 
   <div class="help">
-    {$_('cookies.help_text')}<strong>{$_('cookies.help_text_link')}</strong>{$_('cookies.help_text_end')}
+    {$_('cookies.help_text')}
   </div>
 
   {#if loading}
