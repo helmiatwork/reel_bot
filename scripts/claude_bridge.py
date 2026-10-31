@@ -316,10 +316,8 @@ class BridgeHandler(http.server.BaseHTTPRequestHandler):
             self._send_json(400, {"ok": False, "error": "effort must be one of " + ", ".join(sorted(_EFFORTS))})
             return
 
-        # Optional subdir: validated strictly inside _resolve_frames.
-        # An invalid subdir (traversal attempt, dotfile, etc.) causes
-        # _resolve_frames to return [] — the run proceeds with no frames,
-        # matching the 400-style defensive behavior documented in the spec.
+        # Optional subdir: a malformed one is a 400 (checked below); frames that are
+        # missing under a valid subdir are a 400 frames_missing (checked further below).
         subdir = req.get("subdir") or None
         if subdir is not None and not isinstance(subdir, str):
             self._send_json(400, {"ok": False, "error": "subdir must be a string"})
