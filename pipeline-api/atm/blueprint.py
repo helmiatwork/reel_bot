@@ -200,7 +200,7 @@ def gather_context(cur, item: dict) -> dict:
     rows = _rows(cur, "SELECT kind, content FROM learnings WHERE niche IN (%s, 'general') "
                       "ORDER BY hits DESC LIMIT 10", (niche,))
     ctx["learnings"] = [{"kind": r[0], "content": r[1]} for r in rows]
-    rows = _rows(cur, "SELECT keyword, score FROM keywords WHERE niche = %s "
+    rows = _rows(cur, "SELECT keyword, score FROM keywords WHERE lower(trim(niche)) = lower(trim(%s)) "
                       "ORDER BY score DESC NULLS LAST LIMIT 10", (niche,))
     ctx["keywords"] = [{"keyword": r[0], "score": r[1]} for r in rows]
     return ctx

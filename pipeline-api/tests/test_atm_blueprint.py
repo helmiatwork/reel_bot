@@ -202,6 +202,15 @@ def test_blueprint_gives_up_after_one_retry():
     assert rc.call_count == 2 and conn.sqls("blueprint_status = 'error'")
 
 
+def test_gather_context_keywords_match_niche_case_and_space_insensitive():
+    conn = FakeConn([])
+    with conn.cursor() as cur:
+        bpm.gather_context(cur, {"reference_url": None, "niche": " Komedi Relatable "})
+    kw = conn.sqls("FROM keywords")
+    assert len(kw) == 1 and "lower(trim(niche)) = lower(trim(%s))" in kw[0][0]
+    assert kw[0][1] == (" Komedi Relatable ",)
+
+
 def test_gather_context_reads_reference_channel():
     conn = FakeConn([("FROM sources", (["channel"], [("KucingKu",)]))])
     with conn.cursor() as cur:
