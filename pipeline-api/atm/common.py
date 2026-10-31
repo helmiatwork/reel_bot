@@ -14,6 +14,9 @@ ATM_LIGHT_MODEL = os.getenv("ATM_LIGHT_MODEL", "claude-haiku-5-5")
 # Passed to `claude -p --effort`; empty = the model's own default.
 ATM_EFFORT = os.getenv("ATM_EFFORT", "")
 ATM_LIGHT_EFFORT = os.getenv("ATM_LIGHT_EFFORT", "")
+# Draft + post evaluation (A/B-tested: haiku at high effort matches sonnet there).
+ATM_EVAL_MODEL = os.getenv("ATM_EVAL_MODEL", "claude-haiku-5-5")
+ATM_EVAL_EFFORT = os.getenv("ATM_EVAL_EFFORT", "high")
 
 _FENCE_RE = re.compile(r"```(?:json)?\s*(.*?)```", re.S | re.I)
 

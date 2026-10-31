@@ -113,7 +113,7 @@ def test_evaluate_round_increments():
     with patch("main._db_conn", return_value=conn), patch("atm.evaluate._run_evaluation") as job:
         r = client.post("/atm/items/7/evaluate")
     assert r.json() == {"evaluation_id": 41, "round": 3, "status": "building"}
-    assert conn.sqls("INSERT INTO content_evaluations")[0][1] == (7, 3, evaluate.ATM_MODEL)
+    assert conn.sqls("INSERT INTO content_evaluations")[0][1] == (7, 3, evaluate.ATM_EVAL_MODEL)
     job.assert_called_once_with(41, 7, 3)
 
 
@@ -184,6 +184,8 @@ def test_evaluate_success_writes_ready_and_uses_round_subdir(tmp_path):
     ext, rc = _run(tmp_path, conn, frames, "```json\n" + json.dumps(_good_eval()) + "\n```")
     assert rc.call_args.kwargs["subdir"] == "atm_7_r3" and rc.call_args.kwargs["frames"] == ["frame_000.jpg"]
     assert ext.call_args.args[1] == str(tmp_path / "af" / "atm_7_r3") and ext.call_args.kwargs["n"] == 16
+    assert rc.call_args.kwargs["model"] == evaluate.ATM_EVAL_MODEL == "claude-haiku-5-5"
+    assert rc.call_args.kwargs["effort"] == evaluate.ATM_EVAL_EFFORT == "high"
     assert "potong 1,5" in rc.call_args.args[0]  # previous round fixes reach the prompt
     ups = conn.sqls("UPDATE content_evaluations")
     assert "status = 'ready'" in ups[0][0] and json.loads(ups[0][1][0])["hook"] == 7

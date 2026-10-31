@@ -29,7 +29,7 @@ _SCHEMA = """{
 _MAX_CTX_CHARS = 6000
 
 
-def validate_blueprint(bp: dict, song_ids: set) -> list[str]:
+def validate_blueprint(bp: dict, song_ids: set, channel: Optional[str] = None) -> list[str]:
     """Return a list of problems (empty = ok). Unknown bgm_song_id is nulled in place, not an error."""
     if not isinstance(bp, dict):
         return ["blueprint is not an object"]
@@ -37,6 +37,11 @@ def validate_blueprint(bp: dict, song_ids: set) -> list[str]:
     titles = bp.get("titles")
     if "titles" in bp and (not isinstance(titles, list) or len(titles) != 5):
         errors.append("titles harus tepat 5")
+    name = (channel or "").strip().lstrip("@").lower()
+    if name and isinstance(titles, list):
+        for t in titles:
+            if name in str(t).lower():
+                errors.append(f"judul memuat nama channel referensi '{channel}': {t}")
     thumb = bp.get("thumbnail")
     if "thumbnail" in bp:
         concepts = thumb.get("concepts") if isinstance(thumb, dict) else None
@@ -72,6 +77,8 @@ def build_blueprint_prompt(item: dict, ctx: dict, section: Optional[str] = None)
         f"Format: {item.get('format')}\nVoice: {item.get('voice_mode')}\n",
         "Aturan orisinalitas: jangan memakai footage referensi sebagai materi; semua footage dan narasi "
         "direkam/ditulis sendiri. Tiru struktur dan pola, modifikasi sudut cerita.\n",
+        "Judul, deskripsi, dan tag TIDAK BOLEH memuat nama atau handle channel referensi"
+        + (f" ('{ctx['reference_channel']}')" if ctx.get("reference_channel") else "") + ".\n",
         block("Analisa referensi", ctx.get("analysis")),
         block("Ide dari referensi", ctx.get("ideas")),
         block("Efek referensi", ctx.get("effects")),
@@ -119,6 +126,8 @@ def gather_context(cur, item: dict) -> dict:
         ctx["ideas"] = dict(zip(("detail", "candidates"), rows[0])) if rows else None
         rows = _rows(cur, "SELECT effects FROM source_effects WHERE youtube_url = %s", (url,))
         ctx["effects"] = rows[0][0] if rows else None
+        rows = _rows(cur, "SELECT channel FROM sources WHERE youtube_url = %s AND channel IS NOT NULL LIMIT 1", (url,))
+        ctx["reference_channel"] = rows[0][0] if rows else None
     rows = _rows(cur, "SELECT id, title, mood, bpm, genre, is_viral FROM songs WHERE kind IN ('song','clip') "
                       "ORDER BY is_viral DESC, created_at DESC LIMIT 20")
     ctx["songs"] = [dict(zip(("id", "title", "mood", "bpm", "genre", "is_viral"), r)) for r in rows]
@@ -153,19 +162,26 @@ def _run_blueprint(item_id: int, section: Optional[str]) -> None:
             item = item_row(cur.description, row)
             ctx = gather_context(cur, item)
         song_ids = {s["id"] for s in ctx["songs"]}
-        text = run_claude(build_blueprint_prompt(item, ctx, section), agent="atm_blueprint", model=ATM_MODEL)
-        if text is None:
-            return _fail(conn, item_id, "Claude tidak bisa dihubungi. Coba lagi nanti.")
-        parsed = parse_json(text)
-        if parsed is None:
-            return _fail(conn, item_id, "Jawaban Claude bukan JSON yang valid. Coba buat ulang.")
-        if section:
-            if section not in parsed or not isinstance(item.get("blueprint"), dict):
-                return _fail(conn, item_id, f"Bagian '{section}' tidak ada di jawaban Claude.")
-            bp = {**item["blueprint"], section: parsed[section]}
-        else:
-            bp = parsed
-        errors = validate_blueprint(bp, song_ids)
+        base_prompt = build_blueprint_prompt(item, ctx, section)
+        prompt, errors = base_prompt, []
+        for attempt in (1, 2):  # one retry with the validation errors appended
+            text = run_claude(prompt, agent="atm_blueprint", model=ATM_MODEL)
+            if text is None:
+                return _fail(conn, item_id, "Claude tidak bisa dihubungi. Coba lagi nanti.")
+            parsed = parse_json(text)
+            if parsed is None:
+                return _fail(conn, item_id, "Jawaban Claude bukan JSON yang valid. Coba buat ulang.")
+            if section:
+                if section not in parsed or not isinstance(item.get("blueprint"), dict):
+                    return _fail(conn, item_id, f"Bagian '{section}' tidak ada di jawaban Claude.")
+                bp = {**item["blueprint"], section: parsed[section]}
+            else:
+                bp = parsed
+            errors = validate_blueprint(bp, song_ids, ctx.get("reference_channel"))
+            if not errors:
+                break
+            prompt = base_prompt + "\n\nJawaban sebelumnya ditolak karena:\n- " + "\n- ".join(errors) + \
+                "\nPerbaiki semua masalah di atas dan balas JSON saja."
         if errors:
             return _fail(conn, item_id, "Blueprint tidak lengkap: " + "; ".join(errors))
         with conn.cursor() as cur:

@@ -150,3 +150,41 @@ def test_gather_context_missing_table_does_not_crash():
             raise RuntimeError("no table")
     ctx = bpm.gather_context(Cur(), {"reference_url": "u", "niche": "n"})
     assert ctx["songs"] == [] and ctx["analysis"] is None
+
+
+def test_validate_rejects_title_with_reference_channel_name():
+    bp = copy.deepcopy(OK)
+    bp["titles"][0] = "Kucing lucu ala KucingKu Official"
+    assert any("KucingKu" in e for e in bpm.validate_blueprint(bp, {7}, "@kucingku official"))
+    assert bpm.validate_blueprint(bp, {7}, None) == []  # no known channel: check skipped
+
+
+def test_prompt_forbids_reference_channel_name():
+    p = bpm.build_blueprint_prompt({"title": "T"}, {"reference_channel": "KucingKu"})
+    assert "TIDAK BOLEH memuat nama atau handle channel" in p and "KucingKu" in p
+
+
+def test_blueprint_retries_once_with_validation_errors_then_saves():
+    bad = {**OK, "titles": ["a"]}
+    conn = FakeConn([("SELECT * FROM content_items", (ITEM_COLS, [_item()])), ("FROM songs", SONGS)])
+    with patch("main._db_conn", return_value=conn), \
+            patch("atm.blueprint.run_claude", side_effect=[json.dumps(bad), json.dumps(OK)]) as rc:
+        bpm._run_blueprint(1, None)
+    assert rc.call_count == 2
+    assert "titles harus tepat 5" in rc.call_args_list[1].args[0]
+    assert conn.sqls("SET blueprint = ") and not conn.sqls("blueprint_status = 'error'")
+
+
+def test_blueprint_gives_up_after_one_retry():
+    bad = {**OK, "titles": ["a"]}
+    conn = FakeConn([("SELECT * FROM content_items", (ITEM_COLS, [_item()])), ("FROM songs", SONGS)])
+    with patch("main._db_conn", return_value=conn), \
+            patch("atm.blueprint.run_claude", return_value=json.dumps(bad)) as rc:
+        bpm._run_blueprint(1, None)
+    assert rc.call_count == 2 and conn.sqls("blueprint_status = 'error'")
+
+
+def test_gather_context_reads_reference_channel():
+    conn = FakeConn([("FROM sources", (["channel"], [("KucingKu",)]))])
+    with conn.cursor() as cur:
+        assert bpm.gather_context(cur, {"reference_url": "u", "niche": "n"})["reference_channel"] == "KucingKu"

@@ -5,7 +5,7 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 
-from .common import ATM_LIGHT_MODEL, ATM_MODEL, parse_json, run_claude
+from .common import ATM_EVAL_EFFORT, ATM_EVAL_MODEL, ATM_LIGHT_MODEL, parse_json, run_claude
 
 router = APIRouter()
 
@@ -73,7 +73,7 @@ RINGKASAN EVALUASI DRAFT: {_clip(drafts, 3000)}
 
 Jawab HANYA JSON valid tanpa teks lain, persis skema ini:
 {_POST_SCHEMA}"""
-        text = run_claude(prompt, agent="atm_post_evaluate", model=ATM_MODEL, timeout_s=300)
+        text = run_claude(prompt, agent="atm_post_evaluate", model=ATM_EVAL_MODEL, effort=ATM_EVAL_EFFORT, timeout_s=300)
         if text is None:
             _release(conn, item_id)
             return None
@@ -88,11 +88,11 @@ Jawab HANYA JSON valid tanpa teks lain, persis skema ini:
                             "fixes, summary, model, status) VALUES (%s, 'post', %s, %s::jsonb, %s::jsonb, "
                             "%s::jsonb, %s, %s, 'ready') RETURNING id",
                             (item_id, rnd, json.dumps(parsed["scores"]), json.dumps(parsed["findings"]),
-                             json.dumps(parsed["fixes"]), parsed["summary"].strip(), ATM_MODEL))
+                             json.dumps(parsed["fixes"]), parsed["summary"].strip(), ATM_EVAL_MODEL))
             else:
                 cur.execute("INSERT INTO content_evaluations (content_item_id, kind, round, model, status, error) "
                             "VALUES (%s, 'post', %s, %s, 'error', %s) RETURNING id",
-                            (item_id, rnd, ATM_MODEL, "Jawaban Claude bukan evaluasi yang valid."))
+                            (item_id, rnd, ATM_EVAL_MODEL, "Jawaban Claude bukan evaluasi yang valid."))
             eval_id = cur.fetchone()[0]
         conn.commit()
         return eval_id if ok else None

@@ -109,6 +109,8 @@ def test_post_eval_sets_done():
     ins = conn.sqls("INSERT INTO content_evaluations")[0]
     assert "'post'" in ins[0] and ins[1][1] == 2  # round = max + 1
     assert "frames" not in rc.call_args.kwargs or not rc.call_args.kwargs["frames"]
+    assert rc.call_args.kwargs["model"] == learn.ATM_EVAL_MODEL and rc.call_args.kwargs["effort"] == learn.ATM_EVAL_EFFORT
+    assert ins[1][2] == learn.ATM_EVAL_MODEL or learn.ATM_EVAL_MODEL in ins[1]
     assert "draft bagus" in rc.call_args.args[0] and "90" in rc.call_args.args[0]
 
 

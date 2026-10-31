@@ -10,7 +10,7 @@ from typing import Optional
 from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
-from .common import ATM_MODEL, item_row, parse_json, run_claude
+from .common import ATM_EVAL_EFFORT, ATM_EVAL_MODEL, item_row, parse_json, run_claude
 from .learn import distill_learnings
 
 router = APIRouter()
@@ -206,7 +206,7 @@ def _run_evaluation(eval_id: int, item_id: int, rnd: int) -> None:
         if not frames:
             return _fail(conn, eval_id, "Gagal mengambil frame dari video.")
         prompt = build_eval_prompt(item, frames, transcribe(str(video)), audio_levels(str(video)), prev)
-        text = run_claude(prompt, agent="atm_evaluate", model=ATM_MODEL, frames=[f["name"] for f in frames],
+        text = run_claude(prompt, agent="atm_evaluate", model=ATM_EVAL_MODEL, effort=ATM_EVAL_EFFORT, frames=[f["name"] for f in frames],
                           subdir=subdir, timeout_s=480)
         if text is None:
             return _fail(conn, eval_id, "Claude tidak bisa dihubungi. Coba lagi nanti.")
@@ -224,7 +224,7 @@ def _run_evaluation(eval_id: int, item_id: int, rnd: int) -> None:
                 "error = NULL WHERE id = %s",
                 (json.dumps(parsed["scores"]), json.dumps(parsed["findings"]), json.dumps(parsed["fixes"]),
                  parsed["summary"].strip(), json.dumps(resolved) if isinstance(resolved, dict) and prev else None,
-                 item["draft_video_path"], ATM_MODEL, eval_id))
+                 item["draft_video_path"], ATM_EVAL_MODEL, eval_id))
         conn.commit()
         distill_learnings(item_id, eval_id)  # never raises; 0 when nothing could be distilled
     except Exception as exc:
@@ -264,7 +264,7 @@ def evaluate_item(item_id: int, background: BackgroundTasks):
             rnd = cur.fetchone()[0] + 1
             try:  # UNIQUE (item, kind, round) is the guard against two concurrent requests
                 cur.execute("INSERT INTO content_evaluations (content_item_id, kind, round, model, status) "
-                            "VALUES (%s, 'draft', %s, %s, 'building') RETURNING id", (item_id, rnd, ATM_MODEL))
+                            "VALUES (%s, 'draft', %s, %s, 'building') RETURNING id", (item_id, rnd, ATM_EVAL_MODEL))
                 eval_id = cur.fetchone()[0]
             except Exception:
                 conn.rollback()
