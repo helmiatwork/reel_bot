@@ -80,7 +80,7 @@ def validate_blueprint(bp: dict, song_ids: set, channel: Optional[str] = None, f
                 errors.append(f"judul memuat nama channel referensi '{channel}': {t}")
     niche_name = (niche or "").strip().lower()
     if niche_name and isinstance(titles, list):
-        lead = re.compile(re.escape(niche_name) + r"\s*[:|-]")
+        lead = re.compile(re.escape(niche_name) + r"\s*[:|\-–—]")
         for t in titles:
             if lead.match(str(t).strip().lower()):
                 errors.append(f"judul diawali nama niche '{niche}': {t}")

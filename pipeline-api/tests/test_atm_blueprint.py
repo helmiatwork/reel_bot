@@ -255,7 +255,8 @@ def test_prompt_says_exactly_three_concepts_cover_separate():
 
 def test_validate_rejects_title_starting_with_niche():
     bp = copy.deepcopy(OK)
-    for title in ("Komedi Relatable: kucing lucu", "komedi relatable | kucing lucu", "KOMEDI RELATABLE - kucing lucu"):
+    for title in ("Komedi Relatable: kucing lucu", "komedi relatable | kucing lucu", "KOMEDI RELATABLE - kucing lucu",
+                  "Komedi Relatable – kucing lucu", "Komedi Relatable — kucing lucu"):
         bp["titles"][0] = title
         assert any("diawali nama niche" in e for e in bpm.validate_blueprint(bp, {7}, None, None, "Komedi Relatable")), title
     bp["titles"][0] = "Kucing komedi relatable: lucu"
