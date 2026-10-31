@@ -127,6 +127,26 @@ class TestSubprocessArgv(unittest.TestCase):
         idx = argv.index("-p")
         self.assertIn("my test prompt", argv[idx + 1])
 
+    def test_text_only_job_gets_no_tools(self):
+        with patch("subprocess.run", return_value=_completed(_GOOD_CLAUDE_JSON)) as mock_run:
+            claude_bridge._run_claude("test", [], "claude-sonnet-4-6", 10)
+        argv = mock_run.call_args[0][0]
+        idx = argv.index("--tools")
+        self.assertEqual(argv[idx + 1], "")
+        self.assertNotIn("--allowedTools", argv)
+        self.assertIn("--strict-mcp-config", argv)
+
+    def test_frame_job_read_scoped_to_frame_dir(self):
+        with patch("subprocess.run", return_value=_completed(_GOOD_CLAUDE_JSON)) as mock_run:
+            claude_bridge._run_claude("test", ["/x/frame_000.jpg"], "claude-sonnet-4-6", 10)
+        argv = mock_run.call_args[0][0]
+        self.assertEqual(argv[argv.index("--tools") + 1], "Read")
+        self.assertEqual(argv[argv.index("--allowedTools") + 1],
+                         f"Read(/{claude_bridge.FRAME_DIR}/**)")
+        self.assertEqual(argv[argv.index("--permission-mode") + 1], "dontAsk")
+        self.assertIn("--strict-mcp-config", argv)
+        self.assertEqual(argv[argv.index("--setting-sources") + 1], "")
+
 
 # ── Rate-limit detection ───────────────────────────────────────────────────────
 

@@ -29,6 +29,7 @@ import http.server
 import json
 import logging
 import os
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -36,10 +37,8 @@ from pathlib import Path
 # ── Config ────────────────────────────────────────────────────────────────────
 
 PORT = int(os.environ.get("CLAUDE_BRIDGE_PORT", 9999))
-CLAUDE_BIN = os.environ.get(
-    "CLAUDE_BIN",
-    "/Users/ichigo/.nodenv/versions/24.14.1/bin/claude",
-)
+# PATH lookup first: a pinned nodenv path breaks on every node upgrade.
+CLAUDE_BIN = os.environ.get("CLAUDE_BIN") or shutil.which("claude") or "claude"
 # .resolve() makes the dir absolute so resolved frame paths stay absolute even
 # when ANALYZE_FRAME_DIR is passed as a relative path. claude runs in a clean
 # temp cwd and reads frames via absolute path — a relative path would not resolve.
@@ -153,14 +152,30 @@ def _run_claude(prompt: str, frame_paths: list, model: str, timeout_s: int) -> d
     if frame_paths:
         final_prompt += "\n\nGambar untuk dianalisa:\n" + "\n".join(frame_paths)
 
+    # Prompts carry untrusted text (scraped titles, transcripts), so tools are
+    # least-privilege: text-only jobs get no tools at all; frame jobs get Read
+    # scoped to FRAME_DIR, and dontAsk denies anything else instead of hanging
+    # on a permission prompt (no tty to approve).
+    if frame_paths:
+        tool_args = [
+            "--tools", "Read",
+            "--allowedTools", f"Read(/{FRAME_DIR}/**)",
+            "--permission-mode", "dontAsk",
+        ]
+    else:
+        tool_args = ["--tools", ""]
+    # --tools only limits built-ins; without this the host's MCP servers and
+    # claude.ai connectors (Gmail, Drive, …) load into every bridge job.
+    tool_args.append("--strict-mcp-config")
+    # Skip user/project settings: the host's allow rules ("Read", home in
+    # additionalDirectories) would otherwise override the FRAME_DIR scope.
+    tool_args += ["--setting-sources", ""]
+
     argv = [
         CLAUDE_BIN,
         "-p", final_prompt,
         "--model", model,
-        # Allow the Read tool headlessly so claude can open the frame image files
-        # referenced in the prompt. Without this, claude hits the permission gate
-        # trying to Read the frames and hangs forever (no tty to approve).
-        "--allowedTools", "Read",
+        *tool_args,
         # Isolate from the host user's Claude Code config so analysis output is
         # never polluted by interactive hooks (grammar-check, caveman, persona).
         # disableAllHooks kills all hook events; OAuth subscription auth still
