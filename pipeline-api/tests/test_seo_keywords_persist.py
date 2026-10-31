@@ -45,8 +45,8 @@ def test_analyze_persists_autocomplete_and_trends_rows_with_scores():
     assert _inserted(conn) == {
         ("kucing lucu", "yt_autocomplete"): ("Kucing", "global", "kucing", 60),
         ("kucing oren", "yt_autocomplete"): ("Kucing", "global", "kucing", 58),
-        ("kucing hitam", "trends_top"): ("Kucing", "global", "kucing", 80),
-        ("kucing viral", "trends_rising"): ("Kucing", "global", "kucing", 100),
+        ("kucing hitam", "trends_top"): ("Kucing", "global", "kucing", 48.0),
+        ("kucing viral", "trends_rising"): ("Kucing", "global", "kucing", 50.0),
     }
     assert conn.sqls("ON CONFLICT (keyword, region, source) DO UPDATE SET seed = EXCLUDED.seed, niche = EXCLUDED.niche, "
                      "score = EXCLUDED.score, raw = EXCLUDED.raw, fetched_at = now()")

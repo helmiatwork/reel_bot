@@ -9418,11 +9418,14 @@ def _seo_persist_keywords(seed: str, niche: str, platform: str, raw_suggestions:
         for rank, term in enumerate(raw_suggestions):
             if term:
                 rows[(term, auto_source)] = (max(10, 60 - 2 * rank), {"term": term, "source": "autocomplete"})
-        for key, source in (("related_top", "trends_top"), ("related_rising", "trends_rising")):
+        # One scale with autocomplete (60..10): trends top 0-100 -> 0-60, rising % growth -> max 50,
+        # so YouTube search intent is not crowded out of the blueprint's top-10 keywords.
+        for key, source, weight in (("related_top", "trends_top", 0.6), ("related_rising", "trends_rising", 0.5)):
             for item in trends.get(key, []):
                 q = item.get("query", "")
                 if q:
-                    rows[(q, source)] = (min(100.0, float(item.get("value") or 0)), {"term": q, "source": source})
+                    score = round(min(100.0, float(item.get("value") or 0)) * weight, 1)
+                    rows[(q, source)] = (score, {"term": q, "source": source})
         with conn.cursor() as cur:
             for (term, source), (score, raw) in rows.items():
                 cur.execute("""
