@@ -151,7 +151,9 @@ Alat lanjutan (Pecah Kompilasi, Clipper) menjadi tombol di Amati/Pustaka, bukan 
 - `content_evaluations` (baru) — `id, content_item_id, kind ('draft'|'post'), round INT, video_ref, scores JSONB,
   findings JSONB, fixes JSONB, summary TEXT, compared_to_round INT, human_notes JSONB, model, created_at`;
   unik `(content_item_id, kind, round)`.
-- `performance_snapshots` (sudah ada) — tambah `likes`, `comments`, `content_item_id`, `checkpoint`.
+- `monitor_snapshots` (baru) — `content_item_id, url, checkpoint_h, views, likes, comments, alerted`, unik per
+  (konten, checkpoint). Tabel terpisah karena `performance_snapshots` punya indeks unik per hari yang bentrok
+  dengan checkpoint 1 jam dan 6 jam di hari yang sama.
 - `routine_settings` (baru, kecil) — per akun: hari, jam, jumlah per minggu, ambang alert.
 - `learnings` — tetap; tambah `kind` = `fix` untuk pelajaran dari evaluasi.
 
