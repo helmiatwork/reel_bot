@@ -258,8 +258,27 @@ h2{font-size:24px;margin:24px 0 8px;color:#ffd60a}
   "use strict";
   var data = JSON.parse(document.getElementById("data").textContent);
   var shots = data.shots, beats = data.beats;
-  // beat i narrates shot i only when the counts match; otherwise beats live on the start screen
-  var matched = beats.length === shots.length;
+  // Beats map to shots by time ("00:03-00:08" vs cumulative shot durations); if any beat has no
+  // parsable time, fall back to beat i = shot i when the counts match, else beats go on the start screen.
+  function secs(t) { var p = String(t).split(":"); return p.length === 2 ? (+p[0]) * 60 + (+p[1]) : NaN; }
+  var spans = beats.map(function (b) {
+    var p = String(b.t || "").split("-");
+    return p.length === 2 ? [secs(p[0]), secs(p[1])] : [NaN, NaN];
+  });
+  var timed = beats.length > 0 && spans.every(function (s) { return s[0] < s[1]; });
+  var shotBeats = [], at = 0;
+  shots.forEach(function (s, i) {
+    var end = at + (+s.duration_s || 0), from = at;
+    shotBeats.push(timed
+      ? beats.filter(function (_, j) { return spans[j][0] < end && spans[j][1] > from; })
+      : (beats.length === shots.length ? [beats[i]] : []));
+    at = end;
+  });
+  var matched = timed || beats.length === shots.length;
+  var LABELS = {camera: "Kamera", record: "Aksi", action: "Aksi", framing: "Framing", transition: "Transisi",
+                on_screen_text: "Teks di layar", location: "Lokasi", props: "Properti", audio: "Audio", note: "Catatan",
+                shot: "Shot", moment: "Momen"};
+  function labelOf(k) { return LABELS[k] || k.replace(/_/g, " "); }
   var total = shots.length, last = total + 1; // 0 = start, 1..total = shots, last = summary
   var key = "rekam|" + data.title + "|";
   var done = shots.map(function (_, i) {
@@ -305,9 +324,9 @@ h2{font-size:24px;margin:24px 0 8px;color:#ffd60a}
     var s = shots[i];
     screen.appendChild(el("div", "meta", "Shot " + (i + 1) + " / " + total));
     if (s.duration_s) screen.appendChild(el("div", "meta", s.duration_s + " dtk"));
-    if (matched) screen.appendChild(beatNode(beats[i]));
+    shotBeats[i].forEach(function (b) { screen.appendChild(beatNode(b)); });
     Object.keys(s).forEach(function (k) {
-      if (k !== "n" && k !== "duration_s") screen.appendChild(el("div", "kv", k + ": " + s[k]));
+      if (k !== "n" && k !== "duration_s") screen.appendChild(el("div", "kv", labelOf(k) + ": " + s[k]));
     });
     var label = el("label", "check"), box = el("input");
     box.type = "checkbox";
@@ -326,7 +345,7 @@ h2{font-size:24px;margin:24px 0 8px;color:#ffd60a}
     var cover = data.cover, keys = Object.keys(cover);
     if (keys.length) {
       screen.appendChild(el("h2", "", "Cover frame (di dalam aplikasi)"));
-      keys.forEach(function (k) { screen.appendChild(el("div", "kv", k + ": " + cover[k])); });
+      keys.forEach(function (k) { screen.appendChild(el("div", "kv", labelOf(k) + ": " + cover[k])); });
     }
   }
   function render() {
