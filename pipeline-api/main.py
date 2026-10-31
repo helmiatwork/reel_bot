@@ -29,9 +29,12 @@ _YT_PIPELINE = str(_REPO_ROOT / "yt-pipeline" / "yt_pipeline.py")
 sys.path.insert(0, str(_REPO_ROOT))
 
 # Import Google Ads adapter (module imports cleanly even if creds are missing)
+import atm  # noqa: E402  (atm.* call back into main lazily)
+import atm.db, atm.common  # noqa: E402
 from adapters.google_ads import generate_keyword_ideas, GoogleAdsNotConfigured, normalize_keyword_ideas, compute_score
 
 app = FastAPI(title="Content Pipeline API", version="1.0")
+app.include_router(atm.router)
 
 # Module-level dict to track OAuth state -> account_id for web flow
 _oauth_flows = {}
@@ -92,6 +95,10 @@ def startup_event():
         _learnings_init_db()
     except Exception as e:
         print(f"[startup] learnings db init failed (non-fatal): {e}")
+    try:
+        atm.db.init_atm_db()
+    except Exception as e:
+        print(f"[startup] atm db init failed (non-fatal): {e}")
 
 # ── SSRF guard: blocked networks (module-level constant) ────────────────────
 # Extra ranges beyond ipaddress.ip_address check (0.0.0.0/8, CGNAT, etc)
@@ -9111,7 +9118,7 @@ def update_song(song_id: int, req: SongUpdateRequest):
         conn.close()
 
 
-_SONG_KINDS = ("song", "clip")
+_SONG_KINDS = ("song", "clip", "voiceover")
 
 _SONG_IMPORT_AUDIO_EXTS = {".mp3", ".wav", ".m4a", ".aac", ".ogg"}
 _SONG_IMPORT_VIDEO_EXTS = {".mp4", ".mov", ".webm", ".mkv", ".m4v"}
@@ -13284,7 +13291,7 @@ def winners_clone(req: WinnersCloneRequest, bg: BackgroundTasks):
                         with conn.cursor() as cur:
                             cur.execute(
                                 """INSERT INTO content_items (title, niche, topic, script, based_on, stage)
-                                   VALUES (%s, %s, %s, %s, %s::jsonb, 'script')
+                                   VALUES (%s, %s, %s, %s, %s::jsonb, 'blueprint')
                                    RETURNING id""",
                                 (title, niche, f"Winner variation {i + 1}", script_text,
                                  json.dumps(based_on_urls)),
@@ -13328,7 +13335,7 @@ def winners_clone_status(run_id: str):
 
 # ── Studio — batch script generation + Kanban content pipeline ─────────────────
 
-_VALID_STAGES = frozenset({"idea", "script", "prep", "scheduled", "posted"})
+_VALID_STAGES = frozenset(atm.common.STATUSES)
 
 
 def _studio_init_db():
@@ -13347,7 +13354,7 @@ def _studio_init_db():
                 based_on          JSONB,
                 source_id         BIGINT,
                 scheduled_post_id BIGINT,
-                stage             TEXT NOT NULL DEFAULT 'script',
+                stage             TEXT NOT NULL DEFAULT 'blueprint',
                 created_at        TIMESTAMPTZ DEFAULT now(),
                 updated_at        TIMESTAMPTZ DEFAULT now()
             )""")
@@ -13473,7 +13480,7 @@ def generate_batch(req: BatchGenerateRequest, bg: BackgroundTasks):
                         with conn.cursor() as cur:
                             cur.execute(
                                 """INSERT INTO content_items (title, niche, topic, script, based_on, stage)
-                                   VALUES (%s, %s, %s, %s, %s::jsonb, 'script')
+                                   VALUES (%s, %s, %s, %s, %s::jsonb, 'blueprint')
                                    RETURNING id""",
                                 (title, req.niche, topic_i, script_text, json.dumps(based_on)),
                             )
@@ -13721,7 +13728,7 @@ def keywords_list(
 @app.get("/studio/board")
 def studio_board():
     """All content_items grouped by stage. Never 500 — returns empty groups on DB error."""
-    groups: dict = {s: [] for s in ("idea", "script", "prep", "scheduled", "posted")}
+    groups: dict = {s: [] for s in atm.common.STATUSES}
     try:
         conn = _db_conn()
         if not conn:
@@ -13737,7 +13744,7 @@ def studio_board():
                 cols = [c.name for c in cur.description]
                 for row in cur.fetchall():
                     item = _studio_row(row, cols)
-                    stage = item.get("stage", "script")
+                    stage = item.get("stage", "blueprint")
                     if stage in groups:
                         groups[stage].append(item)
         finally:

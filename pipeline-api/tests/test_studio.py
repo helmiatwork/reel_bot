@@ -90,8 +90,11 @@ class TestStudioRow:
 
 # ── _VALID_STAGES ─────────────────────────────────────────────────────────────
 
-def test_valid_stages_contains_all_five():
-    assert _VALID_STAGES == {"idea", "script", "prep", "scheduled", "posted"}
+ALL_STAGES = ("idea", "blueprint", "shoot", "edit", "review", "ready", "scheduled", "posted", "monitored")
+
+
+def test_valid_stages_contains_all_nine():
+    assert _VALID_STAGES == set(ALL_STAGES)
 
 
 # ── GET /studio/board ─────────────────────────────────────────────────────────
@@ -106,7 +109,7 @@ class TestStudioBoard:
 
     def test_groups_items_by_stage(self):
         rows = [
-            self._row(1, "script", "Script Card"),
+            self._row(1, "blueprint", "Script Card"),
             self._row(2, "idea", "Idea Card"),
             self._row(3, "posted", "Posted Card"),
         ]
@@ -116,11 +119,11 @@ class TestStudioBoard:
             r = client.get("/studio/board")
         assert r.status_code == 200
         data = r.json()
-        assert len(data["script"]) == 1
-        assert data["script"][0]["title"] == "Script Card"
+        assert len(data["blueprint"]) == 1
+        assert data["blueprint"][0]["title"] == "Script Card"
         assert len(data["idea"]) == 1
         assert len(data["posted"]) == 1
-        assert data["prep"] == []
+        assert data["shoot"] == []
         assert data["scheduled"] == []
 
     def test_returns_empty_groups_when_db_unavailable(self):
@@ -129,7 +132,7 @@ class TestStudioBoard:
             r = client.get("/studio/board")
         assert r.status_code == 200
         data = r.json()
-        for stage in ("idea", "script", "prep", "scheduled", "posted"):
+        for stage in ALL_STAGES:
             assert data[stage] == []
 
     def test_returns_empty_groups_on_db_exception(self):
@@ -138,15 +141,15 @@ class TestStudioBoard:
             r = client.get("/studio/board")
         assert r.status_code == 200
         data = r.json()
-        assert all(data[s] == [] for s in ("idea", "script", "prep", "scheduled", "posted"))
+        assert all(data[s] == [] for s in ALL_STAGES)
 
-    def test_board_has_all_five_stage_keys(self):
+    def test_board_has_all_stage_keys(self):
         conn, cur = _make_conn(fetchall=[])
         cur.description = [_col(c) for c in BOARD_COLS]
         with patch("main._db_conn", return_value=conn):
             r = client.get("/studio/board")
         data = r.json()
-        for stage in ("idea", "script", "prep", "scheduled", "posted"):
+        for stage in ALL_STAGES:
             assert stage in data
 
 
@@ -219,14 +222,14 @@ class TestStudioCreate:
 
 class TestStudioUpdate:
     def test_updates_stage(self):
-        row = (1, "My Idea", None, None, None, None, None, None, "script", None, None)
+        row = (1, "My Idea", None, None, None, None, None, None, "blueprint", None, None)
         conn, cur = _make_conn(fetchone=row)
         cur.description = [_col(c) for c in ITEM_COLS]
         with patch("main._db_conn", return_value=conn):
-            r = client.patch("/studio/1", json={"stage": "script"})
+            r = client.patch("/studio/1", json={"stage": "blueprint"})
         assert r.status_code == 200
         data = r.json()
-        assert data["stage"] == "script"
+        assert data["stage"] == "blueprint"
 
     def test_rejects_invalid_stage(self):
         r = client.patch("/studio/1", json={"stage": "trash"})
@@ -256,7 +259,7 @@ class TestStudioUpdate:
 
     def test_503_when_db_unavailable(self):
         with patch("main._db_conn", return_value=None):
-            r = client.patch("/studio/1", json={"stage": "prep"})
+            r = client.patch("/studio/1", json={"stage": "shoot"})
         assert r.status_code == 503
 
 
