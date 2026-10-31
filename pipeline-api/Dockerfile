@@ -1,5 +1,5 @@
 FROM python:3.11-slim
-LABEL description="Pipeline API — voiceover + quality check + publisher + analytics"
+LABEL description="Pipeline API — voiceover + analytics"
 ENV DEBIAN_FRONTEND=noninteractive PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 RUN apt-get update && apt-get install -y \
     ffmpeg libgl1 libglib2.0-0 curl jq unzip dpkg \
@@ -22,16 +22,12 @@ RUN pip install --no-cache-dir \
     boto3 docker
 # Copy all pipeline modules
 COPY voiceover/    /app/voiceover/
-COPY publisher/    /app/publisher/
-COPY quality-check/ /app/quality_check/
 COPY analytics/    /app/analytics/
 COPY analytics-dashboard/ /app/dashboard/
 COPY yt-pipeline/ /app/yt_pipeline/
-COPY pipeline.py   /app/pipeline.py
 COPY pipeline-api/main.py /app/main.py
 COPY pipeline-api/youtube_v3.py /app/youtube_v3.py
-RUN touch /app/voiceover/__init__.py /app/publisher/__init__.py \
-          /app/quality_check/__init__.py /app/analytics/__init__.py \
+RUN touch /app/voiceover/__init__.py /app/analytics/__init__.py \
           /app/yt_pipeline/__init__.py
 RUN mkdir -p /videos /output /app/credentials
 EXPOSE 8000

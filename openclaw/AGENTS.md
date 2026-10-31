@@ -155,7 +155,7 @@
 
 **Model:** gemini/gemini-2.5-flash (simple task)
 
-**Called by:** orchestrator after pipeline-api /publish endpoint completes
+**Called by:** orchestrator when a pipeline run completes
 
 **Responsibilities:**
 1. Format publish results into readable Telegram message
