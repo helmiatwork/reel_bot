@@ -21,6 +21,15 @@
   let voiceFiles = $state({}) // beat -> {song_id, url}
   let voiceBusy = $state(false)
   let timer = null
+  let evals = $state([])
+  let uploading = $state(false)
+  let fileInput = $state(null)
+  let noteEdits = $state({}) // `${evalId}:${findingIndex}` -> {agree, note}
+  let doneFixes = $state({}) // `${evalId}:${no}` -> true (local checklist only)
+  let evalTimer = null
+  const ASPECTS = ['hook', 'pacing', 'story', 'audio', 'text', 'thumbnail_fit', 'blueprint_fit', 'originality']
+  let evalBuilding = $derived(evals.some((e) => e.status === 'building'))
+  let draftEvals = $derived(evals.filter((e) => e.kind === 'draft'))
 
   let bp = $derived(item?.blueprint || null)
   let building = $derived(item?.blueprint_status === 'building')
@@ -56,7 +65,58 @@
     if (building && !timer) timer = setInterval(() => load(), 3000)
     if (!building && timer) { clearInterval(timer); timer = null }
   })
-  onDestroy(() => timer && clearInterval(timer))
+  onDestroy(() => { timer && clearInterval(timer); evalTimer && clearInterval(evalTimer) })
+
+  async function loadEvals() {
+    if (!item) return
+    const r = await api.atmEvaluations(item.id)
+    if (r.ok) evals = r.data.evaluations
+  }
+
+  $effect(() => {
+    if (tab === 'evaluation' && item) loadEvals()
+  })
+
+  // poll every 3 s while an evaluation is running
+  $effect(() => {
+    if (evalBuilding && !evalTimer) evalTimer = setInterval(loadEvals, 3000)
+    if (!evalBuilding && evalTimer) { clearInterval(evalTimer); evalTimer = null }
+  })
+
+  async function uploadDraft() {
+    const f = fileInput?.files?.[0]
+    if (!f) return
+    uploading = true
+    msg = ''
+    const r = await api.atmDraftUpload(item.id, f)
+    uploading = false
+    if (!r.ok) { msg = detail(r) || $_('atm.save_error'); return }
+    fileInput.value = ''
+    await load()
+  }
+
+  async function runEvaluation() {
+    msg = ''
+    const r = await api.atmEvaluate(item.id)
+    if (!r.ok) { msg = detail(r) || $_('atm.save_error'); return }
+    await loadEvals()
+  }
+
+  function noteOf(e, i) {
+    return noteEdits[`${e.id}:${i}`] ?? (e.human_notes || []).find((n) => n.finding_index === i) ?? null
+  }
+
+  function setNote(e, i, patch) {
+    const cur = noteOf(e, i) || { finding_index: i, agree: true, note: '' }
+    noteEdits[`${e.id}:${i}`] = { ...cur, finding_index: i, ...patch }
+  }
+
+  async function saveNotes(e) {
+    const notes = (e.findings || []).map((_f, i) => noteOf(e, i)).filter(Boolean)
+    const r = await api.atmEvalNotes(e.id, notes)
+    if (r.ok) { pushToast('success', $_('atm.eval_notes_saved')); await loadEvals() }
+    else msg = detail(r) || $_('atm.save_error')
+  }
 
   async function patch(body) {
     const r = await api.atmItemPatch(item.id, body)
@@ -293,7 +353,73 @@
       </div>
 
     {:else}
-      <div class="panel"><div class="mut">{$_('atm.eval_soon')}</div></div>
+      <div class="panel">
+        <div class="row">
+          <input type="file" accept="video/*,.mkv,.m4v" bind:this={fileInput} />
+          <button class="btn-ghost" disabled={uploading} onclick={uploadDraft}>
+            {uploading ? $_('atm.eval_uploading') : $_('atm.eval_upload')}
+          </button>
+          <button class="btn-primary" disabled={!item.draft_video_path || evalBuilding} onclick={runEvaluation}>{$_('atm.eval_run')}</button>
+        </div>
+        {#if item.draft_video_path}
+          <div class="mut small">{$_('atm.eval_current')}: {item.draft_video_path}</div>
+        {:else}
+          <div class="mut">{$_('atm.eval_no_draft')}</div>
+        {/if}
+        {#if evalBuilding}<div class="mut">{$_('atm.eval_running')}</div>{/if}
+      </div>
+
+      {#if draftEvals.length === 0}
+        <div class="mut">{$_('atm.eval_none')}</div>
+      {/if}
+      {#each draftEvals as e (e.id)}
+        <div class="panel">
+          <h4 class="eval-h">{$_('atm.eval_round', { values: { n: e.round } })}</h4>
+          {#if e.status === 'building'}
+            <div class="mut">{$_('atm.eval_running')}</div>
+          {:else if e.status === 'error'}
+            <div class="err">{$_('atm.eval_error')}: {e.error}</div>
+          {:else}
+            <div class="lbl-s">{$_('atm.eval_scores')}</div>
+            <div class="scores">
+              {#each ASPECTS as a}
+                <span class="score"><span class="mut">{$_('atm.asp_' + a)}</span> <b>{e.scores?.[a] ?? '-'}</b>/10</span>
+              {/each}
+            </div>
+            <div class="lbl-s">{$_('atm.eval_summary')}</div>
+            <p>{e.summary}</p>
+            {#if e.resolved_prev}
+              <p class="mut">{$_('atm.eval_resolved', { values: { done: e.resolved_prev.done ?? 0, total: e.resolved_prev.total ?? 0 } })}</p>
+            {/if}
+
+            <div class="lbl-s">{$_('atm.eval_findings')}</div>
+            {#each e.findings || [] as f, i}
+              {@const n = noteOf(e, i)}
+              <div class="finding">
+                <div><span class="ts">{f.t_start}-{f.t_end}</span> <span class="niche-badge">{$_('atm.asp_' + f.aspect)}</span> {f.issue}</div>
+                <div class="row">
+                  <button class="btn-ghost sm" class:on={n?.agree === true} onclick={() => setNote(e, i, { agree: true })}>{$_('atm.eval_agree')}</button>
+                  <button class="btn-ghost sm" class:on={n?.agree === false} onclick={() => setNote(e, i, { agree: false })}>{$_('atm.eval_disagree')}</button>
+                  <input class="inp" placeholder={$_('atm.eval_note_ph')} maxlength="1000" value={n?.note ?? ''}
+                    oninput={(ev) => setNote(e, i, { note: ev.currentTarget.value })} />
+                </div>
+              </div>
+            {:else}
+              <div class="mut">{$_('atm.eval_no_findings')}</div>
+            {/each}
+            {#if (e.findings || []).length}
+              <button class="btn-ghost sm" onclick={() => saveNotes(e)}>{$_('atm.eval_save_notes')}</button>
+            {/if}
+
+            <div class="lbl-s">{$_('atm.eval_fixes')}</div>
+            <ul class="fixes">
+              {#each e.fixes || [] as fx}
+                <li><label><input type="checkbox" bind:checked={doneFixes[`${e.id}:${fx.no}`]} /> {fx.no}. {fx.instruction}</label></li>
+              {/each}
+            </ul>
+          {/if}
+        </div>
+      {/each}
     {/if}
   {/if}
 </div>
@@ -337,5 +463,11 @@
   .err { color: var(--red, #f87171); font-size: 12.5px; margin: 6px 0; }
   .mut { color: var(--mut); font-size: 12.5px; }
   .small { font-size: 11px; }
+  .eval-h { margin: 0 0 6px; font-size: 15px; }
+  .scores { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; }
+  .finding { border-bottom: 1px solid var(--line); padding: 8px 0; font-size: 13px; }
+  .ts { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .btn-ghost.on { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .fixes { list-style: none; margin-left: 0; }
   .empty { text-align: center; padding: 60px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; color: var(--mut); }
 </style>

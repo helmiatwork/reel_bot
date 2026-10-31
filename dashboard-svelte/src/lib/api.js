@@ -44,12 +44,12 @@ async function delJSON(path) {
 }
 
 // ATM calls need the HTTP status (409 = reference not analyzed yet), so they return {ok, status, data}.
-async function atmReq(method, path, body) {
+async function atmReq(method, path, body, raw = false) {
   try {
     const r = await fetch(path, {
       method,
-      headers: body === undefined ? {} : { 'content-type': 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body)
+      headers: body === undefined || raw ? {} : { 'content-type': 'application/json' },
+      body: body === undefined ? undefined : raw ? body : JSON.stringify(body)
     })
     let data = null
     try { data = await r.json() } catch (e) {}
@@ -247,6 +247,14 @@ export const api = {
   atmBlueprint: (id, section) => atmReq('POST', '/atm/items/' + id + '/blueprint', section ? { section } : {}),
   atmVoiceEstimate: (id) => atmReq('GET', '/atm/items/' + id + '/voice/estimate'),
   atmVoice: (id, beat) => atmReq('POST', '/atm/items/' + id + '/voice', beat ? { beat } : {}),
+  atmDraftUpload: (id, file) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return atmReq('POST', '/atm/items/' + id + '/draft', fd, true)
+  },
+  atmEvaluate: (id) => atmReq('POST', '/atm/items/' + id + '/evaluate', {}),
+  atmEvaluations: (id) => atmReq('GET', '/atm/items/' + id + '/evaluations'),
+  atmEvalNotes: (evalId, notes) => atmReq('PATCH', '/atm/evaluations/' + evalId + '/notes', { notes }),
 
   // Winner clone — top performers + variation script generation
   winners: () => getJSON('/winners'),
