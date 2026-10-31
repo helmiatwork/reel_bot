@@ -43,6 +43,22 @@ async function delJSON(path) {
   }
 }
 
+// ATM calls need the HTTP status (409 = reference not analyzed yet), so they return {ok, status, data}.
+async function atmReq(method, path, body) {
+  try {
+    const r = await fetch(path, {
+      method,
+      headers: body === undefined ? {} : { 'content-type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body)
+    })
+    let data = null
+    try { data = await r.json() } catch (e) {}
+    return { ok: r.ok, status: r.status, data }
+  } catch (e) {
+    return { ok: false, status: 0, data: null }
+  }
+}
+
 export const api = {
   services: () => getJSON('/dash/services'),
   restartService: (name) => postJSON(`/dash/restart/${name}`, {}),
@@ -219,6 +235,18 @@ export const api = {
   studioCreate: (payload) => postJSON('/studio', payload),
   studioUpdate: (id, payload) => patchJSON('/studio/' + id, payload),
   studioDelete: (id) => delJSON('/studio/' + id),
+
+  // ATM creator studio
+  atmItems: (status = '') => atmReq('GET', '/atm/items' + (status ? '?status=' + status : '')),
+  atmItemCreate: (body) => atmReq('POST', '/atm/items', body),
+  atmItem: (id) => atmReq('GET', '/atm/items/' + id),
+  atmItemPatch: (id, body) => atmReq('PATCH', '/atm/items/' + id, body),
+  atmItemDelete: (id) => atmReq('DELETE', '/atm/items/' + id),
+  atmSettings: () => atmReq('GET', '/atm/settings'),
+  atmSettingsSave: (body) => atmReq('PUT', '/atm/settings', body),
+  atmBlueprint: (id, section) => atmReq('POST', '/atm/items/' + id + '/blueprint', section ? { section } : {}),
+  atmVoiceEstimate: (id) => atmReq('GET', '/atm/items/' + id + '/voice/estimate'),
+  atmVoice: (id, beat) => atmReq('POST', '/atm/items/' + id + '/voice', beat ? { beat } : {}),
 
   // Winner clone — top performers + variation script generation
   winners: () => getJSON('/winners'),

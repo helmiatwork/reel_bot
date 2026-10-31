@@ -32,32 +32,44 @@
   import Seo from './pages/Seo.svelte'
   import Prep from './pages/Prep.svelte'
   import Studio from './pages/Studio.svelte'
+  import Plan from './pages/Plan.svelte'
+  import Production from './pages/Production.svelte'
 
   // Standard line icons (Lucide), monochrome, inherit text color.
   const I = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`
 
-  // Simplified to 3 cores: research, analyze, assets. Hidden pages stay routable via page.set():
-  // agents, brands, clips, cost, formulas, generate, jadwal, openclaw, performance, pipeline,
+  // ATM flow: Hari Ini → Rencana → Amati → Produksi → Pantau → Pustaka → Belajar. Hidden pages stay routable via page.set():
+  // agents, brands, clips, cost, dashboard, formulas, generate, jadwal, openclaw, performance, pipeline,
   // posts, publish-accounts, snoop, studio
   const NAV_GROUPS = [
-    { title_key: 'nav.overview', items: [
-      { p: 'dashboard', ico: I('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>'), key: 'nav.dashboard' }
+    { title_key: 'nav.today', items: [
+      { p: 'today', ico: I('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>'), key: 'nav.today' }
     ]},
-    { title_key: 'nav.research', items: [
+    { title_key: 'nav.plan', items: [
+      { p: 'plan', ico: I('<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/>'), key: 'nav.plan' }
+    ]},
+    { title_key: 'nav.observe', items: [
       { p: 'discover', ico: I('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>'), key: 'nav.discover' },
       { p: 'seo', ico: I('<line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/>'), key: 'nav.seo' },
-      { p: 'creators', ico: I('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'), key: 'nav.creators' }
-    ]},
-    { title_key: 'nav.analyze', items: [
-      { p: 'sources', ico: I('<path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/>'), key: 'nav.sources' },
+      { p: 'creators', ico: I('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'), key: 'nav.creators' },
       { p: 'analysis', ico: I('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><circle cx="11.5" cy="14.5" r="2.5"/><path d="M13.3 16.3 15 18"/>'), key: 'nav.analysis' },
       { p: 'decompose', ico: I('<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>'), key: 'nav.decompose' },
       { p: 'clipper', ico: I('<path d="M7 4v16"/><path d="M17 4v16"/><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h4"/><path d="M17 9h4"/><path d="M3 15h4"/><path d="M17 15h4"/>'), key: 'nav.clipper' }
     ]},
-    { title_key: 'nav.assets', items: [
+    { title_key: 'nav.production', items: [
+      { p: 'production', ico: I('<path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/>'), key: 'nav.production' }
+    ]},
+    { title_key: 'nav.monitor', items: [
+      { p: 'monitor', ico: I('<polyline points="3 17 8 11 13 14 21 6"/>'), key: 'nav.monitor' }
+    ]},
+    { title_key: 'nav.library', items: [
       { p: 'songs', ico: I('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'), key: 'nav.songs' },
       { p: 'audio-clips', ico: I('<path d=\"M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2\"/>'), key: 'nav.audio_clips' },
+      { p: 'sources', ico: I('<path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/>'), key: 'nav.sources' },
       { p: 'prep', ico: I('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'), key: 'nav.prep' }
+    ]},
+    { title_key: 'nav.learn', items: [
+      { p: 'learn', ico: I('<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>'), key: 'nav.learn' }
     ]},
     { title_key: 'nav.settings', items: [
       { p: 'cookies', ico: I('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'), key: 'nav.scrape_accounts' }
@@ -81,7 +93,7 @@
     try { const r = await api.notifications(); notifs = r?.notifications || [] } catch {}
   }
 
-  let current = $state('dashboard')
+  let current = $state('today')
   page.subscribe((v) => (current = v))
 
   let services = $state([])
@@ -372,7 +384,10 @@
 
     <div class="content">
       {#if current === 'openclaw'}<OpenClaw />
-      {:else if current === 'dashboard'}<Dashboard />
+      {:else if current === 'dashboard' || current === 'today'}<Dashboard />
+      {:else if current === 'plan'}<Plan />
+      {:else if current === 'production'}<Production />
+      {:else if current === 'monitor' || current === 'learn'}<div class="mut">{$_('atm.coming_soon')}</div>
       {:else if current === 'sources'}<Sources />
       {:else if current === 'analysis'}<Analysis />
       {:else if current === 'clips'}<Clips />

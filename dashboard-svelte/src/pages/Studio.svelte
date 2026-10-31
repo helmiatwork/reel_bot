@@ -3,17 +3,21 @@
   import { _ } from 'svelte-i18n'
   import { api } from '../lib/api.js'
 
-  const STAGES = ['idea', 'script', 'prep', 'scheduled', 'posted']
+  const STAGES = ['idea', 'blueprint', 'shoot', 'edit', 'review', 'ready', 'scheduled', 'posted', 'monitored']
   const STAGE_LABELS = {
     idea: 'Idea',
-    script: 'Script',
-    prep: 'Prep',
+    blueprint: 'Blueprint',
+    shoot: 'Shoot',
+    edit: 'Edit',
+    review: 'Review',
+    ready: 'Ready',
     scheduled: 'Scheduled',
-    posted: 'Posted'
+    posted: 'Posted',
+    monitored: 'Monitored'
   }
 
   // ── Board state ───────────────────────────────────────────────────────────────
-  let board = $state({ idea: [], script: [], prep: [], scheduled: [], posted: [] })
+  let board = $state(Object.fromEntries(STAGES.map((st) => [st, []])))
   let boardError = $state('')
   let boardLoading = $state(false)
 
