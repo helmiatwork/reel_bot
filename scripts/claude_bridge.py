@@ -140,7 +140,7 @@ _EFFORTS = {"low", "medium", "high", "xhigh", "max"}
 
 
 def _run_claude(prompt: str, frame_paths: list, model: str, timeout_s: int,
-                effort: str | None = None) -> dict:
+                effort: "str | None" = None) -> dict:
     """
     Run `claude -p <final_prompt> --model <model> --output-format json`
     as a subprocess (argv list, never shell=True).
