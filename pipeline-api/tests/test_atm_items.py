@@ -204,3 +204,17 @@ def test_patch_blueprint_good_shape_ok():
     conn, p = _db(("UPDATE content_items", (COLS, [ROW])))
     with p:
         assert client.patch("/atm/items/1", json={"blueprint": bp}).status_code == 200
+
+
+def test_patch_published_url_needs_exact_youtube_host():
+    for u in ("https://youtube.com.evil.tld/x", "https://youtube.com@evil.tld/x",
+              "https://evilyoutube.com/x", "https://notyoutu.be/x"):
+        conn, p = _db(("UPDATE content_items", (COLS, [ROW])))
+        with p, patch("main._validate_source_url", side_effect=lambda u: u):
+            r = client.patch("/atm/items/1", json={"published_url": u})
+        assert r.status_code == 400 and not conn.sqls("UPDATE content_items"), u
+    for u in ("https://m.youtube.com/shorts/x", "https://youtu.be/abc", "https://YouTube.com/watch?v=x"):
+        conn, p = _db(("UPDATE content_items", (COLS, [ROW])))
+        with p, patch("main._validate_source_url", side_effect=lambda u: u):
+            r = client.patch("/atm/items/1", json={"published_url": u})
+        assert r.status_code == 200 and u in conn.sqls("UPDATE content_items")[0][1], u

@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
-from .common import STATUSES, item_row
+from .common import STATUSES, is_youtube_host, item_row
 
 router = APIRouter()
 
@@ -187,7 +187,7 @@ def patch_item(item_id: int, body: ItemPatch):
     if body.published_url is not None:
         sets += ["published_url = %s", "published_at = COALESCE(published_at, now())"]
         url = main._validate_source_url(body.published_url.strip())
-        if main._detect_platform(url) != "youtube":
+        if not is_youtube_host(url):
             raise HTTPException(status_code=400, detail="Hanya URL YouTube")
         vals.append(url)
     if not sets:

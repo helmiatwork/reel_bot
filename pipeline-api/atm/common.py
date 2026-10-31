@@ -6,6 +6,7 @@ import re
 import shutil
 import sys
 from pathlib import Path
+from urllib.parse import urlparse
 
 import httpx
 
@@ -23,6 +24,12 @@ ATM_EVAL_EFFORT = os.getenv("ATM_EVAL_EFFORT", "high")
 
 def effort_for(model: str) -> str:
     return ATM_LIGHT_EFFORT if model == ATM_LIGHT_MODEL else ATM_EFFORT
+
+
+def is_youtube_host(url: str) -> bool:
+    """Exact host match: youtu.be, youtube.com or a *.youtube.com subdomain (not youtube.com.evil.tld)."""
+    host = (urlparse(url).hostname or "").lower()
+    return host in ("youtu.be", "youtube.com") or host.endswith(".youtube.com")
 
 
 def ytdlp_bin() -> str:
