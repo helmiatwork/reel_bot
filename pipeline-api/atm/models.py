@@ -2,12 +2,12 @@
 from fastapi import APIRouter
 
 from .common import (
-    ATM_EFFORT,
     ATM_EVAL_EFFORT,
     ATM_EVAL_MODEL,
     ATM_LIGHT_EFFORT,
     ATM_LIGHT_MODEL,
     ATM_MODEL,
+    effort_for,
 )
 
 router = APIRouter()
@@ -31,7 +31,7 @@ def list_models():
          "effort": _effort(main.ANALYZE_SYNTHESIS_MODEL, ""),
          "reason": "Tes 4 video (31 Okt 2026): low, medium, high hasilnya setara; low paling hemat token."},
         {"key": "blueprint", "job": "Blueprint ATM", "model": ATM_MODEL,
-         "effort": _effort(ATM_MODEL, ATM_EFFORT),
+         "effort": _effort(ATM_MODEL, effort_for(ATM_MODEL)),
          "reason": "Tes 4 video: lolos 4/4, blueprint 34 detik (Haiku 61 detik). "
                    "Haiku pernah gagal format JSON dan membocorkan nama channel referensi."},
         {"key": "evaluation", "job": "Evaluasi draft + pasca-upload", "model": ATM_EVAL_MODEL,

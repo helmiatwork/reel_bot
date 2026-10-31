@@ -21,6 +21,10 @@ ATM_LIGHT_EFFORT = os.getenv("ATM_LIGHT_EFFORT", "")
 ATM_EVAL_MODEL = os.getenv("ATM_EVAL_MODEL", "claude-haiku-5-5")
 ATM_EVAL_EFFORT = os.getenv("ATM_EVAL_EFFORT", "high")
 
+def effort_for(model: str) -> str:
+    return ATM_LIGHT_EFFORT if model == ATM_LIGHT_MODEL else ATM_EFFORT
+
+
 def ytdlp_bin() -> str:
     """yt-dlp beside the running interpreter (venv) first; a stale ~/.local/bin copy gets HTTP 429."""
     beside = Path(sys.executable).with_name("yt-dlp")
@@ -37,7 +41,7 @@ def run_claude(prompt: str, *, agent: str, model: str = ATM_MODEL, frames: list 
     payload = {"prompt": prompt, "frames": frames or [], "model": model, "timeout_s": timeout_s}
     if subdir:
         payload["subdir"] = subdir
-    effort = effort if effort is not None else (ATM_LIGHT_EFFORT if model == ATM_LIGHT_MODEL else ATM_EFFORT)
+    effort = effort if effort is not None else effort_for(model)
     if effort:
         payload["effort"] = effort
     try:

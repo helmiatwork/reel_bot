@@ -16,7 +16,9 @@ client = TestClient(app, raise_server_exceptions=False)
 DEFAULTS = {
     "main.ANALYZE_SYNTHESIS_MODEL": "claude-sonnet-5-5",
     "atm.models.ATM_MODEL": "claude-sonnet-5-5",
-    "atm.models.ATM_EFFORT": "",
+    "atm.common.ATM_EFFORT": "",
+    "atm.common.ATM_LIGHT_MODEL": "claude-haiku-5-5",
+    "atm.common.ATM_LIGHT_EFFORT": "",
     "atm.models.ATM_LIGHT_MODEL": "claude-haiku-5-5",
     "atm.models.ATM_LIGHT_EFFORT": "",
     "atm.models.ATM_EVAL_MODEL": "claude-haiku-5-5",
@@ -67,7 +69,15 @@ def test_blueprint_effort_falls_back_to_bridge_default():
 
 
 def test_blueprint_explicit_effort_wins_over_default():
-    assert _job(_get(**{"atm.models.ATM_EFFORT": "medium"}), "blueprint")["effort"] == "medium"
+    assert _job(_get(**{"atm.common.ATM_EFFORT": "medium"}), "blueprint")["effort"] == "medium"
+
+
+def test_blueprint_effort_follows_light_branch_like_run_claude():
+    # run_claude picks ATM_LIGHT_EFFORT when the model is the light model; the view must match.
+    light = {"atm.models.ATM_MODEL": "claude-haiku-5-5", "atm.common.ATM_LIGHT_MODEL": "claude-haiku-5-5",
+             "atm.common.ATM_EFFORT": "medium"}
+    assert _job(_get(**light, **{"atm.common.ATM_LIGHT_EFFORT": ""}), "blueprint")["effort"] == "high"
+    assert _job(_get(**light, **{"atm.common.ATM_LIGHT_EFFORT": "low"}), "blueprint")["effort"] == "low"
 
 
 def test_unknown_claude_model_without_explicit_effort_shows_default():
