@@ -193,6 +193,7 @@ export const api = {
   atmItemPatch: (id, body) => atmReq('PATCH', '/atm/items/' + id, body),
   atmItemDelete: (id) => atmReq('DELETE', '/atm/items/' + id),
   atmSettings: () => atmReq('GET', '/atm/settings'),
+  atmModels: () => atmReq('GET', '/atm/models'),
   atmSettingsSave: (body) => atmReq('PUT', '/atm/settings', body),
   atmBlueprint: (id, section) => atmReq('POST', '/atm/items/' + id + '/blueprint', section ? { section } : {}),
   atmVoiceEstimate: (id) => atmReq('GET', '/atm/items/' + id + '/voice/estimate'),

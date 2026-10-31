@@ -3,7 +3,7 @@ import { writable } from 'svelte/store'
 // Valid page ids — must stay in sync with App.svelte's {#if} chain and NAV n.p values.
 const VALID_PAGES = new Set([
   'sources', 'analysis', 'clipper', 'discover', 'creators', 'songs', 'audio-clips',
-  'decompose', 'cookies', 'seo', 'prep',
+  'decompose', 'cookies', 'seo', 'prep', 'models',
   'today', 'plan', 'production', 'monitor', 'learn'
 ])
 

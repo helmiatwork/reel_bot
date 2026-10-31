@@ -7,6 +7,7 @@
     "monitor": "Monitor",
     "library": "Library",
     "learn": "Learn",
+    "models": "AI Models",
     "research": "Research",
     "analyze": "Analyze",
     "assets": "Assets",
@@ -811,6 +812,12 @@
     "eval_history": "Evaluation history",
     "no_evals": "No evaluations yet.",
     "eval_kind_draft": "Draft",
-    "eval_kind_post": "Post-publish"
+    "eval_kind_post": "Post-publish",
+    "models_title": "AI Models",
+    "models_subtitle": "Model and effort used by each AI job, and why. Change them via .env, then restart.",
+    "models_col_job": "Job",
+    "models_col_model": "Model",
+    "models_col_effort": "Effort",
+    "models_col_reason": "Reason"
   }
 }

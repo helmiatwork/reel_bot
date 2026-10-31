@@ -22,6 +22,7 @@
   import Today from './pages/Today.svelte'
   import Monitor from './pages/Monitor.svelte'
   import Learn from './pages/Learn.svelte'
+  import Models from './pages/Models.svelte'
 
   // Standard line icons (Lucide), monochrome, inherit text color.
   const I = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`
@@ -58,7 +59,8 @@
       { p: 'learn', ico: I('<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>'), key: 'nav.learn' }
     ]},
     { title_key: 'nav.settings', items: [
-      { p: 'cookies', ico: I('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'), key: 'nav.scrape_accounts' }
+      { p: 'cookies', ico: I('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'), key: 'nav.scrape_accounts' },
+      { p: 'models', ico: I('<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2"/>'), key: 'nav.models' }
     ]}
   ]
 
@@ -386,6 +388,7 @@
       {:else if current === 'cookies'}<Cookies />
       {:else if current === 'seo'}<Seo />
       {:else if current === 'prep'}<Prep />
+      {:else if current === 'models'}<Models />
       {/if}
     </div>
   </main>

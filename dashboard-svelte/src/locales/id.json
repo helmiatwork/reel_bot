@@ -7,6 +7,7 @@
     "monitor": "Pantau",
     "library": "Pustaka",
     "learn": "Belajar",
+    "models": "Model AI",
     "research": "Riset",
     "analyze": "Analisa",
     "assets": "Aset",
@@ -811,6 +812,12 @@
     "eval_history": "Riwayat evaluasi",
     "no_evals": "Belum ada evaluasi.",
     "eval_kind_draft": "Draft",
-    "eval_kind_post": "Pasca-tayang"
+    "eval_kind_post": "Pasca-tayang",
+    "models_title": "Model AI",
+    "models_subtitle": "Model dan effort yang dipakai tiap pekerjaan AI, beserta alasannya. Ubah lewat env (.env) lalu restart.",
+    "models_col_job": "Pekerjaan",
+    "models_col_model": "Model",
+    "models_col_effort": "Effort",
+    "models_col_reason": "Alasan"
   }
 }
