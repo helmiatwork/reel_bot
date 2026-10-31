@@ -3103,9 +3103,13 @@ def _fetch_transcript(youtube_url: str) -> list:
     """
     import subprocess
     try:
+        env = os.environ.copy()
+        scrape_f = _scrape_cookie_file("youtube")  # scrape-role only; avoids HTTP 429 on anonymous transcript fetches
+        if scrape_f:
+            env["YTDLP_COOKIES_FILE"] = str(scrape_f)
         proc = subprocess.run(
             [sys.executable, _YT_PIPELINE, "--transcript", youtube_url],
-            capture_output=True, text=True, timeout=600)
+            capture_output=True, text=True, timeout=600, env=env)
         if proc.returncode != 0:
             return []
         try:
