@@ -8203,11 +8203,7 @@ async def upload_source(
         hook = parsed.get("hook", "")
         structure = parsed.get("structure", "")
         retention = parsed.get("retention", "")
-        retention_score = parsed.get("retention_score")
-        try:
-            retention_score = max(1, min(10, int(retention_score))) if retention_score is not None else None
-        except (TypeError, ValueError):
-            retention_score = None
+        retention_score = _retention_score(parsed)
         tags = parsed.get("tags", [])
         if not isinstance(tags, list):
             tags = []

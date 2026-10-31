@@ -72,3 +72,21 @@ def test_claude_prompt_asks_for_all_retention_checks():
     for key in KEYS:
         assert f'"{key}"' in prompt, f"prompt must ask for {key}"
     assert '"retention_checklist": {' in prompt
+
+
+def test_upload_source_scores_retention_from_checklist(tmp_path):
+    from unittest.mock import patch
+    from fastapi.testclient import TestClient
+    from main import app
+    from _atm_fakes import FakeConn
+    parsed = {"hook": "h", "structure": "s", "retention": "r", "summary": "x", "detail": "d",
+              "retention_score": 9, "retention_checklist": _checklist(0)}
+    conn = FakeConn([("INSERT INTO sources", (["id"], [(5,)]))])
+    frames = [{"path": str(tmp_path / "missing.jpg")}]
+    with patch("main._REPO_ROOT", tmp_path), patch("main.ANALYZE_AUDIO_TAGS", False), \
+            patch("main._extract_frames_timed", return_value=frames), \
+            patch("main._analyze_frames_sequential", return_value=parsed), patch("main._db_conn", return_value=conn):
+        r = TestClient(app).post("/sources/upload", files={"file": ("clip.mp4", b"\x00\x00\x00\x18ftypmp42" + b"\x00" * 64, "video/mp4")})
+    assert r.status_code == 200, r.text
+    params = conn.sqls("INSERT INTO video_analysis")[0][1]
+    assert params[9] == 1  # retention_score column: checklist all false -> 1, not the model's 9
