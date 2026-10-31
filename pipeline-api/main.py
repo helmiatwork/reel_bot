@@ -2995,7 +2995,8 @@ Format JSON yang harus dikembalikan:
   "structure": "<string: struktur naratif/penyampaian konten video secara keseluruhan>",
   "retention": "<string: teknik yang digunakan untuk mempertahankan penonton sampai akhir>",
   "retention_score": <integer 1-10: seberapa kuat video ini menahan penonton sampai akhir; 1=lemah, 10=sangat kuat>,
-  "tags": ["<tag1>", "<tag2>", "<tag3>", ...]{gen_prompt_field}
+  "retention_checklist": {{"hook_2s": <true/false: hook jelas dalam 2 detik pertama>, "curiosity_gap": <true/false: ada pertanyaan terbuka atau ketegangan yang bikin penonton menunggu>, "payoff": <true/false: ada payoff atau twist yang jelas mendekati akhir>, "fast_pacing": <true/false: ada cut atau perubahan visual minimal tiap ~3 detik>, "loopable": <true/false: ending kembali ke awal atau layak ditonton ulang>}},
+  "tags":["<tag1>", "<tag2>", "<tag3>", ...]{gen_prompt_field}
 }}
 """
 
@@ -5297,6 +5298,31 @@ def _build_frame_analysis(normalized_frames: list, frame_descriptions: list) -> 
     return out
 
 
+_RETENTION_CHECKS = ("hook_2s", "curiosity_gap", "payoff", "fast_pacing", "loopable")
+
+
+def _retention_score(parsed: dict) -> int | None:
+    """Retention 1-10. Uses the 5-check rubric when all checks are booleans, else the model's integer (clamped)."""
+    checklist = parsed.get("retention_checklist")
+    if isinstance(checklist, dict) and all(k in checklist for k in _RETENTION_CHECKS):
+        checks = [checklist[k] for k in _RETENTION_CHECKS]
+        if all(isinstance(c, bool) for c in checks):
+            return 1 + round(9 * sum(checks) / len(checks))
+    raw = parsed.get("retention_score")
+    if raw is None or isinstance(raw, bool):
+        return None
+    try:
+        if isinstance(raw, str):
+            score = int(raw.strip(), 10)
+        elif isinstance(raw, (int, float)):
+            score = int(raw)
+        else:
+            return None
+    except (ValueError, OverflowError):
+        return None
+    return max(1, min(10, score))
+
+
 def _persist_frame_analysis(video_id: str, parsed: dict) -> None:
     """Write per-frame {name,t,desc} sidecar so /sources/frames can return timestamps + descriptions. Non-fatal."""
     try:
@@ -5972,11 +5998,7 @@ def _run_analyze_claude(req: AnalyzeClaudeRequest, progress_id: Optional[str] = 
     hook = parsed.get("hook", "")
     structure = parsed.get("structure", "")
     retention = parsed.get("retention", "")
-    retention_score = parsed.get("retention_score")
-    try:
-        retention_score = max(1, min(10, int(retention_score))) if retention_score is not None else None
-    except (TypeError, ValueError):
-        retention_score = None
+    retention_score = _retention_score(parsed)
     tags = parsed.get("tags", [])
     if not isinstance(tags, list):
         tags = []
