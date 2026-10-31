@@ -279,3 +279,9 @@ def test_blueprint_job_passes_niche_to_title_check():
         bpm._run_blueprint(1, None)
     assert rc.call_count == 2 and "diawali nama niche" in rc.call_args_list[1].args[0]
     assert conn.sqls("SET blueprint = ") and not conn.sqls("blueprint_status = 'error'")
+
+
+def test_blueprint_success_only_writes_a_building_item():
+    conn = _run(_item(), json.dumps(OK))
+    (sql, _), = conn.sqls("SET blueprint = ")
+    assert sql.endswith("WHERE id = %s AND blueprint_status = 'building'")  # a job marked error must stay error

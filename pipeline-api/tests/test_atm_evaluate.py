@@ -289,3 +289,10 @@ def test_evaluate_frames_missing_bridge_400_sets_error_not_ready(tmp_path):
     updates = conn.sqls("UPDATE content_evaluations")
     assert len(updates) == 1 and "status = 'error'" in updates[0][0] and "status = 'ready'" not in updates[0][0]
     distill.assert_not_called()
+
+
+def test_evaluate_success_only_writes_a_building_row(tmp_path):
+    conn, frames = _job_env(tmp_path, "")
+    _run(tmp_path, conn, frames, "```json\n" + json.dumps(_good_eval()) + "\n```")
+    (sql, _), = conn.sqls("UPDATE content_evaluations SET scores")
+    assert sql.endswith("WHERE id = %s AND status = 'building'")  # a stale-marked row must stay error

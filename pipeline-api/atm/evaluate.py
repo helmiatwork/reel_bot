@@ -221,7 +221,7 @@ def _run_evaluation(eval_id: int, item_id: int, rnd: int) -> None:
             cur.execute(
                 "UPDATE content_evaluations SET scores = %s::jsonb, findings = %s::jsonb, fixes = %s::jsonb, "
                 "summary = %s, resolved_prev = %s::jsonb, video_ref = %s, model = %s, status = 'ready', "
-                "error = NULL WHERE id = %s",
+                "error = NULL WHERE id = %s AND status = 'building'",
                 (json.dumps(parsed["scores"]), json.dumps(parsed["findings"]), json.dumps(parsed["fixes"]),
                  parsed["summary"].strip(), json.dumps(resolved) if isinstance(resolved, dict) and prev else None,
                  item["draft_video_path"], ATM_EVAL_MODEL, eval_id))

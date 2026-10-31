@@ -255,7 +255,7 @@ def _run_blueprint(item_id: int, section: Optional[str]) -> None:
                 "UPDATE content_items SET blueprint = %s::jsonb, blueprint_version = blueprint_version + 1, "
                 "blueprint_status = 'ready', blueprint_error = NULL, "
                 "stage = CASE WHEN stage = 'idea' THEN 'blueprint' ELSE stage END, updated_at = now() "
-                "WHERE id = %s", (json.dumps(bp), item_id))
+                "WHERE id = %s AND blueprint_status = 'building'", (json.dumps(bp), item_id))
         conn.commit()
     except Exception as exc:
         print(f"[atm] blueprint job {item_id} failed: {exc}")
