@@ -1,3 +1,4 @@
+import ast
 import sys
 from contextlib import ExitStack
 from pathlib import Path
@@ -8,9 +9,12 @@ from fastapi.testclient import TestClient
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from atm.models import _BRIDGE_DEFAULT_EFFORT  # noqa: E402
 from main import app  # noqa: E402
 
 client = TestClient(app, raise_server_exceptions=False)
+
+BRIDGE_SRC = Path(__file__).resolve().parents[2] / "scripts" / "claude_bridge.py"
 
 # Pin every model/effort constant so the test does not depend on the local .env.
 DEFAULTS = {
@@ -35,8 +39,10 @@ EXPECTED = [
                "Haiku pernah gagal format JSON dan membocorkan nama channel referensi."},
     {"key": "evaluation", "job": "Evaluasi draft + pasca-upload", "model": "claude-haiku-5-5", "effort": "high",
      "reason": "A/B: Haiku high valid, setara Sonnet, dan menangkap video reupload."},
-    {"key": "learn", "job": "Ringkas pelajaran", "model": "claude-haiku-5-5", "effort": "high",
+    {"key": "learn", "job": "Ringkas pelajaran + alert monitor", "model": "claude-haiku-5-5", "effort": "high",
      "reason": "Teks pendek dan sederhana, cukup Haiku."},
+    {"key": "tagging", "job": "Tag kreator (gender/niche)", "model": "claude-haiku-5-5", "effort": "high",
+     "reason": "Klasifikasi singkat dari judul/deskripsi, cukup Haiku."},
     {"key": "clipper", "job": "Clipper + grup shot Decompose", "model": "claude-sonnet-5-5", "effort": "low",
      "reason": "Perlu memahami transkrip panjang dan urutan shot. Belum diuji per effort."},
     {"key": "seo", "job": "Saran judul/hashtag halaman SEO", "model": "gemini-2.5-flash-lite", "effort": "-",
@@ -58,8 +64,17 @@ def _job(body, key):
     return next(j for j in body["jobs"] if j["key"] == key)
 
 
-def test_models_returns_seven_jobs_in_order():
+def test_models_returns_eight_jobs_in_order():
     assert _get() == {"jobs": EXPECTED}
+
+
+def test_bridge_default_effort_matches_bridge_source():
+    # Read the bridge source with ast (no import): its DEFAULT_EFFORT must equal the view's copy.
+    tree = ast.parse(BRIDGE_SRC.read_text(encoding="utf-8"))
+    assign = next(n for n in tree.body
+                  if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "DEFAULT_EFFORT"
+                                                       for t in n.targets))
+    assert ast.literal_eval(assign.value) == _BRIDGE_DEFAULT_EFFORT
 
 
 def test_blueprint_effort_falls_back_to_bridge_default():
