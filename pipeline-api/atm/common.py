@@ -27,7 +27,10 @@ def effort_for(model: str) -> str:
 
 
 def is_youtube_host(url: str) -> bool:
-    """Exact host match: youtu.be, youtube.com or a *.youtube.com subdomain (not youtube.com.evil.tld)."""
+    """Exact host match: youtu.be, youtube.com or a *.youtube.com subdomain (not youtube.com.evil.tld).
+    Backslash rejected: urlparse reads `evil.com\\@youtube.com` as host youtube.com."""
+    if "\\" in url:
+        return False
     host = (urlparse(url).hostname or "").lower()
     return host in ("youtu.be", "youtube.com") or host.endswith(".youtube.com")
 

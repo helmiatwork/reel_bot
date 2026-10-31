@@ -208,7 +208,7 @@ def test_patch_blueprint_good_shape_ok():
 
 def test_patch_published_url_needs_exact_youtube_host():
     for u in ("https://youtube.com.evil.tld/x", "https://youtube.com@evil.tld/x",
-              "https://evilyoutube.com/x", "https://notyoutu.be/x"):
+              "https://evilyoutube.com/x", "https://notyoutu.be/x", "https://evil.com\\@youtube.com/x"):
         conn, p = _db(("UPDATE content_items", (COLS, [ROW])))
         with p, patch("main._validate_source_url", side_effect=lambda u: u):
             r = client.patch("/atm/items/1", json={"published_url": u})
