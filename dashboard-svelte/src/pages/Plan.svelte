@@ -165,7 +165,7 @@
     </div>
     {#if mineMsg}<div class="err">{mineMsg}</div>{/if}
     {#if mined}
-      <div class="mut">{mined.channel.name || ''}{mined.channel.followers != null ? ` · ${mined.channel.followers} ${$_('atm.mine_followers')}` : ''}{mined.channel.median_views != null ? ` · ${$_('atm.mine_median', { values: { median: mined.channel.median_views.toLocaleString() } })}` : ''}</div>
+      <div class="mut">{mined.channel.name || ''}{mined.channel.followers != null ? ` · ${mined.channel.followers} ${$_('atm.mine_followers')}` : ''}{mined.channel.median_views != null ? ` · ${$_('atm.mine_median', { values: { median: Math.round(mined.channel.median_views).toLocaleString() } })}` : ''}</div>
       <table class="mine-tbl">
         <thead><tr><th></th><th>{$_('atm.mine_col_title')}</th><th>{$_('atm.mine_col_views')}</th></tr></thead>
         <tbody>
