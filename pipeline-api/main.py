@@ -2996,7 +2996,7 @@ Format JSON yang harus dikembalikan:
   "retention": "<string: teknik yang digunakan untuk mempertahankan penonton sampai akhir>",
   "retention_score": <integer 1-10: seberapa kuat video ini menahan penonton sampai akhir; 1=lemah, 10=sangat kuat>,
   "retention_checklist": {{"hook_2s": <true/false: hook jelas dalam 2 detik pertama>, "curiosity_gap": <true/false: ada pertanyaan terbuka atau ketegangan yang bikin penonton menunggu>, "payoff": <true/false: ada payoff atau twist yang jelas mendekati akhir>, "fast_pacing": <true/false: ada cut atau perubahan visual minimal tiap ~3 detik>, "loopable": <true/false: ending kembali ke awal atau layak ditonton ulang>}},
-  "tags":["<tag1>", "<tag2>", "<tag3>", ...]{gen_prompt_field}
+  "tags": ["<tag1>", "<tag2>", "<tag3>", ...]{gen_prompt_field}
 }}
 """
 
