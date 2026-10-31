@@ -1,7 +1,7 @@
 import json
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 from fastapi.testclient import TestClient
 
@@ -64,7 +64,8 @@ def test_import_creates_items_and_starts_analysis():
     u = "https://www.youtube.com/shorts/aaaaaaaaaaa"
     with patch("main._db_conn", return_value=conn), patch("main._validate_source_url"), \
             patch("main.analyze_claude_async", return_value={"run_id": "r1"}) as an:
-        r = client.post("/atm/mine/import", json={"urls": [u], "niche": "kucing", "titles": {u: "Judul A"}})
+        r = client.post("/atm/mine/import", json={"urls": [u], "niche": "kucing", "titles": {u: "Judul A"},
+                                                  "auto_blueprint": False})
     assert r.status_code == 200 and r.json()["items"][0]["analysis"] == {"run_id": "r1"}
     ins = conn.sqls("INSERT INTO content_items")[0]
     assert ins[1][:3] == ("Judul A", "kucing", u) and conn.commits == 1
@@ -100,3 +101,106 @@ def test_discover_stats_failure_keeps_items():
     items = [{"video_id": "a"}]
     with patch("main.v3_video_details", side_effect=RuntimeError("quota")):
         assert main._with_stats(items) == [{"video_id": "a"}]
+
+
+URL = "https://www.youtube.com/shorts/aaaaaaaaaaa"
+
+
+def _import_conn(analysis_exists=True, start_ok=True):
+    rules = [("INSERT INTO content_items", (["id", "title", "reference_url"], [(9, "A", URL)])),
+             ("FOR UPDATE", (["reference_url", "building"], [(URL, False)] if start_ok else [])),
+             ("FROM video_analysis", (["x"], [(1,)] if analysis_exists else []))]
+    return FakeConn(rules)
+
+
+def _import(conn, analyze, load_run=None, body=None, sleep=None, job=None):
+    """Run POST /atm/mine/import with DB, analysis start, run polling and blueprint job patched."""
+    payload = {"urls": [URL], "niche": "kucing", **(body or {})}
+    with patch("main._db_conn", return_value=conn), patch("main._validate_source_url"), \
+            patch("main.analyze_claude_async", **analyze) as an, \
+            patch("main._load_run", **(load_run or {"return_value": None})) as lr, \
+            patch("atm.mine.time.sleep", **(sleep or {})) as sl, \
+            patch("atm.blueprint._run_blueprint", **(job or {})) as bp:
+        r = client.post("/atm/mine/import", json=payload)
+    return r, {"analyze": an, "load_run": lr, "sleep": sl, "job": bp}
+
+
+def test_import_auto_blueprint_starts_after_analysis_done():
+    conn = _import_conn()
+    r, m = _import(conn, {"return_value": {"run_id": "r1"}}, {"return_value": {"status": "done"}})
+    assert r.status_code == 200
+    m["job"].assert_called_once_with(9, None)
+    m["sleep"].assert_not_called()
+    assert conn.sqls("SET blueprint_status = 'building'") and conn.sqls("blueprint_started_at = now()")
+
+
+def test_import_auto_blueprint_skipped_when_analysis_errors():
+    conn = _import_conn()
+    r, m = _import(conn, {"return_value": {"run_id": "r1"}}, {"return_value": {"status": "error"}})
+    assert r.status_code == 200 and r.json()["items"][0]["analysis"] == {"run_id": "r1"}
+    m["job"].assert_not_called()
+    assert not conn.sqls("SET blueprint_status = 'building'")
+
+
+def test_import_auto_blueprint_gives_up_after_20_minutes():
+    from atm import mine
+    conn = _import_conn()
+    r, m = _import(conn, {"return_value": {"run_id": "r1"}}, {"return_value": {"status": "running"}},
+                   sleep={"return_value": None})
+    assert r.status_code == 200
+    assert m["sleep"].call_count == mine._MAX_POLLS and mine._MAX_POLLS * mine._POLL_S == 20 * 60
+    m["job"].assert_not_called()
+    assert not conn.sqls("SET blueprint_status = 'building'")
+
+
+def test_import_auto_blueprint_off_does_nothing():
+    conn = _import_conn()
+    r, m = _import(conn, {"return_value": {"run_id": "r1"}}, {"return_value": {"status": "done"}},
+                   body={"auto_blueprint": False})
+    assert r.status_code == 200
+    m["load_run"].assert_not_called()
+    m["job"].assert_not_called()
+
+
+def test_import_already_analysed_starts_blueprint_directly():
+    conn = _import_conn()
+    r, m = _import(conn, {"return_value": {"already_exists": True, "source": {}}})
+    assert r.status_code == 200
+    m["load_run"].assert_not_called()
+    m["job"].assert_called_once_with(9, None)
+
+
+def test_import_already_exists_without_analysis_row_is_not_started():
+    conn = _import_conn(analysis_exists=False)
+    r, m = _import(conn, {"return_value": {"already_exists": True, "source": {}}})
+    assert r.status_code == 200
+    m["job"].assert_not_called()
+    assert not conn.sqls("SET blueprint_status = 'building'")
+
+
+def test_import_auto_blueprint_is_sequential_and_skips_failed_analysis():
+    from fastapi import HTTPException
+    conn = _import_conn()
+    items = [{"id": 9, "title": "A", "reference_url": URL}, {"id": 10, "title": "B", "reference_url": URL},
+             {"id": 11, "title": "C", "reference_url": URL}]
+    analyses = [{"run_id": "r1"}, {"run_id": "r2"}, HTTPException(status_code=502, detail="boom")]
+    polled = []
+
+    def load_run(run_id):
+        polled.append(run_id)
+        return {"status": "done"}
+
+    with patch("atm.mine.insert_item", side_effect=items):
+        r, m = _import(conn, {"side_effect": analyses}, {"side_effect": load_run},
+                       body={"urls": [URL, URL, URL]})
+    assert r.status_code == 200 and [i["analysis"] for i in r.json()["items"]][2] == {"error": "boom"}
+    assert polled == ["r1", "r2"]
+    assert m["job"].call_args_list == [call(9, None), call(10, None)]
+
+
+def test_wait_run_treats_partial_run_file_as_still_running():
+    from atm import mine
+    with patch("main._load_run", side_effect=[ValueError("partial"), {"status": "done"}]), \
+            patch("atm.mine.time.sleep") as sleep:
+        assert mine._wait_run("r1") == "done"
+    sleep.assert_called_once()
