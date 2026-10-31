@@ -155,8 +155,10 @@ def _run(tmp_path, conn, frames, claude_text):
             patch("main.ANALYZE_FRAME_DIR", str(tmp_path / "af")), \
             patch("main._extract_frames_timed", return_value=frames) as ext, \
             patch("atm.evaluate.transcribe", return_value=[]), patch("atm.evaluate.audio_levels", return_value={}), \
-            patch("atm.evaluate.run_claude", return_value=claude_text) as rc:
+            patch("atm.evaluate.run_claude", return_value=claude_text) as rc, \
+            patch("atm.evaluate.distill_learnings") as distill:
         evaluate._run_evaluation(41, 7, 3)
+    rc.distill = distill
     return ext, rc
 
 
@@ -186,6 +188,13 @@ def test_evaluate_success_writes_ready_and_uses_round_subdir(tmp_path):
     ups = conn.sqls("UPDATE content_evaluations")
     assert "status = 'ready'" in ups[0][0] and json.loads(ups[0][1][0])["hook"] == 7
     assert conn.commits == 1
+    rc.distill.assert_called_once_with(7, 41)
+
+
+def test_evaluate_failure_does_not_distill(tmp_path):
+    conn, frames = _job_env(tmp_path, "")
+    _, rc = _run(tmp_path, conn, frames, "ini bukan json")
+    rc.distill.assert_not_called()
 
 
 def test_evaluate_draft_path_escape_is_refused(tmp_path):

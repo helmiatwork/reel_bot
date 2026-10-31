@@ -255,6 +255,11 @@ export const api = {
   atmEvaluate: (id) => atmReq('POST', '/atm/items/' + id + '/evaluate', {}),
   atmEvaluations: (id) => atmReq('GET', '/atm/items/' + id + '/evaluations'),
   atmEvalNotes: (evalId, notes) => atmReq('PATCH', '/atm/evaluations/' + evalId + '/notes', { notes }),
+  atmToday: () => atmReq('GET', '/atm/today'),
+  atmAutofill: () => atmReq('POST', '/atm/schedule/autofill', {}),
+  atmMonitor: (id) => atmReq('GET', '/atm/items/' + id + '/monitor'),
+  atmLearn: (niche = '') => atmReq('GET', '/atm/learn' + (niche ? '?niche=' + encodeURIComponent(niche) : '')),
+  atmLearningDelete: (id) => atmReq('DELETE', '/atm/learnings/' + id),
 
   // Winner clone — top performers + variation script generation
   winners: () => getJSON('/winners'),

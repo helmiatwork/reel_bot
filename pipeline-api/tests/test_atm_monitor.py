@@ -205,9 +205,10 @@ def test_run_monitor_without_db_returns_empty():
 
 
 def test_tick_runs_monitor_job():
-    with patch("atm.schedule.send_reminders", return_value=0), patch("atm.monitor.run_monitor", return_value={"checked": 2}):
+    with patch("atm.schedule.send_reminders", return_value=0), patch("atm.monitor.run_monitor", return_value={"checked": 2}), \
+            patch("atm.learn.run_post_evals", return_value=1):
         r = client.post("/atm/cron/tick").json()
-    assert r["monitor"] == {"checked": 2} and r["post_evals"] == 0 and r["errors"] == []
+    assert r["monitor"] == {"checked": 2} and r["post_evals"] == 1 and r["errors"] == []
 
 
 def test_item_monitor_endpoint():

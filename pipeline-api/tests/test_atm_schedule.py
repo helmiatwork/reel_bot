@@ -113,7 +113,7 @@ def test_failed_telegram_releases_claim():
 @pytest.fixture(autouse=True)
 def _no_real_tick_jobs():
     """Tick tests cover reminders only; monitor/post-eval jobs have their own tests and must not touch a live DB."""
-    with patch("atm.monitor.run_monitor", return_value={}):
+    with patch("atm.monitor.run_monitor", return_value={}), patch("atm.learn.run_post_evals", return_value=0):
         yield
 
 

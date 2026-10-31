@@ -34,6 +34,9 @@
   import Studio from './pages/Studio.svelte'
   import Plan from './pages/Plan.svelte'
   import Production from './pages/Production.svelte'
+  import Today from './pages/Today.svelte'
+  import Monitor from './pages/Monitor.svelte'
+  import Learn from './pages/Learn.svelte'
 
   // Standard line icons (Lucide), monochrome, inherit text color.
   const I = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`
@@ -384,10 +387,12 @@
 
     <div class="content">
       {#if current === 'openclaw'}<OpenClaw />
-      {:else if current === 'dashboard' || current === 'today'}<Dashboard />
+      {:else if current === 'dashboard'}<Dashboard />
+      {:else if current === 'today'}<Today />
       {:else if current === 'plan'}<Plan />
       {:else if current === 'production'}<Production />
-      {:else if current === 'monitor' || current === 'learn'}<div class="mut">{$_('atm.coming_soon')}</div>
+      {:else if current === 'monitor'}<Monitor />
+      {:else if current === 'learn'}<Learn />
       {:else if current === 'sources'}<Sources />
       {:else if current === 'analysis'}<Analysis />
       {:else if current === 'clips'}<Clips />

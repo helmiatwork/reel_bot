@@ -3,7 +3,7 @@ import datetime as _dt
 
 from fastapi import APIRouter, Depends, Header
 
-from . import monitor, schedule
+from . import learn, monitor, schedule
 
 router = APIRouter()
 
@@ -28,4 +28,4 @@ def tick(_: None = Depends(_admin)):
     errors: list = []
     return {"reminders": _safe("reminders", lambda: schedule.send_reminders(now), 0, errors),
             "monitor": _safe("monitor", lambda: monitor.run_monitor(now), {}, errors),
-            "post_evals": 0, "errors": errors}
+            "post_evals": _safe("post_evals", learn.run_post_evals, 0, errors), "errors": errors}

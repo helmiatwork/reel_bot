@@ -11,6 +11,7 @@ from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from .common import ATM_MODEL, item_row, parse_json, run_claude
+from .learn import distill_learnings
 
 router = APIRouter()
 
@@ -225,6 +226,7 @@ def _run_evaluation(eval_id: int, item_id: int, rnd: int) -> None:
                  parsed["summary"].strip(), json.dumps(resolved) if isinstance(resolved, dict) and prev else None,
                  item["draft_video_path"], ATM_MODEL, eval_id))
         conn.commit()
+        distill_learnings(item_id, eval_id)  # never raises; 0 when nothing could be distilled
     except Exception as exc:
         print(f"[atm] evaluation {eval_id} failed: {exc}")
         try:
