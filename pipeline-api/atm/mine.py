@@ -82,6 +82,7 @@ def mine_channel(body: MineRequest):
 def _wait_run(run_id: str) -> Optional[str]:
     """'done' or 'error' when the analyze run ends, None after 20 min. Reads the state /analyze/claude/status serves."""
     import main
+    # analyses run earlier in the same BackgroundTasks, so this normally returns on the first read
     for _ in range(_MAX_POLLS):
         try:
             status = (main._load_run(run_id) or {}).get("status")
@@ -94,14 +95,16 @@ def _wait_run(run_id: str) -> Optional[str]:
 
 
 def _start_blueprint(item_id: int) -> bool:
-    """Mark the item building under the same lock and stale rule as POST /items/{id}/blueprint. False = do not start."""
+    """Mark the item building under the same lock and stale rule as POST /items/{id}/blueprint. False = do not start.
+    Auto-blueprint only fills items with no blueprint yet, never overwrites one."""
     import main
     conn = main._db_conn()
     if not conn:
         return False
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT reference_url, (blueprint_status = 'building' AND blueprint_started_at > now() - interval '15 minutes') "
+            cur.execute("SELECT reference_url, (blueprint IS NOT NULL OR (blueprint_status = 'building' "
+                        "AND blueprint_started_at > now() - interval '15 minutes')) "
                         "FROM content_items WHERE id = %s FOR UPDATE", (item_id,))
             row = cur.fetchone()
             if not row or row[1]:

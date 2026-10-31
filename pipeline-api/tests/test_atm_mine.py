@@ -107,9 +107,9 @@ def test_discover_stats_failure_keeps_items():
 URL = "https://www.youtube.com/shorts/aaaaaaaaaaa"
 
 
-def _import_conn(analysis_exists=True, start_ok=True):
+def _import_conn(analysis_exists=True, start_ok=True, blocked=False):
     rules = [("INSERT INTO content_items", (["id", "title", "reference_url"], [(9, "A", URL)])),
-             ("FOR UPDATE", (["reference_url", "building"], [(URL, False)] if start_ok else [])),
+             ("FOR UPDATE", (["reference_url", "blocked"], [(URL, blocked)] if start_ok else [])),
              ("FROM video_analysis", (["x"], [(1,)] if analysis_exists else []))]
     return FakeConn(rules)
 
@@ -177,6 +177,24 @@ def test_import_already_exists_without_analysis_row_is_not_started():
     assert r.status_code == 200
     m["job"].assert_not_called()
     assert not conn.sqls("SET blueprint_status = 'building'")
+
+
+def test_auto_blueprint_skips_item_that_already_has_blueprint():
+    conn = _import_conn(blocked=True)
+    r, m = _import(conn, {"return_value": {"run_id": "r1"}}, {"return_value": {"status": "done"}})
+    assert r.status_code == 200
+    m["job"].assert_not_called()
+    assert not conn.sqls("SET blueprint_status = 'building'")
+    assert "blueprint IS NOT NULL" in conn.sqls("FOR UPDATE")[0][0]
+
+
+def test_auto_blueprint_skips_item_building_within_15_minutes():
+    conn = _import_conn(blocked=True)
+    r, m = _import(conn, {"return_value": {"already_exists": True, "source": {}}})
+    assert r.status_code == 200
+    m["job"].assert_not_called()
+    assert "blueprint_status = 'building' AND blueprint_started_at > now() - interval '15 minutes'" \
+        in conn.sqls("FOR UPDATE")[0][0]
 
 
 def test_import_auto_blueprint_is_sequential_and_skips_failed_analysis():
