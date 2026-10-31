@@ -135,7 +135,8 @@ def build_blueprint_prompt(item: dict, ctx: dict, section: Optional[str] = None)
         block("Keyword SEO", ctx.get("keywords")),
     ]
     parts.append(
-        "\nDurasi: jumlah shots[].duration_s HARUS sama dengan waktu akhir narasi (beat terakhir), selisih maksimal 15%.\n")
+        "\nDurasi: jumlah shots[].duration_s HARUS sama dengan waktu akhir narasi (beat terakhir), selisih maksimal 15%.\n"
+        "Thumbnail: thumbnail.concepts berisi TEPAT 3 konsep berbeda; cover_frame terpisah dan TIDAK dihitung sebagai konsep.\n")
     if item.get("format") == "short":
         parts.append(
             "Format short: SEMUA vertikal 9:16 (tips rekaman, kamera, CapCut); jangan tulis horizontal/landscape. "

@@ -228,3 +228,8 @@ def test_prompt_has_duration_and_format_rules():
     short = bpm.build_blueprint_prompt({"title": "T", "format": "short"}, {})
     assert "maksimal 15%" in short and "vertikal 9:16" in short and "cover_frame" in short
     assert "horizontal 16:9" in bpm.build_blueprint_prompt({"title": "T", "format": "long"}, {})
+
+
+def test_prompt_says_exactly_three_concepts_cover_separate():
+    p = bpm.build_blueprint_prompt({"title": "T", "format": "short"}, {})
+    assert "TEPAT 3 konsep" in p and "TIDAK dihitung sebagai konsep" in p
