@@ -3,7 +3,7 @@ import datetime as _dt
 
 from fastapi import APIRouter, Depends, Header
 
-from . import schedule
+from . import monitor, schedule
 
 router = APIRouter()
 
@@ -26,6 +26,6 @@ def _safe(name, fn, default, errors):
 def tick(_: None = Depends(_admin)):
     now = _dt.datetime.now(_dt.timezone.utc)
     errors: list = []
-    # monitor / post_evals jobs arrive with the monitoring tasks; no-op until then
     return {"reminders": _safe("reminders", lambda: schedule.send_reminders(now), 0, errors),
-            "monitor": {}, "post_evals": 0, "errors": errors}
+            "monitor": _safe("monitor", lambda: monitor.run_monitor(now), {}, errors),
+            "post_evals": 0, "errors": errors}

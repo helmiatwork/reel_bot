@@ -2,6 +2,8 @@ import datetime as dt
 import sys
 from pathlib import Path
 from unittest.mock import patch
+
+import pytest
 from zoneinfo import ZoneInfo
 
 from fastapi.testclient import TestClient
@@ -106,6 +108,13 @@ def test_failed_telegram_releases_claim():
     with patch("main._db_conn", return_value=conn), patch("main._telegram_notify", return_value=False):
         assert schedule.send_reminders(now) == 0
     assert conn.claimed == set()
+
+
+@pytest.fixture(autouse=True)
+def _no_real_tick_jobs():
+    """Tick tests cover reminders only; monitor/post-eval jobs have their own tests and must not touch a live DB."""
+    with patch("atm.monitor.run_monitor", return_value={}):
+        yield
 
 
 def test_tick_survives_job_exception():
