@@ -3491,6 +3491,23 @@ def _normalize_ytdlp_video(raw: dict) -> dict:
     }
 
 
+def _with_stats(items: list) -> list:
+    """Add view/like counts + duration to v3 list results with one batched videos.list call; best-effort."""
+    ids = [i["video_id"] for i in items if i.get("video_id")][:50]
+    if not ids:
+        return items
+    try:
+        by_id = {v["video_id"]: v for v in v3_video_details(ids)}
+    except Exception as e:
+        print(f"[youtube] stats enrichment skipped: {type(e).__name__}")
+        return items
+    for it in items:
+        d = by_id.get(it.get("video_id"))
+        if d:
+            it.update({k: d[k] for k in ("view_count", "like_count", "duration_s") if k in d})
+    return items
+
+
 @app.get("/youtube/search")
 def youtube_search(q: str, max_results: int = 10):
     """
@@ -3509,7 +3526,7 @@ def youtube_search(q: str, max_results: int = 10):
 
     # Try v3 first
     try:
-        items = v3_search(q, max_results=max_results)
+        items = _with_stats(v3_search(q, max_results=max_results))
         return _json({"items": items, "source": "v3"})
     except YouTubeNotConfigured:
         print(f"[youtube/search] v3 not configured, falling back to yt-dlp for: {q}")
@@ -3607,6 +3624,8 @@ def youtube_trending(region: str = "US", max_results: int = 10, category_id: str
             max_results=max_results,
             category_id=category_id if category_id else None
         )
+        if items and "view_count" not in items[0]:
+            items = _with_stats(items)
         return _json({"items": items, "source": "v3"})
     except (YouTubeNotConfigured, YouTubeQuotaError) as e:
         print(f"[youtube/trending] v3 unavailable: {e}")
@@ -3634,7 +3653,7 @@ def youtube_channel_uploads(channel_id: str, max_results: int = 10):
     max_results = max(1, min(int(max_results), 50))
 
     try:
-        items = v3_channel_uploads(channel_id, max_results=max_results)
+        items = _with_stats(v3_channel_uploads(channel_id, max_results=max_results))
         return _json({"items": items, "source": "v3"})
     except (YouTubeNotConfigured, YouTubeQuotaError) as e:
         print(f"[youtube/channel] v3 unavailable: {e}")

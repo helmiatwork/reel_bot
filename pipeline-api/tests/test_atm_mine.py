@@ -76,3 +76,19 @@ def test_ytdlp_bin_prefers_venv_binary(tmp_path):
     (tmp_path / "yt-dlp").write_text("")
     with patch.object(sys, "executable", str(tmp_path / "python")):
         assert common.ytdlp_bin() == str(tmp_path / "yt-dlp")
+
+
+def test_discover_lists_get_view_counts_batched():
+    import main
+    items = [{"video_id": "a", "title": "A"}, {"video_id": "b", "title": "B"}]
+    with patch("main.v3_video_details", return_value=[{"video_id": "a", "view_count": 7, "like_count": 1, "duration_s": 30}]) as vd:
+        out = main._with_stats(items)
+    vd.assert_called_once_with(["a", "b"])
+    assert out[0]["view_count"] == 7 and out[0]["duration_s"] == 30 and "view_count" not in out[1]
+
+
+def test_discover_stats_failure_keeps_items():
+    import main
+    items = [{"video_id": "a"}]
+    with patch("main.v3_video_details", side_effect=RuntimeError("quota")):
+        assert main._with_stats(items) == [{"video_id": "a"}]
