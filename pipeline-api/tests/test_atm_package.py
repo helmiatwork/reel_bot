@@ -61,3 +61,21 @@ def test_package_404_and_409(tmp_path):
         assert client.get("/atm/items/3/package").status_code == 404
     r, _ = _get(tmp_path, [], None, bp={})
     assert r.status_code == 409
+
+
+def test_blueprint_markdown_is_readable():
+    from atm.package import blueprint_markdown
+    bp = json.loads((Path(__file__).parent / "fixtures" / "atm_blueprint_ok.json").read_text())
+    bp["extra_key"] = {"catatan": "tambahan"}
+    bp["shots"][0]["mood"] = "hangat"
+    bp["upload"]["checklist"] = ["cek judul"]
+    md = blueprint_markdown("Kucing", bp)
+    assert "1. hook pertanyaan" in md and "1. Judul 1" in md and "5. Judul 5" in md
+    assert "| Waktu | Kalimat VO | Catatan |" in md and "| 00:00-00:03 | Kucingku nolak makan. | jeda |" in md
+    assert "| # | Durasi | Yang direkam | Framing / kamera | Teks layar | Transisi |" in md
+    assert "| 1 | 8 dtk | close-up kucing | close / statis | Kenapa? | zoom |" in md
+    assert "| Momen | SFX |" in md and "- [ ] rekam kucing" in md and "- [ ] lagu ceria" in md and "- [ ] cek judul" in md
+    assert "2. Potong" in md and "### Konsep 3" in md and "### Cover frame" in md and "kucing menatap kamera" in md
+    assert "## Lainnya" in md and "**extra_key**" in md and "**mood**: hangat" in md
+    assert "-\n" not in md and ": None" not in md and not any(l.strip() in ("-", "- ") for l in md.splitlines())
+    assert "tiru:" not in md and "- line:" not in md

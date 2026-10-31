@@ -12,40 +12,174 @@ router = APIRouter()
 
 
 def _lines(v, indent=0) -> list[str]:
-    """Generic readable rendering: dicts become 'Key: value' lines, lists become bullets."""
+    """Generic readable rendering for leftovers: dicts become '**Key**: value' lines, lists become bullets."""
     pad = "  " * indent
     if isinstance(v, dict):
         out = []
         for k, x in v.items():
             if isinstance(x, (dict, list)) and x:
-                out += [f"{pad}- {k}:"] + _lines(x, indent + 1)
+                out += [f"{pad}- **{k}**:"] + _lines(x, indent + 1)
             elif x not in (None, "", [], {}):
-                out.append(f"{pad}- {k}: {x}")
+                out.append(f"{pad}- **{k}**: {x}")
         return out
     if isinstance(v, list):
         out = []
         for x in v:
             if isinstance(x, (dict, list)):
-                out += [f"{pad}-"] + _lines(x, indent + 1)
-            else:
+                out += _lines(x, indent)
+            elif x not in (None, ""):
                 out.append(f"{pad}- {x}")
         return out
-    return [f"{pad}{v}"]
+    return [f"{pad}{v}"] if v not in (None, "") else []
 
 
-_SECTION_TITLES = (
-    ("atm", "ATM: Tiru, Modifikasi, Orisinalitas"), ("titles", "Pilihan Judul"), ("hook", "Hook"),
-    ("narration", "Narasi per Beat"), ("shots", "Daftar Shot"), ("audio", "Audio"), ("assets", "Aset"),
-    ("capcut_steps", "Langkah Edit CapCut"), ("thumbnail", "Thumbnail"), ("upload", "Upload"),
-    ("recording_tips", "Tips Rekaman"),
+def _cell(v) -> str:
+    return str(v if v is not None else "").replace("|", "\\|").replace("\n", " ").strip()
+
+
+def _table(headers, rows) -> list[str]:
+    if not rows:
+        return []
+    return ["| " + " | ".join(headers) + " |", "|" + "---|" * len(headers)] + \
+        ["| " + " | ".join(_cell(c) for c in r) + " |" for r in rows]
+
+
+def _numbered(items) -> list[str]:
+    return [f"{i}. {x}" for i, x in enumerate([x for x in items if x not in (None, "")], 1)] if isinstance(items, list) else []
+
+
+def _dicts(v) -> list[dict]:
+    return [x for x in v if isinstance(x, dict)] if isinstance(v, list) else []
+
+
+def _rest(d, known) -> list[str]:
+    return _lines({k: x for k, x in d.items() if k not in known}) if isinstance(d, dict) else _lines(d)
+
+
+def _md_atm(a):
+    if not isinstance(a, dict):
+        return _lines(a), []
+    out = []
+    for key, label in (("tiru", "Tiru (struktur yang ditiru)"), ("modifikasi", "Modifikasi (sudut baru)"),
+                       ("checklist_orisinalitas", "Checklist orisinalitas")):
+        if _numbered(a.get(key)):
+            out += [f"**{label}**", ""] + _numbered(a[key]) + [""]
+    return out, _rest(a, ("tiru", "modifikasi", "checklist_orisinalitas"))
+
+
+def _md_hook(h):
+    if not isinstance(h, dict):
+        return _lines(h), []
+    out = [f"**Kalimat hook:** {h['line']}", ""] if h.get("line") else []
+    out += [f"**Visual pembuka:** {h['visual']}", ""] if h.get("visual") else []
+    return out, _rest(h, ("line", "visual"))
+
+
+def _md_narration(n):
+    if not isinstance(n, dict):
+        return _lines(n), []
+    out = [f"**Gaya bicara:** {n['style']}", ""] if n.get("style") else []
+    out += _table(["Waktu", "Kalimat VO", "Catatan"], [(b.get("t"), b.get("vo"), b.get("note")) for b in _dicts(n.get("beats"))])
+    return out, _rest(n, ("style", "beats"))
+
+
+_SHOT_KEYS = ("n", "duration_s", "record", "framing", "camera", "on_screen_text", "transition")
+
+
+def _md_shots(shots):
+    if not isinstance(shots, list):
+        return _lines(shots), []
+    rows = [(s.get("n", i), f"{s['duration_s']} dtk" if s.get("duration_s") else "", s.get("record"),
+             " / ".join(str(x) for x in (s.get("framing"), s.get("camera")) if x), s.get("on_screen_text"), s.get("transition"))
+            for i, s in enumerate(_dicts(shots), 1)]
+    out = _table(["#", "Durasi", "Yang direkam", "Framing / kamera", "Teks layar", "Transisi"], rows)
+    return out, [line for s in _dicts(shots) for line in _rest(s, _SHOT_KEYS)]
+
+
+def _md_audio(a):
+    if not isinstance(a, dict):
+        return _lines(a), []
+    out = []
+    if a.get("bgm_reason") or a.get("bgm_song_id"):
+        bgm = a.get("bgm_name") or (f"lagu #{a['bgm_song_id']}" if a.get("bgm_song_id") else "")
+        out += [f"**BGM:** {bgm}" + (f" - {a['bgm_reason']}" if a.get("bgm_reason") else ""), ""]
+    if _dicts(a.get("sfx")):
+        out += ["**SFX**", ""] + _table(["Momen", "SFX"], [(x.get("moment"), x.get("sfx")) for x in _dicts(a["sfx"])]) + [""]
+    return out, _rest(a, ("bgm_song_id", "bgm_name", "bgm_reason", "sfx"))
+
+
+def _md_assets(a):
+    if not isinstance(a, dict):
+        return _lines(a), []
+    have = [x.get("label") or x.get("song_id") if isinstance(x, dict) else x for x in (a.get("have") or [])]
+    out = []
+    for label, items in (("Sudah punya", have), ("Harus disiapkan", a.get("need") or [])):
+        items = [x for x in items if x not in (None, "")]
+        if items:
+            out += [f"**{label}**", ""] + [f"- [ ] {x}" for x in items] + [""]
+    return out, _rest(a, ("have", "need"))
+
+
+def _md_thumbnail(t):
+    if not isinstance(t, dict):
+        return _lines(t), []
+    out = []
+    for i, c in enumerate(_dicts(t.get("concepts")), 1):
+        out += [f"### Konsep {i}", "", f"- **Prompt gambar:** {c.get('prompt', '')}",
+                f"- **Teks overlay:** {c.get('overlay_text', '')}", f"- **Alasan CTR:** {c.get('why_ctr', '')}", ""]
+    cf = t.get("cover_frame")
+    if isinstance(cf, dict) and cf:
+        out += ["### Cover frame (di dalam aplikasi)", "", f"- **Shot nomor:** {cf.get('shot', '')}",
+                f"- **Momen:** {cf.get('moment', '')}", f"- **Teks overlay:** {cf.get('overlay_text', '')}", ""]
+    if _numbered(t.get("rules")):
+        out += ["**Aturan thumbnail**", ""] + _numbered(t["rules"]) + [""]
+    return out, _rest(t, ("concepts", "cover_frame", "rules"))
+
+
+def _md_upload(u):
+    if not isinstance(u, dict):
+        return _lines(u), []
+    out = []
+    for key, label in (("description", "Deskripsi"), ("pinned_comment", "Komentar pin"), ("playlist", "Playlist"), ("end_screen", "End screen")):
+        if u.get(key):
+            out += [f"**{label}:** {u[key]}", ""]
+    if u.get("tags"):
+        out += [f"**Tag:** {', '.join(map(str, u['tags']))}", ""]
+    if u.get("hashtags"):
+        out += [f"**Hashtag:** {' '.join(map(str, u['hashtags']))}", ""]
+    if _numbered(u.get("checklist")):
+        out += ["**Checklist upload**", ""] + [f"- [ ] {x}" for x in u["checklist"] if x] + [""]
+    return out, _rest(u, ("description", "pinned_comment", "playlist", "end_screen", "tags", "hashtags", "checklist"))
+
+
+def _md_numbered(v):
+    return (_numbered(v), []) if isinstance(v, list) else (_lines(v), [])
+
+
+_SECTIONS = (
+    ("atm", "ATM: Tiru, Modifikasi, Orisinalitas", _md_atm),
+    ("titles", "Pilihan Judul", _md_numbered), ("hook", "Hook", _md_hook),
+    ("narration", "Narasi per Beat", _md_narration), ("shots", "Daftar Shot", _md_shots),
+    ("audio", "Audio", _md_audio), ("assets", "Aset", _md_assets),
+    ("capcut_steps", "Langkah Edit CapCut", _md_numbered), ("thumbnail", "Thumbnail", _md_thumbnail),
+    ("upload", "Kit Upload", _md_upload), ("recording_tips", "Tips Rekaman", lambda v: ([f"- {x}" for x in v if x] if isinstance(v, list) else _lines(v), [])),
 )
 
 
 def blueprint_markdown(title: str, bp: dict) -> str:
-    parts = [f"# Blueprint: {title}\n"]
-    for key, label in _SECTION_TITLES:
+    parts, extra = [f"# Blueprint: {title}\n"], []
+    for key, label, render in _SECTIONS:
         if bp.get(key):
-            parts.append(f"## {label}\n\n" + "\n".join(_lines(bp[key])) + "\n")
+            body, leftover = render(bp[key])
+            if body:
+                parts.append(f"## {label}\n\n" + "\n".join(body).rstrip() + "\n")
+            if leftover:
+                extra += [f"**{label}**", ""] + leftover + [""]
+    known = {k for k, _, _ in _SECTIONS}
+    other = {k: v for k, v in bp.items() if k not in known}
+    extra += _lines(other) if other else []
+    if extra:
+        parts.append("## Lainnya\n\n" + "\n".join(extra).rstrip() + "\n")
     return "\n".join(parts)
 
 

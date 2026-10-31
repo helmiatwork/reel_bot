@@ -188,3 +188,43 @@ def test_gather_context_reads_reference_channel():
     conn = FakeConn([("FROM sources", (["channel"], [("KucingKu",)]))])
     with conn.cursor() as cur:
         assert bpm.gather_context(cur, {"reference_url": "u", "niche": "n"})["reference_channel"] == "KucingKu"
+
+
+def _errs(bp, fmt="short"):
+    return " | ".join(bpm.validate_blueprint(bp, {7}, None, fmt))
+
+
+def test_validate_duration_mismatch_real_shape():
+    bp = copy.deepcopy(OK)
+    bp["narration"]["beats"] = [{"t": "00:00-00:03", "vo": "a", "note": ""}, {"t": "00:47-00:55", "vo": "b", "note": ""}]
+    bp["shots"] = [{"n": 1, "duration_s": 20}, {"n": 2, "duration_s": 15}]
+    assert "total durasi shots (35s)" in _errs(bp) and "akhir narasi (55s)" in _errs(bp)
+    bp["shots"][1]["duration_s"] = 30  # 50s vs 55s: inside 15%
+    assert "durasi" not in _errs(bp)
+    bp["narration"]["beats"] = [{"end_s": 55}]
+    bp["shots"] = [{"duration_s": 35}]
+    assert "durasi" in _errs(bp)
+
+
+def test_validate_short_must_be_vertical():
+    bp = copy.deepcopy(OK)
+    bp["recording_tips"] = ["Rekam HORIZONTAL saja"]
+    assert "vertikal" in _errs(bp)
+    bp["recording_tips"] = []
+    bp["shots"][0]["camera"] = "landscape statis"
+    assert "vertikal" in _errs(bp)
+    assert "vertikal" not in _errs(bp, "long")
+
+
+def test_validate_short_requires_cover_frame():
+    bp = copy.deepcopy(OK)
+    del bp["thumbnail"]["cover_frame"]
+    assert "cover_frame" in _errs(bp) and "cover_frame" not in _errs(bp, "long")
+    bp["thumbnail"]["cover_frame"] = {"shot": 1, "moment": "x"}
+    assert "cover_frame" in _errs(bp)
+
+
+def test_prompt_has_duration_and_format_rules():
+    short = bpm.build_blueprint_prompt({"title": "T", "format": "short"}, {})
+    assert "maksimal 15%" in short and "vertikal 9:16" in short and "cover_frame" in short
+    assert "horizontal 16:9" in bpm.build_blueprint_prompt({"title": "T", "format": "long"}, {})

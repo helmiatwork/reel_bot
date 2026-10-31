@@ -1,5 +1,6 @@
 """Blueprint generation: one claude call per item (or per section), validated before anything is saved."""
 import json
+import re
 from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException
@@ -21,15 +22,49 @@ _SCHEMA = """{
   "audio": {"bgm_song_id": 0, "bgm_reason": "", "sfx": [{"moment": "", "sfx": ""}]},
   "assets": {"have": [{"song_id": 0, "label": ""}], "need": ["harus direkam/dicari"]},
   "capcut_steps": ["langkah edit bernomor untuk pemula"],
-  "thumbnail": {"concepts": [{"prompt": "prompt AI gambar", "overlay_text": "maks 4 kata", "why_ctr": "alasan CTR"}], "rules": ["kontras", "1 fokus", "terbaca di HP"]},
+  "thumbnail": {"concepts": [{"prompt": "prompt AI gambar", "overlay_text": "maks 4 kata", "why_ctr": "alasan CTR"}], "rules": ["kontras", "1 fokus", "terbaca di HP"], "cover_frame": {"shot": 1, "moment": "momen di shot untuk cover in-app (hanya format short)", "overlay_text": "teks di cover"}},
   "upload": {"description": "2 baris pertama memuat keyword", "tags": [], "hashtags": [], "pinned_comment": "", "playlist": "", "end_screen": "", "checklist": []},
   "recording_tips": ["jarak mic, ruangan, rekam per beat"]
 }"""
 
 _MAX_CTX_CHARS = 6000
+_DURATION_TOLERANCE = 0.15
+_TIME = re.compile(r"\d+(?::\d+){1,2}|\d+(?:\.\d+)?")
 
 
-def validate_blueprint(bp: dict, song_ids: set, channel: Optional[str] = None) -> list[str]:
+def _seconds(token: str) -> float:
+    secs = 0.0
+    for part in token.split(":"):
+        secs = secs * 60 + float(part)
+    return secs
+
+
+def _narration_end(beats: list) -> Optional[float]:
+    """Largest end time (s) over beats; `t` is 'mm:ss-mm:ss', 'mm:ss' or a number, or `end_s`/`end` is numeric."""
+    ends = []
+    for b in beats:
+        if not isinstance(b, dict):
+            continue
+        for key in ("end_s", "end"):
+            if isinstance(b.get(key), (int, float)) and not isinstance(b[key], bool):
+                ends.append(float(b[key]))
+                break
+        else:
+            t = b.get("t")
+            if isinstance(t, (int, float)) and not isinstance(t, bool):
+                ends.append(float(t))
+            elif isinstance(t, str) and (found := _TIME.findall(t)):
+                ends.append(_seconds(found[-1]))
+    return max(ends) if ends else None
+
+
+def _shots_total(shots: list) -> Optional[float]:
+    vals = [s.get("duration_s") for s in shots if isinstance(s, dict)]
+    nums = [float(v) for v in vals if isinstance(v, (int, float)) and not isinstance(v, bool)]
+    return sum(nums) if nums else None
+
+
+def validate_blueprint(bp: dict, song_ids: set, channel: Optional[str] = None, fmt: Optional[str] = None) -> list[str]:
     """Return a list of problems (empty = ok). Unknown bgm_song_id is nulled in place, not an error."""
     if not isinstance(bp, dict):
         return ["blueprint is not an object"]
@@ -58,6 +93,19 @@ def validate_blueprint(bp: dict, song_ids: set, channel: Optional[str] = None) -
     narr = bp.get("narration")
     if "narration" in bp and not (isinstance(narr, dict) and isinstance(narr.get("beats"), list) and narr["beats"]):
         errors.append("narration.beats kosong")
+    shots, beats = bp.get("shots"), (narr or {}).get("beats") if isinstance(narr, dict) else None
+    if isinstance(shots, list) and isinstance(beats, list):
+        total, end = _shots_total(shots), _narration_end(beats)
+        if total and end and abs(total - end) > _DURATION_TOLERANCE * end:
+            errors.append(f"total durasi shots ({total:g}s) harus sama dengan akhir narasi ({end:g}s) dengan selisih maksimal 15%")
+    if fmt == "short":
+        texts = [str(t) for t in (bp.get("recording_tips") if isinstance(bp.get("recording_tips"), list) else [])]
+        texts += [str(s.get("camera") or "") for s in shots if isinstance(s, dict)] if isinstance(shots, list) else []
+        if any(w in t.lower() for t in texts for w in ("horizontal", "landscape")):
+            errors.append("format short harus vertikal 9:16: hapus 'horizontal'/'landscape' dari recording_tips dan camera")
+        cf = thumb.get("cover_frame") if isinstance(thumb, dict) else None
+        if "thumbnail" in bp and not (isinstance(cf, dict) and all(cf.get(k) for k in ("shot", "moment", "overlay_text"))):
+            errors.append("thumbnail.cover_frame (shot, moment, overlay_text) wajib untuk format short")
     audio = bp.get("audio")
     if isinstance(audio, dict) and audio.get("bgm_song_id") not in song_ids:
         audio["bgm_song_id"] = None
@@ -86,6 +134,14 @@ def build_blueprint_prompt(item: dict, ctx: dict, section: Optional[str] = None)
         block("Pelajaran sebelumnya", ctx.get("learnings")),
         block("Keyword SEO", ctx.get("keywords")),
     ]
+    parts.append(
+        "\nDurasi: jumlah shots[].duration_s HARUS sama dengan waktu akhir narasi (beat terakhir), selisih maksimal 15%.\n")
+    if item.get("format") == "short":
+        parts.append(
+            "Format short: SEMUA vertikal 9:16 (tips rekaman, kamera, CapCut); jangan tulis horizontal/landscape. "
+            "thumbnail.cover_frame WAJIB: nomor shot + momen untuk cover frame in-app dan teks overlay.\n")
+    else:
+        parts.append("Format long: semua horizontal 16:9 (tips rekaman, kamera, CapCut).\n")
     if item.get("voice_mode") == "self":
         parts.append("\nvoice_mode=self: recording_tips WAJIB diisi (jarak mic, ruangan, rekam per beat).\n")
     else:
@@ -177,7 +233,7 @@ def _run_blueprint(item_id: int, section: Optional[str]) -> None:
                 bp = {**item["blueprint"], section: parsed[section]}
             else:
                 bp = parsed
-            errors = validate_blueprint(bp, song_ids, ctx.get("reference_channel"))
+            errors = validate_blueprint(bp, song_ids, ctx.get("reference_channel"), item.get("format"))
             if not errors:
                 break
             prompt = base_prompt + "\n\nJawaban sebelumnya ditolak karena:\n- " + "\n- ".join(errors) + \
