@@ -194,6 +194,9 @@
         {#if item.niche}<span class="niche-badge">{item.niche}</span>{/if}
         <span class="niche-badge">{item.format} · {$_('atm.voice_' + item.voice_mode)}</span>
         <div style="flex:1"></div>
+        {#if item.blueprint && Object.keys(item.blueprint).length}
+          <a class="btn-ghost sm" style="text-decoration:none" href={`/atm/items/${item.id}/package`} download>{$_('atm.package_download')}</a>
+        {/if}
         <button class="btn-danger sm" onclick={removeItem}>{$_('atm.delete')}</button>
       </div>
       <div class="head-row">
