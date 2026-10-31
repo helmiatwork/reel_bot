@@ -9410,6 +9410,46 @@ def _seo_synthesize(topic: str, keywords: list, trends: dict, platform: str) -> 
         return {}
 
 
+def _seo_persist_keywords(seed: str, niche: str, platform: str, raw_suggestions: list, trends: dict) -> None:
+    """Best-effort UPSERT of SEO keywords into `keywords` so ATM blueprints can read them. Never raises."""
+    conn = _db_conn()
+    if not conn:
+        return
+    auto_source = "yt_autocomplete" if platform == "youtube" else "google_autocomplete"
+    try:
+        rows: dict = {}  # keyed by (term, source): one batch must not hit the same UPSERT key twice
+        for rank, term in enumerate(raw_suggestions):
+            if term:
+                rows[(term, auto_source)] = (max(10, 60 - 2 * rank), {"term": term, "source": "autocomplete"})
+        for key, source in (("related_top", "trends_top"), ("related_rising", "trends_rising")):
+            for item in trends.get(key, []):
+                q = item.get("query", "")
+                if q:
+                    rows[(q, source)] = (min(100.0, float(item.get("value") or 0)), {"term": q, "source": source})
+        with conn.cursor() as cur:
+            for (term, source), (score, raw) in rows.items():
+                cur.execute("""
+                    INSERT INTO keywords
+                    (keyword, seed, source, region, niche, score, raw, fetched_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb, now())
+                    ON CONFLICT (keyword, region, source) DO UPDATE SET
+                        seed = EXCLUDED.seed,
+                        niche = EXCLUDED.niche,
+                        score = EXCLUDED.score,
+                        raw = EXCLUDED.raw,
+                        fetched_at = now()
+                """, (term, seed, source, "global", niche, score, json.dumps(raw)))
+        conn.commit()
+    except Exception as exc:
+        print(f"[seo_keywords] persist failed (non-fatal): {type(exc).__name__}")
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+    finally:
+        conn.close()
+
+
 class SeoAnalyzeRequest(BaseModel):
     topic: str
     platform: Optional[str] = "youtube"
@@ -9453,6 +9493,9 @@ def seo_analyze(req: SeoAnalyzeRequest):
         if q and q.lower() not in existing_terms:
             keywords.append({"term": q, "source": "trends_top"})
             existing_terms.add(q.lower())
+
+    # Persist for ATM blueprints (best-effort; they read keywords by niche)
+    _seo_persist_keywords(seed, (req.niche or "").strip() or seed.lower(), platform, raw_suggestions, trends)
 
     # 3. LLM synthesis (best-effort)
     suggestions = _seo_synthesize(seed, keywords, trends, platform)
