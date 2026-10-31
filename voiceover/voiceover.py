@@ -50,10 +50,10 @@ def text_to_speech(text: str, output_path: str,
     return output_path
 
 
-def _gtts_fallback(text: str, output_path: str) -> str:
+def _gtts_fallback(text: str, output_path: str, lang: str = "") -> str:
     """Free fallback: Google TTS via gTTS library."""
     from gtts import gTTS
-    gTTS(text=text, lang="en").save(output_path)
+    gTTS(text=text, lang=lang or os.getenv("TTS_LANG", "id")).save(output_path)
     print(f"[TTS] gTTS fallback: {output_path}")
     return output_path
 

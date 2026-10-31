@@ -72,3 +72,24 @@ def test_voice_single_beat_and_tts_failure(tmp_path):
         r = client.post("/atm/items/3/voice", json={"beat": 2})
     assert r.status_code == 502 and "beat 2" in r.json()["detail"]
     assert not conn.sqls("INSERT INTO songs")
+
+
+def test_gtts_fallback_defaults_to_indonesian(monkeypatch, tmp_path):
+    import types
+    from voiceover import voiceover as vo
+    seen = {}
+
+    class FakeTTS:
+        def __init__(self, text, lang):
+            seen["lang"] = lang
+
+        def save(self, path):
+            pass
+
+    monkeypatch.setitem(sys.modules, "gtts", types.SimpleNamespace(gTTS=FakeTTS))
+    monkeypatch.delenv("TTS_LANG", raising=False)
+    vo._gtts_fallback("halo", str(tmp_path / "a.mp3"))
+    assert seen["lang"] == "id"
+    monkeypatch.setenv("TTS_LANG", "en")
+    vo._gtts_fallback("halo", str(tmp_path / "a.mp3"))
+    assert seen["lang"] == "en"
