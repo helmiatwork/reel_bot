@@ -31,7 +31,8 @@ def test_mine_sorts_by_views_limits_and_never_sends_cookies():
     body = r.json()
     assert [v["video_id"] for v in body["videos"]] == ["bbbbbbbbbbb", "aaaaaaaaaaa"]
     assert body["videos"][0]["url"] == "https://www.youtube.com/shorts/bbbbbbbbbbb"
-    assert body["channel"] == {"name": "Kucing TV", "url": "https://www.youtube.com/channel/UC1", "followers": 900}
+    assert body["channel"] == {"name": "Kucing TV", "url": "https://www.youtube.com/channel/UC1", "followers": 900,
+                               "median_views": 255}
     argv = run.call_args.args[0]
     assert "--ignore-config" in argv and "--no-cookies" in argv and not any(a.startswith("--cookies") for a in argv)
     assert argv[argv.index("--playlist-end") + 1] == "60" and argv[-2:] == ["--", "https://www.youtube.com/@kucingtv/shorts"]
@@ -204,3 +205,45 @@ def test_wait_run_treats_partial_run_file_as_still_running():
             patch("atm.mine.time.sleep") as sleep:
         assert mine._wait_run("r1") == "done"
     sleep.assert_called_once()
+
+
+def _e(c, views=None):
+    """Scanned entry with id c*11; no view_count key when views is None."""
+    e = {"id": c * 11, "title": c}
+    if views is not None:
+        e["view_count"] = views
+    return e
+
+
+def _scan(entries, limit=50):
+    from atm.mine import _mine
+    with patch("atm.mine.subprocess.run", return_value=_proc({"channel": "C", "entries": entries})):
+        return _mine("https://www.youtube.com/@c/shorts", limit)
+
+
+def test_outlier_is_views_over_channel_median_rounded_to_one_decimal():
+    r = _scan([_e("a", 10), _e("b", 500), _e("c", 100), _e("d", 200)])
+    assert r["channel"]["median_views"] == 150
+    assert {v["title"]: v["outlier"] for v in r["videos"]} == {"a": 0.1, "b": 3.3, "c": 0.7, "d": 1.3}
+    assert {v["title"]: v["views"] for v in r["videos"]} == {"a": 10, "b": 500, "c": 100, "d": 200}
+
+
+def test_videos_sorted_by_outlier_desc_with_none_last_and_limit_applied_after():
+    entries = [_e("a", 10), _e("n"), _e("b", 500), _e("c", 100), _e("d", 200)]
+    assert [v["title"] for v in _scan(entries)["videos"]] == ["b", "d", "c", "a", "n"]
+    assert [v["title"] for v in _scan(entries, limit=2)["videos"]] == ["b", "d"]
+
+
+def test_missing_or_zero_views_have_no_outlier_and_do_not_count_toward_median():
+    r = _scan([_e("a", 10), _e("b", 300), _e("n"), _e("z", 0)])
+    assert r["channel"]["median_views"] == 155
+    by_title = {v["title"]: v for v in r["videos"]}
+    assert by_title["b"]["outlier"] == 1.9 and by_title["a"]["outlier"] == 0.1
+    assert by_title["n"]["outlier"] is None and by_title["n"]["views"] == 0
+    assert by_title["z"]["outlier"] is None and by_title["z"]["views"] == 0
+
+
+def test_no_views_at_all_gives_no_median_and_no_outliers():
+    r = _scan([_e("a"), _e("b")])
+    assert r["channel"]["median_views"] is None
+    assert [v["outlier"] for v in r["videos"]] == [None, None]

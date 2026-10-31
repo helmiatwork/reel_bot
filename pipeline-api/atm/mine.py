@@ -61,10 +61,16 @@ def _mine(shorts_url: str, limit: int) -> dict:
             views = e.get("view_count")
             videos.append({"video_id": vid, "url": f"https://www.youtube.com/shorts/{vid}",
                            "title": str(e.get("title") or ""), "views": views if isinstance(views, int) else 0})
-    videos.sort(key=lambda v: v["views"], reverse=True)
+    import statistics
+    known = [v["views"] for v in videos if v["views"] > 0]  # 0 means no view count here
+    median = statistics.median(known) if known else None
+    for v in videos:
+        v["outlier"] = round(v["views"] / median, 1) if v["views"] and median else None
+    videos.sort(key=lambda v: (v["outlier"] is None, -(v["outlier"] or 0)))
     return {"channel": {"name": data.get("channel") or data.get("uploader") or data.get("title"),
                         "url": data.get("channel_url") or data.get("uploader_url") or shorts_url,
-                        "followers": data.get("channel_follower_count")},
+                        "followers": data.get("channel_follower_count"),
+                        "median_views": median},
             "videos": videos[:limit]}
 
 
