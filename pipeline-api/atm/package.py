@@ -197,6 +197,177 @@ def upload_text(bp: dict) -> str:
             f"HASHTAG\n{' '.join(map(str, up.get('hashtags') or []))}\n\nKOMENTAR PIN\n{up.get('pinned_comment', '')}\n")
 
 
+def _text(v) -> str:
+    """Untrusted value as plain text: strings and numbers only, anything else becomes ''."""
+    return str(v) if isinstance(v, (str, int, float)) and not isinstance(v, bool) else ""
+
+
+def _flat(d) -> dict:
+    return {str(k): _text(x) for k, x in d.items() if _text(x)} if isinstance(d, dict) else {}
+
+
+def _rekam_data(title, bp: dict) -> dict:
+    hook, narration, thumb, tips = bp.get("hook"), bp.get("narration"), bp.get("thumbnail"), bp.get("recording_tips")
+    return {
+        "title": _text(title),
+        "hook": _text(hook.get("line") if isinstance(hook, dict) else hook),
+        "tips": [t for t in map(_text, tips) if t] if isinstance(tips, list) else [],
+        "shots": [_flat(s) for s in _dicts(bp.get("shots"))],
+        "beats": [_flat(b) for b in _dicts(narration.get("beats"))] if isinstance(narration, dict) else [],
+        "cover": _flat(thumb.get("cover_frame")) if isinstance(thumb, dict) else {},
+    }
+
+
+def _json_for_html(obj) -> str:
+    """JSON that cannot close the <script> block or start a tag; JS parses it back to the same values."""
+    s = json.dumps(obj, ensure_ascii=False)
+    return s.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026") \
+        .replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
+
+
+_REKAM_PAGE = """<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mode Rekam</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;background:#000;color:#fff;font:18px/1.45 system-ui,-apple-system,sans-serif}
+#screen{max-width:640px;margin:0 auto;padding:16px 16px 104px;overflow-wrap:anywhere}
+h1{font-size:30px;margin:8px 0 16px;line-height:1.25}
+h2{font-size:24px;margin:24px 0 8px;color:#ffd60a}
+.hook{font-size:28px;font-weight:700;margin:12px 0}
+.meta{font-size:20px;font-weight:700;color:#ffd60a;margin:4px 0}
+.narasi{font-size:32px;font-weight:700;line-height:1.35;margin:16px 0}
+.kv{font-size:20px;color:#e6e6e6;margin:6px 0}
+.ok{color:#7CFC8A;font-weight:700}
+.check{display:flex;align-items:center;gap:12px;min-height:48px;font-size:22px;font-weight:700;background:#1c1c1c;border-radius:10px;padding:10px 14px;margin:20px 0}
+.check input{width:28px;height:28px;flex:none}
+.nav{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;padding:8px;background:#000;border-top:1px solid #333}
+.nav button{flex:1;min-height:56px;font-size:22px;font-weight:700;border:0;border-radius:10px;background:#ffd60a;color:#000}
+.nav button:disabled{background:#333;color:#999}
+</style>
+</head>
+<body>
+<main id="screen"></main>
+<nav class="nav"><button id="prev" type="button">Sebelumnya</button><button id="next" type="button">Berikutnya</button></nav>
+<script type="application/json" id="data">__DATA__</script>
+<script>
+(function () {
+  "use strict";
+  var data = JSON.parse(document.getElementById("data").textContent);
+  var shots = data.shots, beats = data.beats;
+  // beat i narrates shot i only when the counts match; otherwise beats live on the start screen
+  var matched = beats.length === shots.length;
+  var total = shots.length, last = total + 1; // 0 = start, 1..total = shots, last = summary
+  var key = "rekam|" + data.title + "|";
+  var done = shots.map(function (_, i) {
+    try { return localStorage.getItem(key + i) === "1"; } catch (e) { return false; }
+  });
+  var screen = document.getElementById("screen");
+  var prev = document.getElementById("prev"), next = document.getElementById("next");
+  var pos = 0;
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+  function setDone(i, v) {
+    done[i] = v;
+    try { localStorage.setItem(key + i, v ? "1" : "0"); } catch (e) {}
+  }
+  function beatNode(b) {
+    var box = el("div", "");
+    if (b.t) box.appendChild(el("div", "meta", b.t));
+    box.appendChild(el("div", "narasi", b.vo || ""));
+    if (b.note) box.appendChild(el("div", "kv", "Catatan: " + b.note));
+    return box;
+  }
+  function startScreen() {
+    screen.appendChild(el("h1", "", data.title || "Mode Rekam"));
+    if (data.hook) screen.appendChild(el("p", "hook", data.hook));
+    screen.appendChild(el("div", "meta", "Total shot: " + total));
+    if (data.tips.length) {
+      screen.appendChild(el("h2", "", "Tips rekaman"));
+      var ul = el("ul", "kv");
+      data.tips.forEach(function (t) { ul.appendChild(el("li", "", t)); });
+      screen.appendChild(ul);
+    }
+    if (!matched && beats.length) {
+      screen.appendChild(el("h2", "", "Narasi per beat"));
+      beats.forEach(function (b) { screen.appendChild(beatNode(b)); });
+    }
+  }
+  function shotScreen(i) {
+    var s = shots[i];
+    screen.appendChild(el("div", "meta", "Shot " + (i + 1) + " / " + total));
+    if (s.duration_s) screen.appendChild(el("div", "meta", s.duration_s + " dtk"));
+    if (matched) screen.appendChild(beatNode(beats[i]));
+    Object.keys(s).forEach(function (k) {
+      if (k !== "n" && k !== "duration_s") screen.appendChild(el("div", "kv", k + ": " + s[k]));
+    });
+    var label = el("label", "check"), box = el("input");
+    box.type = "checkbox";
+    box.checked = done[i];
+    box.addEventListener("change", function () { setDone(i, box.checked); });
+    label.appendChild(box);
+    label.appendChild(el("span", "", "Sudah direkam"));
+    screen.appendChild(label);
+  }
+  function summaryScreen() {
+    var n = done.filter(Boolean).length;
+    screen.appendChild(el("h1", "", "Ringkasan: " + n + " dari " + total + " shot sudah direkam"));
+    shots.forEach(function (_, i) {
+      screen.appendChild(el("div", done[i] ? "kv ok" : "kv", "Shot " + (i + 1) + ": " + (done[i] ? "Sudah direkam" : "Belum")));
+    });
+    var cover = data.cover, keys = Object.keys(cover);
+    if (keys.length) {
+      screen.appendChild(el("h2", "", "Cover frame (di dalam aplikasi)"));
+      keys.forEach(function (k) { screen.appendChild(el("div", "kv", k + ": " + cover[k])); });
+    }
+  }
+  function render() {
+    while (screen.firstChild) screen.removeChild(screen.firstChild);
+    if (pos === 0) startScreen();
+    else if (pos === last) summaryScreen();
+    else shotScreen(pos - 1);
+    prev.disabled = pos === 0;
+    next.disabled = pos === last;
+    window.scrollTo(0, 0);
+  }
+  function go(d) {
+    var np = Math.min(last, Math.max(0, pos + d));
+    if (np !== pos) { pos = np; render(); }
+  }
+  prev.addEventListener("click", function () { go(-1); });
+  next.addEventListener("click", function () { go(1); });
+  var sx = null;
+  document.addEventListener("touchstart", function (e) {
+    sx = e.touches.length ? e.touches[0].clientX : null;
+  }, { passive: true });
+  document.addEventListener("touchend", function (e) {
+    if (sx === null || !e.changedTouches.length) return;
+    var dx = e.changedTouches[0].clientX - sx;
+    sx = null;
+    if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+  }, { passive: true });
+  document.title = data.title ? "Mode Rekam - " + data.title : "Mode Rekam";
+  render();
+})();
+</script>
+</body>
+</html>
+"""
+
+
+def rekam_html(title: str, bp: dict) -> str:
+    """Offline phone page: one screen per shot. Blueprint text is untrusted, so it only reaches the page as JSON data."""
+    return _REKAM_PAGE.replace("__DATA__", _json_for_html(_rekam_data(title, bp)))
+
+
 def _inside_data(path_str, data_dir: Path):
     """Resolved Path when it is an existing file under data/, else None."""
     if not path_str:
@@ -237,6 +408,7 @@ def item_package(item_id: int):
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("blueprint.md", blueprint_markdown(title, bp))
+        z.writestr("rekam.html", rekam_html(title, bp))
         z.writestr("blueprint.json", json.dumps(bp, ensure_ascii=False, indent=2))
         z.writestr("thumbnail_prompts.txt", thumbnail_prompts(bp))
         z.writestr("upload.txt", upload_text(bp))

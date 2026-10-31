@@ -36,8 +36,8 @@ def test_package_contains_texts_and_audio(tmp_path):
     r, conn = _get(tmp_path, [str(vo / "beat_01.mp3")], str(bgm))
     assert r.status_code == 200 and r.headers["content-type"] == "application/zip"
     z = zipfile.ZipFile(io.BytesIO(r.content))
-    assert sorted(z.namelist()) == ["bgm/bgm.mp3", "blueprint.json", "blueprint.md", "thumbnail_prompts.txt",
-                                    "upload.txt", "voiceover/beat_01.mp3"]
+    assert sorted(z.namelist()) == ["bgm/bgm.mp3", "blueprint.json", "blueprint.md", "rekam.html",
+                                    "thumbnail_prompts.txt", "upload.txt", "voiceover/beat_01.mp3"]
     assert json.loads(z.read("blueprint.json")) == BP
     assert "Halo kucing" in z.read("blueprint.md").decode() and "kucing kaget" in z.read("thumbnail_prompts.txt").decode()
     up = z.read("upload.txt").decode()
@@ -79,3 +79,67 @@ def test_blueprint_markdown_is_readable():
     assert "## Lainnya" in md and "**extra_key**" in md and "**mood**: hangat" in md
     assert "-\n" not in md and ": None" not in md and not any(l.strip() in ("-", "- ") for l in md.splitlines())
     assert "tiru:" not in md and "- line:" not in md
+
+
+FIXTURE = Path(__file__).parent / "fixtures" / "atm_blueprint_ok.json"
+EVIL = "</script><img src=x onerror=alert(1)>"
+
+
+def _data_block(html):
+    return html.split('<script type="application/json" id="data">', 1)[1].split("</script>", 1)[0]
+
+
+def test_package_rekam_html_is_offline_single_file(tmp_path):
+    r, _ = _get(tmp_path, [], None)
+    html = zipfile.ZipFile(io.BytesIO(r.content)).read("rekam.html").decode()
+    assert "http://" not in html and "https://" not in html
+    assert '<html lang="id">' in html and '<meta charset="utf-8">' in html
+    assert '<meta name="viewport" content="width=device-width, initial-scale=1">' in html
+    data = json.loads(_data_block(html))
+    assert data["title"] == "Judul Kucing!" and data["hook"] == "Halo kucing" and data["shots"] == []
+
+
+def test_rekam_html_embeds_shot_beat_and_cover_subset():
+    from atm.package import rekam_html
+    data = json.loads(_data_block(rekam_html("Kucing", json.loads(FIXTURE.read_text()))))
+    assert data["hook"] == "Kucingku nolak makan?" and data["tips"] == ["rekam per beat"]
+    assert data["beats"][1] == {"t": "00:03-00:08", "vo": "Ternyata ini sebabnya."}
+    assert data["shots"][0]["record"] == "close-up kucing" and data["shots"][0]["duration_s"] == "8"
+    assert data["cover"] == {"shot": "1", "moment": "kucing menatap kamera", "overlay_text": "KENAPA?"}
+
+
+def test_rekam_html_keeps_untrusted_text_inside_json_data():
+    from atm.package import rekam_html
+    bp = json.loads(FIXTURE.read_text())
+    bp["hook"]["line"] = EVIL
+    bp["shots"][0]["record"] = EVIL
+    html = rekam_html("Kucing", bp)
+    block = _data_block(html)
+    assert "</script" not in block and "<img" not in block
+    assert html.count("</script>") == 2
+    data = json.loads(block)
+    assert data["hook"] == EVIL and data["shots"][0]["record"] == EVIL
+
+
+def test_rekam_js_renders_with_textcontent_only():
+    from atm.package import rekam_html
+    html = rekam_html("Kucing", json.loads(FIXTURE.read_text()))
+    assert "textContent" in html
+    for banned in ("innerHTML", "outerHTML", "insertAdjacentHTML", "document.write"):
+        assert banned not in html
+
+
+def test_package_builds_with_malformed_blueprint(tmp_path):
+    r, _ = _get(tmp_path, [], None, bp=dict(BP, shots="x", narration=None))
+    assert r.status_code == 200
+    html = zipfile.ZipFile(io.BytesIO(r.content)).read("rekam.html").decode()
+    assert json.loads(_data_block(html))["shots"] == []
+
+
+def test_rekam_html_skips_odd_shapes():
+    from atm.package import rekam_html
+    bp = {"shots": ["x", {"n": 1, "record": "a", "duration_s": 8}], "narration": {"beats": "x"},
+          "recording_tips": "nope", "hook": ["odd"], "thumbnail": {"cover_frame": "x"}}
+    data = json.loads(_data_block(rekam_html(None, bp)))
+    assert data["title"] == "" and data["hook"] == "" and data["tips"] == [] and data["beats"] == []
+    assert data["shots"] == [{"n": "1", "record": "a", "duration_s": "8"}] and data["cover"] == {}
