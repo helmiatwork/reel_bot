@@ -9211,7 +9211,9 @@ def _keywords_init_db():
             """)
             # Indexes
             cur.execute("CREATE INDEX IF NOT EXISTS keywords_score_idx ON keywords (score DESC)")
-            cur.execute("CREATE INDEX IF NOT EXISTS keywords_niche_idx ON keywords (niche)")
+            # Niche filter is lower(trim(niche)); the plain niche index is never used for it.
+            cur.execute("DROP INDEX IF EXISTS keywords_niche_idx")
+            cur.execute("CREATE INDEX IF NOT EXISTS keywords_niche_norm_idx ON keywords ((lower(trim(niche))))")
             cur.execute("CREATE INDEX IF NOT EXISTS keywords_source_idx ON keywords (source)")
             cur.execute("CREATE INDEX IF NOT EXISTS keywords_region_idx ON keywords (region)")
             cur.execute("CREATE INDEX IF NOT EXISTS keywords_keyword_idx ON keywords (keyword)")

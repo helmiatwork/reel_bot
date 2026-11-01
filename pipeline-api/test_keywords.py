@@ -433,3 +433,20 @@ def test_init_db_replaces_upsert_key_with_niche_key():
     assert "DROP INDEX IF EXISTS keywords_upsert_key" in sqls
     assert f"CREATE UNIQUE INDEX IF NOT EXISTS keywords_upsert_niche_key ON keywords {_KEYWORDS_UPSERT_KEY}" in sqls
     mock_conn.commit.assert_called_once()
+
+
+def test_init_db_replaces_niche_index_with_normalized_expression_index():
+    """_keywords_init_db drops keywords_niche_idx and creates the lower(trim(niche)) expression index the niche filter uses."""
+    from main import _keywords_init_db
+    with patch("main._db_conn") as mock_db:
+        mock_conn = MagicMock()
+        mock_cur = MagicMock()
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cur
+        mock_db.return_value = mock_conn
+        _keywords_init_db()
+    sqls = [c[0][0] for c in mock_cur.execute.call_args_list]
+    drop = "DROP INDEX IF EXISTS keywords_niche_idx"
+    create = "CREATE INDEX IF NOT EXISTS keywords_niche_norm_idx ON keywords ((lower(trim(niche))))"
+    assert drop in sqls
+    assert create in sqls
+    assert sqls.index(drop) < sqls.index(create)

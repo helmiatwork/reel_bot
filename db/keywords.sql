@@ -26,7 +26,9 @@ CREATE TABLE IF NOT EXISTS keywords (
 
 -- Indexes for filtering and ordering
 CREATE INDEX IF NOT EXISTS keywords_score_idx ON keywords (score DESC);
-CREATE INDEX IF NOT EXISTS keywords_niche_idx ON keywords (niche);
+-- Expression must match the niche filter: lower(trim(niche)) (pipeline-api/main.py, pipeline-api/atm/blueprint.py)
+DROP INDEX IF EXISTS keywords_niche_idx;
+CREATE INDEX IF NOT EXISTS keywords_niche_norm_idx ON keywords ((lower(trim(niche))));
 CREATE INDEX IF NOT EXISTS keywords_source_idx ON keywords (source);
 CREATE INDEX IF NOT EXISTS keywords_region_idx ON keywords (region);
 CREATE INDEX IF NOT EXISTS keywords_keyword_idx ON keywords (keyword);
