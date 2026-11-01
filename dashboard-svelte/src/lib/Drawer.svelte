@@ -500,8 +500,17 @@
   function openLightbox(src, i = 0) { lightboxSrc = src; lightboxIndex = i }
   function closeLightbox() { lightboxSrc = null }
 
-  function onLightboxKey(e) {
-    if (e.key === 'Escape') closeLightbox()
+  // Esc closes the topmost layer only; stopPropagation keeps the window listener from closing the next one too.
+  // Overlays share one z-index, so the later one in the markup is on top: check them in reverse markup order.
+  function onEscape(e) {
+    if (e.key !== 'Escape') return
+    if (ideOpen) closeIdeModal()
+    else if (geminiBriefModal !== null) geminiBriefModal = null
+    else if (sceneJsonModal) sceneJsonModal = null
+    else if (lightboxSrc) closeLightbox()
+    else if (d) closeDrawer()
+    else return
+    e.stopPropagation()
   }
 
   // ponytail: $effect so the unsubscribe handle is captured; return tears it down on destroy (I9)
@@ -680,13 +689,15 @@
   }
 </script>
 
+<svelte:window onkeydown={onEscape} />
+
 <!-- Lightbox overlay -->
 {#if lightboxSrc}
   {@const sc = matchedScene(lightboxIndex)}
   <div
     class="lb-overlay"
     onclick={closeLightbox}
-    onkeydown={onLightboxKey}
+    onkeydown={onEscape}
     role="dialog"
     aria-modal="true"
     aria-label={$_('drawer.detail_frame')}
@@ -719,7 +730,7 @@
   <div
     class="lb-overlay"
     onclick={() => sceneJsonModal = null}
-    onkeydown={(e) => { if (e.key === 'Escape') sceneJsonModal = null }}
+    onkeydown={onEscape}
     role="dialog"
     aria-modal="true"
     aria-label={$_('drawer.json_scene')}
@@ -743,7 +754,7 @@
   <div
     class="lb-overlay"
     onclick={() => geminiBriefModal = null}
-    onkeydown={(e) => { if (e.key === 'Escape') geminiBriefModal = null }}
+    onkeydown={onEscape}
     role="dialog"
     aria-modal="true"
     aria-label={$_('drawer.prompt_gemini')}
@@ -772,7 +783,7 @@
   <div
     class="lb-overlay"
     onclick={closeIdeModal}
-    onkeydown={(e) => { if (e.key === 'Escape') closeIdeModal() }}
+    onkeydown={onEscape}
     role="dialog"
     aria-modal="true"
     aria-label={$_('drawer.make_idea_aria')}
