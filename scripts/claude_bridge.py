@@ -6,6 +6,9 @@ HOW TO RUN (on the host machine):
 
 ENV VARS:
     CLAUDE_BRIDGE_PORT   Port to listen on (default: 9999). Binds 127.0.0.1 only.
+    CLAUDE_BRIDGE_MAX_CONCURRENT
+                         Max `claude` subprocesses at once (default: 2, min: 1).
+                         Extra POST /run requests wait for a slot.
     CLAUDE_BIN           Path to the claude binary
                          (default: /Users/ichigo/.nodenv/versions/24.14.1/bin/claude)
     ANALYZE_FRAME_DIR    Host directory where frame images live
@@ -32,11 +35,15 @@ import os
 import shutil
 import subprocess
 import tempfile
+import threading
 from pathlib import Path
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
 PORT = int(os.environ.get("CLAUDE_BRIDGE_PORT", 9999))
+# Cap on concurrent `claude` subprocesses; requests beyond it wait for a slot.
+MAX_CONCURRENT = max(1, int(os.environ.get("CLAUDE_BRIDGE_MAX_CONCURRENT", 2)))
+_RUN_SLOTS = threading.BoundedSemaphore(MAX_CONCURRENT)
 # PATH lookup first: a pinned nodenv path breaks on every node upgrade.
 CLAUDE_BIN = os.environ.get("CLAUDE_BIN") or shutil.which("claude") or "claude"
 # .resolve() makes the dir absolute so resolved frame paths stay absolute even
@@ -332,7 +339,8 @@ class BridgeHandler(http.server.BaseHTTPRequestHandler):
             self._send_json(400, {"ok": False, "error_type": "frames_missing",
                                   "error": "none of the requested frames exist"})
             return
-        result = _run_claude(prompt, frame_paths, model, timeout_s, effort)
+        with _RUN_SLOTS:  # only the claude subprocess waits for a slot
+            result = _run_claude(prompt, frame_paths, model, timeout_s, effort)
 
         status_code = 200 if result.get("ok") else 502
         if result.get("error_type") == "rate_limit":
@@ -342,12 +350,19 @@ class BridgeHandler(http.server.BaseHTTPRequestHandler):
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 
+class _BridgeServer(http.server.ThreadingHTTPServer):
+    """One thread per request so GET /health answers while a claude job runs."""
+
+    daemon_threads = True
+
+
 def main():
     bind_addr = "127.0.0.1"
-    server = http.server.HTTPServer((bind_addr, PORT), BridgeHandler)
+    server = _BridgeServer((bind_addr, PORT), BridgeHandler)
     log.info("claude_bridge listening on %s:%d", bind_addr, PORT)
     log.info("claude binary: %s", CLAUDE_BIN)
     log.info("frame dir:     %s", FRAME_DIR)
+    log.info("max concurrent claude runs: %d", MAX_CONCURRENT)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

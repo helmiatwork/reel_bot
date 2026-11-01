@@ -2,11 +2,16 @@
 # Offline stdlib-only unit tests for claude_bridge.py.
 # Mocks subprocess.run — no real claude calls are made.
 
+import http.server
 import io
 import json
 import os
+import socketserver
+import subprocess
 import sys
 import tempfile
+import threading
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -618,6 +623,159 @@ class TestSubdirHTTPHandler(unittest.TestCase):
                           return_value={"ok": True, "result": "{}", "cost_usd": 0.0, "model": "x"}):
             handler.do_POST()
         mock_resolve.assert_called_once_with([], subdir=None)
+
+
+# ── Concurrency cap (MAX_CONCURRENT semaphore) ────────────────────────────────
+
+def _post_handler(body_dict):
+    """Build a BridgeHandler for POST /run with a captured response list."""
+    body = json.dumps(body_dict).encode()
+    handler = claude_bridge.BridgeHandler.__new__(claude_bridge.BridgeHandler)
+    handler.path = "/run"
+    handler.headers = {"Content-Length": str(len(body))}
+    handler.rfile = io.BytesIO(body)
+    captured = []
+    handler._send_json = lambda status, payload: captured.append((status, payload))
+    return handler, captured
+
+
+class _RunProbe:
+    """Fake _run_claude: records how many calls are inside it at once."""
+
+    def __init__(self, barrier=None):
+        self.lock = threading.Lock()
+        self.active = 0
+        self.max_active = 0
+        self.calls = 0
+        self.barrier = barrier
+
+    def __call__(self, prompt, frame_paths, model, timeout_s, effort=None):
+        with self.lock:
+            self.active += 1
+            self.calls += 1
+            self.max_active = max(self.max_active, self.active)
+        try:
+            if self.barrier is not None:
+                self.barrier.wait(timeout=5)
+            time.sleep(0.05)
+        finally:
+            with self.lock:
+                self.active -= 1
+        return {"ok": True, "result": "{}", "cost_usd": 0.0, "model": "x"}
+
+
+def _run_posts_concurrently(handlers, join_timeout=5):
+    """Run do_POST on each handler in its own thread; return (errors, still_alive)."""
+    errors = []
+
+    def _go(handler):
+        try:
+            handler.do_POST()
+        except BaseException as exc:  # surface thread failures in the test
+            errors.append(exc)
+
+    threads = [threading.Thread(target=_go, args=(h,), daemon=True) for h in handlers]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(join_timeout)
+    return errors, [t for t in threads if t.is_alive()]
+
+
+class TestConcurrencyCap(unittest.TestCase):
+    def test_cap_1_never_runs_two_claude_calls_at_once(self):
+        probe = _RunProbe()
+        handlers = [_post_handler({"prompt": f"p{i}", "frames": []})[0] for i in range(2)]
+        with patch.object(claude_bridge, "_RUN_SLOTS", threading.BoundedSemaphore(1)), \
+             patch.object(claude_bridge, "_run_claude", side_effect=probe):
+            errors, alive = _run_posts_concurrently(handlers)
+        self.assertEqual(errors, [])
+        self.assertEqual(alive, [])
+        self.assertEqual(probe.calls, 2)
+        self.assertEqual(probe.max_active, 1)
+
+    def test_cap_2_allows_two_claude_calls_at_once(self):
+        # Barrier(2) only passes when both calls are inside _run_claude together.
+        probe = _RunProbe(barrier=threading.Barrier(2))
+        handlers = [_post_handler({"prompt": f"p{i}", "frames": []})[0] for i in range(2)]
+        with patch.object(claude_bridge, "_RUN_SLOTS", threading.BoundedSemaphore(2)), \
+             patch.object(claude_bridge, "_run_claude", side_effect=probe):
+            errors, alive = _run_posts_concurrently(handlers)
+        self.assertEqual(errors, [])
+        self.assertEqual(alive, [])
+        self.assertEqual(probe.max_active, 2)
+
+    def test_invalid_request_returns_400_while_slots_are_held(self):
+        slots = threading.BoundedSemaphore(1)
+        handler, captured = _post_handler({"prompt": "   ", "frames": []})
+        slots.acquire()  # cap fully held by another request
+        try:
+            with patch.object(claude_bridge, "_RUN_SLOTS", slots), \
+                 patch.object(claude_bridge, "_run_claude") as run:
+                errors, alive = _run_posts_concurrently([handler])
+        finally:
+            slots.release()
+        self.assertEqual(errors, [])
+        self.assertEqual(alive, [], "validation must not wait for a slot")
+        self.assertEqual(captured[0][0], 400)
+        run.assert_not_called()
+
+    def test_valid_request_waits_for_a_free_slot(self):
+        slots = threading.BoundedSemaphore(1)
+        probe = _RunProbe()
+        handler, captured = _post_handler({"prompt": "analyze", "frames": []})
+        slots.acquire()
+        with patch.object(claude_bridge, "_RUN_SLOTS", slots), \
+             patch.object(claude_bridge, "_run_claude", side_effect=probe):
+            t = threading.Thread(target=handler.do_POST, daemon=True)
+            t.start()
+            t.join(0.3)
+            self.assertTrue(t.is_alive(), "request must wait while cap is full")
+            self.assertEqual(probe.calls, 0)
+            slots.release()
+            t.join(5)
+            self.assertFalse(t.is_alive())
+        self.assertEqual(probe.calls, 1)
+        self.assertEqual(captured[0][0], 200)
+
+    def test_env_clamps_cap_to_at_least_one(self):
+        scripts_dir = str(Path(__file__).parent)
+        env = dict(os.environ, CLAUDE_BRIDGE_MAX_CONCURRENT="0")
+        out = subprocess.run(
+            [sys.executable, "-c", "import claude_bridge as b; print(b.MAX_CONCURRENT)"],
+            cwd=scripts_dir, env=env, capture_output=True, text=True, timeout=30,
+        )
+        self.assertEqual(out.returncode, 0, out.stderr)
+        self.assertEqual(out.stdout.strip(), "1")
+
+    def test_default_cap_is_two(self):
+        scripts_dir = str(Path(__file__).parent)
+        env = {k: v for k, v in os.environ.items() if k != "CLAUDE_BRIDGE_MAX_CONCURRENT"}
+        out = subprocess.run(
+            [sys.executable, "-c", "import claude_bridge as b; print(b.MAX_CONCURRENT)"],
+            cwd=scripts_dir, env=env, capture_output=True, text=True, timeout=30,
+        )
+        self.assertEqual(out.returncode, 0, out.stderr)
+        self.assertEqual(out.stdout.strip(), "2")
+
+
+class TestServerSetup(unittest.TestCase):
+    def test_main_builds_threading_server_with_daemon_threads(self):
+        seen = {}
+
+        def _serve_once(server):
+            seen["threading"] = isinstance(server, http.server.ThreadingHTTPServer)
+            seen["daemon_threads"] = server.daemon_threads
+            server.server_close()
+            raise KeyboardInterrupt
+
+        with patch.object(claude_bridge, "PORT", 0), \
+             patch.object(socketserver.BaseServer, "serve_forever", _serve_once), \
+             self.assertLogs("bridge", "INFO") as logs:
+            claude_bridge.main()
+        self.assertTrue(seen["threading"])
+        self.assertTrue(seen["daemon_threads"])
+        self.assertTrue(any("max concurrent" in line for line in logs.output))
 
 
 if __name__ == "__main__":
