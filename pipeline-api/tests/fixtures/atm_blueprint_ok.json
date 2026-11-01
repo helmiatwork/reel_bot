@@ -1,0 +1,21 @@
+{
+  "atm": {"tiru": ["hook pertanyaan"], "modifikasi": ["sudut kucing rumahan"], "checklist_orisinalitas": ["footage sendiri"]},
+  "titles": ["Judul 1", "Judul 2", "Judul 3", "Judul 4", "Judul 5"],
+  "hook": {"line": "Kucingku nolak makan?", "visual": "close-up mangkuk"},
+  "narration": {"style": "santai", "beats": [
+    {"t": "00:00-00:03", "vo": "Kucingku nolak makan.", "note": "jeda"},
+    {"t": "00:03-00:08", "vo": "Ternyata ini sebabnya.", "note": ""}
+  ]},
+  "shots": [{"n": 1, "duration_s": 8, "record": "close-up kucing", "framing": "close", "camera": "statis", "on_screen_text": "Kenapa?", "transition": "zoom"}],
+  "audio": {"bgm_song_id": 7, "bgm_reason": "ceria", "sfx": [{"moment": "hook", "sfx": "pop"}]},
+  "assets": {"have": [{"song_id": 7, "label": "lagu ceria"}], "need": ["rekam kucing"]},
+  "capcut_steps": ["Import klip", "Potong"],
+  "thumbnail": {"concepts": [
+    {"prompt": "kucing kaget", "overlay_text": "KENAPA SIH?", "why_ctr": "emosi"},
+    {"prompt": "before after", "overlay_text": "Sebelum Sesudah", "why_ctr": "kontras"},
+    {"prompt": "mangkuk besar", "overlay_text": "Rahasia", "why_ctr": "penasaran"}
+  ], "rules": ["kontras"],
+    "cover_frame": {"shot": 1, "moment": "kucing menatap kamera", "overlay_text": "KENAPA?"}},
+  "upload": {"description": "kucing nolak makan", "tags": ["kucing"], "hashtags": ["#kucing"], "pinned_comment": "", "playlist": "", "end_screen": "", "checklist": []},
+  "recording_tips": ["rekam per beat"]
+}

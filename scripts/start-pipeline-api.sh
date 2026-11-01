@@ -8,7 +8,7 @@ set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT/pipeline-api"
 
-# Load repo .env (DATABASE_URL, CLAUDE_BRIDGE_URL, keys, …) if present
+# Load repo .env (DATABASE_URL, keys, …) if present
 if [ -f "$ROOT/.env" ]; then
   set -a
   . "$ROOT/.env"

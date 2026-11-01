@@ -1,6 +1,7 @@
 <script>
   import { _ } from 'svelte-i18n'
   import { api } from '../lib/api.js'
+  import { page, atmItemId, pushToast } from '../lib/stores.js'
 
   // ── tab state ─────────────────────────────────────────────────────────────
   let tab = $state('search')   // 'search' | 'trending' | 'channel'
@@ -162,6 +163,21 @@
       try { await navigator.clipboard.writeText(url) } catch (_) {}
       alert(`Could not queue automatically. URL copied to clipboard:\n${url}`)
     }
+  }
+
+  // ── "Jadikan konten ATM": item + reference analysis, then open Production ──
+  let atmBusyId = $state('')
+  async function makeAtm(item) {
+    if (atmBusyId) return
+    atmBusyId = item.video_id
+    const url = ytUrl(item.video_id)
+    const r = await api.atmMineImport([url], '', { [url]: item.title })
+    atmBusyId = ''
+    const created = r.ok && r.data?.items?.[0]
+    if (!created) { pushToast('error', $_('discover.atm_error'), ''); return }
+    pushToast('success', $_('discover.atm_created'), created.title)
+    atmItemId.set(created.id)
+    page.set('production')
   }
 
   // keyboard: press Enter in inputs
@@ -356,6 +372,9 @@
               {:else}
                 {$_('discover.send_to_clip')}
               {/if}
+            </button>
+            <button class="send-btn" onclick={() => makeAtm(item)} disabled={!!atmBusyId}>
+              {atmBusyId === item.video_id ? $_('discover.sending') : $_('discover.make_atm')}
             </button>
           </div>
         </div>

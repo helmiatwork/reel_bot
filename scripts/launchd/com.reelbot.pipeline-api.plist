@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  launchd agent: pipeline-api (:8000). Also runs the claude CLI in-process (claude_runner.py),
+  so the logged-in `claude` must be on PATH below.
+  Start order: postgres first (com.reelbot.postgres); pipeline-api retries via KeepAlive.
+
+  Install (per-user):
+    cp scripts/launchd/com.reelbot.pipeline-api.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.reelbot.pipeline-api.plist
+  Restart: launchctl kickstart -k gui/$(id -u)/com.reelbot.pipeline-api
+  Remove:  launchctl bootout gui/$(id -u)/com.reelbot.pipeline-api
+  Logs: tail -f ~/Library/Logs/reelbot/pipeline-api.log  (mkdir -p ~/Library/Logs/reelbot before install)
+
+  macOS TCC: the repo is under ~/Documents. If the log shows "Operation not permitted", grant
+  Full Disk Access to /bin/sh AND the venv python (realpath pipeline-api/.venv/bin/python),
+  since `exec uvicorn` replaces sh. Fallback: run scripts/start-pipeline-api.sh with nohup.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.reelbot.pipeline-api</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/sh</string>
+        <string>/Users/ichigo/Documents/repo/helmi/reelbot/scripts/start-pipeline-api.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/ichigo/Documents/repo/helmi/reelbot</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/ichigo/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+
+    <key>StandardOutPath</key>
+    <string>/Users/ichigo/Library/Logs/reelbot/pipeline-api.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/ichigo/Library/Logs/reelbot/pipeline-api.log</string>
+</dict>
+</plist>

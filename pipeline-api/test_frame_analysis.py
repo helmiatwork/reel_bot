@@ -401,13 +401,13 @@ def test_persist_frame_analysis_with_null_timestamps(tmp_path):
 
 
 def test_analyze_synthesis_model_defaults_to_sonnet():
-    """Test that ANALYZE_SYNTHESIS_MODEL defaults to claude-sonnet-4-6."""
+    """Test that ANALYZE_SYNTHESIS_MODEL defaults to claude-sonnet-5-5."""
     # Import directly from main to verify the constant exists and has correct default
     import main
 
     # When ANALYZE_SYNTHESIS_MODEL is not set in env, should default to sonnet
     if "ANALYZE_SYNTHESIS_MODEL" not in os.environ:
-        assert main.ANALYZE_SYNTHESIS_MODEL == "claude-sonnet-4-6"
+        assert main.ANALYZE_SYNTHESIS_MODEL == "claude-sonnet-5-5"
         assert isinstance(main.ANALYZE_SYNTHESIS_MODEL, str)
         assert len(main.ANALYZE_SYNTHESIS_MODEL) > 0
 
@@ -415,13 +415,13 @@ def test_analyze_synthesis_model_defaults_to_sonnet():
 def test_analyze_synthesis_model_honors_env_override(monkeypatch):
     """Test that ANALYZE_SYNTHESIS_MODEL honors environment variable override."""
     # Set a custom model via environment variable
-    monkeypatch.setenv("ANALYZE_SYNTHESIS_MODEL", "claude-opus-4-1")
+    monkeypatch.setenv("ANALYZE_SYNTHESIS_MODEL", "claude-opus-5-5")
 
     # Reload the main module to pick up the new env var
     import main
     importlib.reload(main)
 
-    assert main.ANALYZE_SYNTHESIS_MODEL == "claude-opus-4-1"
+    assert main.ANALYZE_SYNTHESIS_MODEL == "claude-opus-5-5"
 
     # Clean up by resetting to default
     monkeypatch.delenv("ANALYZE_SYNTHESIS_MODEL", raising=False)

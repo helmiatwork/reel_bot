@@ -26,13 +26,16 @@ CREATE TABLE IF NOT EXISTS keywords (
 
 -- Indexes for filtering and ordering
 CREATE INDEX IF NOT EXISTS keywords_score_idx ON keywords (score DESC);
-CREATE INDEX IF NOT EXISTS keywords_niche_idx ON keywords (niche);
+-- Expression must match the niche filter: lower(trim(niche)) (pipeline-api/main.py, pipeline-api/atm/blueprint.py)
+DROP INDEX IF EXISTS keywords_niche_idx;
+CREATE INDEX IF NOT EXISTS keywords_niche_norm_idx ON keywords ((lower(trim(niche))));
 CREATE INDEX IF NOT EXISTS keywords_source_idx ON keywords (source);
 CREATE INDEX IF NOT EXISTS keywords_region_idx ON keywords (region);
 CREATE INDEX IF NOT EXISTS keywords_keyword_idx ON keywords (keyword);
 CREATE INDEX IF NOT EXISTS keywords_fetched_at_idx ON keywords (fetched_at DESC);
 
--- Unique constraint to prevent duplicates on re-fetch same keyword+region+source
--- If a keyword is fetched again for the same region/source, it UPSERT (update existing)
-CREATE UNIQUE INDEX IF NOT EXISTS keywords_upsert_key
-    ON keywords (keyword, region, source);
+-- Unique constraint to prevent duplicates on re-fetch same keyword+region+source+niche
+-- (niche normalized; must match _KEYWORDS_UPSERT_KEY in pipeline-api/main.py)
+DROP INDEX IF EXISTS keywords_upsert_key;
+CREATE UNIQUE INDEX IF NOT EXISTS keywords_upsert_niche_key
+    ON keywords (keyword, region, source, (coalesce(lower(trim(niche)), '')));

@@ -47,11 +47,11 @@ def test_cached_path():
 
 def test_fresh_path_with_niche():
     """Test fresh path with niche inference includes 5 steps."""
-    steps = _build_analyze_steps(cached=False, video_id="abc123", model="claude-sonnet-4-6", niche_done=True)
+    steps = _build_analyze_steps(cached=False, video_id="abc123", model="claude-sonnet-5-5", niche_done=True)
     assert len(steps) == 5
     assert "Download" in steps[0]
     assert "abc123" in steps[1]
-    assert "claude-sonnet-4-6" in steps[2]
+    assert "claude-sonnet-5-5" in steps[2]
     assert "Infer niche" in steps[3]
     print("✓ test_fresh_path_with_niche passed")
 

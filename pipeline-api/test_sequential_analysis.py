@@ -31,7 +31,7 @@ def _make_bridge_response(result_payload: dict = None, ok: bool = True,
             "result": json.dumps(result_payload),
             "raw_usage": {"input_tokens": 100, "output_tokens": 50},
             "cost_usd": 0.01,
-            "model": "claude-sonnet-4-6",
+            "model": "claude-sonnet-5-5",
         }
     else:
         payload = {"ok": False, "error": "bridge_test_error"}
@@ -94,7 +94,7 @@ class TestSequentialAnalysis:
                 subdir="test_subdir",
                 intent="test intent",
                 output_format="none",
-                model="claude-sonnet-4-6",
+                model="claude-sonnet-5-5",
             )
 
         # Should have called bridge 4 times (3 frames + 1 synthesis)
@@ -125,7 +125,7 @@ class TestSequentialAnalysis:
                 subdir="test_subdir",
                 intent="test",
                 output_format="none",
-                model="claude-sonnet-4-6",
+                model="claude-sonnet-5-5",
             )
 
         assert "summary" in result
@@ -168,7 +168,7 @@ class TestSequentialAnalysis:
                 subdir="test_subdir",
                 intent="test",
                 output_format="none",
-                model="claude-sonnet-4-6",
+                model="claude-sonnet-5-5",
             )
 
         # Should have retried the first frame (2 calls) + frame 2 + frame 3 + synthesis = 5 calls
@@ -200,7 +200,7 @@ class TestSequentialAnalysis:
                 subdir="test_subdir",
                 intent="test",
                 output_format="none",
-                model="claude-sonnet-4-6",
+                model="claude-sonnet-5-5",
             )
 
         # Should still return valid result
@@ -236,7 +236,7 @@ class TestSequentialAnalysis:
                 subdir="test_subdir",
                 intent="test",
                 output_format="none",
-                model="claude-sonnet-4-6",
+                model="claude-sonnet-5-5",
             )
 
         # Should have called bridge 3 (frames) + 2 (synthesis attempts) = 5 times
@@ -271,7 +271,7 @@ class TestSequentialAnalysis:
                     subdir="test_subdir",
                     intent="test",
                     output_format="none",
-                    model="claude-sonnet-4-6",
+                    model="claude-sonnet-5-5",
                 )
 
         assert exc_info.value.status_code == 502
@@ -306,7 +306,7 @@ class TestSequentialAnalysis:
                 subdir="test_subdir",
                 intent="test",
                 output_format="prompt_json",
-                model="claude-sonnet-4-6",
+                model="claude-sonnet-5-5",
             )
 
         assert "gen_prompt_storyboard" in result
@@ -341,7 +341,7 @@ class TestSequentialAnalysis:
                 subdir="test_subdir",
                 intent="test",
                 output_format="none",
-                model="claude-sonnet-4-6",
+                model="claude-sonnet-5-5",
                 log_fn=log_fn,
             )
 
@@ -361,7 +361,7 @@ class TestSequentialAnalysis:
                 subdir="test_subdir",
                 intent="test",
                 output_format="none",
-                model="claude-sonnet-4-6",
+                model="claude-sonnet-5-5",
             )
 
         # Should still work, just with synthesis call
@@ -417,7 +417,7 @@ class TestNoRegressionExistingTests:
                 frame_descriptions=frame_context,
                 subdir="test",
                 output_format="prompt_video",
-                model="claude-sonnet-4-6"
+                model="claude-sonnet-5-5"
             )
 
             # Verify the call was made and frames=[] (no images)
@@ -465,7 +465,7 @@ class TestVeo3Storyboard:
                 subdir="test_subdir",
                 intent="test",
                 output_format="none",
-                model="claude-sonnet-4-6",
+                model="claude-sonnet-5-5",
             )
 
         # Verify per-frame prompts include timestamps
@@ -503,7 +503,7 @@ class TestVeo3Storyboard:
                 subdir="test_subdir",
                 intent="test",
                 output_format="none",
-                model="claude-sonnet-4-6",
+                model="claude-sonnet-5-5",
                 transcript_text=transcript_text,
             )
 
@@ -545,7 +545,7 @@ class TestVeo3Storyboard:
                 subdir="test_subdir",
                 intent="test",
                 output_format="none",
-                model="claude-sonnet-4-6",
+                model="claude-sonnet-5-5",
                 audio_tags=audio_tags,
             )
 
@@ -604,7 +604,7 @@ class TestVeo3Storyboard:
                 subdir="test_subdir",
                 intent="test",
                 output_format="prompt_json",
-                model="claude-sonnet-4-6",
+                model="claude-sonnet-5-5",
             )
 
         # Verify rich storyboard fields are present
@@ -655,7 +655,7 @@ class TestVeo3Storyboard:
                 subdir="test_subdir",
                 intent="test",
                 output_format="none",
-                model="claude-sonnet-4-6",
+                model="claude-sonnet-5-5",
             )
 
         # Should still work and return valid result
@@ -691,7 +691,7 @@ class TestVeo3Storyboard:
                 subdir="test_subdir",
                 intent="test",
                 output_format="none",
-                model="claude-sonnet-4-6",
+                model="claude-sonnet-5-5",
                 transcript_text=transcript_text,
                 audio_tags=audio_tags,
             )
@@ -753,7 +753,7 @@ class TestVeo3Storyboard:
                 subdir="test_subdir",
                 intent="test",
                 output_format="prompt_json",
-                model="claude-sonnet-4-6",
+                model="claude-sonnet-5-5",
             )
 
         # Verify scene duration cap is enforced
@@ -828,7 +828,7 @@ class TestVeo3Storyboard:
                 subdir="test_subdir",
                 intent="test",
                 output_format="prompt_json",
-                model="claude-sonnet-4-6",
+                model="claude-sonnet-5-5",
             )
 
         # Verify scene is NOT split
@@ -888,7 +888,7 @@ class TestVeo3Storyboard:
                 subdir="test_subdir",
                 intent="test",
                 output_format="prompt_json",
-                model="claude-sonnet-4-6",
+                model="claude-sonnet-5-5",
             )
 
         # Get the storyboard from result
@@ -956,7 +956,7 @@ class TestVeo3Storyboard:
                 subdir="test_subdir",
                 intent="test",
                 output_format="prompt_json",
-                model="claude-sonnet-4-6",
+                model="claude-sonnet-5-5",
                 audio_tags=audio_tags,
             )
 

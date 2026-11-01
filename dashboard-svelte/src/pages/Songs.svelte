@@ -4,6 +4,10 @@
   import { api } from '../lib/api.js'
   import Pagination from '../lib/Pagination.svelte'
 
+  // 'song' = long tracks (Songs menu), 'clip' = short audio cuts (Potongan Audio menu)
+  let { kind = 'song' } = $props()
+  const otherKind = kind === 'clip' ? 'song' : 'clip'
+
   // ── State ──────────────────────────────────────────────────────────────────
   let rows    = $state([])
   let total   = $state(0)
@@ -65,7 +69,7 @@
   // ── Load ───────────────────────────────────────────────────────────────────
   async function load() {
     loading = true
-    const data = await api.getSongs(limit, offset, filterTag.trim(), filterMood.trim())
+    const data = await api.getSongs(limit, offset, filterTag.trim(), filterMood.trim(), kind)
     if (data?.songs) { rows = data.songs; total = data.total ?? rows.length }
     loading = false
   }
@@ -94,7 +98,7 @@
     importing = true
     importResult = null
     const res = await api.songImport(importFile, {
-      title: importTitle, tags: importTags, mood: importMood, genre: importGenre
+      title: importTitle, tags: importTags, mood: importMood, genre: importGenre, kind
     })
     importing = false
     if (res?.id) {
@@ -135,13 +139,23 @@
       cancelEdit()
     }
   }
+
+  async function toggleViral(row) {
+    const res = await api.songUpdate(row.id, { is_viral: !row.is_viral })
+    if (res?.id) rows = rows.map(r => r.id === res.id ? { ...r, is_viral: res.is_viral } : r)
+  }
+
+  async function moveKind(row) {
+    const res = await api.songUpdate(row.id, { kind: otherKind })
+    if (res?.id) { rows = rows.filter(r => r.id !== res.id); total = Math.max(0, total - 1) }
+  }
 </script>
 
 <!-- ── Header ──────────────────────────────────────────────────────────────── -->
 <div class="top">
   <div>
-    <h1>{$_('songs.title')}</h1>
-    <div class="sub">{$_('songs.subtitle')}</div>
+    <h1>{$_(kind === 'clip' ? 'songs.clip_title' : 'songs.title')}</h1>
+    <div class="sub">{$_(kind === 'clip' ? 'songs.clip_subtitle' : 'songs.subtitle')}</div>
   </div>
   <div style="display:flex;gap:0.5rem;align-items:center">
     <div class="pill">{$_('songs.song_count', { values: { count: total || rows.length } })}</div>
@@ -226,6 +240,7 @@
   <table>
     <thead>
       <tr>
+        <th>{$_('songs.viral_header')}</th>
         <th>{$_('songs.title_header')}</th>
         <th class="num">{$_('songs.bpm_header')}</th>
         <th>{$_('songs.key_header')}</th>
@@ -240,6 +255,13 @@
     <tbody>
       {#each rows as r (r.id)}
         <tr>
+          <td>
+            <button class="btn-xs {r.is_viral ? 'btn-primary' : 'btn-ghost'}"
+              title={$_('songs.viral_toggle')} aria-pressed={!!r.is_viral}
+              onclick={() => toggleViral(r)}>{r.is_viral ? $_('songs.viral_yes') : $_('songs.viral_no')}</button>
+            <button class="btn-xs btn-ghost" title={$_(kind === 'clip' ? 'songs.move_to_song' : 'songs.move_to_clip')}
+              onclick={() => moveKind(r)}>{kind === 'clip' ? '→ ' + $_('nav.songs') : '→ ' + $_('nav.audio_clips')}</button>
+          </td>
           <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
             {r.title || '—'}
           </td>
@@ -300,10 +322,10 @@
         </tr>
       {/each}
       {#if !loading && !rows.length}
-        <tr><td colspan="9" class="mut">{$_('songs.no_songs')}</td></tr>
+        <tr><td colspan="10" class="mut">{$_('songs.no_songs')}</td></tr>
       {/if}
       {#if loading}
-        <tr><td colspan="9" class="mut">{$_('songs.loading')}</td></tr>
+        <tr><td colspan="10" class="mut">{$_('songs.loading')}</td></tr>
       {/if}
     </tbody>
   </table>

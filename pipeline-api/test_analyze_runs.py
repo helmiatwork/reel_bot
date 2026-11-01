@@ -323,7 +323,7 @@ def test_existing_analyze_async_tests_still_pass():
                 "structure": "Test structure",
                 "retention": "Good",
                 "tags": [],
-                "model": "claude-sonnet-4-6",
+                "model": "claude-sonnet-5-5",
                 "cost_usd": 0.01,
             }
 

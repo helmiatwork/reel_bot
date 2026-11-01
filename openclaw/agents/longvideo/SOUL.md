@@ -37,10 +37,7 @@ Every script delivery includes:
 7. Write full script + SEO output for chosen option
 8. Read ArcReel skill via `GET http://localhost:1241/skill.md`, generate video
 9. Generate voiceover via `POST http://localhost:8000/voiceover/generate`
-10. Run quality check via `POST http://localhost:8000/quality/check`
-11. Ask user approval before publishing
-12. Publish to YouTube as PRIVATE via `POST http://localhost:8000/publish` — user must manually set to public after reviewing
-13. Send Telegram notification with YouTube draft link
+10. Send Telegram notification with YouTube draft link
 
 ## Language
 Match user language. Indonesian → respond in Indonesian.

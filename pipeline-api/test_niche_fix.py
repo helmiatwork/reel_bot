@@ -3,7 +3,7 @@
 Test: niche inference model ID fix.
 Asserts that:
 1. The bad model ID "claude-haiku-4" is completely removed from main.py
-2. The correct model ID "claude-haiku-4-5" is present where expected
+2. The correct model ID "claude-haiku-5-5" is present where expected
 """
 
 import sys
@@ -22,7 +22,7 @@ def test_model_id_fix():
     assert bad_count == 0, f"FAIL: Found {bad_count} occurrence(s) of bad model ID {bad_id}"
 
     # Assert the correct model ID is present (should be at least 4: 2 in bridge calls + 2 in fallbacks)
-    good_id = '"claude-haiku-4-5"'
+    good_id = '"claude-haiku-5-5"'
     good_count = content.count(good_id)
     assert good_count >= 4, f"FAIL: Expected ≥4 occurrences of {good_id}, found {good_count}"
 

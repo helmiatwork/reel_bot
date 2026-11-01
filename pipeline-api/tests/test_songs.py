@@ -109,17 +109,17 @@ def test_analyze_audio_no_raise_on_empty_file():
 
 
 def test_suggest_music_tags_returns_list_when_key_unset(monkeypatch):
-    """_suggest_music_tags returns [] and does not raise when CLIPROXY_KEY is unset."""
-    monkeypatch.delenv("CLIPROXY_KEY", raising=False)
+    """_suggest_music_tags returns [] and does not raise when SUMOPOD_KEY is unset."""
+    monkeypatch.delenv("SUMOPOD_KEY", raising=False)
     result = _suggest_music_tags("/any/path.mp3")
     assert isinstance(result, list), f"expected list, got {type(result)}"
     assert result == [], "should be empty list when key unset"
 
 
 def test_suggest_music_tags_returns_list_when_unreachable(monkeypatch):
-    """_suggest_music_tags returns [] when the cliproxy endpoint is unreachable."""
-    monkeypatch.setenv("CLIPROXY_KEY", "test-key-does-not-matter")
-    monkeypatch.setenv("CLIPROXY_URL", "http://127.0.0.1:1")  # port 1 = unreachable
+    """_suggest_music_tags returns [] when the SumoPod endpoint is unreachable."""
+    monkeypatch.setenv("SUMOPOD_KEY", "test-key-does-not-matter")
+    monkeypatch.setenv("SUMOPOD_URL", "http://127.0.0.1:1")  # port 1 = unreachable
     # Needs a real (but short) audio file to get past ffmpeg
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
         wav_path = Path(f.name)

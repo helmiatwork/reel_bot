@@ -6,7 +6,7 @@ Covers:
 - _seo_autocomplete: returns [] on bad/empty response
 - _seo_trends: returns safe empty dict when pytrends raises
 - _seo_trends: returns safe empty dict when pytrends is missing
-- _seo_synthesize: returns {} when CLIPROXY_KEY is absent
+- _seo_synthesize: returns {} when SUMOPOD_KEY is absent
 - _seo_synthesize: returns {} on HTTP error
 - _seo_synthesize: strips ```json fences before JSON parse
 - SeoAnalyzeRequest: endpoint returns 400 when topic is blank (no network)
@@ -181,16 +181,16 @@ def test_trends_result_shape_when_successful():
 # ── _seo_synthesize ───────────────────────────────────────────────────────────
 
 def test_synthesize_returns_empty_when_no_key(monkeypatch):
-    """Without CLIPROXY_KEY set, synthesize returns {} immediately."""
-    monkeypatch.delenv("CLIPROXY_KEY", raising=False)
+    """Without SUMOPOD_KEY set, synthesize returns {} immediately."""
+    monkeypatch.delenv("SUMOPOD_KEY", raising=False)
     result = _seo_synthesize("topic", [], {}, "youtube")
     assert result == {}
 
 
 def test_synthesize_returns_empty_on_http_error(monkeypatch):
     """HTTP failure returns {} — never raises."""
-    monkeypatch.setenv("CLIPROXY_KEY", "test-key")
-    monkeypatch.setenv("CLIPROXY_URL", "http://localhost:8317/v1")
+    monkeypatch.setenv("SUMOPOD_KEY", "test-key")
+    monkeypatch.setenv("SUMOPOD_URL", "http://localhost:9/v1")
 
     with patch("httpx.post", side_effect=Exception("connection refused")):
         result = _seo_synthesize("topic", [], {}, "youtube")
@@ -200,8 +200,8 @@ def test_synthesize_returns_empty_on_http_error(monkeypatch):
 
 def test_synthesize_strips_json_fences(monkeypatch):
     """```json ... ``` fences are stripped before JSON parsing."""
-    monkeypatch.setenv("CLIPROXY_KEY", "test-key")
-    monkeypatch.setenv("CLIPROXY_URL", "http://localhost:8317/v1")
+    monkeypatch.setenv("SUMOPOD_KEY", "test-key")
+    monkeypatch.setenv("SUMOPOD_URL", "http://localhost:9/v1")
 
     payload = {
         "titles": ["Title 1", "Title 2", "Title 3"],
@@ -226,8 +226,8 @@ def test_synthesize_strips_json_fences(monkeypatch):
 
 def test_synthesize_clean_json(monkeypatch):
     """Clean JSON response (no fences) is parsed correctly."""
-    monkeypatch.setenv("CLIPROXY_KEY", "test-key")
-    monkeypatch.setenv("CLIPROXY_URL", "http://localhost:8317/v1")
+    monkeypatch.setenv("SUMOPOD_KEY", "test-key")
+    monkeypatch.setenv("SUMOPOD_URL", "http://localhost:9/v1")
 
     payload = {
         "titles": ["Viral Ramen Recipe"],
@@ -249,8 +249,8 @@ def test_synthesize_clean_json(monkeypatch):
 
 def test_synthesize_returns_empty_on_bad_json(monkeypatch):
     """Non-JSON response body returns {} — never raises."""
-    monkeypatch.setenv("CLIPROXY_KEY", "test-key")
-    monkeypatch.setenv("CLIPROXY_URL", "http://localhost:8317/v1")
+    monkeypatch.setenv("SUMOPOD_KEY", "test-key")
+    monkeypatch.setenv("SUMOPOD_URL", "http://localhost:9/v1")
 
     mock_resp = MagicMock()
     mock_resp.raise_for_status.return_value = None

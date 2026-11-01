@@ -2,15 +2,15 @@ import { writable } from 'svelte/store'
 
 // Valid page ids — must stay in sync with App.svelte's {#if} chain and NAV n.p values.
 const VALID_PAGES = new Set([
-  'openclaw', 'dashboard', 'sources', 'analysis', 'clips', 'clipper', 'snoop',
-  'performance', 'pipeline', 'posts', 'agents', 'formulas', 'cost', 'discover', 'creators', 'songs',
-  'decompose', 'generate', 'cookies', 'publish-accounts', 'jadwal', 'seo', 'prep', 'studio'
+  'sources', 'analysis', 'clipper', 'discover', 'creators', 'songs', 'audio-clips',
+  'decompose', 'cookies', 'seo', 'prep', 'models',
+  'today', 'plan', 'production', 'monitor', 'learn', 'recycle', 'formulas'
 ])
 
 function hashPage() {
-  if (typeof window === 'undefined') return 'dashboard'
+  if (typeof window === 'undefined') return 'today'
   const h = window.location.hash.replace(/^#/, '')
-  return VALID_PAGES.has(h) ? h : 'dashboard'
+  return VALID_PAGES.has(h) ? h : 'today'
 }
 
 // Hash-synced page store: survives refresh, works with browser back/forward.
@@ -37,8 +37,20 @@ function createPageStore() {
 
 export const page = createPageStore()
 
+// ATM: content item open in Production, persisted across refresh
+function storedItemId() {
+  if (typeof localStorage === 'undefined') return null
+  return Number(localStorage.getItem('reelbot-atm-item')) || null
+}
+export const atmItemId = writable(storedItemId())
+atmItemId.subscribe((v) => {
+  if (typeof localStorage === 'undefined') return
+  if (v) localStorage.setItem('reelbot-atm-item', String(v))
+  else localStorage.removeItem('reelbot-atm-item')
+})
+
 // drawer content: null = closed, else { type, data }
-// type ∈ 'source' | 'agent' | 'formula' | 'piece'
+// type ∈ 'source'
 export const drawer = writable(null)
 
 export function openDrawer(type, data) {
