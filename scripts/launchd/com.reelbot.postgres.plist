@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  launchd agent: PostgreSQL for reelbot, data dir ./data/pg, port 5432.
+  Runs postgres in the foreground (not pg_ctl start) so launchd supervises and restarts it.
+  Binary must match data/pg/PG_VERSION (18).
+
+  Install (per-user):
+    cp scripts/launchd/com.reelbot.postgres.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.reelbot.postgres.plist
+  Restart: launchctl kickstart -k gui/$(id -u)/com.reelbot.postgres
+  Remove:  launchctl bootout gui/$(id -u)/com.reelbot.postgres
+  Logs: tail -f ~/Library/Logs/reelbot/postgres.log
+  Before install: stop any pg_ctl-started postgres on data/pg (pg_ctl -D data/pg -m fast stop),
+  or this job exits on the existing postmaster.pid and KeepAlive loops.
+  macOS TCC: data/pg is under ~/Documents. If the log shows "Operation not permitted", grant
+  Full Disk Access to the real binary (realpath /opt/homebrew/opt/postgresql@18/bin/postgres);
+  grant it again after each brew upgrade of postgresql@18.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.reelbot.postgres</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/opt/postgresql@18/bin/postgres</string>
+        <string>-D</string>
+        <string>/Users/ichigo/Documents/repo/helmi/reelbot/data/pg</string>
+        <string>-p</string>
+        <string>5432</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/ichigo/Documents/repo/helmi/reelbot</string>
+
+    <!-- launchd starts jobs with no locale; postgres then dies "postmaster became multithreaded during startup" -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>LC_ALL</key>
+        <string>en_US.UTF-8</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/ichigo/Library/Logs/reelbot/postgres.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/ichigo/Library/Logs/reelbot/postgres.log</string>
+</dict>
+</plist>

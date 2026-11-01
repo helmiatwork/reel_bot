@@ -1375,42 +1375,6 @@
         </div>
       {/if}
 
-    {:else if d.type === 'agent'}
-      {@const a = d.data}
-      <h2>{a.name}</h2>
-      <div class="meta" style="margin:8px 0">
-        {#each a.model as m, i}<span class="m-chip {a.cls[i]}">{m}</span>{/each}
-      </div>
-      <div class="kv"><span>Peran</span><span style="text-align:right;max-width:62%">{a.role}</span></div>
-      <div class="kv"><span>Model</span><span style="text-align:right;max-width:62%">{a.modelId || '-'}</span></div>
-      <div class="kv"><span>Trigger</span><span style="text-align:right;max-width:62%">{a.trig}</span></div>
-      <p class="mut" style="font-size:12.5px;margin-top:12px">{a.detail}</p>
-
-    {:else if d.type === 'formula'}
-      {@const f = d.data}
-      <h2>{f.slug}</h2>
-      <div class="meta" style="margin:8px 0">
-        {#if f.db}<span class="m-chip s-active">sudah di DB</span>{:else}<span class="m-chip s-mod">usulan baru</span>{/if}
-        <span class="m-chip m-cheap">{f.face}</span>
-      </div>
-      <div class="kv"><span>Best for</span><span style="text-align:right;max-width:60%">{f.best}</span></div>
-      <h3 style="margin:14px 0 6px;font-size:13px">Struktur</h3>
-      <p style="font-size:12.5px"><code style="display:block;padding:10px;line-height:1.6">{f.struct}</code></p>
-      <div class="kv"><span>Hook</span><span style="text-align:right;max-width:60%">{f.hook}</span></div>
-      <div class="kv"><span>Retensi</span><span style="text-align:right;max-width:60%">{f.ret}</span></div>
-      <div class="kv"><span>Contoh</span><span style="text-align:right;max-width:60%">{f.ex}</span></div>
-
-    {:else if d.type === 'piece'}
-      {@const p = d.data}
-      <h2>{p.title}</h2>
-      <div class="mut" style="font-size:12px;margin-bottom:8px">{p.kind} · {p.niche}</div>
-      <div class="kv"><span>Status</span><span>{p.status}</span></div>
-      <div class="kv"><span>QC</span><span>{p.qc}</span></div>
-      <h3 style="margin:14px 0 6px;font-size:13px">Assets</h3>
-      {#each p.assets as x}
-        <div class="kv"><span>{x.split(' ')[0]}</span><span>{#if x.includes('✓')}<span class="up">✓</span>{:else if x.includes('⏳')}<span class="mut">⏳</span>{:else}<span class="mut">✗</span>{/if}</span></div>
-      {/each}
-      <p class="mut" style="font-size:12.5px;margin-top:12px">{p.note}</p>
     {/if}
     </div>
   </div>

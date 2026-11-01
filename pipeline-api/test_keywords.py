@@ -281,7 +281,7 @@ def test_endpoint_get_keywords_filtering(client):
         mock_cur.execute.assert_called_once()
         call_args = mock_cur.execute.call_args[0]
         sql = call_args[0]
-        assert "niche" in sql
+        assert "lower(trim(niche)) = lower(trim(%s))" in sql
         assert "source" in sql
         assert "avg_monthly_searches" in sql
         assert "ORDER BY score DESC" in sql
@@ -366,7 +366,7 @@ def test_database_upsert_no_duplicates(client):
             # Verify the UPSERT SQL was executed
             assert mock_cur.execute.called
             sql_call = mock_cur.execute.call_args[0][0]
-            assert "ON CONFLICT (keyword, region, source)" in sql_call, \
+            assert "ON CONFLICT (keyword, region, source, (coalesce(lower(trim(niche)), '')))" in sql_call, \
                 "SQL should include ON CONFLICT clause for deduplication"
             assert "DO UPDATE SET" in sql_call, \
                 "SQL should include DO UPDATE for conflict handling"
@@ -418,3 +418,35 @@ if __name__ == "__main__":
     print("✓ Normalization works correctly")
 
     print("\n✓ All basic tests passed!")
+
+
+def test_init_db_replaces_upsert_key_with_niche_key():
+    """_keywords_init_db drops the old (keyword, region, source) key and creates the niche-aware one."""
+    from main import _keywords_init_db, _KEYWORDS_UPSERT_KEY
+    with patch("main._db_conn") as mock_db:
+        mock_conn = MagicMock()
+        mock_cur = MagicMock()
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cur
+        mock_db.return_value = mock_conn
+        _keywords_init_db()
+    sqls = [c[0][0] for c in mock_cur.execute.call_args_list]
+    assert "DROP INDEX IF EXISTS keywords_upsert_key" in sqls
+    assert f"CREATE UNIQUE INDEX IF NOT EXISTS keywords_upsert_niche_key ON keywords {_KEYWORDS_UPSERT_KEY}" in sqls
+    mock_conn.commit.assert_called_once()
+
+
+def test_init_db_replaces_niche_index_with_normalized_expression_index():
+    """_keywords_init_db drops keywords_niche_idx and creates the lower(trim(niche)) expression index the niche filter uses."""
+    from main import _keywords_init_db
+    with patch("main._db_conn") as mock_db:
+        mock_conn = MagicMock()
+        mock_cur = MagicMock()
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cur
+        mock_db.return_value = mock_conn
+        _keywords_init_db()
+    sqls = [c[0][0] for c in mock_cur.execute.call_args_list]
+    drop = "DROP INDEX IF EXISTS keywords_niche_idx"
+    create = "CREATE INDEX IF NOT EXISTS keywords_niche_norm_idx ON keywords ((lower(trim(niche))))"
+    assert drop in sqls
+    assert create in sqls
+    assert sqls.index(drop) < sqls.index(create)

@@ -18,7 +18,7 @@ def _make_bridge_response(result_payload: dict, ok: bool = True, cost_usd: float
             "result": json.dumps(result_payload),
             "raw_usage": {"input_tokens": 100, "output_tokens": 50},
             "cost_usd": cost_usd,
-            "model": "claude-sonnet-4-6",
+            "model": "claude-sonnet-5-5",
         }
     else:
         mock_resp.json.return_value = {"ok": False, "error": "test error"}

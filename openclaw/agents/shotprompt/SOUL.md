@@ -47,7 +47,7 @@ Shot <n> — <timing>  · source: GENERATE | REAL-FOOTAGE (<why + where to get i
 - Tight. No preamble. Start with the STYLE LOCK, then the shots.
 
 ## Model (config-level, set via CLIPROXY)
-Prompt-craft, text-only (works from the script): `cliproxy/claude-sonnet-4-6`.
+Prompt-craft, text-only (works from the script): `cliproxy/claude-sonnet-5-5`.
 
 ## Language
 Match user language. Indonesian → respond in Indonesian. Do NOT grammar-correct the user — just do the task.

@@ -43,34 +43,42 @@ async function delJSON(path) {
   }
 }
 
+// ATM calls need the HTTP status (409 = reference not analyzed yet), so they return {ok, status, data}.
+async function atmReq(method, path, body, raw = false) {
+  try {
+    const r = await fetch(path, {
+      method,
+      headers: body === undefined || raw ? {} : { 'content-type': 'application/json' },
+      body: body === undefined ? undefined : raw ? body : JSON.stringify(body)
+    })
+    let data = null
+    try { data = await r.json() } catch (e) {}
+    return { ok: r.ok, status: r.status, data }
+  } catch (e) {
+    return { ok: false, status: 0, data: null }
+  }
+}
+
 export const api = {
   services: () => getJSON('/dash/services'),
   restartService: (name) => postJSON(`/dash/restart/${name}`, {}),
   restartAll: () => postJSON('/dash/restart-all', {}),
-  overview: () => getJSON('/dash/overview'),
   table: (name, limit = 25, offset = 0) => getJSON(`/dash/table/${name}?limit=${limit}&offset=${offset}`),
-  agents: () => getJSON('/dash/agents'),
-  formulaPerformance: () => getJSON('/dash/formula-performance'),
-  cost: () => getJSON('/dash/cost'),
-  tokenUsage: () => getJSON('/dash/token-usage'),
   analysis: (limit = 25, offset = 0) => getJSON('/dash/analysis?limit=' + limit + '&offset=' + offset),
   clipFinds: (limit = 25, offset = 0) => getJSON('/dash/clip-finds?limit=' + limit + '&offset=' + offset),
   findClips: (youtube_url, max_clips = 8) => postJSON('/clips/find-claude', { youtube_url, max_clips }),
-  runs: (limit = 20) => getJSON(`/pipeline/runs?limit=${limit}`),
-  run: (id) => getJSON(`/pipeline/run/${id}`),
-  artifact: (id) => getJSON(`/pipeline/run/${id}/artifact`),
-  artifactDownloadUrl: (id) => `/pipeline/run/${id}/artifact?download=true`,
   discover: (niche, topic = '', top_n = 3) => postJSON('/pipeline/discover', { niche, topic, top_n }),
   research: (youtube_url, topic = '') => postJSON('/pipeline/research', { youtube_url, topic }),
 
   // Songs — audio extracted from analyzed videos + user imports
-  getSongs: (limit = 25, offset = 0, tag = '', mood = '') => {
+  getSongs: (limit = 25, offset = 0, tag = '', mood = '', kind = '') => {
     const p = new URLSearchParams({ limit, offset })
     if (tag) p.set('tag', tag)
     if (mood) p.set('mood', mood)
+    if (kind) p.set('kind', kind)
     return getJSON(`/songs?${p}`)
   },
-  songImport: async (file, { title = '', tags = [], mood = '', genre = '' } = {}) => {
+  songImport: async (file, { title = '', tags = [], mood = '', genre = '', kind = 'song' } = {}) => {
     try {
       const fd = new FormData()
       fd.append('file', file)
@@ -78,6 +86,7 @@ export const api = {
       fd.append('tags', JSON.stringify(tags))
       fd.append('mood', mood)
       fd.append('genre', genre)
+      fd.append('kind', kind)
       const r = await fetch('/songs/import', { method: 'POST', body: fd })
       return await r.json()
     } catch (e) {
@@ -125,13 +134,6 @@ export const api = {
   saveCookies: (platform, content) => postJSON('/cookies/' + platform, { content }),
   deleteCookies: (platform) => delJSON('/cookies/' + platform),
 
-  // Brands (product grouping)
-  brands: () => getJSON('/brands'),
-  brand: (id) => getJSON(`/brands/${id}`),
-  brandCreate: (body) => postJSON('/brands', body),  // pass { name, description? }
-  brandUpdate: (id, body) => patchJSON(`/brands/${id}`, body),
-  brandDelete: (id) => delJSON(`/brands/${id}`),
-
   // Accounts
   accounts: (platform, role, brandId) => {
     const q = [platform && `platform=${platform}`, role && `role=${role}`, brandId && `brand_id=${brandId}`].filter(Boolean).join('&')
@@ -142,9 +144,7 @@ export const api = {
   accountDelete: (id) => delJSON(`/accounts/${id}`),
   accountSaveCookies: (id, content) => postJSON(`/accounts/${id}/cookies`, { content }),
   accountDeleteCookies: (id) => delJSON(`/accounts/${id}/cookies`),
-  accountConnectYoutube: (id) => postJSON(`/accounts/${id}/connect-youtube`, {}),
 
-  generateScript: (topic, niche = '', top_n = 5) => postJSON('/generate/script', { topic, niche, top_n }),
   discoverCorpus: (niche, count = 5) => postJSON('/discover/corpus', { niche, count }),
   discoverCorpusStatus: (run_id) => getJSON('/discover/corpus/status/' + run_id),
   analyzeClaude: (youtube_url, { intent = '', force = false, output_format = 'none' } = {}) => postJSON('/analyze/claude', { youtube_url, intent, force, output_format }),
@@ -175,31 +175,6 @@ export const api = {
     }
   },
 
-  // Scheduled posts
-  scheduleList: () => getJSON('/schedule'),
-  scheduleCreate: (data) => postJSON('/schedule', data),
-  scheduleUpdate: (id, data) => patchJSON(`/schedule/${id}`, data),
-  scheduleDelete: (id) => delJSON(`/schedule/${id}`),
-  scheduleCorpus: () => getJSON('/schedule/corpus'),
-
-  // Performance tracking — own posted videos
-  performance: () => getJSON('/performance'),
-  performanceRefresh: () => postJSON('/performance/refresh', {}),
-
-  // Revenue + RPM tracking (manual entry per posted video)
-  revenueList: (params = {}) => {
-    const p = new URLSearchParams()
-    if (params.platform) p.set('platform', params.platform)
-    if (params.start) p.set('start', params.start)
-    if (params.end) p.set('end', params.end)
-    const qs = p.toString()
-    return getJSON('/revenue' + (qs ? '?' + qs : ''))
-  },
-  revenueSummary: () => getJSON('/revenue/summary'),
-  revenueCreate: (payload) => postJSON('/revenue', payload),
-  revenueUpdate: (id, payload) => patchJSON(`/revenue/${id}`, payload),
-  revenueDelete: (id) => delJSON(`/revenue/${id}`),
-
   seoAnalyze: (topic, platform = 'youtube', niche = '') => postJSON('/seo/analyze', { topic, platform, niche }),
 
   // Prep Bundle — aggregate assets for CapCut finishing
@@ -209,19 +184,42 @@ export const api = {
   prepRoughcut: (id) => postJSON('/prep/' + id + '/roughcut', {}),
   prepZipUrl: (id) => '/prep/' + id + '/zip',
 
-  // Studio — batch generation + Kanban board
-  generateBatch: (niche, topic, count) => postJSON('/generate/batch', { niche, topic: topic || undefined, count }),
-  generateBatchStatus: (run_id) => getJSON('/generate/batch/status/' + run_id),
-  studioBoard: () => getJSON('/studio/board'),
-  studioGet: (id) => getJSON('/studio/' + id),
-  studioCreate: (payload) => postJSON('/studio', payload),
-  studioUpdate: (id, payload) => patchJSON('/studio/' + id, payload),
-  studioDelete: (id) => delJSON('/studio/' + id),
-
-  // Winner clone — top performers + variation script generation
-  winners: () => getJSON('/winners'),
-  winnersClone: (payload) => postJSON('/winners/clone', payload),
-  winnersCloneStatus: (run_id) => getJSON('/winners/clone/status/' + run_id),
+  // ATM creator studio
+  atmMine: (channel_url, limit = 20) => atmReq('POST', '/atm/mine', { channel_url, limit }),
+  atmMineImport: (urls, niche = '', titles = {}) => atmReq('POST', '/atm/mine/import', { urls, niche, titles }),
+  atmItems: (status = '') => atmReq('GET', '/atm/items' + (status ? '?status=' + status : '')),
+  atmItemCreate: (body) => atmReq('POST', '/atm/items', body),
+  atmItem: (id) => atmReq('GET', '/atm/items/' + id),
+  atmItemPatch: (id, body) => atmReq('PATCH', '/atm/items/' + id, body),
+  atmItemDelete: (id) => atmReq('DELETE', '/atm/items/' + id),
+  atmSettings: () => atmReq('GET', '/atm/settings'),
+  atmModels: () => atmReq('GET', '/atm/models'),
+  atmSettingsSave: (body) => atmReq('PUT', '/atm/settings', body),
+  atmBlueprint: (id, section) => atmReq('POST', '/atm/items/' + id + '/blueprint', section ? { section } : {}),
+  atmVoiceEstimate: (id) => atmReq('GET', '/atm/items/' + id + '/voice/estimate'),
+  atmVoice: (id, beat) => atmReq('POST', '/atm/items/' + id + '/voice', beat ? { beat } : {}),
+  atmDraftUpload: (id, file) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return atmReq('POST', '/atm/items/' + id + '/draft', fd, true)
+  },
+  atmEvaluate: (id) => atmReq('POST', '/atm/items/' + id + '/evaluate', {}),
+  atmEvaluations: (id) => atmReq('GET', '/atm/items/' + id + '/evaluations'),
+  atmEvalNotes: (evalId, notes) => atmReq('PATCH', '/atm/evaluations/' + evalId + '/notes', { notes }),
+  atmToday: () => atmReq('GET', '/atm/today'),
+  atmAutofill: () => atmReq('POST', '/atm/schedule/autofill', {}),
+  atmMonitor: (id) => atmReq('GET', '/atm/items/' + id + '/monitor'),
+  atmLearn: (niche = '') => atmReq('GET', '/atm/learn' + (niche ? '?niche=' + encodeURIComponent(niche) : '')),
+  atmRecycles: () => atmReq('GET', '/atm/recycle'),
+  atmRecycle: (id) => atmReq('GET', '/atm/recycle/' + id),
+  atmRecycleCreate: (url, extra = {}) => atmReq('POST', '/atm/recycle', { url, ...extra }),  // extra: formula_id, target_duration_s
+  atmFormulas: () => atmReq('GET', '/atm/formulas'),
+  atmFormulaCreate: (body) => atmReq('POST', '/atm/formulas', body),
+  atmFormulaUpdate: (id, body) => atmReq('PUT', '/atm/formulas/' + id, body),
+  atmFormulaDelete: (id) => atmReq('DELETE', '/atm/formulas/' + id),
+  atmRecycleRebuild: (id) => atmReq('POST', '/atm/recycle/' + id + '/rebuild', {}),
+  atmRecycleDelete: (id) => atmReq('DELETE', '/atm/recycle/' + id),
+  atmLearningDelete: (id) => atmReq('DELETE', '/atm/learnings/' + id),
 
   decompose: (youtube_url) => postJSON('/decompose', { youtube_url }),
   decomposeNoAI: (youtube_url) => postJSON('/decompose', { youtube_url, group_clips: false, split_files: true }),
@@ -245,75 +243,6 @@ export const api = {
   selectIdea: (youtube_url, index) => postJSON('/analyze/ideas/select', { youtube_url, index }),
   getIdeaDetail: (youtube_url, index) => getJSON('/analyze/gemini-idea-detail?youtube_url=' + encodeURIComponent(youtube_url) + '&index=' + index),
   importStoryboard: (youtube_url, storyboard) => postJSON('/analyze/import', { youtube_url, storyboard }),
-
-  chatSessions: () => getJSON('/dash/chat/sessions'),
-  chatSession: (sid) => getJSON(`/dash/chat/session/${encodeURIComponent(sid)}`),
-  chatSessionDelete: async (sid) => {
-    try {
-      const r = await fetch(`/dash/chat/session/${encodeURIComponent(sid)}`, { method: 'DELETE' })
-      return await r.json()
-    } catch (e) {
-      return null
-    }
-  },
-
-  // Stream the agent's reply (SSE) from /dash/chat. Calls onDelta(textChunk)
-  // per token, onError(msg) on failure, onDone() at end. Returns an abort fn.
-  // When session_key is provided, history is ignored (OpenClaw manages it).
-  streamChat(message, history, { onDelta, onError, onDone }, session_key) {
-    const ctrl = new AbortController()
-    ;(async () => {
-      try {
-        const body = session_key
-          ? { message, session_key }
-          : { message, history }
-        const r = await fetch('/dash/chat', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(body),
-          signal: ctrl.signal
-        })
-        if (!r.ok || !r.body) {
-          onError && onError(`HTTP ${r.status}`)
-          return
-        }
-        const reader = r.body.getReader()
-        const dec = new TextDecoder()
-        let buf = ''
-        while (true) {
-          const { value, done } = await reader.read()
-          if (done) break
-          buf += dec.decode(value, { stream: true })
-          let nl
-          while ((nl = buf.indexOf('\n')) >= 0) {
-            const line = buf.slice(0, nl).trim()
-            buf = buf.slice(nl + 1)
-            if (!line.startsWith('data:')) continue
-            const data = line.slice(5).trim()
-            if (data === '[DONE]') { onDone && onDone(); return }
-            try {
-              const j = JSON.parse(data)
-              if (j.error) { onError && onError(j.error); return }
-              const piece = j.choices?.[0]?.delta?.content
-              if (piece) onDelta && onDelta(piece)
-            } catch (_) {
-              /* ignore non-JSON keepalive lines */
-            }
-          }
-        }
-        onDone && onDone()
-      } catch (e) {
-        if (e.name !== 'AbortError') onError && onError(String(e))
-      }
-    })()
-    return () => ctrl.abort()
-  }
-}
-
-// Pull the first UUID (a pipeline run_id) out of free-form agent text, if any.
-export function extractRunId(text) {
-  const m = String(text || '').match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)
-  return m ? m[0] : null
 }
 
 // helpers

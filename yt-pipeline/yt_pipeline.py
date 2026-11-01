@@ -23,6 +23,13 @@ import httpx
 import time
 from pathlib import Path
 from datetime import datetime
+import shutil
+
+
+def ytdlp_bin() -> str:
+    """yt-dlp next to the running interpreter (venv) first; a stale ~/.local/bin copy gets HTTP 429."""
+    beside = Path(sys.executable).with_name("yt-dlp")
+    return str(beside) if beside.exists() else (shutil.which("yt-dlp") or "yt-dlp")
 
 # ── Config ──────────────────────────────────────────────────────
 CLIPROXY_URL = os.getenv("CLIPROXY_URL", "http://cliproxy:8317/v1")
@@ -351,7 +358,7 @@ def search_youtube(query: str, max_results: int = 5) -> list:
     # Fallback to yt-dlp
     try:
         result = subprocess.run([
-            "yt-dlp",
+            ytdlp_bin(),
             f"ytsearch{max_results}:{query}",   # yt-dlp built-in search
             "--dump-json",
             "--flat-playlist",                   # metadata only, no download
@@ -450,7 +457,7 @@ def _run_yt_dlp_transcript_attempt(youtube_url: str, tmp_dir: str, extra_args: l
     Uses 60s timeout per attempt.
     """
     args = [
-        "yt-dlp",
+        ytdlp_bin(),
         "--write-auto-sub",
         "--write-sub",
         "--sub-langs", "en.*,en",

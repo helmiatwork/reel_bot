@@ -20,7 +20,7 @@ def _make_analysis_rows():
             "Hook → problem → solution → CTA",
             "Pattern interrupts every 15s",
             ["viral", "motivation", "shorts"],  # JSONB parsed by psycopg
-            "claude-sonnet-4-6",
+            "claude-sonnet-5-5",
             0.01234,
             datetime(2025, 6, 20, 10, 30, 0, tzinfo=timezone.utc),
         ),
@@ -32,7 +32,7 @@ def _make_analysis_rows():
             "Curiosity gap → reveal → deeper dive",
             "Pacing with beat drops",
             ["education", "tutorial"],
-            "claude-haiku-4-5",
+            "claude-haiku-5-5",
             0.00567,
             datetime(2025, 6, 20, 11, 45, 30, tzinfo=timezone.utc),
         ),
@@ -87,7 +87,7 @@ class TestDashAnalysis:
         assert row0["retention"] == "Pattern interrupts every 15s"
         assert isinstance(row0["tags"], list)
         assert row0["tags"] == ["viral", "motivation", "shorts"]
-        assert row0["model"] == "claude-sonnet-4-6"
+        assert row0["model"] == "claude-sonnet-5-5"
         assert row0["cost_usd"] == 0.01234
         assert row0["created_at"] == "2025-06-20T10:30:00+00:00"
 

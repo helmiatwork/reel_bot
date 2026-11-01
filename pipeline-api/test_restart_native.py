@@ -19,7 +19,9 @@ def _call_restart_one(service: str, fake_root: Path):
         mock = MagicMock()
         return mock
 
-    with patch.object(_m, "_REPO_ROOT", fake_root):
+    # postgres is the only real service and is launchd-managed (no Popen path), so inject a fake entry.
+    with patch.object(_m, "_REPO_ROOT", fake_root), \
+            patch.dict(_m._SERVICE_RESTART_MAP, {"demo": ("demo-bin", "exec ./demo-bin --flag")}):
         with patch("subprocess.Popen", side_effect=fake_popen):
             with patch("subprocess.run"):  # swallow pkill
                 result = _m._restart_one(service)
@@ -30,14 +32,14 @@ def _call_restart_one(service: str, fake_root: Path):
 def test_b1_shell_false():
     """Popen must never be called with shell=True."""
     root = Path("/tmp/reelbot")
-    _, cap = _call_restart_one("cliproxy", root)
+    _, cap = _call_restart_one("demo", root)
     assert cap["kwargs"].get("shell") is not True, "shell=True would allow injection"
 
 
 def test_b1_static_command_no_root_in_argv():
     """The repo root path must NOT appear anywhere inside the bash -c command string."""
     root = Path("/tmp/reelbot")
-    _, cap = _call_restart_one("cliproxy", root)
+    _, cap = _call_restart_one("demo", root)
     cmd_str = cap["argv"][2]  # bash -c <this>
     assert str(root) not in cmd_str, (
         f"repo root leaked into command string: {cmd_str!r}"
@@ -47,14 +49,14 @@ def test_b1_static_command_no_root_in_argv():
 def test_b1_cwd_carries_root():
     """cwd kwarg must equal _REPO_ROOT so relative paths resolve correctly."""
     root = Path("/tmp/reelbot")
-    _, cap = _call_restart_one("cliproxy", root)
+    _, cap = _call_restart_one("demo", root)
     assert cap["kwargs"]["cwd"] == str(root)
 
 
 def test_b1_path_with_space_does_not_corrupt_command():
     """A repo root with spaces must not word-split into the command string."""
     root = Path("/home/user/my projects/reelbot")
-    _, cap = _call_restart_one("cliproxy", root)
+    _, cap = _call_restart_one("demo", root)
     cmd_str = cap["argv"][2]
     # The space-containing path must NOT appear in the command — only in cwd
     assert "my projects" not in cmd_str, (
@@ -63,18 +65,9 @@ def test_b1_path_with_space_does_not_corrupt_command():
     assert cap["kwargs"]["cwd"] == str(root)
 
 
-def test_b1_arcreel_static():
-    """arcreel command is also static — no repo root in command string."""
-    root = Path("/srv/reelbot")
-    _, cap = _call_restart_one("arcreel", root)
-    cmd_str = cap["argv"][2]
-    assert str(root) not in cmd_str
-    assert cap["kwargs"]["cwd"] == str(root)
-
-
 def test_b1_returns_restarted():
     root = Path("/tmp/reelbot")
-    result, _ = _call_restart_one("cliproxy", root)
+    result, _ = _call_restart_one("demo", root)
     assert result == {"status": "restarted"}
 
 
@@ -85,7 +78,6 @@ if __name__ == "__main__":
         test_b1_static_command_no_root_in_argv,
         test_b1_cwd_carries_root,
         test_b1_path_with_space_does_not_corrupt_command,
-        test_b1_arcreel_static,
         test_b1_returns_restarted,
     ]
     failed = 0

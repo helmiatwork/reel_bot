@@ -27,10 +27,7 @@ For anything unrelated to video content:
 6. Write full script for chosen option
 7. Read ArcReel skill via `GET http://localhost:1241/skill.md`, generate video
 8. Generate voiceover via `POST http://localhost:8000/voiceover/generate`
-9. Run quality check via `POST http://localhost:8000/quality/check`
-10. Ask user approval before publishing
-11. Publish via `POST http://localhost:8000/publish` (TikTok + Instagram Reels)
-12. Send Telegram notification with output links
+9. Send Telegram notification with output links
 
 ## Language
 Match user language. Indonesian → respond in Indonesian.

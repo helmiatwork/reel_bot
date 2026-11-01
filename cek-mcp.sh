@@ -4,7 +4,6 @@
 set -uo pipefail
 cd "$(dirname "$0")"
 [ -f .env ] && { set -a; . ./.env; set +a; }
-BRIDGE="${CLAUDE_BRIDGE_URL:-http://localhost:9999}"
 PY="./pipeline-api/.venv/bin/python"
 ok=0; fail=0
 say(){ printf "%-34s %s\n" "$1" "$2"; }
@@ -16,11 +15,11 @@ else
   say "postgres (DATABASE_URL)" "❌ DOWN — start postgres :5432"; fail=$((fail+1))
 fi
 
-# 2. claude bridge reachable
-if curl -sf -o /dev/null --max-time 5 "$BRIDGE/health" 2>/dev/null || curl -sf -o /dev/null --max-time 5 "$BRIDGE" 2>/dev/null; then
-  say "claude bridge ($BRIDGE)" "✅ up"; ok=$((ok+1))
+# 2. claude CLI on PATH (reelbot_mcp runs it in-process via pipeline-api/claude_runner.py)
+if command -v "${CLAUDE_BIN:-claude}" >/dev/null 2>&1; then
+  say "claude CLI" "✅ found"; ok=$((ok+1))
 else
-  say "claude bridge ($BRIDGE)" "⚠️  no response — start it (needed for generate_shot_prompts / make_brief)"; fail=$((fail+1))
+  say "claude CLI" "⚠️  not on PATH — needed for generate_shot_prompts / make_brief"; fail=$((fail+1))
 fi
 
 # 3. mcp python + server module load
