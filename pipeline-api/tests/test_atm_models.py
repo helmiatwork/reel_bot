@@ -14,7 +14,7 @@ from main import app  # noqa: E402
 
 client = TestClient(app, raise_server_exceptions=False)
 
-BRIDGE_SRC = Path(__file__).resolve().parents[2] / "scripts" / "claude_bridge.py"
+BRIDGE_SRC = Path(__file__).resolve().parents[1] / "claude_runner.py"
 
 # Pin every model/effort constant so the test does not depend on the local .env.
 DEFAULTS = {
@@ -45,8 +45,8 @@ EXPECTED = [
      "reason": "Klasifikasi singkat dari judul/deskripsi, cukup Haiku."},
     {"key": "clipper", "job": "Clipper + grup shot Decompose", "model": "claude-sonnet-5-5", "effort": "low",
      "reason": "Perlu memahami transkrip panjang dan urutan shot. Belum diuji per effort."},
-    {"key": "seo", "job": "Saran judul/hashtag halaman SEO", "model": "gemini-2.5-flash-lite", "effort": "-",
-     "reason": "Lewat cliproxy (bukan Claude), murah. Butuh cliproxy menyala."},
+    {"key": "seo", "job": "Saran judul/hashtag halaman SEO", "model": "gemini/gemini-3.5-flash-lite", "effort": "-",
+     "reason": "Lewat SumoPod (bukan Claude), murah. Butuh SUMOPOD_KEY."},
 ]
 
 

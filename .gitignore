@@ -52,3 +52,12 @@ data/cookies/
 # serena tooling index (local only)
 .serena/
 dashboard-svelte/test-results/
+
+# coverage reports (a root coverage/ dir shadows the coverage package numba imports)
+.coverage
+coverage/
+htmlcov/
+
+# local secrets
+config/master.key
+tmp/

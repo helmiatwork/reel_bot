@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   launchd agent: calls POST /atm/cron/tick every 15 minutes (Telegram reminders, monitoring).
-  Same macOS TCC caveat as com.reelbot.claude-bridge.plist (curl itself is fine; no repo files are read).
+  curl needs no repo file access, so the macOS TCC caveat that hits scripts under ~/Documents does not apply.
 
   If PIPELINE_API_KEY is set on pipeline-api, the tick is gated: add these two lines to ProgramArguments
   right before the URL (curl flag and header value as separate <string> entries):

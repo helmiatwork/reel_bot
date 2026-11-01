@@ -4,6 +4,8 @@
 **What this does:**
 You send a YouTube URL or topic via Telegram. The system researches it, writes an original script, generates AI visuals (via ArcReel), adds voiceover, checks quality, and publishes to YouTube / TikTok / Instagram — automatically.
 
+> The deployment below is the legacy Docker/VPS path. The current native stack (postgres + pipeline-api only) is described in [`docs/NATIVE_SETUP.md`](docs/NATIVE_SETUP.md).
+
 ---
 
 ## How It Works
@@ -178,7 +180,7 @@ Fill in at minimum:
 ```
 POSTGRES_PASSWORD=make_this_strong_and_random
 DOMAIN=general-creation.xyz
-CLIPROXY_KEY=local-proxy-key
+SUMOPOD_KEY=your_sumopod_key
 ARCREEL_PASSWORD=your_arcreel_password
 GEMINI_API_KEY=your_gemini_api_key
 ```
@@ -227,7 +229,7 @@ curl https://api.general-creation.xyz/health
 1. Open `https://arcreel.general-creation.xyz`
 2. Login: username `admin`, password = your `ARCREEL_PASSWORD`
 3. Go to **Settings → AI Providers** → add your Gemini API key
-4. Go to **Settings → Agent** → set Base URL to `http://cliproxy:8317/v1`
+4. Go to **Settings → Agent** → set Base URL to the cliproxy container's `/v1` endpoint
 5. Go to **Settings → API** → click Generate Token → copy the token
 6. Back on VPS: `nano .env` → set `ARCREEL_TOKEN=the_token_you_copied`
 7. `docker compose restart pipeline-api`

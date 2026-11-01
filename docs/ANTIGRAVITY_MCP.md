@@ -24,7 +24,7 @@ Antigravity (MCP client)
 ```
 
 **Scope:**
-- Reelbot: analyze + corpus prep + shot-prompt/brief generation (Claude via bridge)
+- Reelbot: analyze + corpus prep + shot-prompt/brief generation (Claude via the local claude CLI)
 - Antigravity: orchestration, Gemini Imagen/Veo invocation, asset management
 - Human: final edit in CapCut or external editor
 
@@ -40,7 +40,7 @@ Antigravity (MCP client)
 ```bash
 # Set before running Antigravity
 export DATABASE_URL="postgresql://user:pass@localhost:5432/reelbot"
-export CLAUDE_BRIDGE_URL="http://localhost:9999"  # optional; defaults to localhost:9999
+# The server runs the logged-in `claude` CLI in-process; override the binary with CLAUDE_BIN if needed
 ```
 
 ### Claude.ai / Antigravity Settings
@@ -54,8 +54,7 @@ Add this server to your MCP configuration (e.g., in Claude settings or Antigravi
       "command": "/path/to/reelbot/pipeline-api/.venv/bin/python",
       "args": ["/path/to/reelbot/mcp/reelbot_mcp.py"],
       "env": {
-        "DATABASE_URL": "postgresql://user:pass@localhost:5432/reelbot",
-        "CLAUDE_BRIDGE_URL": "http://localhost:9999"
+        "DATABASE_URL": "postgresql://user:pass@localhost:5432/reelbot"
       }
     }
   }
@@ -73,8 +72,7 @@ Or via `~/.claude/models.json` (Claude.ai native MCP):
         "command": "/absolute/path/to/reelbot/pipeline-api/.venv/bin/python",
         "arguments": ["/absolute/path/to/reelbot/mcp/reelbot_mcp.py"],
         "environment": {
-          "DATABASE_URL": "postgresql://...",
-          "CLAUDE_BRIDGE_URL": "http://localhost:9999"
+          "DATABASE_URL": "postgresql://..."
         }
       }
     }
@@ -199,7 +197,7 @@ for seg in result["segments"]:
 
 Generate per-beat Imagen + Veo prompts from a script using the Shot-Prompt agent methodology.
 
-Reads `openclaw/agents/shotprompt/SOUL.md`, builds a prompt, and calls Claude via the bridge.
+Reads `openclaw/agents/shotprompt/SOUL.md`, builds a prompt, and calls Claude via the local claude CLI.
 
 **Args:**
 - `script_text` (str, required): beat-by-beat script (visual intent + VO + caption + timing per beat)
@@ -217,8 +215,8 @@ On error: `{"error": "<reason>", "prompts": ""}`
 
 **Error cases:**
 - SOUL file not found → `"shotprompt/SOUL.md not found"`
-- Claude bridge unreachable → `"bridge connection error: ..."`
-- Bridge returns `ok: false` → `"<bridge error message>"`
+- `claude` CLI cannot start → `"claude runner error: ..."`
+- Runner returns `ok: false` → `"<runner error message>"`
 
 **Example:**
 ```python
@@ -250,7 +248,7 @@ if "error" not in result or not result["error"]:
 
 Generate a Production Brief from video analysis using the Content Director methodology.
 
-Reads `openclaw/agents/director/SOUL.md`, builds a prompt with analysis + optional target, and calls Claude via the bridge.
+Reads `openclaw/agents/director/SOUL.md`, builds a prompt with analysis + optional target, and calls Claude via the local claude CLI.
 
 **Args:**
 - `analysis_json` (str, required): JSON string of `video_analysis` dict (from `get_analysis`)
@@ -425,14 +423,14 @@ Then assemble in CapCut or Antigravity's editor.
 | `"database connection failed"` | Reelbot DB offline or wrong URL | Check `DATABASE_URL`, verify Postgres is running |
 | `"query failed: ..."` | SQL error or schema mismatch | Check DB tables: `sources`, `video_analysis`, `video_segments` exist |
 | `"shotprompt/SOUL.md not found"` | Reelbot repo path wrong or file deleted | Verify MCP arg points to correct repo root; check file exists |
-| `"bridge connection error"` | Claude bridge offline | Verify `CLAUDE_BRIDGE_URL` is running; default is `http://localhost:9999` |
-| `"bridge failed with unknown error"` | Claude bridge returned `ok: false` | Check bridge logs; may be out of API quota or model unavailable |
+| `"claude runner error: ..."` | `claude` CLI missing or not startable | Verify `claude` is on PATH (or set `CLAUDE_BIN`) and logged in |
+| `"claude runner failed with unknown error"` | `claude_runner.run` returned `ok: false` | Check the error text; may be out of subscription quota or model unavailable |
 
 ---
 
 ## Notes
 
-- **Timeout:** Bridge calls use a 200s read timeout (generous for long completions). Adjust in `reelbot_mcp.py:_call_claude_bridge()` if needed.
+- **Timeout:** `claude` runs use the 180s default of `pipeline-api/claude_runner.py`. Pass `timeout_s` in `reelbot_mcp.py:_call_claude()` if a call needs longer.
 - **Stateless:** MCP server is stateless — every call reads the DB fresh. Safe for concurrent clients.
 - **Idempotent:** `list_sources`, `get_analysis`, `get_segments` are read-only and safe to call repeatedly.
 - **Paths:** `segment_path` is relative to the Reelbot machine; Antigravity may need to fetch them over the network or mount a shared volume.
@@ -441,8 +439,8 @@ Then assemble in CapCut or Antigravity's editor.
 
 ## Installation Checklist
 
-- [ ] Reelbot running with native Postgres + Claude bridge
-- [ ] `.env` in reelbot root has `DATABASE_URL` and (optionally) `CLAUDE_BRIDGE_URL`
+- [ ] Reelbot running with native Postgres; `claude` CLI logged in
+- [ ] `.env` in reelbot root has `DATABASE_URL`
 - [ ] `mcp/reelbot_mcp.py` exists and is executable
 - [ ] `pipeline-api/.venv/bin/python -m mcp` available (MCP SDK installed)
 - [ ] Antigravity MCP config points to absolute paths

@@ -2,8 +2,6 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import httpx
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -26,24 +24,21 @@ def test_parse_json_bare_object_with_prose():
     assert parse_json('Ini hasilnya: {"a": {"b": 2}} selesai') == {"a": {"b": 2}}
 
 
-def test_run_claude_bridge_down_returns_none():
-    with patch("httpx.post", side_effect=httpx.ConnectError("down")):
+def test_run_claude_runner_raises_returns_none():
+    with patch("claude_runner.run", side_effect=OSError("down")):
         assert run_claude("p", agent="t") is None
 
 
 def test_run_claude_not_ok_returns_none():
-    resp = MagicMock()
-    resp.json.return_value = {"ok": False, "error": "x"}
-    with patch("httpx.post", return_value=resp):
+    with patch("claude_runner.run", return_value={"ok": False, "error": "x"}):
         assert run_claude("p", agent="t") is None
 
 
 def test_run_claude_ok_returns_text_and_logs_usage():
-    resp = MagicMock()
-    resp.json.return_value = {"ok": True, "result": "hi", "raw_usage": {"output_tokens": 3}, "cost_usd": 0.1, "model": "m"}
-    with patch("httpx.post", return_value=resp) as post, patch("main._log_api_usage") as log:
+    data = {"ok": True, "result": "hi", "raw_usage": {"output_tokens": 3}, "cost_usd": 0.1, "model": "m"}
+    with patch("claude_runner.run", return_value=data) as run, patch("main._log_api_usage") as log:
         assert run_claude("p", agent="t", subdir="d") == "hi"
-    assert post.call_args.kwargs["json"]["subdir"] == "d"
+    assert run.call_args.args[0]["subdir"] == "d"
     log.assert_called_once_with("t", "m", {"output_tokens": 3}, 0.1)
 
 

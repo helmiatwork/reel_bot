@@ -12,7 +12,7 @@ from .common import (
 
 router = APIRouter()
 
-# Must match DEFAULT_EFFORT in scripts/claude_bridge.py (applied when no explicit effort is sent).
+# Must match DEFAULT_EFFORT in claude_runner.py (applied when no explicit effort is sent).
 _BRIDGE_DEFAULT_EFFORT = {"claude-haiku-5-5": "high", "claude-sonnet-5-5": "low"}
 
 
@@ -47,5 +47,5 @@ def list_models():
          "effort": _effort("claude-sonnet-5-5", ""),
          "reason": "Perlu memahami transkrip panjang dan urutan shot. Belum diuji per effort."},
         {"key": "seo", "job": "Saran judul/hashtag halaman SEO", "model": main._SEO_SYNTH_MODEL, "effort": "-",
-         "reason": "Lewat cliproxy (bukan Claude), murah. Butuh cliproxy menyala."},
+         "reason": "Lewat SumoPod (bukan Claude), murah. Butuh SUMOPOD_KEY."},
     ]}

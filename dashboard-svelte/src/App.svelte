@@ -371,8 +371,7 @@
     </div>
 
     <div class="content">
-      {#if current === 'openclaw'}<OpenClaw />
-      {:else if current === 'today'}<Today />
+      {#if current === 'today'}<Today />
       {:else if current === 'plan'}<Plan />
       {:else if current === 'production'}<Production />
       {:else if current === 'monitor'}<Monitor />

@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 from urllib.parse import urlparse
 
-import httpx
+import claude_runner
 
 STATUSES = ("idea", "blueprint", "shoot", "edit", "review", "ready", "scheduled", "posted", "monitored")
 LEGACY_STAGE_MAP = {"script": "blueprint", "prep": "shoot"}
@@ -46,7 +46,7 @@ _FENCE_RE = re.compile(r"```(?:json)?\s*(.*?)```", re.S | re.I)
 
 def run_claude(prompt: str, *, agent: str, model: str = ATM_MODEL, frames: list | None = None,
                subdir: str | None = None, timeout_s: int = 300, effort: str | None = None) -> str | None:
-    """Ask claude-bridge; returns the result text, or None on transport error / ok:false."""
+    """Ask the claude CLI; returns the result text, or None on runner error / ok:false."""
     import main
     payload = {"prompt": prompt, "frames": frames or [], "model": model, "timeout_s": timeout_s}
     if subdir:
@@ -55,16 +55,12 @@ def run_claude(prompt: str, *, agent: str, model: str = ATM_MODEL, frames: list 
     if effort:
         payload["effort"] = effort
     try:
-        resp = httpx.post(
-            f"{main.CLAUDE_BRIDGE_URL}/run", json=payload,
-            timeout=httpx.Timeout(connect=10.0, read=float(timeout_s) + 10, write=10.0, pool=5.0),
-        )
-        data = resp.json()
+        data = claude_runner.run(payload)
     except Exception as exc:
-        print(f"[atm] claude bridge unreachable ({agent}): {exc}")
+        print(f"[atm] claude runner failed ({agent}): {exc}")
         return None
     if not isinstance(data, dict) or not data.get("ok"):
-        print(f"[atm] claude bridge error ({agent}): {data.get('error') if isinstance(data, dict) else data}")
+        print(f"[atm] claude runner error ({agent}): {data.get('error') if isinstance(data, dict) else data}")
         return None
     main._log_api_usage(agent, data.get("model", model), data.get("raw_usage") or {}, data.get("cost_usd"))
     return data.get("result")

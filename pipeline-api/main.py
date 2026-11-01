@@ -29,6 +29,7 @@ _YT_PIPELINE = str(_REPO_ROOT / "yt-pipeline" / "yt_pipeline.py")
 sys.path.insert(0, str(_REPO_ROOT))
 
 # Import Google Ads adapter (module imports cleanly even if creds are missing)
+import claude_runner  # noqa: E402
 import atm  # noqa: E402  (atm.* call back into main lazily)
 import atm.db, atm.common  # noqa: E402
 from adapters.google_ads import generate_keyword_ideas, GoogleAdsNotConfigured, normalize_keyword_ideas, compute_score
@@ -233,8 +234,6 @@ async def dash_services():
     # All services now use localhost for native execution (no Docker hostnames).
     checks = [
         ("postgres", 5432, None),
-        ("cliproxy", 8317, "http://localhost:8317/v1/models"),
-        ("claude-bridge", 9999, "http://localhost:9999/health"),
         ("pipeline-api", 8000, "http://localhost:8000/health"),
     ]
     # Concurrent probes instead of sequential
@@ -244,17 +243,15 @@ async def dash_services():
 
 # ── Service restart endpoints (native process restart) ─────────────────────────
 # Allowlist of restartable services (deliberately excludes pipeline-api itself).
-# openclaw / n8n / arcreel dropped: they only served the hidden agents, publish and render features.
-_RESTARTABLE_SERVICES = {"postgres", "cliproxy", "claude-bridge"}
+# Native stack = postgres + pipeline-api; both are launchd jobs (scripts/launchd/).
+_RESTARTABLE_SERVICES = {"postgres"}
 
 # Map service name → (pkill pattern, restart command)
 # Used to find and restart the native process.
-# ponytail: postgres & claude-bridge (launchd) have their own setup;
-# returning unsupported_native rather than breaking them on restart attempt.
+# ponytail: postgres (launchd) has its own setup;
+# returning unsupported_native rather than breaking it on restart attempt.
 _SERVICE_RESTART_MAP = {
-    "postgres": None,  # unsupported_native: complex FS/env setup
-    "cliproxy": ("cli-proxy-api", "exec ./data/bin/cli-proxy-api -config ./cliproxy/config.yaml"),
-    "claude-bridge": None,  # unsupported_native: managed by launchd (com.reelbot.claude-bridge)
+    "postgres": None,  # unsupported_native: managed by launchd (com.reelbot.postgres)
 }
 
 
@@ -1245,7 +1242,6 @@ def _group_shots_claude(video_id: str, shots: list, frame_dir: str, video_path: 
         list of grouped clips (or [] on failure, non-fatal).
     """
     import re
-    import httpx as _httpx
 
     if not shots or not video_path:
         return []
@@ -1293,26 +1289,17 @@ def _group_shots_claude(video_id: str, shots: list, frame_dir: str, video_path: 
 
     prompt = "\n".join(prompt_lines)
 
-    # Call claude bridge with frames
+    # Call claude (claude_runner) with frames
     try:
         # Reuse run_id from decompose job (passed via _group_shots_claude context)
         # For now, use a temp run_id for frame resolution
         temp_run_id = re.sub(r"[^A-Za-z0-9_-]", "", str(video_id)[:8])
 
-        bridge_timeout = _httpx.Timeout(connect=10.0, read=200.0, write=10.0, pool=5.0)
-        bridge_resp = _httpx.post(
-            f"{CLAUDE_BRIDGE_URL}/run",
-            json={"prompt": prompt, "frames": frame_names, "model": "claude-sonnet-5-5", "subdir": temp_run_id},
-            timeout=bridge_timeout,
+        bridge_data = claude_runner.run(
+            {"prompt": prompt, "frames": frame_names, "model": "claude-sonnet-5-5", "subdir": temp_run_id}
         )
     except Exception as exc:
-        print(f"[_group_shots_claude] bridge error: {exc}")
-        return []
-
-    try:
-        bridge_data = bridge_resp.json()
-    except Exception as exc:
-        print(f"[_group_shots_claude] response parse error: {exc}")
+        print(f"[_group_shots_claude] claude runner error: {exc}")
         return []
 
     if not bridge_data.get("ok"):
@@ -1590,16 +1577,9 @@ def generate_script(req: GenerateScriptRequest):
 
     prompt = _build_script_prompt(req.topic, winners)
     try:
-        import httpx as _httpx
-        bridge_timeout = _httpx.Timeout(connect=10.0, read=180.0, write=10.0, pool=5.0)
-        resp = _httpx.post(
-            f"{CLAUDE_BRIDGE_URL}/run",
-            json={"prompt": prompt, "frames": [], "model": "claude-sonnet-5-5"},
-            timeout=bridge_timeout,
-        )
-        data = resp.json()
+        data = claude_runner.run({"prompt": prompt, "frames": [], "model": "claude-sonnet-5-5"})
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"claude bridge error: {e}")
+        raise HTTPException(status_code=502, detail=f"claude runner error: {e}")
 
     if not data.get("ok"):
         raise HTTPException(status_code=502, detail=f"generation failed: {data.get('error', 'unknown')}")
@@ -2243,8 +2223,8 @@ def start_decompose(req: DecomposeRequest, bg: BackgroundTasks):
                 if req.group_clips:
                     _save_run(run_id, _update_run(run_id, status="grouping"))
                     # Frames MUST live under ANALYZE_FRAME_DIR/<subdir> — that is the only
-                    # place the claude bridge resolves them. subdir == video_id[:8] to match
-                    # the subdir _group_shots_claude passes to the bridge.
+                    # place claude_runner resolves them. subdir == video_id[:8] to match
+                    # the subdir _group_shots_claude passes to claude_runner.
                     frame_dir = f"{ANALYZE_FRAME_DIR}/{video_id[:8]}"
                     clips = _group_shots_claude(video_id, shots, frame_dir, str(video_path))
                 if not clips:
@@ -2976,7 +2956,6 @@ def youtube_clip_this(req: ClipThisRequest, bg: BackgroundTasks):
 
 ANALYZE_FRAME_DIR = os.getenv("ANALYZE_FRAME_DIR", str(_REPO_ROOT / "analyze-frames"))
 # P1b: default to localhost instead of Docker internal host
-CLAUDE_BRIDGE_URL = os.getenv("CLAUDE_BRIDGE_URL", "http://localhost:9999")
 
 _CLAUDE_RE_PROMPT_TEMPLATE = """\
 Analisa video YouTube berikut berdasarkan frame-frame gambar yang disediakan.
@@ -4269,8 +4248,8 @@ def _analyze_audio(path: str, start_sec: Optional[float] = None, end_sec: Option
     return result
 
 
-_MUSIC_TAG_MODEL = "gemini-2.5-flash-lite"  # ponytail: swap here if model changes
-_SUNO_AUDIO_MODEL = os.getenv("SUNO_AUDIO_MODEL", "gemini-2.5-pro")  # ponytail: stronger model for richer audio analysis
+_MUSIC_TAG_MODEL = "gemini/gemini-3.5-flash-lite"  # ponytail: swap here if model changes
+_SUNO_AUDIO_MODEL = os.getenv("SUNO_AUDIO_MODEL", "gemini/gemini-3.1-pro-preview")  # ponytail: stronger model for richer audio analysis
 try:
     _SUNO_WINDOW_SEC = int(os.getenv("SUNO_WINDOW_SEC") or "600")
 except (ValueError, TypeError):
@@ -4280,15 +4259,15 @@ except (ValueError, TypeError):
 
 def _suggest_music_tags(path: str) -> list:
     """
-    Auto-tag audio via Gemini (through cliproxy gateway).
+    Auto-tag audio via Gemini (through the SumoPod gateway).
     Trims first 10s to mono mp3, sends as input_audio, parses JSON tags.
     Cost: ~390 tokens/song (~$0.00004) — fine to run on every import.
     Returns [] on any failure — never raises, never blocks import.
-    Reads CLIPROXY_URL and CLIPROXY_KEY from environment.
+    Reads SUMOPOD_URL and SUMOPOD_KEY from environment.
     """
-    cliproxy_url = os.getenv("CLIPROXY_URL", "http://localhost:8317/v1").rstrip("/")
-    cliproxy_key = os.getenv("CLIPROXY_KEY", "")
-    if not cliproxy_key:
+    sumopod_url = os.getenv("SUMOPOD_URL", "https://ai.sumopod.com/v1").rstrip("/")
+    sumopod_key = os.getenv("SUMOPOD_KEY", "")
+    if not sumopod_key:
         return []
 
     try:
@@ -4332,9 +4311,9 @@ def _suggest_music_tags(path: str) -> list:
         }
 
         resp = httpx.post(
-            f"{cliproxy_url}/chat/completions",
+            f"{sumopod_url}/chat/completions",
             headers={
-                "Authorization": f"Bearer {cliproxy_key}",
+                "Authorization": f"Bearer {sumopod_key}",
                 "Content-Type": "application/json",
             },
             json=payload,
@@ -4381,19 +4360,19 @@ def _suggest_music_tags(path: str) -> list:
 
 def _suno_audio_analysis(path: str) -> dict:
     """
-    Analyze audio via Gemini (through cliproxy gateway) to provide ground-truth audio understanding.
+    Analyze audio via Gemini (through the SumoPod gateway) to provide ground-truth audio understanding.
     Used in Suno prompt generation when Antigravity cannot play the audio directly.
 
     Trims first 30s to mono mp3 (full Suno window), sends as input_audio, parses JSON description.
     Returns dict with: genre, tempo, mood, instruments, description (what Gemini actually heard).
     Returns {} on any failure — never raises, never blocks the analysis.
 
-    Reads CLIPROXY_URL and CLIPROXY_KEY from environment.
-    Model set via SUNO_AUDIO_MODEL env (default: gemini-2.5-pro for richer analysis than flash-lite).
+    Reads SUMOPOD_URL and SUMOPOD_KEY from environment.
+    Model set via SUNO_AUDIO_MODEL env (default: gemini/gemini-3.1-pro-preview for richer analysis than flash-lite).
     """
-    cliproxy_url = os.getenv("CLIPROXY_URL", "http://localhost:8317/v1").rstrip("/")
-    cliproxy_key = os.getenv("CLIPROXY_KEY", "")
-    if not cliproxy_key:
+    sumopod_url = os.getenv("SUMOPOD_URL", "https://ai.sumopod.com/v1").rstrip("/")
+    sumopod_key = os.getenv("SUMOPOD_KEY", "")
+    if not sumopod_key:
         return {}
 
     try:
@@ -4437,9 +4416,9 @@ def _suno_audio_analysis(path: str) -> dict:
         }
 
         resp = httpx.post(
-            f"{cliproxy_url}/chat/completions",
+            f"{sumopod_url}/chat/completions",
             headers={
-                "Authorization": f"Bearer {cliproxy_key}",
+                "Authorization": f"Bearer {sumopod_key}",
                 "Content-Type": "application/json",
             },
             json=payload,
@@ -4572,7 +4551,7 @@ def _detect_audio_sections(path: str, min_section_sec: float = 20.0, max_section
 
 def _suno_audio_analysis_segment(path: str, start_sec: float, end_sec: float) -> dict:
     """
-    Analyze a specific audio segment via Gemini (through cliproxy).
+    Analyze a specific audio segment via Gemini (through SumoPod).
     Clips the sub-range to a temp mp3, sends via input_audio, returns {genre,tempo,mood,instruments,description}.
 
     Non-fatal: returns {} on any error (analysis is optional per section).
@@ -4581,8 +4560,8 @@ def _suno_audio_analysis_segment(path: str, start_sec: float, end_sec: float) ->
         return {}
 
     # Check for required credentials early
-    cliproxy_key = os.getenv("CLIPROXY_KEY", "")
-    if not cliproxy_key:
+    sumopod_key = os.getenv("SUMOPOD_KEY", "")
+    if not sumopod_key:
         return {}
 
     try:
@@ -4615,7 +4594,7 @@ def _suno_audio_analysis_segment(path: str, start_sec: float, end_sec: float) ->
             finally:
                 Path(tmp_path).unlink(missing_ok=True)
 
-            cliproxy_url = os.getenv("CLIPROXY_URL", "http://localhost:8317/v1").rstrip("/")
+            sumopod_url = os.getenv("SUMOPOD_URL", "https://ai.sumopod.com/v1").rstrip("/")
 
             payload = {
                 "model": _SUNO_AUDIO_MODEL,
@@ -4640,9 +4619,9 @@ def _suno_audio_analysis_segment(path: str, start_sec: float, end_sec: float) ->
             }
 
             resp = httpx.post(
-                f"{cliproxy_url}/chat/completions",
+                f"{sumopod_url}/chat/completions",
                 headers={
-                    "Authorization": f"Bearer {cliproxy_key}",
+                    "Authorization": f"Bearer {sumopod_key}",
                     "Content-Type": "application/json",
                 },
                 json=payload,
@@ -4752,22 +4731,15 @@ def _fetch_channel_meta(youtube_url: str) -> dict:
 
 def _infer_gender(creator_name: str, channel: str) -> str:
     """
-    Call claude bridge to infer gender from creator name and channel.
+    Call claude to infer gender from creator name and channel.
     Returns 'male', 'female', or 'unknown'. Non-fatal: defaults to 'unknown' on error.
     """
     try:
-        import httpx as _httpx
         prompt = (
             f"Berdasarkan nama kreator '{creator_name}' (channel '{channel}'), "
             f"tebak gender kemungkinan besar. Jawab SATU kata saja: male, female, atau unknown."
         )
-        bridge_timeout = _httpx.Timeout(connect=10.0, read=30.0, write=10.0, pool=5.0)
-        resp = _httpx.post(
-            f"{CLAUDE_BRIDGE_URL}/run",
-            json={"prompt": prompt, "frames": [], "model": "claude-haiku-5-5"},
-            timeout=bridge_timeout,
-        )
-        data = resp.json()
+        data = claude_runner.run({"prompt": prompt, "frames": [], "model": "claude-haiku-5-5", "timeout_s": 30})
         if not data.get("ok"):
             return "unknown"
         # Log API usage on successful response
@@ -4788,25 +4760,18 @@ def _infer_gender(creator_name: str, channel: str) -> str:
 
 def _infer_niche(title: str, tags: str, channel: str) -> str:
     """
-    Call claude bridge to infer a short, free-form niche label (2-4 words, e.g., 'couples prank').
+    Call claude to infer a short, free-form niche label (2-4 words, e.g., 'couples prank').
     Accepts title, tags, and channel; returns cleaned string (max ~40 chars, lowercase-ish).
     Non-fatal: returns "" on error. Logs API usage on success.
     """
     try:
-        import httpx as _httpx
         # Build a minimal prompt in Indonesian
         prompt = (
             f"Berdasarkan judul video '{title}' dan channel '{channel}', "
             f"tentukan niche atau kategori konten singkat (2-4 kata, contoh: 'couples prank', 'marriage comedy'). "
             f"Jawab HANYA label singkat tanpa penjelasan."
         )
-        bridge_timeout = _httpx.Timeout(connect=10.0, read=30.0, write=10.0, pool=5.0)
-        resp = _httpx.post(
-            f"{CLAUDE_BRIDGE_URL}/run",
-            json={"prompt": prompt, "frames": [], "model": "claude-haiku-5-5"},
-            timeout=bridge_timeout,
-        )
-        data = resp.json()
+        data = claude_runner.run({"prompt": prompt, "frames": [], "model": "claude-haiku-5-5", "timeout_s": 30})
         if not data.get("ok"):
             return ""
         # Log API usage on successful response
@@ -5341,7 +5306,7 @@ FRAMES_PER_BATCH = max(1, int(os.environ.get("ANALYZE_FRAMES_PER_BATCH", "5")))
 # Per-frame analysis uses Haiku (cheap, batched). Synthesis (storyboard JSON) routes to Sonnet for better quality.
 ANALYZE_SYNTHESIS_MODEL = os.environ.get("ANALYZE_SYNTHESIS_MODEL", "claude-sonnet-5-5")
 
-# Audio tagging runs through cliproxy→SumoPod→gemini (paid credit). Off by default
+# Audio tagging runs through SumoPod→gemini (paid credit). Off by default
 # to preserve SumoPod credit; set ANALYZE_AUDIO_TAGS=1 to re-enable music_mood tags.
 ANALYZE_AUDIO_TAGS = os.environ.get("ANALYZE_AUDIO_TAGS", "0") == "1"
 
@@ -5354,7 +5319,7 @@ def _parse_batch_descriptions(raw_result: str, expected_count: int) -> list[str]
     Handles JSON wrapped in ```json fences.
 
     Args:
-        raw_result: raw string result from Claude bridge
+        raw_result: raw string result from claude_runner
         expected_count: expected number of descriptions in the array
 
     Returns:
@@ -5418,7 +5383,6 @@ def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: 
 
     Raises HTTPException on unrecoverable errors.
     """
-    import httpx as _httpx
 
     # Normalize frames: convert plain names to dicts if needed
     normalized_frames = []
@@ -5431,7 +5395,6 @@ def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: 
 
     # Per-frame pass: collect descriptions (batch 5 frames per bridge call)
     frame_descriptions = []
-    bridge_timeout = _httpx.Timeout(connect=10.0, read=180.0, write=10.0, pool=5.0)
 
     # Process frames in batches
     for batch_start_idx in range(0, len(normalized_frames), FRAMES_PER_BATCH):
@@ -5471,18 +5434,13 @@ def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: 
         # Try once, then retry if empty (same as before)
         for attempt in range(2):
             try:
-                bridge_resp = _httpx.post(
-                    f"{CLAUDE_BRIDGE_URL}/run",
-                    json={
-                        "prompt": batch_prompt,
-                        "frames": frame_names_list,
-                        "model": model,
-                        "subdir": subdir,
-                        "timeout_s": 180,
-                    },
-                    timeout=bridge_timeout,
-                )
-                bridge_data = bridge_resp.json()
+                bridge_data = claude_runner.run({
+                    "prompt": batch_prompt,
+                    "frames": frame_names_list,
+                    "model": model,
+                    "subdir": subdir,
+                    "timeout_s": 180,
+                })
                 if bridge_data.get("ok"):
                     raw_batch_result = (bridge_data.get("result", "") or "").strip()
                     if raw_batch_result:
@@ -5520,12 +5478,9 @@ def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: 
                 raw_desc = None
                 for attempt in range(2):
                     try:
-                        bridge_resp = _httpx.post(
-                            f"{CLAUDE_BRIDGE_URL}/run",
-                            json={"prompt": single_prompt, "frames": [frame_name], "model": model, "subdir": subdir},
-                            timeout=bridge_timeout,
+                        bridge_data = claude_runner.run(
+                            {"prompt": single_prompt, "frames": [frame_name], "model": model, "subdir": subdir}
                         )
-                        bridge_data = bridge_resp.json()
                         if bridge_data.get("ok"):
                             raw_desc = (bridge_data.get("result", "") or "").strip()
                             if raw_desc:
@@ -5588,13 +5543,9 @@ def _analyze_frames_sequential(frames, subdir: str, intent: str, output_format: 
     parsed = None
     for attempt in range(2):
         try:
-            bridge_timeout = _httpx.Timeout(connect=10.0, read=330.0, write=10.0, pool=5.0)
-            bridge_resp = _httpx.post(
-                f"{CLAUDE_BRIDGE_URL}/run",
-                json={"prompt": full_synthesis_prompt, "frames": [], "model": ANALYZE_SYNTHESIS_MODEL, "subdir": subdir, "timeout_s": 300},
-                timeout=bridge_timeout,
+            bridge_data = claude_runner.run(
+                {"prompt": full_synthesis_prompt, "frames": [], "model": ANALYZE_SYNTHESIS_MODEL, "subdir": subdir, "timeout_s": 300}
             )
-            bridge_data = bridge_resp.json()
 
             if not bridge_data.get("ok"):
                 print(f"[sequential] synthesis bridge error: {bridge_data.get('error')}")
@@ -5674,7 +5625,6 @@ def _generate_gen_prompt(frame_descriptions: str, subdir: str, output_format: st
     For prompt_video: returns simple text-to-video prompt
     For prompt_json: returns JSON storyboard object as string
     """
-    import httpx as _httpx
 
     if output_format == "none":
         return (None, None)
@@ -5695,15 +5645,10 @@ def _generate_gen_prompt(frame_descriptions: str, subdir: str, output_format: st
         return (None, None)
 
     try:
-        bridge_timeout = _httpx.Timeout(connect=10.0, read=200.0, write=10.0, pool=5.0)
         # NOTE: frames=[] because we're using text descriptions, not image files
-        bridge_resp = _httpx.post(
-            f"{CLAUDE_BRIDGE_URL}/run",
-            json={"prompt": gen_prompt_instruction, "frames": [], "model": model, "subdir": subdir},
-            timeout=bridge_timeout,
+        bridge_data = claude_runner.run(
+            {"prompt": gen_prompt_instruction, "frames": [], "model": model, "subdir": subdir}
         )
-
-        bridge_data = bridge_resp.json()
         if not bridge_data.get("ok"):
             return (None, None)
 
@@ -8759,20 +8704,12 @@ def find_clips_claude(req: ClipFindRequest):
         transcript=transcript_text
     )
 
-    # Step 4: Call the claude bridge (text-only, no frames)
-    import httpx as _httpx
-    bridge_timeout = _httpx.Timeout(connect=10.0, read=200.0, write=10.0, pool=5.0)
+    # Step 4: Call the claude_runner (text-only, no frames)
     try:
-        bridge_resp = _httpx.post(
-            f"{CLAUDE_BRIDGE_URL}/run",
-            json={"prompt": prompt, "frames": [], "model": model, "timeout_s": 200},
-            timeout=bridge_timeout,
-        )
+        bridge_data = claude_runner.run({"prompt": prompt, "frames": [], "model": model, "timeout_s": 200})
     except Exception as exc:
-        print(f"[clips/find-claude] bridge unreachable: {exc}")
-        raise HTTPException(status_code=502, detail=f"Bridge unreachable: {exc}")
-
-    bridge_data = bridge_resp.json()
+        print(f"[clips/find-claude] claude runner failed: {exc}")
+        raise HTTPException(status_code=502, detail=f"Claude runner failed: {exc}")
 
     # Rate-limit → 429
     if bridge_data.get("error_type") == "rate_limit":
@@ -8940,25 +8877,17 @@ def auto_clips(req: ClipAutoRequest):
         if len(transcript_text) > 45000:
             transcript_text = transcript_text[:45000] + "\n[... transcript truncated ...]"
 
-        # Call claude bridge
+        # Call claude_runner
         prompt = _CLAUDE_CLIPPER_PROMPT_TEMPLATE.format(
             max_clips=max_clips,
             transcript=transcript_text
         )
 
-        import httpx as _httpx
-        bridge_timeout = _httpx.Timeout(connect=10.0, read=200.0, write=10.0, pool=5.0)
         try:
-            bridge_resp = _httpx.post(
-                f"{CLAUDE_BRIDGE_URL}/run",
-                json={"prompt": prompt, "frames": [], "model": model, "timeout_s": 200},
-                timeout=bridge_timeout,
-            )
+            bridge_data = claude_runner.run({"prompt": prompt, "frames": [], "model": model, "timeout_s": 200})
         except Exception as exc:
-            print(f"[clips/auto] bridge unreachable: {exc}")
-            raise HTTPException(status_code=502, detail=f"Bridge unreachable: {exc}")
-
-        bridge_data = bridge_resp.json()
+            print(f"[clips/auto] claude runner failed: {exc}")
+            raise HTTPException(status_code=502, detail=f"Claude runner failed: {exc}")
 
         if bridge_data.get("error_type") == "rate_limit":
             raise HTTPException(
@@ -9233,7 +9162,7 @@ def _keywords_init_db():
 
 _SEO_AUTOCOMPLETE_URL = "https://suggestqueries.google.com/complete/search"
 # Cheap text model for synthesis — flash tier keeps cost near zero.
-_SEO_SYNTH_MODEL = "gemini-2.5-flash-lite"
+_SEO_SYNTH_MODEL = "gemini/gemini-3.5-flash-lite"
 # A handful of alphabet expansions for long-tail; don't hammer the endpoint.
 _SEO_EXPAND_LETTERS = list("abcdefghijklmnopqrstuvwxyz")[:10]
 
@@ -9335,15 +9264,15 @@ def _seo_trends(seed: str, platform: str = "") -> dict:
 
 def _seo_synthesize(topic: str, keywords: list, trends: dict, platform: str) -> dict:
     """
-    Ask the LLM (via cliproxy) to produce optimized titles/hashtags/description.
+    Ask the LLM (via SumoPod) to produce optimized titles/hashtags/description.
 
     Returns {titles:[str,...], hashtags:[str,...], description:str} on success;
     {} on any failure (missing key, network error, bad JSON).
     Never raises.
     """
-    cliproxy_url = os.getenv("CLIPROXY_URL", "http://localhost:8317/v1").rstrip("/")
-    cliproxy_key = os.getenv("CLIPROXY_KEY", "")
-    if not cliproxy_key:
+    sumopod_url = os.getenv("SUMOPOD_URL", "https://ai.sumopod.com/v1").rstrip("/")
+    sumopod_key = os.getenv("SUMOPOD_KEY", "")
+    if not sumopod_key:
         return {}
 
     keyword_list = ", ".join(k["term"] for k in keywords[:20]) if keywords else topic
@@ -9375,9 +9304,9 @@ def _seo_synthesize(topic: str, keywords: list, trends: dict, platform: str) -> 
     try:
         import httpx
         resp = httpx.post(
-            f"{cliproxy_url}/chat/completions",
+            f"{sumopod_url}/chat/completions",
             headers={
-                "Authorization": f"Bearer {cliproxy_key}",
+                "Authorization": f"Bearer {sumopod_key}",
                 "Content-Type": "application/json",
             },
             json={
@@ -9469,7 +9398,7 @@ def seo_analyze(req: SeoAnalyzeRequest):
     Data sources:
     - Autocomplete: YouTube or Google suggest (no API key, best-effort)
     - Trends: pytrends (unofficial, rate-limited, best-effort)
-    - Synthesis: cheap LLM via cliproxy (best-effort)
+    - Synthesis: cheap LLM via SumoPod (best-effort)
 
     Never 500 on partial-source failure — returns whatever succeeded.
     """

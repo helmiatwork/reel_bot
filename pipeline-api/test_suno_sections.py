@@ -103,13 +103,13 @@ class TestSunoAudioAnalysisSegment:
         result = m._suno_audio_analysis_segment("/some/path.mp3", 5.0, 5.0)
         assert result == {}
 
-    def test_graceful_failure_on_missing_cliproxy_key(self):
-        """Without CLIPROXY_KEY, should return empty dict before doing any ffmpeg work."""
+    def test_graceful_failure_on_missing_sumopod_key(self):
+        """Without SUMOPOD_KEY, should return empty dict before doing any ffmpeg work."""
         # Clear the key and ensure we return {} immediately
         with patch.dict(os.environ, {}, clear=False):
-            # Ensure CLIPROXY_KEY is not set
-            if "CLIPROXY_KEY" in os.environ:
-                del os.environ["CLIPROXY_KEY"]
+            # Ensure SUMOPOD_KEY is not set
+            if "SUMOPOD_KEY" in os.environ:
+                del os.environ["SUMOPOD_KEY"]
 
             # This should return {} WITHOUT calling subprocess or other expensive operations
             result = m._suno_audio_analysis_segment("/path/audio.mp3", 0.0, 30.0)

@@ -41,7 +41,7 @@ _POST_SCHEMA = """{
 
 def run_post_evaluation(item_id: int) -> Optional[int]:
     """Evaluate a monitored video once (claimed via post_eval_done). Returns the evaluation id, or None when
-    nothing was stored: already done, bridge down (claim released, retried next tick), or unusable answer
+    nothing was stored: already done, claude run failed (claim released, retried next tick), or unusable answer
     (an 'error' row is stored and the claim kept, so a bad model answer is not retried every tick)."""
     import main
     conn = main._db_conn()

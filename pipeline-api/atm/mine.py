@@ -121,7 +121,7 @@ def _start_blueprint(item_id: int) -> bool:
 
 
 def _auto_blueprint(targets: list) -> None:
-    """Background: (item_id, analyze run_id or None when already analysed), one at a time (the claude bridge is single-threaded)."""
+    """Background: (item_id, analyze run_id or None when already analysed), one at a time (claude runs are capped by claude_runner)."""
     for item_id, run_id in targets:
         try:
             if run_id is not None and _wait_run(run_id) != "done":

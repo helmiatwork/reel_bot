@@ -1,49 +1,61 @@
 """
-claude_bridge.py — Host-side HTTP bridge between Docker containers and the `claude` CLI.
+claude_runner.py - run the `claude` CLI in-process.
 
-HOW TO RUN (on the host machine):
-    python3 scripts/claude_bridge.py
+run(payload) takes the JSON body the old bridge accepted on POST /run and returns the
+dict it answered with: {ok, result, model, cost_usd, raw_usage} or
+{ok: False, error, error_type?}. Validation failures return ok:False, they never raise.
 
 ENV VARS:
-    CLAUDE_BRIDGE_PORT   Port to listen on (default: 9999). Binds 127.0.0.1 only.
-    CLAUDE_BRIDGE_MAX_CONCURRENT
-                         Max `claude` subprocesses at once (default: 2, min: 1).
-                         Extra POST /run requests wait for a slot.
-    CLAUDE_BIN           Path to the claude binary
-                         (default: /Users/ichigo/.nodenv/versions/24.14.1/bin/claude)
-    ANALYZE_FRAME_DIR    Host directory where frame images live
-                         (default: /Users/ichigo/Documents/repo/helmi/reelbot/analyze-frames)
+    CLAUDE_MAX_CONCURRENT  Max `claude` subprocesses at once on this host, shared by pipeline-api and MCP processes (default 2, min 1);
+                                  extra callers wait for a slot.
+    CLAUDE_BIN                    Path to the claude binary (default: `claude` on PATH).
+    ANALYZE_FRAME_DIR             Directory where frame images live.
 
-IMPORTANT: This script MUST run on the HOST (not inside Docker). It uses the host's
-logged-in `claude` CLI which authenticates via Claude Team plan subscription.
-ANTHROPIC_API_KEY is intentionally NOT injected — subscription auth is on the host env.
-
-ENDPOINTS:
-    POST /run    — Execute a claude -p prompt, optionally with frame images.
-    GET  /health — Liveness check.
-
-SECURITY:
-    - Listens on 127.0.0.1 only; Docker containers reach it via host.docker.internal.
-    - Frame filenames are validated to be basename-only (no / or .. allowed).
-    - subprocess is called with an argv list — shell=False always.
+The host's logged-in `claude` CLI authenticates via the subscription, so
+ANTHROPIC_API_KEY is intentionally NOT injected.
+Frame names are basename-only and subprocess uses an argv list (shell=False).
 """
 
-import http.server
+import contextlib
+import fcntl
 import json
 import logging
 import os
+import re
 import shutil
 import subprocess
 import tempfile
 import threading
+import time
 from pathlib import Path
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-PORT = int(os.environ.get("CLAUDE_BRIDGE_PORT", 9999))
 # Cap on concurrent `claude` subprocesses; requests beyond it wait for a slot.
-MAX_CONCURRENT = max(1, int(os.environ.get("CLAUDE_BRIDGE_MAX_CONCURRENT", 2)))
+MAX_CONCURRENT = max(1, int(os.environ.get("CLAUDE_MAX_CONCURRENT", 2)))
 _RUN_SLOTS = threading.BoundedSemaphore(MAX_CONCURRENT)
+# Slot lock files shared by every process that imports this module (pipeline-api, each MCP server).
+SLOT_DIR = Path(os.environ.get("CLAUDE_SLOT_DIR") or Path(__file__).resolve().parents[1] / "tmp" / "claude-slots")
+
+
+@contextlib.contextmanager
+def _host_slot():
+    """Cross-process cap: hold one of MAX_CONCURRENT flock'd slot files until the run ends."""
+    SLOT_DIR.mkdir(parents=True, exist_ok=True)
+    while True:
+        for i in range(MAX_CONCURRENT):
+            f = open(SLOT_DIR / f"slot-{i}.lock", "w")
+            try:
+                fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                f.close()
+                continue
+            try:
+                yield
+            finally:
+                f.close()  # closing the fd releases the flock
+            return
+        time.sleep(0.2)
 # PATH lookup first: a pinned nodenv path breaks on every node upgrade.
 CLAUDE_BIN = os.environ.get("CLAUDE_BIN") or shutil.which("claude") or "claude"
 # .resolve() makes the dir absolute so resolved frame paths stay absolute even
@@ -52,7 +64,7 @@ CLAUDE_BIN = os.environ.get("CLAUDE_BIN") or shutil.which("claude") or "claude"
 FRAME_DIR = Path(
     os.environ.get(
         "ANALYZE_FRAME_DIR",
-        "/Users/ichigo/Documents/repo/helmi/reelbot/analyze-frames",
+        str(Path(__file__).resolve().parents[1] / "analyze-frames"),
     )
 ).resolve()
 DEFAULT_MODEL = "claude-sonnet-5-5"
@@ -63,11 +75,7 @@ ALLOWED_MODELS = {"claude-haiku-5-5", "claude-sonnet-5-5", "claude-opus-5-5"}
 DEFAULT_EFFORT = {"claude-haiku-5-5": "high", "claude-sonnet-5-5": "low"}
 DEFAULT_TIMEOUT = 180
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="[bridge] %(levelname)s %(message)s",
-)
-log = logging.getLogger("bridge")
+log = logging.getLogger("claude_runner")
 
 # ── Rate-limit signal detection ───────────────────────────────────────────────
 
@@ -88,9 +96,7 @@ def _is_rate_limit(text: str) -> bool:
 
 # ── Frame path resolution ─────────────────────────────────────────────────────
 
-import re as _re
-
-_SAFE_SUBDIR_RE = _re.compile(r'^[A-Za-z0-9_-]+$')
+_SAFE_SUBDIR_RE = re.compile(r'^[A-Za-z0-9_-]+$')
 
 
 def _validate_subdir(subdir: str) -> bool:
@@ -203,7 +209,7 @@ def _run_claude(prompt: str, frame_paths: list, model: str, timeout_s: int,
     ]
 
     # Use a clean temp dir as cwd to minimize context noise
-    with tempfile.TemporaryDirectory(prefix="bridge_run_") as cwd:
+    with tempfile.TemporaryDirectory(prefix="claude_run_") as cwd:
         log.info("running claude model=%s frames=%d timeout=%ds",
                  model, len(frame_paths), timeout_s)
         try:
@@ -213,8 +219,9 @@ def _run_claude(prompt: str, frame_paths: list, model: str, timeout_s: int,
                 text=True,
                 timeout=timeout_s,
                 cwd=cwd,
-                # Inherit host env; do NOT override ANTHROPIC_API_KEY —
-                # subscription auth depends on whatever the host session has.
+                # Inherit pipeline-api's env (incl. .env) minus ANTHROPIC_*, so an API key, token or
+                # base URL in .env never moves claude off the subscription login.
+                env={k: v for k, v in os.environ.items() if not k.startswith("ANTHROPIC_")},
             )
         except subprocess.TimeoutExpired:
             log.error("claude timed out after %ds", timeout_s)
@@ -271,103 +278,38 @@ def _run_claude(prompt: str, frame_paths: list, model: str, timeout_s: int,
     }
 
 
-# ── HTTP handler ──────────────────────────────────────────────────────────────
-
-class BridgeHandler(http.server.BaseHTTPRequestHandler):
-    """Minimal stdlib HTTP handler — POST /run and GET /health only."""
-
-    def log_message(self, fmt, *args):  # silence default per-request logs
-        log.debug(fmt, *args)
-
-    def _send_json(self, status: int, payload: dict):
-        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-
-    def do_GET(self):
-        if self.path == "/health":
-            self._send_json(200, {"ok": True})
-        else:
-            self._send_json(404, {"ok": False, "error": "not found"})
-
-    def do_POST(self):
-        if self.path != "/run":
-            self._send_json(404, {"ok": False, "error": "not found"})
-            return
-
-        # Read body
-        length = int(self.headers.get("Content-Length", 0))
-        raw = self.rfile.read(length)
-        try:
-            req = json.loads(raw)
-        except json.JSONDecodeError:
-            self._send_json(400, {"ok": False, "error": "invalid JSON body"})
-            return
-
-        prompt = req.get("prompt", "").strip()
-        if not prompt:
-            self._send_json(400, {"ok": False, "error": "prompt is required"})
-            return
-
-        frames = req.get("frames") or []
-        model = req.get("model") or DEFAULT_MODEL
-        if model not in ALLOWED_MODELS:
-            self._send_json(400, {"ok": False, "error": "model must be one of " + ", ".join(sorted(ALLOWED_MODELS))})
-            return
-        timeout_s = int(req.get("timeout_s") or DEFAULT_TIMEOUT)
-        effort = req.get("effort") or DEFAULT_EFFORT.get(model)
-        if effort is not None and effort not in _EFFORTS:
-            self._send_json(400, {"ok": False, "error": "effort must be one of " + ", ".join(sorted(_EFFORTS))})
-            return
-
-        # Optional subdir: a malformed one is a 400 (checked below); frames that are
-        # missing under a valid subdir are a 400 frames_missing (checked further below).
-        subdir = req.get("subdir") or None
-        if subdir is not None and not isinstance(subdir, str):
-            self._send_json(400, {"ok": False, "error": "subdir must be a string"})
-            return
-        if subdir is not None and not _validate_subdir(subdir):
-            self._send_json(400, {"ok": False, "error": "subdir must be a single safe path component ([A-Za-z0-9_-]+)"})
-            return
-
-        frame_paths = _resolve_frames(frames, subdir=subdir)
-        if frames and not frame_paths:
-            # Never silently fall back to a text-only run: the caller expects vision.
-            self._send_json(400, {"ok": False, "error_type": "frames_missing",
-                                  "error": "none of the requested frames exist"})
-            return
-        with _RUN_SLOTS:  # only the claude subprocess waits for a slot
-            result = _run_claude(prompt, frame_paths, model, timeout_s, effort)
-
-        status_code = 200 if result.get("ok") else 502
-        if result.get("error_type") == "rate_limit":
-            status_code = 429
-        self._send_json(status_code, result)
-
-
 # ── Entry point ───────────────────────────────────────────────────────────────
 
-class _BridgeServer(http.server.ThreadingHTTPServer):
-    """One thread per request so GET /health answers while a claude job runs."""
+def run(payload: dict) -> dict:
+    """Validate a /run-style payload and execute it; same result dict the old HTTP bridge returned."""
+    prompt = (payload.get("prompt") or "").strip()
+    if not prompt:
+        return {"ok": False, "error": "prompt is required"}
 
-    daemon_threads = True
-
-
-def main():
-    bind_addr = "127.0.0.1"
-    server = _BridgeServer((bind_addr, PORT), BridgeHandler)
-    log.info("claude_bridge listening on %s:%d", bind_addr, PORT)
-    log.info("claude binary: %s", CLAUDE_BIN)
-    log.info("frame dir:     %s", FRAME_DIR)
-    log.info("max concurrent claude runs: %d", MAX_CONCURRENT)
+    frames = payload.get("frames") or []
+    model = payload.get("model") or DEFAULT_MODEL
+    if model not in ALLOWED_MODELS:
+        return {"ok": False, "error": "model must be one of " + ", ".join(sorted(ALLOWED_MODELS))}
     try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        log.info("shutting down")
+        timeout_s = int(payload.get("timeout_s") or DEFAULT_TIMEOUT)
+    except (TypeError, ValueError):
+        return {"ok": False, "error": "timeout_s must be an integer"}
+    effort = payload.get("effort") or DEFAULT_EFFORT.get(model)
+    if effort is not None and effort not in _EFFORTS:
+        return {"ok": False, "error": "effort must be one of " + ", ".join(sorted(_EFFORTS))}
 
+    # Optional subdir: malformed is rejected here; frames missing under a valid subdir
+    # are rejected below as frames_missing.
+    subdir = payload.get("subdir") or None
+    if subdir is not None and not isinstance(subdir, str):
+        return {"ok": False, "error": "subdir must be a string"}
+    if subdir is not None and not _validate_subdir(subdir):
+        return {"ok": False, "error": "subdir must be a single safe path component ([A-Za-z0-9_-]+)"}
 
-if __name__ == "__main__":
-    main()
+    frame_paths = _resolve_frames(frames, subdir=subdir)
+    if frames and not frame_paths:
+        # Never silently fall back to a text-only run: the caller expects vision.
+        return {"ok": False, "error_type": "frames_missing",
+                "error": "none of the requested frames exist"}
+    with _RUN_SLOTS, _host_slot():  # only the claude subprocess waits for a slot
+        return _run_claude(prompt, frame_paths, model, timeout_s, effort)

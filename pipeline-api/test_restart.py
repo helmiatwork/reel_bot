@@ -34,7 +34,7 @@ class TestRestartService:
 
     def test_restart_all_allowed_services(self):
         """Verify allowlist includes expected services."""
-        expected = {"postgres", "cliproxy", "claude-bridge"}
+        expected = {"postgres"}
         assert _RESTARTABLE_SERVICES == expected
 
     def test_restart_pipeline_api_rejected(self):

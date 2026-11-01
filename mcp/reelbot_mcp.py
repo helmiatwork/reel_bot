@@ -3,11 +3,10 @@
 Reelbot MCP Server for Antigravity
 
 Provides tools to pull analysis/segments and generate shot-prompts/director briefs
-via Claude bridge for media generation in Gemini.
+via the claude CLI for media generation in Gemini.
 
 Environment:
 - DATABASE_URL: psycopg connection string (required)
-- CLAUDE_BRIDGE_URL: Claude bridge endpoint (defaults to http://localhost:9999)
 
 Schema (sources, video_analysis, video_segments):
 - sources: id, youtube_url, title, niche, platform, channel, views_at_analysis, status, created_at
@@ -31,7 +30,7 @@ from mcp.server.fastmcp import FastMCP
 import psycopg
 from psycopg.types.json import Jsonb
 
-# HTTP to Claude bridge
+# HTTP to pipeline-api
 import httpx
 
 # Env
@@ -41,9 +40,12 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 DATABASE_URL = os.getenv("DATABASE_URL", "")
-CLAUDE_BRIDGE_URL = os.getenv("CLAUDE_BRIDGE_URL", "http://localhost:9999")
 PIPELINE_API_URL = os.getenv("PIPELINE_API_URL", "http://localhost:8000")
 REPO_ROOT = Path(__file__).parent.parent
+
+# claude_runner lives in pipeline-api/ (this server runs as its own process)
+sys.path.insert(0, str(REPO_ROOT / "pipeline-api"))
+import claude_runner  # noqa: E402
 
 # MCP server
 server = FastMCP("reelbot")
@@ -157,33 +159,24 @@ def _read_soul(agent_name: str) -> str:
         return ""
 
 
-def _call_claude_bridge(prompt: str) -> tuple[bool, str]:
+def _call_claude(prompt: str) -> tuple[bool, str]:
     """
-    POST a prompt to Claude bridge and return (ok: bool, result_or_error: str).
+    Run a prompt through the claude CLI (pipeline-api/claude_runner.py, in-process)
+    and return (ok: bool, result_or_error: str).
 
     Returns:
         (True, result_text) on success
         (False, error_msg) on failure
     """
     try:
-        resp = httpx.post(
-            f"{CLAUDE_BRIDGE_URL}/run",
-            json={"prompt": prompt, "frames": [], "model": "claude-sonnet-5-5"},
-            timeout=httpx.Timeout(connect=10.0, read=200.0, write=10.0, pool=5.0),
-        )
+        data = claude_runner.run({"prompt": prompt, "frames": [], "model": "claude-sonnet-5-5"})
     except Exception as e:
-        return False, f"bridge connection error: {e}"
-
-    try:
-        data = resp.json()
-    except Exception as e:
-        return False, f"bridge response parse error: {e}"
+        return False, f"claude runner error: {e}"
 
     if not data.get("ok"):
-        return False, data.get("error", "bridge failed with unknown error")
+        return False, data.get("error", "claude runner failed with unknown error")
 
-    result = data.get("result", "")
-    return True, result
+    return True, data.get("result", "")
 
 
 # ── MCP tools (require DB or network) ──────────────────────────────────
@@ -313,7 +306,7 @@ def generate_shot_prompts(script_text: str, style_note: str = "") -> dict:
 
     Generate Gemini image→video prompts from a script.
 
-    Reads shotprompt/SOUL.md, builds a prompt, calls Claude bridge.
+    Reads shotprompt/SOUL.md, builds a prompt, calls the claude CLI.
 
     Args:
         script_text: the beat-by-beat script
@@ -340,7 +333,7 @@ def generate_shot_prompts(script_text: str, style_note: str = "") -> dict:
         f"Produce the per-beat image→video prompts now."
     )
 
-    ok, result = _call_claude_bridge(prompt)
+    ok, result = _call_claude(prompt)
     if not ok:
         return {"error": result, "prompts": ""}
 
@@ -354,7 +347,7 @@ def make_brief(analysis_json: str, target: str = "") -> dict:
 
     Generate a Production Brief from video analysis.
 
-    Reads director/SOUL.md, builds a prompt with analysis + target, calls Claude bridge.
+    Reads director/SOUL.md, builds a prompt with analysis + target, calls the claude CLI.
 
     Args:
         analysis_json: JSON string of video_analysis (hook, structure, tags, retention_score, etc.)
@@ -380,7 +373,7 @@ def make_brief(analysis_json: str, target: str = "") -> dict:
         f"Produce the Production Brief now."
     )
 
-    ok, result = _call_claude_bridge(prompt)
+    ok, result = _call_claude(prompt)
     if not ok:
         return {"error": result, "brief": ""}
 
