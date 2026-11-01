@@ -44,9 +44,23 @@ def ytdlp_bin() -> str:
 _FENCE_RE = re.compile(r"```(?:json)?\s*(.*?)```", re.S | re.I)
 
 
+def _add_usage(usage: dict, data: dict, model: str) -> None:
+    """Accumulate one ok call into `usage` (same token formula as main._log_api_usage)."""
+    raw = data.get("raw_usage") or {}
+    usage["attempts"] = usage.get("attempts", 0) + 1
+    usage["prompt_tokens"] = usage.get("prompt_tokens", 0) + int(
+        (raw.get("input_tokens", 0) or 0) + (raw.get("cache_creation_input_tokens", 0) or 0)
+        + (raw.get("cache_read_input_tokens", 0) or 0))
+    usage["completion_tokens"] = usage.get("completion_tokens", 0) + int(raw.get("output_tokens", 0) or 0)
+    usage["cost_usd"] = usage.get("cost_usd", 0) + float(data.get("cost_usd") or 0)
+    usage["model"] = data.get("model", model)
+
+
 def run_claude(prompt: str, *, agent: str, model: str = ATM_MODEL, frames: list | None = None,
-               subdir: str | None = None, timeout_s: int = 300, effort: str | None = None) -> str | None:
-    """Ask the claude CLI; returns the result text, or None on runner error / ok:false."""
+               subdir: str | None = None, timeout_s: int = 300, effort: str | None = None,
+               usage: dict | None = None) -> str | None:
+    """Ask the claude CLI; returns the result text, or None on runner error / ok:false.
+    `usage`: when given, an ok call is accumulated into it (attempts, tokens, cost_usd, model)."""
     import main
     payload = {"prompt": prompt, "frames": frames or [], "model": model, "timeout_s": timeout_s}
     if subdir:
@@ -63,6 +77,8 @@ def run_claude(prompt: str, *, agent: str, model: str = ATM_MODEL, frames: list 
         print(f"[atm] claude runner error ({agent}): {data.get('error') if isinstance(data, dict) else data}")
         return None
     main._log_api_usage(agent, data.get("model", model), data.get("raw_usage") or {}, data.get("cost_usd"))
+    if usage is not None:
+        _add_usage(usage, data, model)
     return data.get("result")
 
 

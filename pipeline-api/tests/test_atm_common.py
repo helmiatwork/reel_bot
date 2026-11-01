@@ -2,6 +2,8 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -76,3 +78,28 @@ def test_init_creates_content_items_before_any_alter():
 def test_init_without_db_is_noop():
     with patch("main._db_conn", return_value=None):
         init_atm_db()
+
+
+def _reply(text, usage, cost, model="m"):
+    return {"ok": True, "result": text, "raw_usage": usage, "cost_usd": cost, "model": model}
+
+
+def test_run_claude_usage_accumulates_ok_calls_only():
+    usage = {}
+    runs = [_reply("a", {"input_tokens": 10, "cache_creation_input_tokens": 2, "cache_read_input_tokens": 3,
+                         "output_tokens": 5}, 0.1),
+            {"ok": False, "error": "x"},
+            _reply("b", {"input_tokens": 1, "output_tokens": 4}, None, model="m2")]
+    with patch("claude_runner.run", side_effect=runs), patch("main._log_api_usage"):
+        assert run_claude("p", agent="t", usage=usage) == "a"
+        assert run_claude("p", agent="t", usage=usage) is None
+        assert run_claude("p", agent="t", usage=usage) == "b"
+    assert usage == {"attempts": 2, "prompt_tokens": 16, "completion_tokens": 9,
+                     "cost_usd": pytest.approx(0.1), "model": "m2"}
+
+
+def test_run_claude_without_usage_unchanged():
+    data = _reply("hi", {"input_tokens": 3}, 0.5)
+    with patch("claude_runner.run", return_value=data), patch("main._log_api_usage") as log:
+        assert run_claude("p", agent="t") == "hi"
+    log.assert_called_once_with("t", "m", {"input_tokens": 3}, 0.5)

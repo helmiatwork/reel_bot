@@ -81,6 +81,14 @@ def startup_event():
         atm.db.init_atm_db()
     except Exception as e:
         print(f"[startup] atm db init failed (non-fatal): {e}")
+    try:
+        atm.recycle.init_recycle_db()
+    except Exception as e:
+        print(f"[startup] recycle db init failed (non-fatal): {e}")
+    try:
+        atm.formulas.init_formulas_db()
+    except Exception as e:
+        print(f"[startup] formulas db init failed (non-fatal): {e}")
 
 # ── SSRF guard: blocked networks (module-level constant) ────────────────────
 # Extra ranges beyond ipaddress.ip_address check (0.0.0.0/8, CGNAT, etc)

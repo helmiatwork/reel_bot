@@ -210,6 +210,15 @@ export const api = {
   atmAutofill: () => atmReq('POST', '/atm/schedule/autofill', {}),
   atmMonitor: (id) => atmReq('GET', '/atm/items/' + id + '/monitor'),
   atmLearn: (niche = '') => atmReq('GET', '/atm/learn' + (niche ? '?niche=' + encodeURIComponent(niche) : '')),
+  atmRecycles: () => atmReq('GET', '/atm/recycle'),
+  atmRecycle: (id) => atmReq('GET', '/atm/recycle/' + id),
+  atmRecycleCreate: (url, extra = {}) => atmReq('POST', '/atm/recycle', { url, ...extra }),  // extra: formula_id, target_duration_s
+  atmFormulas: () => atmReq('GET', '/atm/formulas'),
+  atmFormulaCreate: (body) => atmReq('POST', '/atm/formulas', body),
+  atmFormulaUpdate: (id, body) => atmReq('PUT', '/atm/formulas/' + id, body),
+  atmFormulaDelete: (id) => atmReq('DELETE', '/atm/formulas/' + id),
+  atmRecycleRebuild: (id) => atmReq('POST', '/atm/recycle/' + id + '/rebuild', {}),
+  atmRecycleDelete: (id) => atmReq('DELETE', '/atm/recycle/' + id),
   atmLearningDelete: (id) => atmReq('DELETE', '/atm/learnings/' + id),
 
   decompose: (youtube_url) => postJSON('/decompose', { youtube_url }),

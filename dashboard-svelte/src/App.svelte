@@ -22,6 +22,8 @@
   import Today from './pages/Today.svelte'
   import Monitor from './pages/Monitor.svelte'
   import Learn from './pages/Learn.svelte'
+  import Recycle from './pages/Recycle.svelte'
+  import Formulas from './pages/Formulas.svelte'
   import Models from './pages/Models.svelte'
 
   // Standard line icons (Lucide), monochrome, inherit text color.
@@ -44,7 +46,8 @@
       { p: 'clipper', ico: I('<path d="M7 4v16"/><path d="M17 4v16"/><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h4"/><path d="M17 9h4"/><path d="M3 15h4"/><path d="M17 15h4"/>'), key: 'nav.clipper' }
     ]},
     { title_key: 'nav.production', items: [
-      { p: 'production', ico: I('<path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/>'), key: 'nav.production' }
+      { p: 'production', ico: I('<path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/>'), key: 'nav.production' },
+      { p: 'recycle', ico: I('<path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/>'), key: 'nav.recycle' }
     ]},
     { title_key: 'nav.monitor', items: [
       { p: 'monitor', ico: I('<polyline points="3 17 8 11 13 14 21 6"/>'), key: 'nav.monitor' }
@@ -53,7 +56,8 @@
       { p: 'songs', ico: I('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'), key: 'nav.songs' },
       { p: 'audio-clips', ico: I('<path d=\"M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2\"/>'), key: 'nav.audio_clips' },
       { p: 'sources', ico: I('<path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/>'), key: 'nav.sources' },
-      { p: 'prep', ico: I('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'), key: 'nav.prep' }
+      { p: 'prep', ico: I('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'), key: 'nav.prep' },
+      { p: 'formulas', ico: I('<line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/>'), key: 'nav.formulas' }
     ]},
     { title_key: 'nav.learn', items: [
       { p: 'learn', ico: I('<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>'), key: 'nav.learn' }
@@ -376,6 +380,8 @@
       {:else if current === 'production'}<Production />
       {:else if current === 'monitor'}<Monitor />
       {:else if current === 'learn'}<Learn />
+      {:else if current === 'recycle'}<Recycle />
+      {:else if current === 'formulas'}<Formulas />
       {:else if current === 'sources'}<Sources />
       {:else if current === 'analysis'}<Analysis />
       {:else if current === 'clipper'}<Clipper />
