@@ -13,6 +13,7 @@ import tempfile
 import threading
 import time
 import unittest
+import urllib.request
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -684,15 +685,37 @@ def _run_posts_concurrently(handlers, join_timeout=5):
 
 class TestConcurrencyCap(unittest.TestCase):
     def test_cap_1_never_runs_two_claude_calls_at_once(self):
-        probe = _RunProbe()
+        # Barrier(2) passes only when two calls are inside _run_claude together.
+        # At cap 1 no second party ever arrives, so every wait must break on timeout.
+        barrier = threading.Barrier(2, timeout=0.5)
+        lock = threading.Lock()
+        active = {"now": 0, "max": 0}
+        outcomes = []
+
+        def _fake_run(prompt, frame_paths, model, timeout_s, effort=None):
+            with lock:
+                active["now"] += 1
+                active["max"] = max(active["max"], active["now"])
+            try:
+                barrier.wait()
+                outcome = "passed"
+            except threading.BrokenBarrierError:
+                outcome = "broken"
+            finally:
+                with lock:
+                    active["now"] -= 1
+            with lock:
+                outcomes.append(outcome)
+            return {"ok": True, "result": "{}", "cost_usd": 0.0, "model": "x"}
+
         handlers = [_post_handler({"prompt": f"p{i}", "frames": []})[0] for i in range(2)]
         with patch.object(claude_bridge, "_RUN_SLOTS", threading.BoundedSemaphore(1)), \
-             patch.object(claude_bridge, "_run_claude", side_effect=probe):
+             patch.object(claude_bridge, "_run_claude", side_effect=_fake_run):
             errors, alive = _run_posts_concurrently(handlers)
         self.assertEqual(errors, [])
         self.assertEqual(alive, [])
-        self.assertEqual(probe.calls, 2)
-        self.assertEqual(probe.max_active, 1)
+        self.assertEqual(outcomes, ["broken", "broken"], "no barrier may pass at cap 1")
+        self.assertEqual(active["max"], 1)
 
     def test_cap_2_allows_two_claude_calls_at_once(self):
         # Barrier(2) only passes when both calls are inside _run_claude together.
@@ -722,21 +745,76 @@ class TestConcurrencyCap(unittest.TestCase):
 
     def test_valid_request_waits_for_a_free_slot(self):
         slots = threading.BoundedSemaphore(1)
-        probe = _RunProbe()
+        entered = threading.Event()
+        calls = []
+
+        def _fake_run(prompt, frame_paths, model, timeout_s, effort=None):
+            calls.append(prompt)
+            entered.set()
+            return {"ok": True, "result": "{}", "cost_usd": 0.0, "model": "x"}
+
         handler, captured = _post_handler({"prompt": "analyze", "frames": []})
         slots.acquire()
         with patch.object(claude_bridge, "_RUN_SLOTS", slots), \
-             patch.object(claude_bridge, "_run_claude", side_effect=probe):
+             patch.object(claude_bridge, "_run_claude", side_effect=_fake_run):
             t = threading.Thread(target=handler.do_POST, daemon=True)
             t.start()
-            t.join(0.3)
-            self.assertTrue(t.is_alive(), "request must wait while cap is full")
-            self.assertEqual(probe.calls, 0)
+            self.assertFalse(entered.wait(0.3), "request must wait while cap is full")
             slots.release()
+            self.assertTrue(entered.wait(5), "request must run once a slot frees")
             t.join(5)
             self.assertFalse(t.is_alive())
-        self.assertEqual(probe.calls, 1)
+        self.assertEqual(len(calls), 1)
         self.assertEqual(captured[0][0], 200)
+
+    def test_health_answers_over_socket_while_a_claude_job_runs(self):
+        entered = threading.Event()
+        release = threading.Event()
+        posted = {}
+        # No proxy: an http_proxy env var would otherwise route 127.0.0.1 away.
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
+        def _blocking_run(prompt, frame_paths, model, timeout_s, effort=None):
+            entered.set()
+            release.wait(10)
+            return {"ok": True, "result": "{}", "cost_usd": 0.0, "model": "x"}
+
+        def _post_run(port):
+            req = urllib.request.Request(
+                f"http://127.0.0.1:{port}/run",
+                data=json.dumps({"prompt": "analyze", "frames": []}).encode(),
+                headers={"Content-Type": "application/json"}, method="POST",
+            )
+            try:
+                with opener.open(req, timeout=10) as resp:
+                    posted["status"] = resp.status
+            except Exception as exc:  # surfaced by the assertion below
+                posted["error"] = exc
+
+        server = claude_bridge._BridgeServer(("127.0.0.1", 0), claude_bridge.BridgeHandler)
+        port = server.server_address[1]
+        serve = threading.Thread(target=server.serve_forever, daemon=True)
+        poster = threading.Thread(target=_post_run, args=(port,), daemon=True)
+        try:
+            with patch.object(claude_bridge, "_run_claude", side_effect=_blocking_run), \
+                 patch.object(claude_bridge, "_RUN_SLOTS", threading.BoundedSemaphore(1)):
+                serve.start()
+                poster.start()
+                self.assertTrue(entered.wait(5), "POST /run never reached _run_claude")
+                with opener.open(f"http://127.0.0.1:{port}/health", timeout=5) as health:
+                    self.assertEqual(health.status, 200)
+                    self.assertEqual(json.loads(health.read()), {"ok": True})
+                release.set()
+                poster.join(5)
+                self.assertFalse(poster.is_alive(), "POST /run did not finish")
+                self.assertNotIn("error", posted, posted.get("error"))
+                self.assertEqual(posted.get("status"), 200)
+        finally:
+            release.set()
+            if serve.is_alive():  # shutdown() blocks forever if serve_forever never ran
+                server.shutdown()
+                serve.join(5)
+            server.server_close()
 
     def test_env_clamps_cap_to_at_least_one(self):
         scripts_dir = str(Path(__file__).parent)
